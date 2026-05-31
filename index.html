@@ -690,11 +690,12 @@ async function processImageText(mode){
   // NEW: If it's math, use Groq Vision to read it (NOT solve it)
   if (isMath) {
     try {
-      const response = await fetch("/api/groq-chat", {
+     const response = await fetch("/api/groq-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.2-90b-vision-preview",
+          // THIS IS THE NEW WORKING VISION MODEL
+          model: "meta-llama/llama-4-scout-17b-16e-instruct", 
           temperature: 0,
           messages: [
             {
