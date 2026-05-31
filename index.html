@@ -715,29 +715,56 @@ async function processImageText(mode){
 
 // --- MATH SOLVER API ---
 async function solveMath() {
-  const problem = document.getElementById("mathExtractedText").value.trim();
-  if(!problem) return alert("Extract math text first, or type a problem.");
+  if (!capturedImage) {
+    alert("Please take a photo of the math problem first!");
+    return;
+  }
   
   const statusEl = document.getElementById("mathStatus");
   const outputBox = document.getElementById("mathSolutionBox");
   
-  statusEl.innerHTML = "🧠 Solving problem...";
-  outputBox.innerHTML = "Analyzing and calculating...";
+  statusEl.innerHTML = "🧠 AI is looking at your photo...";
+  outputBox.innerHTML = "Calculating step-by-step...";
   
   try {
-    const solution = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. If the input is slightly corrupted from OCR, infer the most logical equation. Clearly show the final answer at the end." },
-      { role:"user", content: `Solve this:\n\n${problem}` }
-    ], {temperature:0.2});
+    // We send the image DIRECTLY to Groq using their free Vision model!
+    const response = await fetch("/api/groq-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama-3.2-90b-vision-preview", // Groq's FREE vision model
+        temperature: 0.2,
+        messages: [
+          { 
+            role: "system", 
+            content: "You are an expert Math Tutor. Read the math problem from the image and solve it step-by-step. Clearly show the final answer." 
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Solve this math problem for me." },
+              { type: "image_url", image_url: { url: capturedImage } }
+            ]
+          }
+        ]
+      })
+    });
 
-    outputBox.innerText = solution;
-    statusEl.innerHTML = "✅ Solved!";
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || "Groq vision request failed");
+    }
+
+    // Display the final solved answer!
+    outputBox.innerText = data.choices[0].message.content;
+    statusEl.innerHTML = "✅ Solved for FREE!";
+    
   } catch(err) {
     statusEl.innerHTML = "❌ Solving failed";
     outputBox.innerText = `Error: ${err.message}`;
   }
 }
-
 // --- IMAGE TRANSLATOR API ---
 async function translateExtractedText(){
   const textToTranslate = document.getElementById("imageExtractedText").value.trim();
