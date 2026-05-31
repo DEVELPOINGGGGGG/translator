@@ -40,6 +40,7 @@ body{
 background:linear-gradient(180deg,#020617,#0f172a);
 color:white;
 height:100vh;
+height:100dvh;
 overflow:hidden;
 }
 
@@ -344,7 +345,8 @@ z-index:5000;
 }
 
 .cameraModal.active{
-display:block;
+display:flex;
+flex-direction:column;
 }
 
 .cameraHeader{
@@ -354,6 +356,11 @@ justify-content:space-between;
 align-items:center;
 padding:0 15px;
 background:rgba(0,0,0,.5);
+position:absolute;
+top:0;
+left:0;
+right:0;
+z-index:2;
 }
 
 .cameraHeader button{
@@ -365,18 +372,24 @@ font-size:20px;
 
 .cameraVideo{
 width:100%;
-height:calc(100vh - 150px);
+height:100%;
 object-fit:cover;
 background:black;
 }
 
 .cameraControls{
-height:80px;
+min-height:96px;
 display:flex;
 justify-content:center;
 align-items:center;
 gap:20px;
-background:black;
+background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.95) 28%);
+padding-bottom:calc(28px + env(safe-area-inset-bottom));
+position:absolute;
+left:0;
+right:0;
+bottom:0;
+z-index:2;
 }
 
 .cameraCircle{
@@ -914,7 +927,45 @@ style="display:none;">
 <!-- SCRIPT WILL GO BELOW THIS -->
 <script>
 
-const GROQ_API_KEY="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";
+async function callGroq(messages, options={}){
+
+const response=
+await fetch(
+"/api/groq-chat",
+{
+method:"POST",
+headers:{
+"Content-Type":
+"application/json"
+},
+body:JSON.stringify({
+model:
+"llama-3.3-70b-versatile",
+temperature:
+options.temperature ?? 0,
+messages
+})
+}
+);
+
+const data=
+await response.json();
+
+if(
+!response.ok
+){
+
+throw new Error(
+data.error ||
+"Groq request failed"
+);
+
+}
+
+return data.choices[0]
+.message.content;
+
+}
 
 /* ======================
    SIDEBAR
@@ -1030,22 +1081,9 @@ document
 
 try{
 
-const response=
-await fetch(
-"https://api.groq.com/openai/v1/chat/completions",
-{
-method:"POST",
-headers:{
-Authorization:
-`Bearer ${GROQ_API_KEY}`,
-"Content-Type":
-"application/json"
-},
-body:JSON.stringify({
-model:
-"llama-3.3-70b-versatile",
-temperature:0,
-messages:[
+const result=
+await callGroq(
+[
 {
 role:"user",
 content:
@@ -1055,17 +1093,9 @@ ${text}
 
 Return only translation`
 }
-]
-})
-}
+],
+{temperature:0}
 );
-
-const data=
-await response.json();
-
-const result=
-data.choices[0]
-.message.content;
 
 document
 .getElementById(
@@ -1094,21 +1124,9 @@ async function getMeaning(text){
 
 try{
 
-const response=
-await fetch(
-"https://api.groq.com/openai/v1/chat/completions",
-{
-method:"POST",
-headers:{
-Authorization:
-`Bearer ${GROQ_API_KEY}`,
-"Content-Type":
-"application/json"
-},
-body:JSON.stringify({
-model:
-"llama-3.3-70b-versatile",
-messages:[
+const result=
+await callGroq(
+[
 {
 role:"user",
 content:
@@ -1119,19 +1137,13 @@ ${text}
 Short format`
 }
 ]
-})
-}
 );
-
-const data=
-await response.json();
 
 document
 .getElementById(
 "meaningBox"
 ).innerText=
-data.choices[0]
-.message.content;
+result;
 
 }catch(e){}
 
@@ -1163,36 +1175,18 @@ output.innerHTML=
 
 try{
 
-const response=
-await fetch(
-"https://api.groq.com/openai/v1/chat/completions",
-{
-method:"POST",
-headers:{
-Authorization:
-`Bearer ${GROQ_API_KEY}`,
-"Content-Type":
-"application/json"
-},
-body:JSON.stringify({
-model:
-"llama-3.3-70b-versatile",
-messages:[
+const result=
+await callGroq(
+[
 {
 role:"user",
 content:query
 }
 ]
-})
-}
 );
 
-const data=
-await response.json();
-
 output.innerText=
-data.choices[0]
-.message.content;
+result;
 
 }catch(err){
 
@@ -1517,22 +1511,9 @@ document
 )
 .value;
 
-const response=
-await fetch(
-"https://api.groq.com/openai/v1/chat/completions",
-{
-method:"POST",
-headers:{
-Authorization:
-`Bearer ${GROQ_API_KEY}`,
-"Content-Type":
-"application/json"
-},
-body:JSON.stringify({
-model:
-"llama-3.3-70b-versatile",
-temperature:0,
-messages:[
+const translated=
+await callGroq(
+[
 {
 role:"user",
 content:
@@ -1542,17 +1523,9 @@ ${extractedText}
 
 Return only translation`
 }
-]
-})
-}
+],
+{temperature:0}
 );
-
-const data=
-await response.json();
-
-const translated=
-data.choices[0]
-.message.content;
 
 document
 .getElementById(
@@ -1646,22 +1619,9 @@ async function getHardWords(text){
 
 try{
 
-const response=
-await fetch(
-"https://api.groq.com/openai/v1/chat/completions",
-{
-method:"POST",
-headers:{
-Authorization:
-`Bearer ${GROQ_API_KEY}`,
-"Content-Type":
-"application/json"
-},
-body:JSON.stringify({
-model:
-"llama-3.3-70b-versatile",
-temperature:0,
-messages:[
+const result=
+await callGroq(
+[
 {
 role:"user",
 content:
@@ -1677,17 +1637,9 @@ Word:
 Meaning:
 `
 }
-]
-})
-}
+],
+{temperature:0}
 );
-
-const data=
-await response.json();
-
-const result=
-data.choices[0]
-.message.content;
 
 document
 .getElementById(
