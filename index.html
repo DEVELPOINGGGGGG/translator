@@ -687,14 +687,46 @@ async function processImageText(mode){
   statusEl.innerHTML = "🔍 Extracting text...";
   inputEl.value = "Reading image... please wait.";
 
+  // NEW: If it's math, use Groq Vision to read it (NOT solve it)
+  if (isMath) {
+    try {
+      const response = await fetch("/api/groq-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.2-90b-vision-preview",
+          temperature: 0,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Write out the exact math equation or text shown in this image. Do NOT solve it. Just return the text exactly as written." },
+                { type: "image_url", image_url: { url: capturedImage } }
+              ]
+            }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Vision API failed");
+
+      // Put the read text into the edit box
+      inputEl.value = data.choices[0].message.content.trim();
+      statusEl.innerHTML = "✅ Extracted! Check the text for typos, then hit Solve.";
+      
+    } catch(err) {
+      statusEl.innerHTML = "❌ Extraction failed";
+      inputEl.value = `Error: ${err.message}`;
+    }
+    return; // Stop here for math
+  }
+
+  // Old Tesseract logic for regular translation images remains below
   try {
     if(!window.Tesseract) throw new Error("OCR Library missing.");
-    
     const imageForOcr = await prepareImageForOcr(capturedImage);
-    const result = await Tesseract.recognize(imageForOcr, "eng", {
-      tessedit_pageseg_mode: "6"
-    });
-
+    const result = await Tesseract.recognize(imageForOcr, "eng", { tessedit_pageseg_mode: "6" });
     const extractedText = cleanOcrText(result.data);
     
     if(!extractedText){
@@ -703,63 +735,33 @@ async function processImageText(mode){
       alert("No reliable text found. Try taking a closer photo.");
       return;
     }
-
     inputEl.value = extractedText;
     statusEl.innerHTML = "✅ Extracted! Edit if needed, then hit the button below.";
-    
   } catch(err) {
     statusEl.innerHTML = "❌ Error reading image";
     inputEl.value = `Error: ${err.message}`;
   }
 }
-
 // --- MATH SOLVER API ---
 async function solveMath() {
-  if (!capturedImage) {
-    alert("Please take a photo of the math problem first!");
-    return;
-  }
+  const problem = document.getElementById("mathExtractedText").value.trim();
+  if(!problem) return alert("Extract math text first, or type a problem manually.");
   
   const statusEl = document.getElementById("mathStatus");
   const outputBox = document.getElementById("mathSolutionBox");
   
-  statusEl.innerHTML = "🧠 AI is looking at your photo...";
-  outputBox.innerHTML = "Calculating step-by-step...";
+  statusEl.innerHTML = "🧠 Solving problem...";
+  outputBox.innerHTML = "Analyzing and calculating step-by-step...";
   
   try {
-    // We send the image DIRECTLY to Groq using their free Vision model!
-    const response = await fetch("/api/groq-chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "llama-3.2-90b-vision-preview", // Groq's FREE vision model
-        temperature: 0.2,
-        messages: [
-          { 
-            role: "system", 
-            content: "You are an expert Math Tutor. Read the math problem from the image and solve it step-by-step. Clearly show the final answer." 
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Solve this math problem for me." },
-              { type: "image_url", image_url: { url: capturedImage } }
-            ]
-          }
-        ]
-      })
-    });
+    // We send the clean text to the highly accurate Llama 3.3 Text model
+    const solution = await callGroq([
+      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. Clearly show the final answer at the end." },
+      { role:"user", content: `Solve this exactly as written:\n\n${problem}` }
+    ], {temperature: 0});
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || "Groq vision request failed");
-    }
-
-    // Display the final solved answer!
-    outputBox.innerText = data.choices[0].message.content;
-    statusEl.innerHTML = "✅ Solved for FREE!";
-    
+    outputBox.innerText = solution;
+    statusEl.innerHTML = "✅ Solved!";
   } catch(err) {
     statusEl.innerHTML = "❌ Solving failed";
     outputBox.innerText = `Error: ${err.message}`;
