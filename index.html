@@ -7,6 +7,9 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
 <style>
 /* =========================
    AI TRANSLATOR & MATH V4
@@ -687,21 +690,20 @@ async function processImageText(mode){
   statusEl.innerHTML = "🔍 Extracting text...";
   inputEl.value = "Reading image... please wait.";
 
-  // NEW: If it's math, use Groq Vision to read it (NOT solve it)
+  // If it's math, use Groq Vision to read it (STRICT prompt to NOT solve)
   if (isMath) {
     try {
      const response = await fetch("/api/groq-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // THIS IS THE NEW WORKING VISION MODEL
           model: "meta-llama/llama-4-scout-17b-16e-instruct", 
           temperature: 0,
           messages: [
             {
               role: "user",
               content: [
-                { type: "text", text: "Write out the exact math equation or text shown in this image. Do NOT solve it. Just return the text exactly as written." },
+                { type: "text", text: "Look at this image and EXTRACT ONLY THE MATH QUESTION. Do NOT solve it. Do NOT provide any answers. If the image already contains the answer or steps, IGNORE THEM. Just write the original question exactly as shown." },
                 { type: "image_url", image_url: { url: capturedImage } }
               ]
             }
@@ -743,6 +745,7 @@ async function processImageText(mode){
     inputEl.value = `Error: ${err.message}`;
   }
 }
+
 // --- MATH SOLVER API ---
 async function solveMath() {
   const problem = document.getElementById("mathExtractedText").value.trim();
@@ -757,17 +760,28 @@ async function solveMath() {
   try {
     // We send the clean text to the highly accurate Llama 3.3 Text model
     const solution = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. Clearly show the final answer at the end." },
+      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. Use standard LaTeX for all math formulas (e.g., \\frac{x}{y}, \\sqrt{x}). Clearly show the final answer at the end." },
       { role:"user", content: `Solve this exactly as written:\n\n${problem}` }
     ], {temperature: 0});
 
-    outputBox.innerText = solution;
+    // Fix line breaks so they render properly in HTML
+    let formattedSolution = solution.replace(/\n/g, '<br>');
+    outputBox.innerHTML = formattedSolution;
+    
+    // TELL MATHJAX TO RENDER THE "BATTA" (FRACTIONS) AND SYMBOLS
+    if (window.MathJax) {
+      MathJax.typesetPromise([outputBox]).catch(function (err) {
+        console.log('MathJax error: ', err.message);
+      });
+    }
+
     statusEl.innerHTML = "✅ Solved!";
   } catch(err) {
     statusEl.innerHTML = "❌ Solving failed";
     outputBox.innerText = `Error: ${err.message}`;
   }
 }
+
 // --- IMAGE TRANSLATOR API ---
 async function translateExtractedText(){
   const textToTranslate = document.getElementById("imageExtractedText").value.trim();
