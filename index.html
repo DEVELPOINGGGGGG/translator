@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Translator Dashboard</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 /* =========================
-   AI TRANSLATOR DASHBOARD V2
+   AI TRANSLATOR DASHBOARD V3
    MOBILE FIRST CSS
 ========================= */
-
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 *{
 margin:0;
@@ -36,15 +34,21 @@ font-family:'Poppins',sans-serif;
 --radius:22px;
 }
 
+/* Added Animated Background */
 body{
-background:
-radial-gradient(circle at 18% 12%,rgba(59,130,246,.22),transparent 28%),
-radial-gradient(circle at 82% 8%,rgba(168,85,247,.18),transparent 24%),
-linear-gradient(180deg,#020617,#0f172a);
+background: linear-gradient(-45deg, #020617, #0f172a, #172033, #081124);
+background-size: 400% 400%;
+animation: gradientBG 15s ease infinite;
 color:white;
 height:100vh;
 height:100dvh;
 overflow:hidden;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 ::-webkit-scrollbar{
@@ -65,8 +69,8 @@ height:65px;
 display:flex;
 align-items:center;
 padding:0 18px;
-background:rgba(17,24,39,.9);
-backdrop-filter:blur(15px);
+background:rgba(17,24,39,.8);
+backdrop-filter:blur(20px);
 border-bottom:1px solid rgba(255,255,255,.05);
 position:fixed;
 top:0;
@@ -78,12 +82,20 @@ z-index:100;
 .menuBtn{
 font-size:28px;
 cursor:pointer;
+transition: transform 0.2s;
+}
+
+.menuBtn:hover {
+transform: scale(1.1);
 }
 
 .appTitle{
 font-size:18px;
 font-weight:700;
 margin-left:14px;
+background: linear-gradient(90deg, #60a5fa, #a855f7);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
 }
 
 /* ===================
@@ -98,9 +110,9 @@ width:280px;
 height:100%;
 background:#020617;
 z-index:999;
-transition:.3s;
+transition:.4s cubic-bezier(0.4, 0, 0.2, 1);
 padding-top:90px;
-box-shadow:0 0 30px rgba(0,0,0,.4);
+box-shadow:0 0 30px rgba(0,0,0,.6);
 }
 
 .sidebar.active{
@@ -117,23 +129,33 @@ font-size:16px;
 text-align:left;
 cursor:pointer;
 transition:.3s;
+border-left: 0px solid transparent;
 }
 
 .sidebar button:hover{
 background:#111827;
 padding-left:28px;
+border-left: 4px solid #3b82f6;
+color: #60a5fa;
 }
 
 .overlay{
 position:fixed;
 inset:0;
-background:rgba(0,0,0,.55);
+background:rgba(0,0,0,.65);
+backdrop-filter:blur(3px);
 display:none;
 z-index:998;
 }
 
 .overlay.active{
 display:block;
+animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ===================
@@ -152,64 +174,51 @@ padding:16px;
 scroll-behavior:smooth;
 }
 
-#dashboardPage{
-padding-bottom:24px;
-}
-
-#imagePage{
-padding-bottom:calc(36px + env(safe-area-inset-bottom));
-}
+#dashboardPage{ padding-bottom:24px; }
+#imagePage{ padding-bottom:calc(36px + env(safe-area-inset-bottom)); }
 
 .page.active{
 display:block;
-animation:fadePage .25s ease;
+animation:fadePage .4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadePage{
-from{
-opacity:0;
-transform:translateY(10px);
-}
-to{
-opacity:1;
-transform:translateY(0);
-}
+from{ opacity:0; transform:translateY(20px); filter: blur(4px); }
+to{ opacity:1; transform:translateY(0); filter: blur(0); }
 }
 
 /* ===================
-   CARDS
+   CARDS & CONTAINERS
 =================== */
 
 .card{
-background:linear-gradient(145deg,rgba(30,41,59,.97),rgba(15,23,42,.92));
+background:linear-gradient(145deg,rgba(30,41,59,.8),rgba(15,23,42,.7));
+backdrop-filter: blur(10px);
 border-radius:24px;
 padding:16px;
 margin-bottom:15px;
-border:1px solid rgba(148,163,184,.14);
-box-shadow:0 18px 45px rgba(2,6,23,.22);
-animation:cardFloat .35s ease both;
+border:1px solid rgba(255,255,255,.05);
+box-shadow:0 18px 45px rgba(0,0,0,.3);
+transition: transform 0.3s, box-shadow 0.3s;
 }
 
-@keyframes cardFloat{
-from{
-opacity:0;
-transform:translateY(12px) scale(.98);
-}
-to{
-opacity:1;
-transform:translateY(0) scale(1);
-}
+.card:hover {
+transform: translateY(-2px);
+box-shadow: 0 22px 50px rgba(0,0,0,.5);
+border: 1px solid rgba(255,255,255,.1);
 }
 
 .cardTitle{
 font-size:18px;
 font-weight:700;
 margin-bottom:10px;
+color: #bfdbfe;
 }
 
 .cardSub{
 color:var(--muted);
-font-size:14px;
+font-size:13px;
+margin-bottom: 12px;
 }
 
 /* ===================
@@ -220,10 +229,18 @@ font-size:14px;
 padding:22px;
 border-radius:26px;
 background:linear-gradient(135deg,#2563eb,#7c3aed,#db2777);
+background-size: 200% 200%;
+animation: heroGradient 6s ease infinite;
 margin-bottom:15px;
 position:relative;
 overflow:hidden;
-box-shadow:0 24px 60px rgba(37,99,235,.25);
+box-shadow:0 24px 60px rgba(37,99,235,.3);
+}
+
+@keyframes heroGradient {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
 }
 
 .hero::after{
@@ -239,25 +256,12 @@ animation:pulseGlow 3s ease-in-out infinite;
 }
 
 @keyframes pulseGlow{
-0%,100%{
-transform:scale(1);
-opacity:.55;
-}
-50%{
-transform:scale(1.18);
-opacity:.9;
-}
+0%,100%{ transform:scale(1); opacity:.55; }
+50%{ transform:scale(1.18); opacity:.9; }
 }
 
-.hero h1{
-font-size:24px;
-margin-bottom:8px;
-}
-
-.hero p{
-font-size:14px;
-opacity:.9;
-}
+.hero h1{ font-size:24px; margin-bottom:8px; }
+.hero p{ font-size:14px; opacity:.9; }
 
 .featureGrid{
 display:grid;
@@ -272,19 +276,16 @@ padding:16px;
 border-radius:18px;
 text-align:center;
 border:1px solid rgba(255,255,255,.06);
-transition:transform .2s ease, box-shadow .2s ease;
+transition:all .3s ease;
 }
 
 .feature:hover{
-transform:translateY(-3px);
-box-shadow:0 14px 28px rgba(0,0,0,.22);
+transform:translateY(-4px) scale(1.02);
+box-shadow:0 14px 28px rgba(0,0,0,.4);
+border:1px solid rgba(96,165,250,.3);
 }
 
-.feature span{
-display:block;
-font-size:28px;
-margin-bottom:8px;
-}
+.feature span{ display:block; font-size:28px; margin-bottom:8px; }
 
 /* ===================
    INPUTS
@@ -292,27 +293,33 @@ margin-bottom:8px;
 
 textarea{
 width:100%;
-min-height:160px;
-border:none;
+min-height:120px;
+border:2px solid rgba(255,255,255,.05);
 outline:none;
-resize:none;
+resize:vertical;
 padding:15px;
 border-radius:18px;
-background:#0f172a;
+background:rgba(15,23,42,.8);
 color:white;
 font-size:15px;
+transition: border 0.3s;
 }
+
+textarea:focus { border: 2px solid #3b82f6; }
 
 select{
 width:100%;
 padding:14px;
-border:none;
+border:2px solid rgba(255,255,255,.05);
 outline:none;
-background:#0f172a;
+background:rgba(15,23,42,.8);
 color:white;
 border-radius:16px;
 margin-bottom:10px;
+transition: border 0.3s;
 }
+
+select:focus { border: 2px solid #a855f7; }
 
 input{
 width:100%;
@@ -328,22 +335,15 @@ border-radius:16px;
    OUTPUT
 =================== */
 
-.outputBox{
+.outputBox, .meaningBox{
 margin-top:12px;
-background:#0f172a;
-border-radius:18px;
-padding:16px;
-min-height:120px;
-white-space:pre-wrap;
-word-wrap:break-word;
-}
-
-.meaningBox{
-margin-top:12px;
-background:#0f172a;
+background:rgba(2,6,23,.5);
+border: 1px solid rgba(255,255,255,.05);
 border-radius:18px;
 padding:16px;
 min-height:100px;
+white-space:pre-wrap;
+word-wrap:break-word;
 }
 
 /* ===================
@@ -359,47 +359,21 @@ font-weight:700;
 font-size:15px;
 cursor:pointer;
 margin-top:10px;
-box-shadow:0 12px 26px rgba(0,0,0,.22);
-transition:transform .16s ease, filter .16s ease;
+box-shadow:0 8px 20px rgba(0,0,0,.3);
+transition:all .2s ease;
 }
 
-.btn:active,
-.askBtn:active,
-.cameraCircle:active,
-.switchBtn:active,
-.flashBtn:active{
-transform:scale(.96);
-}
+.btn:active{ transform:scale(.95); }
+.btn:hover{ filter:brightness(1.15); box-shadow:0 12px 26px rgba(0,0,0,.5); }
 
-.btn:hover,
-.askBtn:hover{
-filter:brightness(1.08);
-}
+.blue{ background:linear-gradient(135deg, #2563eb, #3b82f6); color:white; }
+.green{ background:linear-gradient(135deg, #16a34a, #22c55e); color:white; }
+.yellow{ background:linear-gradient(135deg, #ca8a04, #eab308); color:black; }
+.purple{ background:linear-gradient(135deg, #7c3aed, #a855f7); color:white; }
+.red{ background:linear-gradient(135deg, #dc2626, #ef4444); color:white; }
 
-.blue{
-background:#3b82f6;
-color:white;
-}
-
-.green{
-background:#22c55e;
-color:white;
-}
-
-.yellow{
-background:#facc15;
-color:black;
-}
-
-.red{
-background:#ef4444;
-color:white;
-}
-
-.gray{
-background:#334155;
-color:white;
-}
+.btn-group { display: flex; gap: 10px; margin-top: 10px; }
+.btn-group .btn { margin-top: 0; }
 
 /* ===================
    CAMERA MODAL
@@ -413,10 +387,7 @@ display:none;
 z-index:5000;
 }
 
-.cameraModal.active{
-display:flex;
-flex-direction:column;
-}
+.cameraModal.active{ display:flex; flex-direction:column; animation: fadeIn 0.3s; }
 
 .cameraHeader{
 height:70px;
@@ -424,59 +395,43 @@ display:flex;
 justify-content:space-between;
 align-items:center;
 padding:0 15px;
-background:rgba(0,0,0,.5);
+background:linear-gradient(to bottom, rgba(0,0,0,.8), transparent);
 position:absolute;
-top:0;
-left:0;
-right:0;
-z-index:2;
+top:0; left:0; right:0; z-index:2;
 }
 
-.cameraHeader button{
-background:none;
-border:none;
-color:white;
-font-size:20px;
-}
+.cameraHeader button{ background:none; border:none; color:white; font-size:24px; }
 
-.cameraVideo{
-width:100%;
-height:100%;
-object-fit:cover;
-background:black;
-}
+.cameraVideo{ width:100%; height:100%; object-fit:cover; background:black; }
 
 .cameraControls{
-min-height:96px;
+min-height:100px;
 display:flex;
 justify-content:center;
 align-items:center;
-gap:20px;
-background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.95) 28%);
-padding-bottom:calc(28px + env(safe-area-inset-bottom));
+gap:30px;
+background:linear-gradient(180deg,transparent,rgba(0,0,0,.95));
+padding-bottom:calc(30px + env(safe-area-inset-bottom));
 position:absolute;
-left:0;
-right:0;
-bottom:0;
-z-index:2;
+left:0; right:0; bottom:0; z-index:2;
 }
 
 .cameraCircle{
-width:74px;
-height:74px;
+width:74px; height:74px;
 border-radius:50%;
-border:5px solid white;
-background:rgba(255,255,255,.08);
-box-shadow:0 0 0 8px rgba(255,255,255,.08);
+border:4px solid white;
+background:rgba(255,255,255,.2);
+box-shadow:0 0 15px rgba(255,255,255,.5);
+transition: transform 0.2s;
 }
+.cameraCircle:active { transform: scale(0.9); background: white; }
 
-.switchBtn,
-.flashBtn{
-width:55px;
-height:55px;
+.switchBtn, .flashBtn{
+width:50px; height:50px;
 border-radius:50%;
 border:none;
-background:#1e293b;
+background:rgba(255,255,255,0.15);
+backdrop-filter: blur(5px);
 color:white;
 font-size:20px;
 }
@@ -491,42 +446,23 @@ inset:0;
 background:rgba(0,0,0,.95);
 display:none;
 z-index:4500;
+flex-direction: column;
 }
 
-.photoViewer.active{
-display:flex;
-justify-content:center;
-align-items:center;
-}
+.photoViewer.active{ display:flex; justify-content:center; align-items:center; animation: fadeIn 0.3s; }
+.photoViewer img{ max-width:95%; max-height:75%; border-radius:18px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
 
-.photoViewer img{
-max-width:95%;
-max-height:85%;
-border-radius:18px;
-}
+.photoViewerControls { margin-top: 20px; display: flex; gap: 15px; }
 
 .closePreview{
 position:absolute;
 top:calc(20px + env(safe-area-inset-top));
 right:20px;
-width:45px;
-height:45px;
-border:none;
-border-radius:50%;
-background:#ef4444;
-color:white;
-font-size:20px;
-}
-
-/* ===================
-   CANVAS
-=================== */
-
-canvas{
-width:100%;
-border-radius:18px;
-background:white;
-margin-top:12px;
+width:45px; height:45px;
+border:none; border-radius:50%;
+background:rgba(255,255,255,0.2);
+backdrop-filter: blur(10px);
+color:white; font-size:20px;
 }
 
 /* ===================
@@ -534,32 +470,11 @@ margin-top:12px;
 =================== */
 
 .status{
-margin-top:12px;
-padding:12px;
-border-radius:14px;
-background:#0f172a;
-font-weight:600;
-text-align:center;
-}
-
-/* ===================
-   LOADER
-=================== */
-
-.loader{
-width:28px;
-height:28px;
-border:4px solid rgba(255,255,255,.3);
-border-top:4px solid white;
-border-radius:50%;
-animation:spin .8s linear infinite;
-margin:auto;
-}
-
-@keyframes spin{
-100%{
-transform:rotate(360deg);
-}
+margin-top:12px; padding:12px;
+border-radius:14px; background:rgba(0,0,0,0.3);
+font-weight:600; text-align:center;
+border: 1px solid rgba(255,255,255,0.1);
+color: #93c5fd;
 }
 
 /* ===================
@@ -567,1477 +482,591 @@ transform:rotate(360deg);
 =================== */
 
 .aiSearchWrap{
-position:static;
-margin-top:16px;
-padding:12px;
+margin-top:16px; padding:12px;
 background:linear-gradient(145deg,rgba(17,24,39,.98),rgba(30,41,59,.94));
-display:flex;
-gap:10px;
-z-index:1;
-border-radius:22px;
-border:1px solid rgba(148,163,184,.14);
-box-shadow:0 18px 45px rgba(2,6,23,.28);
+display:flex; gap:10px; border-radius:22px;
+border:1px solid rgba(255,255,255,.05);
+box-shadow:0 18px 45px rgba(0,0,0,.3);
 }
 
-.aiSearchWrap input{
-flex:1;
-}
+.aiSearchWrap input{ flex:1; background: transparent; }
 
 .askBtn{
-padding:0 18px;
-border:none;
-border-radius:16px;
+padding:0 20px; border:none; border-radius:16px;
 background:linear-gradient(135deg,#2563eb,#7c3aed);
-color:white;
-font-weight:700;
-cursor:pointer;
+color:white; font-weight:700; cursor:pointer;
 box-shadow:0 10px 24px rgba(37,99,235,.25);
-transition:transform .16s ease, filter .16s ease;
+transition: transform .2s, filter .2s;
 }
+
+.askBtn:hover { filter: brightness(1.2); }
+.askBtn:active { transform: scale(0.95); }
 
 .aiResponse{
-margin-top:15px;
-background:#0f172a;
-padding:15px;
-border-radius:18px;
-white-space:pre-wrap;
-line-height:1.6;
-min-height:140px;
-max-height:55vh;
-overflow:auto;
-border:1px solid rgba(148,163,184,.1);
+margin-top:15px; background:rgba(2,6,23,.5);
+padding:15px; border-radius:18px;
+white-space:pre-wrap; line-height:1.6;
+min-height:120px; border:1px solid rgba(255,255,255,.05);
 }
 
-.aiResponse.loading{
-position:relative;
-color:#bfdbfe;
-}
-
+.aiResponse.loading{ color:#bfdbfe; }
 .aiResponse.loading::after{
-content:"";
-display:inline-block;
-width:8px;
-height:8px;
-margin-left:8px;
-border-radius:50%;
-background:#60a5fa;
+content:""; display:inline-block;
+width:8px; height:8px; margin-left:8px;
+border-radius:50%; background:#60a5fa;
 animation:typingDot .8s infinite alternate;
 }
 
 @keyframes typingDot{
-from{
-opacity:.25;
-transform:translateY(0);
-}
-to{
-opacity:1;
-transform:translateY(-4px);
-}
+from{ opacity:.25; transform:translateY(0); }
+to{ opacity:1; transform:translateY(-4px); }
 }
 
 /* ===================
    TRANSLATED WORDS
 =================== */
 
-.wordList{
-margin-top:12px;
-}
-
 .wordItem{
-background:#0f172a;
-padding:12px;
-border-radius:14px;
-margin-bottom:8px;
+background:rgba(15,23,42,.6);
+padding:12px; border-radius:14px;
+margin-bottom:8px; border: 1px solid rgba(255,255,255,0.05);
 }
 
-.wordTitle{
-font-weight:700;
-margin-bottom:4px;
-}
-
-.wordMeaning{
-font-size:14px;
-color:#cbd5e1;
-}
-
-/* ===================
-   MOBILE
-=================== */
+.wordTitle{ font-weight:700; margin-bottom:4px; color: #a855f7; }
+.wordMeaning{ font-size:14px; color:#cbd5e1; }
 
 @media(min-width:768px){
-
-.page{
-max-width:700px;
-margin:auto;
-left:50%;
-transform:translateX(-50%);
-}
-
-.topbar{
-justify-content:center;
-}
-
+.page{ max-width:700px; margin:auto; left:50%; transform:translateX(-50%); }
+.topbar{ justify-content:center; }
 }
 </style>
 </head>
 <body>
-   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';"></script>
-<!-- OVERLAY -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <div class="overlay" id="overlay"></div>
 
-<!-- SIDEBAR -->
-
 <div class="sidebar" id="sidebar">
-
-<button onclick="showPage('dashboardPage')">
-🏠 Dashboard
-</button>
-
-<button onclick="showPage('translatorPage')">
-📝 Word Translator
-</button>
-
-<button onclick="showPage('imagePage')">
-🖼️ Image Translator
-</button>
-
+  <button onclick="showPage('dashboardPage')">🏠 Dashboard</button>
+  <button onclick="showPage('translatorPage')">📝 Word Translator</button>
+  <button onclick="showPage('imagePage')">🖼️ Image Translator</button>
 </div>
-
-<!-- TOPBAR -->
 
 <div class="topbar">
-
-<div class="menuBtn" onclick="toggleSidebar()">
-☰
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Translator Pro</div>
 </div>
-
-<div class="appTitle">
-AI Translator Pro
-</div>
-
-</div>
-
-<!-- DASHBOARD -->
 
 <div class="page active" id="dashboardPage">
+  <div class="hero">
+    <h1>🚀 AI Translator</h1>
+    <p>Translate words, sentences and images with AI.</p>
+  </div>
+  <div class="featureGrid">
+    <div class="feature"><span>🌍</span>Translator</div>
+    <div class="feature"><span>📷</span>Image OCR</div>
+    <div class="feature"><span>🧠</span>AI Search</div>
+    <div class="feature"><span>📖</span>Meanings</div>
+  </div>
 
-<div class="hero">
-<h1>🚀 AI Translator</h1>
-<p>
-Translate words, sentences and images with AI.
-</p>
+  <div class="card">
+    <div class="cardTitle">AI Response</div>
+    <div class="aiResponse" id="dashboardResponse">Ask anything below...</div>
+  </div>
+
+  <div class="aiSearchWrap" id="searchSection">
+    <input id="aiInput" placeholder="Ask AI or type: translate into hindi - hello">
+    <button class="askBtn" onclick="askAI()">Ask</button>
+  </div>
 </div>
-
-<div class="featureGrid">
-
-<div class="feature">
-<span>🌍</span>
-Translator
-</div>
-
-<div class="feature">
-<span>📷</span>
-Image OCR
-</div>
-
-<div class="feature">
-<span>🧠</span>
-AI Search
-</div>
-
-<div class="feature">
-<span>📖</span>
-Meanings
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="cardTitle">
-AI Response
-</div>
-
-<div
-class="aiResponse"
-id="dashboardResponse">
-
-Ask anything below...
-
-</div>
-
-</div>
-
-<!-- SEARCH ONLY DASHBOARD -->
-
-<div class="aiSearchWrap" id="searchSection">
-
-<input
-id="aiInput"
-placeholder="Ask AI or type: translate into hindi - hello">
-
-<button
-class="askBtn"
-onclick="askAI()">
-
-Ask
-
-</button>
-
-</div>
-
-</div>
-
-<!-- WORD TRANSLATOR -->
 
 <div class="page" id="translatorPage">
-
-<div class="card">
-
-<div class="cardTitle">
-Word Translator
+  <div class="card">
+    <div class="cardTitle">Word Translator</div>
+    <select id="targetLang">
+      <option>Hindi</option>
+      <option>English</option>
+      <option>French</option>
+      <option>Spanish</option>
+      <option>German</option>
+      <option>Japanese</option>
+      <option>Korean</option>
+      <option>Chinese</option>
+      <option>Arabic</option>
+      <option>Russian</option>
+      <option>Portuguese</option>
+      <option>Italian</option>
+    </select>
+    <textarea id="inputText" placeholder="Type anything..."></textarea>
+    <div class="outputBox" id="translatedText">Translation appears here...</div>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Word Meanings</div>
+    <div class="meaningBox" id="meaningBox">Meanings appear here...</div>
+  </div>
 </div>
-
-<select id="targetLang">
-
-<option>Hindi</option>
-<option>English</option>
-<option>French</option>
-<option>Spanish</option>
-<option>German</option>
-<option>Japanese</option>
-
-</select>
-
-<textarea
-id="inputText"
-placeholder="Type anything...">
-</textarea>
-
-<div
-class="outputBox"
-id="translatedText">
-
-Translation appears here...
-
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="cardTitle">
-Word Meanings
-</div>
-
-<div
-class="meaningBox"
-id="meaningBox">
-
-Meanings appear here...
-
-</div>
-
-</div>
-
-</div>
-
-<!-- IMAGE TRANSLATOR -->
 
 <div class="page" id="imagePage">
+  
+  <div class="card">
+    <div class="cardTitle">Step 1: Capture & Read</div>
+    <div class="cardSub">Take a photo of text to begin.</div>
+    <div class="btn-group">
+      <button class="btn green" onclick="openCamera()">📷 Take Photo</button>
+      <button class="btn blue" onclick="viewPhoto()">🖼 View Photo</button>
+    </div>
+    <button class="btn purple" onclick="processImageText()" id="extractBtn">🔍 Extract Text</button>
+    <div class="status" id="status">No Photo Selected</div>
+  </div>
 
-<div class="card">
+  <div class="card">
+    <div class="cardTitle">Step 2: Edit Detected Text</div>
+    <div class="cardSub">We read this from the image. Fix any typos!</div>
+    <textarea id="imageExtractedText" placeholder="Extracted text will appear here. You can type or edit it manually..."></textarea>
+  </div>
 
-<div class="cardTitle">
-Image Translator
-</div>
+  <div class="card">
+    <div class="cardTitle">Step 3: Translate</div>
+    <select id="imageTargetLang">
+      <option>Hindi</option>
+      <option>English</option>
+      <option>French</option>
+      <option>Spanish</option>
+      <option>German</option>
+      <option>Japanese</option>
+      <option>Korean</option>
+      <option>Chinese</option>
+      <option>Arabic</option>
+      <option>Russian</option>
+      <option>Portuguese</option>
+      <option>Italian</option>
+    </select>
+    <button class="btn yellow" onclick="translateExtractedText()">🌍 Translate Now</button>
+    
+    <div class="outputBox" id="translatedImageText" style="margin-top:15px;">Waiting for translation...</div>
+    
+    <canvas id="canvas" style="display:none; width: 100%; border-radius: 18px; margin-top: 15px;"></canvas>
+    <button class="btn blue" id="downloadBtn" onclick="downloadImage()" style="display:none;">💾 Download Image</button>
+  </div>
 
-<div class="cardSub">
-Take a clear, close photo. The app now ignores low-confidence OCR noise before translating.
-</div>
-
-<button
-class="btn green"
-onclick="openCamera()">
-
-📷 Take Photo
-
-</button>
-
-<button
-class="btn blue"
-onclick="viewPhoto()">
-
-🖼 View Photo
-
-</button>
-
-<button
-class="btn yellow"
-onclick="translatePhoto()">
-
-🌍 Translate Image
-
-</button>
-
-<button
-class="btn blue"
-onclick="downloadImage()">
-
-💾 Download Result
-
-</button>
-
-<div
-class="status"
-id="status">
-
-No Photo Selected
+  <div class="card">
+    <div class="cardTitle">Hard Words Meaning</div>
+    <div class="wordList" id="hardWords">No data yet.</div>
+  </div>
 
 </div>
 
-<canvas id="canvas"></canvas>
-
+<div class="cameraModal" id="cameraModal">
+  <div class="cameraHeader">
+    <button onclick="closeCamera()">✕</button>
+    <div>Camera</div>
+    <div></div>
+  </div>
+  <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
+  <div class="cameraControls">
+    <button class="flashBtn" onclick="toggleFlash()">🔦</button>
+    <button class="cameraCircle" onclick="capturePhoto()"></button>
+    <button class="switchBtn" onclick="switchCamera()">🔄</button>
+  </div>
 </div>
 
-<div class="card">
-
-<div class="cardTitle">
-Detected Text
+<div class="photoViewer" id="photoViewer">
+  <button class="closePreview" onclick="closePreview()">✕</button>
+  <img id="previewImage">
+  <div class="photoViewerControls">
+    <button class="btn purple" style="width: 200px;" onclick="processImageFromViewer()">🔍 Extract Text</button>
+  </div>
 </div>
 
-<div
-class="outputBox"
-id="detectedText">
+<canvas id="captureCanvas" style="display:none;"></canvas>
 
-Waiting...
-
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="cardTitle">
-Translated Text
-</div>
-
-<div
-class="outputBox"
-id="translatedImageText">
-
-Waiting...
-
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="cardTitle">
-Hard Words Meaning
-</div>
-
-<div
-class="wordList"
-id="hardWords">
-
-No data
-
-</div>
-
-</div>
-
-</div>
-
-<!-- CAMERA MODAL -->
-
-<div
-class="cameraModal"
-id="cameraModal">
-
-<div class="cameraHeader">
-
-<button onclick="closeCamera()">
-✕
-</button>
-
-<div>
-Camera
-</div>
-
-<div></div>
-
-</div>
-
-<video
-id="cameraVideo"
-class="cameraVideo"
-autoplay
-playsinline>
-</video>
-
-<div class="cameraControls">
-
-<button
-class="flashBtn"
-aria-label="Toggle flashlight"
-onclick="toggleFlash()">
-
-🔦
-
-</button>
-
-<button
-class="cameraCircle"
-aria-label="Capture photo"
-onclick="capturePhoto()">
-</button>
-
-<button
-class="switchBtn"
-aria-label="Switch camera"
-onclick="switchCamera()">
-
-🔄
-
-</button>
-
-</div>
-
-</div>
-
-<!-- PHOTO VIEWER -->
-
-<div
-class="photoViewer"
-id="photoViewer">
-
-<button
-class="closePreview"
-onclick="closePreview()">
-
-✕
-
-</button>
-
-<img id="previewImage">
-
-</div>
-
-<!-- HIDDEN CANVAS -->
-
-<canvas
-id="captureCanvas"
-style="display:none;">
-</canvas>
-
-<!-- SCRIPT WILL GO BELOW THIS -->
 <script>
-
+// --- CORE API ---
 async function callGroq(messages, options={}){
-
-const response=
-await fetch(
-"/api/groq-chat",
-{
-method:"POST",
-headers:{
-"Content-Type":
-"application/json"
-},
-body:JSON.stringify({
-model:
-"llama-3.3-70b-versatile",
-temperature:
-options.temperature ?? 0,
-messages
-})
-}
-);
-
-const data=
-await response.json();
-
-if(
-!response.ok
-){
-
-throw new Error(
-data.error ||
-"Groq request failed"
-);
-
+  const response = await fetch("/api/groq-chat", {
+    method:"POST",
+    headers:{ "Content-Type": "application/json" },
+    body:JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      temperature: options.temperature ?? 0,
+      messages
+    })
+  });
+  const data = await response.json();
+  if(!response.ok) throw new Error(data.error || "Groq request failed");
+  return data.choices[0].message.content;
 }
 
-return data.choices[0]
-.message.content;
-
-}
-
-/* ======================
-   SIDEBAR
-====================== */
-
-const sidebar =
-document.getElementById("sidebar");
-
-const overlay =
-document.getElementById("overlay");
+// --- UI & NAVIGATION ---
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
 
 function toggleSidebar(){
-
-sidebar.classList.toggle("active");
-overlay.classList.toggle("active");
-
+  sidebar.classList.toggle("active");
+  overlay.classList.toggle("active");
 }
 
 overlay.onclick=()=>{
-
-sidebar.classList.remove("active");
-overlay.classList.remove("active");
-
+  sidebar.classList.remove("active");
+  overlay.classList.remove("active");
 };
 
-/* ======================
-   PAGE SWITCH
-====================== */
-
 function showPage(pageId){
+  document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
+  document.getElementById(pageId).classList.add("active");
+  sidebar.classList.remove("active");
+  overlay.classList.remove("active");
 
-document
-.querySelectorAll(".page")
-.forEach(page=>{
-
-page.classList.remove("active");
-
-});
-
-document
-.getElementById(pageId)
-.classList.add("active");
-
-sidebar.classList.remove("active");
-overlay.classList.remove("active");
-
-const search =
-document.getElementById("searchSection");
-
-if(pageId==="dashboardPage"){
-
-search.style.display="flex";
-
-}else{
-
-search.style.display="none";
-
+  const search = document.getElementById("searchSection");
+  if(pageId === "dashboardPage"){
+    search.style.display = "flex";
+  } else {
+    search.style.display = "none";
+  }
 }
 
-}
-
-/* ======================
-   AUTO TRANSLATOR
-====================== */
-
-const inputText =
-document.getElementById("inputText");
-
+// --- WORD TRANSLATOR ---
+const inputText = document.getElementById("inputText");
 let typingTimer;
 
-inputText.addEventListener(
-"input",
-()=>{
+inputText.addEventListener("input", () => {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(autoTranslate, 600);
+});
 
-clearTimeout(
-typingTimer
-);
-
-typingTimer=
-setTimeout(
-autoTranslate,
-600
-);
-
-}
-);
-
-document
-.getElementById("targetLang")
-.addEventListener(
-"change",
-autoTranslate
-);
+document.getElementById("targetLang").addEventListener("change", autoTranslate);
 
 async function autoTranslate(){
-
-const text =
-inputText.value.trim();
-
-if(!text)return;
-
-const lang =
-document
-.getElementById(
-"targetLang"
-).value;
-
-document
-.getElementById(
-"translatedText"
-).textContent=
-"Translating...";
-
-try{
-
-const result=
-await callGroq(
-[
-{
-role:"user",
-content:
-`You are a careful professional translator. Detect the source language and translate the user's exact text into ${lang}. Do not add extra words, explanations, guesses, examples, or alternate translations. Preserve names, numbers, punctuation, and the original meaning. If the text is already ${lang}, return it unchanged.
-
-Text:
-${text}
-
-Return only translation`
+  const text = inputText.value.trim();
+  if(!text) return;
+  const lang = document.getElementById("targetLang").value;
+  document.getElementById("translatedText").textContent = "Translating...";
+  
+  try{
+    const result = await callGroq([
+      { role:"user", content: `You are a careful professional translator. Detect the source language and translate the user's exact text into ${lang}. Do not add extra words, explanations, guesses, or alternate translations. Preserve names, numbers, punctuation. If the text is already ${lang}, return it unchanged.\n\nText:\n${text}\n\nReturn only translation` }
+    ], {temperature:0});
+    document.getElementById("translatedText").innerText = result;
+    getMeaning(text);
+  }catch(err){
+    document.getElementById("translatedText").innerText = `Translation Failed: ${err.message}`;
+  }
 }
-],
-{temperature:0}
-);
-
-document
-.getElementById(
-"translatedText"
-).innerText=result;
-
-getMeaning(text);
-
-}catch(err){
-
-document
-.getElementById(
-"translatedText"
-).innerText=
-`Translation Failed: ${err.message}`;
-
-}
-
-}
-
-/* ======================
-   WORD MEANING
-====================== */
 
 async function getMeaning(text){
-
-try{
-
-const result=
-await callGroq(
-[
-{
-role:"user",
-content:
-`Give meanings of important words from:
-
-${text}
-
-Short format`
-}
-]
-);
-
-document
-.getElementById(
-"meaningBox"
-).innerText=
-result;
-
-}catch(e){}
-
+  try{
+    const result = await callGroq([{
+      role:"user", content: `Give meanings of important words from:\n\n${text}\n\nShort format`
+    }]);
+    document.getElementById("meaningBox").innerText = result;
+  }catch(e){}
 }
 
-/* ======================
-   AI SEARCH
-====================== */
-
+// --- AI SEARCH ---
 async function askAI(){
-
-const query=
-document
-.getElementById(
-"aiInput"
-).value
-.trim();
-
-if(!query)return;
-
-const output=
-document
-.getElementById(
-"dashboardResponse"
-);
-
-output.classList.add(
-"loading"
-);
-
-output.textContent=
-"Thinking";
-
-try{
-
-const result=
-await callGroq(
-[
-{
-role:"user",
-content:
-`Answer clearly and accurately. If the user asks for a translation, translate only the requested text and do not invent content.
-
-User request:
-${query}`
-}
-]
-);
-
-output.innerText=
-result;
-
-}catch(err){
-
-output.classList.remove(
-"loading"
-);
-
-output.innerText=
-`Failed: ${err.message}`;
-
+  const query = document.getElementById("aiInput").value.trim();
+  if(!query) return;
+  const output = document.getElementById("dashboardResponse");
+  output.classList.add("loading");
+  output.textContent = "Thinking";
+  
+  try{
+    const result = await callGroq([{ role:"user", content: `Answer clearly and accurately. If user asks for translation, translate exactly. User request: ${query}` }]);
+    output.innerText = result;
+  }catch(err){
+    output.innerText = `Failed: ${err.message}`;
+  }
+  output.classList.remove("loading");
 }
 
+const aiInput = document.getElementById("aiInput");
+if(aiInput){
+  aiInput.addEventListener("keydown", e => {
+    if(e.key === "Enter"){ e.preventDefault(); askAI(); }
+  });
 }
 
-/* ======================
-   CAMERA
-====================== */
+// --- CAMERA LOGIC ---
+const cameraModal = document.getElementById("cameraModal");
+const video = document.getElementById("cameraVideo");
+const captureCanvas = document.getElementById("captureCanvas");
+const ctx = captureCanvas.getContext("2d");
 
-const cameraModal=
-document.getElementById(
-"cameraModal"
-);
-
-const video=
-document.getElementById(
-"cameraVideo"
-);
-
-const captureCanvas=
-document.getElementById(
-"captureCanvas"
-);
-
-const ctx=
-captureCanvas.getContext(
-"2d"
-);
-
-let currentFacing=
-"environment";
-
-let currentStream=
-null;
-
-let capturedImage=
-null;
+let currentFacing = "environment";
+let currentStream = null;
+let capturedImage = null;
+let finalTranslatedImage = null; // Stores final image for download
 
 async function openCamera(){
-
-cameraModal.classList.add(
-"active"
-);
-
-await startCamera();
-
+  cameraModal.classList.add("active");
+  await startCamera();
 }
 
 function closeCamera(){
-
-cameraModal.classList.remove(
-"active"
-);
-
-stopCamera();
-
+  cameraModal.classList.remove("active");
+  stopCamera();
 }
 
 async function startCamera(){
-
-try{
-
-if(currentStream){
-
-stopCamera();
-
-}
-
-currentStream=
-await navigator
-.mediaDevices
-.getUserMedia({
-
-video:{
-facingMode:{ideal:currentFacing},
-width:{ideal:1920},
-height:{ideal:1080}
-}
-
-});
-
-video.srcObject=
-currentStream;
-
-}catch(err){
-
-alert(
-"Camera Error"
-);
-
-}
-
+  try{
+    if(currentStream) stopCamera();
+    currentStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: {ideal: currentFacing}, width: {ideal: 1920}, height: {ideal: 1080} }
+    });
+    video.srcObject = currentStream;
+  }catch(err){
+    alert("Camera Error: Please allow camera permissions.");
+  }
 }
 
 function stopCamera(){
-
-if(currentStream){
-
-currentStream
-.getTracks()
-.forEach(track=>{
-
-track.stop();
-
-});
-
-}
-
+  if(currentStream){
+    currentStream.getTracks().forEach(track => track.stop());
+  }
 }
 
 async function switchCamera(){
-
-currentFacing=
-currentFacing===
-"environment"
-?
-
-"user"
-
-:
-
-"environment";
-
-await startCamera();
-
+  currentFacing = (currentFacing === "environment") ? "user" : "environment";
+  await startCamera();
 }
 
-/* ======================
-   CAPTURE PHOTO
-====================== */
+let flashEnabled = false;
+async function toggleFlash(){
+  try{
+    if(!currentStream) return;
+    const track = currentStream.getVideoTracks()[0];
+    const capabilities = track.getCapabilities();
+    if(!capabilities.torch){
+      alert("Flashlight not supported on this camera");
+      return;
+    }
+    flashEnabled = !flashEnabled;
+    await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
+  }catch(err){
+    console.log(err);
+  }
+}
 
 function capturePhoto(){
-
-captureCanvas.width=
-video.videoWidth;
-
-captureCanvas.height=
-video.videoHeight;
-
-ctx.drawImage(
-video,
-0,
-0
-);
-
-capturedImage=
-captureCanvas.toDataURL(
-"image/png"
-);
-
-document
-.getElementById(
-"status"
-).innerText=
-"Photo Captured — tap Translate Image when ready";
-
-closeCamera();
-
+  captureCanvas.width = video.videoWidth;
+  captureCanvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+  capturedImage = captureCanvas.toDataURL("image/png");
+  document.getElementById("status").innerText = "📸 Photo Captured — Ready to Extract";
+  closeCamera();
 }
-
-/* ======================
-   VIEW PHOTO
-====================== */
 
 function viewPhoto(){
-
-if(!capturedImage){
-
-alert(
-"Take photo first"
-);
-
-return;
-
-}
-
-document
-.getElementById(
-"previewImage"
-).src=
-capturedImage;
-
-document
-.getElementById(
-"photoViewer"
-)
-.classList.add(
-"active"
-);
-
+  if(!capturedImage) { alert("Take a photo first!"); return; }
+  document.getElementById("previewImage").src = capturedImage;
+  document.getElementById("photoViewer").classList.add("active");
 }
 
 function closePreview(){
-
-document
-.getElementById(
-"photoViewer"
-)
-.classList.remove(
-"active"
-);
-
+  document.getElementById("photoViewer").classList.remove("active");
 }
 
-</script>
-<script>
-
-/* ======================
-   FLASHLIGHT
-====================== */
-
-let flashEnabled=false;
-
-async function toggleFlash(){
-
-try{
-
-if(!currentStream)return;
-
-const track=
-currentStream
-.getVideoTracks()[0];
-
-const capabilities=
-track.getCapabilities();
-
-if(
-!capabilities.torch
-){
-
-alert(
-"Flashlight not supported on this device"
-);
-
-return;
-
+function processImageFromViewer() {
+  closePreview();
+  processImageText();
 }
 
-flashEnabled=
-!flashEnabled;
+// --- OCR PROCESSING (FIXED) ---
 
-await track.applyConstraints({
-advanced:[
-{
-torch:
-flashEnabled
-}
-]
-});
-
-}catch(err){
-
-console.log(err);
-
-}
-
-}
-
-/* ======================
-   OCR CLEANUP
-====================== */
-
-function cleanOcrText(data){
-
-const words=(data.words || [])
-.filter(word=>{
-
-const text=(word.text || "")
-.trim();
-
-const hasLetters=/[A-Za-z]/.test(text);
-const mostlyNoise=/^[^A-Za-z0-9]+$/.test(text);
-const shortJunk=text.length<=2 && !/^[AIai]$/.test(text);
-
-return word.confidence>=58 &&
-hasLetters &&
-!mostlyNoise &&
-!shortJunk;
-
-})
-.map(word=>word.text.trim());
-
-const fromWords=words.join(" ")
-.replace(/\s+/g," ")
-.trim();
-
-if(fromWords.length>=3){
-
-return fromWords;
-
-}
-
-return (data.text || "")
-.split(/\n+/)
-.map(line=>line.replace(/[^A-Za-z0-9.,!?\'"() -]/g," ").replace(/\s+/g," ").trim())
-.filter(line=>/[A-Za-z]{3,}/.test(line))
-.join("\n")
-.trim();
-
-}
-
+// Updated to let Tesseract handle binarization naturally. Just scaling up for better read.
 function prepareImageForOcr(source){
-
-return new Promise(resolve=>{
-
-const img=new Image();
-
-img.onload=()=>{
-
-const scale=Math.min(2.2,Math.max(1,1600/img.width));
-const width=Math.round(img.width*scale);
-const height=Math.round(img.height*scale);
-
-captureCanvas.width=width;
-captureCanvas.height=height;
-
-ctx.drawImage(img,0,0,width,height);
-
-const imageData=ctx.getImageData(0,0,width,height);
-const pixels=imageData.data;
-
-for(let i=0;i<pixels.length;i+=4){
-
-const gray=pixels[i]*.299+pixels[i+1]*.587+pixels[i+2]*.114;
-const contrast=gray>145 ? 255 : 0;
-
-pixels[i]=contrast;
-pixels[i+1]=contrast;
-pixels[i+2]=contrast;
-
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const scale = Math.min(2.2, Math.max(1, 1600/img.width));
+      const width = Math.round(img.width * scale);
+      const height = Math.round(img.height * scale);
+      captureCanvas.width = width;
+      captureCanvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(captureCanvas.toDataURL("image/png"));
+    };
+    img.src=source;
+  });
 }
 
-ctx.putImageData(imageData,0,0);
-resolve(captureCanvas.toDataURL("image/png"));
+// Fixed logic so it stops deleting 2-letter words like "HE", "WE", "DO".
+function cleanOcrText(data){
+  const words = (data.words || []).filter(word => {
+    const text = (word.text || "").trim();
+    const hasLetters = /[A-Za-z]/.test(text);
+    const mostlyNoise = /^[^A-Za-z0-9]+$/.test(text);
+    
+    // FIX: Changed to < 2. Now it only catches single letters that aren't A or I.
+    const shortJunk = text.length < 2 && !/^[AIai]$/.test(text);
 
-};
+    // FIX: Lowered confidence to 45 so valid faint words aren't skipped
+    return word.confidence >= 45 && hasLetters && !mostlyNoise && !shortJunk;
+  }).map(word => word.text.trim());
 
-img.src=source;
+  const fromWords = words.join(" ").replace(/\s+/g," ").trim();
+  if(fromWords.length >= 3) return fromWords;
 
-});
-
+  return (data.text || "")
+    .split(/\n+/)
+    .map(line => line.replace(/[^A-Za-z0-9.,!?\'"() -]/g," ").replace(/\s+/g," ").trim())
+    .filter(line => /[A-Za-z]{3,}/.test(line))
+    .join("\n").trim();
 }
 
-/* ======================
-   IMAGE TRANSLATOR
-====================== */
+// --- STEP 1: EXTRACT TEXT TO INPUT BOX ---
+async function processImageText(){
+  if(!capturedImage){ alert("Please take a photo first."); return; }
+  const status = document.getElementById("status");
+  const inputBox = document.getElementById("imageExtractedText");
+  
+  status.innerHTML = "🔍 Extracting text...";
+  inputBox.value = "Reading image... please wait.";
 
-async function translatePhoto(){
+  try {
+    if(!window.Tesseract) throw new Error("OCR Library missing.");
+    
+    const imageForOcr = await prepareImageForOcr(capturedImage);
+    const result = await Tesseract.recognize(imageForOcr, "eng", {
+      tessedit_pageseg_mode: "6",
+      preserve_interword_spaces: "1",
+      tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-() "
+    });
 
-if(!capturedImage){
+    const extractedText = cleanOcrText(result.data);
+    
+    if(!extractedText){
+      status.innerHTML = "⚠️ No clear text found.";
+      inputBox.value = "";
+      alert("No reliable text found. Try taking a closer, brighter photo.");
+      return;
+    }
 
-alert(
-"Take photo first"
-);
-
-return;
-
+    inputBox.value = extractedText;
+    status.innerHTML = "✅ Text extracted! Edit if needed, then tap Translate.";
+    
+  } catch(err) {
+    status.innerHTML = "❌ Error reading image";
+    inputBox.value = `Error: ${err.message}`;
+  }
 }
 
-const status=
-document.getElementById(
-"status"
-);
+// --- STEP 2: TRANSLATE THE EXTRACTED TEXT ---
+async function translateExtractedText(){
+  const textToTranslate = document.getElementById("imageExtractedText").value.trim();
+  if(!textToTranslate) { alert("Extract text first, or type something to translate."); return; }
+  
+  const status = document.getElementById("status");
+  const targetLang = document.getElementById("imageTargetLang").value;
+  const outputBox = document.getElementById("translatedImageText");
+  
+  status.innerHTML = "🌍 Translating...";
+  outputBox.innerText = "Translating...";
+  
+  try {
+    const translated = await callGroq([
+      { role:"user", content: `Translate the following text into ${targetLang}. Do not invent missing words, do not translate random garbage, and do not add explanations. Preserve names and numbers.\n\nText:\n${textToTranslate}\n\nReturn only translation` }
+    ], {temperature:0});
 
-status.innerHTML=
-"🔍 Reading image...";
+    outputBox.innerText = translated;
+    
+    // Draw text onto image for downloading
+    if(capturedImage){
+      drawTranslatedImage(translated);
+    }
 
-try{
-
-if(!window.Tesseract){
-
-throw new Error(
-"OCR library did not load. Reload the page or allow jsDelivr/unpkg scripts in browser tracking settings."
-);
-
+    // Fetch hard words meaning
+    getHardWords(translated);
+    
+    status.innerHTML = "✅ Translation Complete!";
+  } catch(err) {
+    status.innerHTML = "❌ Translation failed";
+    outputBox.innerText = `Error: ${err.message}`;
+  }
 }
 
-const imageForOcr=
-await prepareImageForOcr(
-capturedImage
-);
+// --- DRAW AND WRAP TEXT ON CANVAS FOR DOWNLOAD ---
+function drawTranslatedImage(translatedText) {
+  const displayCanvas = document.getElementById("canvas");
+  const dlBtn = document.getElementById("downloadBtn");
+  const img = new Image();
+  
+  img.onload = function() {
+    captureCanvas.width = img.width;
+    captureCanvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
 
-const result=
-await Tesseract.recognize(
-imageForOcr,
-"eng",
-{
-tessedit_pageseg_mode:
-"6",
-preserve_interword_spaces:
-"1",
-tessedit_char_whitelist:
-"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-() "
-}
-);
+    // Draw semi-transparent background box for text
+    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+    ctx.beginPath();
+    ctx.roundRect(20, 20, captureCanvas.width - 40, 250, 20);
+    ctx.fill();
 
-const extractedText=
-cleanOcrText(
-result.data
-);
+    // Draw text
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 34px 'Poppins', Arial";
+    drawWrappedText(translatedText, 50, 80, captureCanvas.width - 100, 45);
 
-document
-.getElementById(
-"detectedText"
-)
-.innerText=
-extractedText ||
-"No reliable text found. Retake closer and keep the text straight.";
-
-if(!extractedText){
-
-status.innerHTML=
-"No readable text detected — retake a closer, brighter photo";
-
-return;
-
+    finalTranslatedImage = captureCanvas.toDataURL("image/png");
+    
+    // Update preview canvas and show download button
+    const dCtx = displayCanvas.getContext("2d");
+    displayCanvas.width = captureCanvas.width;
+    displayCanvas.height = captureCanvas.height;
+    dCtx.drawImage(captureCanvas, 0, 0);
+    
+    displayCanvas.style.display = "block";
+    dlBtn.style.display = "block";
+  };
+  img.src = capturedImage;
 }
 
-status.innerHTML=
-"🌍 Translating...";
-
-const lang=
-document
-.getElementById(
-"targetLang"
-)
-.value;
-
-const translated=
-await callGroq(
-[
-{
-role:"user",
-content:
-`You are translating OCR text from a photo. Translate only the verified text below into ${lang}. Do not invent missing words, do not translate OCR garbage, and do not add explanations. Preserve names and numbers.
-
-Verified text:
-${extractedText}
-
-Return only translation`
+function drawWrappedText(text, x, y, maxWidth, lineHeight){
+  const words = text.split(" ");
+  let line = "";
+  for(let n = 0; n < words.length; n++){
+    let testLine = line + words[n] + " ";
+    let width = ctx.measureText(testLine).width;
+    if(width > maxWidth && n > 0){
+      ctx.fillText(line, x, y);
+      line = words[n] + " ";
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
 }
-],
-{temperature:0}
-);
-
-document
-.getElementById(
-"translatedImageText"
-)
-.innerText=
-translated;
-
-/* ======================
-   DRAW TRANSLATED IMAGE
-====================== */
-
-const img=
-new Image();
-
-img.onload=function(){
-
-captureCanvas.width=
-img.width;
-
-captureCanvas.height=
-img.height;
-
-ctx.drawImage(
-img,
-0,
-0
-);
-
-ctx.fillStyle=
-"rgba(255,255,255,0.92)";
-
-ctx.fillRect(
-20,
-20,
-captureCanvas.width-40,
-220
-);
-
-ctx.fillStyle=
-"#000";
-
-ctx.font=
-"30px Arial";
-
-drawWrappedText(
-translated,
-40,
-70,
-captureCanvas.width-80,
-40
-);
-
-capturedImage=
-captureCanvas.toDataURL(
-"image/png"
-);
-
-};
-
-img.src=
-capturedImage;
-
-/* ======================
-   HARD WORDS
-====================== */
-
-getHardWords(
-translated
-);
-
-status.innerHTML=
-"✅ Image Generated";
-
-}catch(err){
-
-console.log(err);
-
-status.innerText=
-`❌ Translation Failed: ${err.message}`;
-
-}
-
-}
-
-/* ======================
-   HARD WORDS
-====================== */
-
-async function getHardWords(text){
-
-try{
-
-const result=
-await callGroq(
-[
-{
-role:"user",
-content:
-`From this text:
-
-${text}
-
-Give only difficult words that actually appear in this text and their short meanings. Do not invent words.
-
-Format:
-
-Word:
-Meaning:
-`
-}
-],
-{temperature:0}
-);
-
-document
-.getElementById(
-"hardWords"
-)
-.innerHTML=
-result.replace(
-/\n/g,
-"<br>"
-);
-
-}catch(err){
-
-console.log(err);
-
-}
-
-}
-
-/* ======================
-   TEXT WRAP
-====================== */
-
-function drawWrappedText(
-text,
-x,
-y,
-maxWidth,
-lineHeight
-){
-
-const words=
-text.split(" ");
-
-let line="";
-
-for(
-let n=0;
-n<words.length;
-n++
-){
-
-let testLine=
-line+
-words[n]+
-" ";
-
-let width=
-ctx.measureText(
-testLine
-).width;
-
-if(
-width>maxWidth
-&&
-n>0
-){
-
-ctx.fillText(
-line,
-x,
-y
-);
-
-line=
-words[n]+" ";
-
-y+=lineHeight;
-
-}else{
-
-line=
-testLine;
-
-}
-
-}
-
-ctx.fillText(
-line,
-x,
-y
-);
-
-}
-
-/* ======================
-   DOWNLOAD IMAGE
-====================== */
 
 function downloadImage(){
-
-if(!capturedImage){
-
-alert(
-"No image found"
-);
-
-return;
-
+  if(!finalTranslatedImage) return;
+  const a = document.createElement("a");
+  a.href = finalTranslatedImage;
+  a.download = "translated-image.png";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
-const a=
-document.createElement(
-"a"
-);
-
-a.href=
-capturedImage;
-
-a.download=
-"translated-image.png";
-
-document.body
-.appendChild(a);
-
-a.click();
-
-document.body
-.removeChild(a);
-
+// --- HARD WORDS ---
+async function getHardWords(text){
+  const hardWordsBox = document.getElementById("hardWords");
+  hardWordsBox.innerHTML = "Loading meanings...";
+  try{
+    const result = await callGroq([{
+      role:"user", content: `From this text:\n\n${text}\n\nGive only difficult words that actually appear in this text and their short meanings. Do not invent words. Format:\n\n<div class='wordItem'><div class='wordTitle'>Word</div><div class='wordMeaning'>Meaning</div></div>\n\nReturn ONLY HTML code, no markdown.`
+    }], {temperature:0});
+    
+    // Strip markdown formatting if AI includes it
+    let cleanHTML = result.replace(/```html/g, "").replace(/```/g, "");
+    hardWordsBox.innerHTML = cleanHTML;
+  }catch(err){
+    hardWordsBox.innerHTML = "Could not load meanings.";
+  }
 }
 
-/* ======================
-   ENTER TO ASK AI
-====================== */
-
-const aiInput=
-document.getElementById(
-"aiInput"
-);
-
-if(aiInput){
-
-aiInput
-.addEventListener(
-"keydown",
-e=>{
-
-if(
-e.key==="Enter"
-){
-
-e.preventDefault();
-
-askAI();
-
-}
-
-}
-);
-
-}
-
-/* ======================
-   START PAGE
-====================== */
-
-showPage(
-"dashboardPage"
-);
-
-console.log(
-"AI Translator Ready"
-);
-
+// START
+showPage("dashboardPage");
 </script>
 </body>
 </html>
