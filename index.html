@@ -37,7 +37,10 @@ font-family:'Poppins',sans-serif;
 }
 
 body{
-background:linear-gradient(180deg,#020617,#0f172a);
+background:
+radial-gradient(circle at 18% 12%,rgba(59,130,246,.22),transparent 28%),
+radial-gradient(circle at 82% 8%,rgba(168,85,247,.18),transparent 24%),
+linear-gradient(180deg,#020617,#0f172a);
 color:white;
 height:100vh;
 height:100dvh;
@@ -146,6 +149,15 @@ right:0;
 bottom:0;
 overflow-y:auto;
 padding:16px;
+scroll-behavior:smooth;
+}
+
+#dashboardPage{
+padding-bottom:24px;
+}
+
+#imagePage{
+padding-bottom:calc(36px + env(safe-area-inset-bottom));
 }
 
 .page.active{
@@ -169,11 +181,24 @@ transform:translateY(0);
 =================== */
 
 .card{
-background:rgba(30,41,59,.95);
+background:linear-gradient(145deg,rgba(30,41,59,.97),rgba(15,23,42,.92));
 border-radius:24px;
 padding:16px;
 margin-bottom:15px;
-border:1px solid rgba(255,255,255,.05);
+border:1px solid rgba(148,163,184,.14);
+box-shadow:0 18px 45px rgba(2,6,23,.22);
+animation:cardFloat .35s ease both;
+}
+
+@keyframes cardFloat{
+from{
+opacity:0;
+transform:translateY(12px) scale(.98);
+}
+to{
+opacity:1;
+transform:translateY(0) scale(1);
+}
 }
 
 .cardTitle{
@@ -194,12 +219,34 @@ font-size:14px;
 .hero{
 padding:22px;
 border-radius:26px;
-background:linear-gradient(
-135deg,
-#2563eb,
-#7c3aed
-);
+background:linear-gradient(135deg,#2563eb,#7c3aed,#db2777);
 margin-bottom:15px;
+position:relative;
+overflow:hidden;
+box-shadow:0 24px 60px rgba(37,99,235,.25);
+}
+
+.hero::after{
+content:"";
+position:absolute;
+width:150px;
+height:150px;
+right:-45px;
+top:-55px;
+background:rgba(255,255,255,.16);
+border-radius:50%;
+animation:pulseGlow 3s ease-in-out infinite;
+}
+
+@keyframes pulseGlow{
+0%,100%{
+transform:scale(1);
+opacity:.55;
+}
+50%{
+transform:scale(1.18);
+opacity:.9;
+}
 }
 
 .hero h1{
@@ -220,10 +267,17 @@ margin-top:15px;
 }
 
 .feature{
-background:#111827;
+background:linear-gradient(145deg,#111827,#172033);
 padding:16px;
 border-radius:18px;
 text-align:center;
+border:1px solid rgba(255,255,255,.06);
+transition:transform .2s ease, box-shadow .2s ease;
+}
+
+.feature:hover{
+transform:translateY(-3px);
+box-shadow:0 14px 28px rgba(0,0,0,.22);
 }
 
 .feature span{
@@ -305,6 +359,21 @@ font-weight:700;
 font-size:15px;
 cursor:pointer;
 margin-top:10px;
+box-shadow:0 12px 26px rgba(0,0,0,.22);
+transition:transform .16s ease, filter .16s ease;
+}
+
+.btn:active,
+.askBtn:active,
+.cameraCircle:active,
+.switchBtn:active,
+.flashBtn:active{
+transform:scale(.96);
+}
+
+.btn:hover,
+.askBtn:hover{
+filter:brightness(1.08);
 }
 
 .blue{
@@ -393,11 +462,12 @@ z-index:2;
 }
 
 .cameraCircle{
-width:70px;
-height:70px;
+width:74px;
+height:74px;
 border-radius:50%;
 border:5px solid white;
-background:none;
+background:rgba(255,255,255,.08);
+box-shadow:0 0 0 8px rgba(255,255,255,.08);
 }
 
 .switchBtn,
@@ -437,7 +507,7 @@ border-radius:18px;
 
 .closePreview{
 position:absolute;
-top:20px;
+top:calc(20px + env(safe-area-inset-top));
 right:20px;
 width:45px;
 height:45px;
@@ -497,15 +567,16 @@ transform:rotate(360deg);
 =================== */
 
 .aiSearchWrap{
-position:fixed;
-left:0;
-right:0;
-bottom:0;
-padding:10px;
-background:#111827;
+position:static;
+margin-top:16px;
+padding:12px;
+background:linear-gradient(145deg,rgba(17,24,39,.98),rgba(30,41,59,.94));
 display:flex;
 gap:10px;
-z-index:200;
+z-index:1;
+border-radius:22px;
+border:1px solid rgba(148,163,184,.14);
+box-shadow:0 18px 45px rgba(2,6,23,.28);
 }
 
 .aiSearchWrap input{
@@ -516,9 +587,12 @@ flex:1;
 padding:0 18px;
 border:none;
 border-radius:16px;
-background:#2563eb;
+background:linear-gradient(135deg,#2563eb,#7c3aed);
 color:white;
 font-weight:700;
+cursor:pointer;
+box-shadow:0 10px 24px rgba(37,99,235,.25);
+transition:transform .16s ease, filter .16s ease;
 }
 
 .aiResponse{
@@ -527,6 +601,38 @@ background:#0f172a;
 padding:15px;
 border-radius:18px;
 white-space:pre-wrap;
+line-height:1.6;
+min-height:140px;
+max-height:55vh;
+overflow:auto;
+border:1px solid rgba(148,163,184,.1);
+}
+
+.aiResponse.loading{
+position:relative;
+color:#bfdbfe;
+}
+
+.aiResponse.loading::after{
+content:"";
+display:inline-block;
+width:8px;
+height:8px;
+margin-left:8px;
+border-radius:50%;
+background:#60a5fa;
+animation:typingDot .8s infinite alternate;
+}
+
+@keyframes typingDot{
+from{
+opacity:.25;
+transform:translateY(0);
+}
+to{
+opacity:1;
+transform:translateY(-4px);
+}
 }
 
 /* ===================
@@ -575,7 +681,7 @@ justify-content:center;
 </style>
 </head>
 <body>
-   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';"></script>
 <!-- OVERLAY -->
 
 <div class="overlay" id="overlay"></div>
@@ -748,7 +854,7 @@ Image Translator
 </div>
 
 <div class="cardSub">
-Take photo and translate text from image
+Take a clear, close photo. The app now ignores low-confidence OCR noise before translating.
 </div>
 
 <button
@@ -876,6 +982,7 @@ playsinline>
 
 <button
 class="flashBtn"
+aria-label="Toggle flashlight"
 onclick="toggleFlash()">
 
 🔦
@@ -884,11 +991,13 @@ onclick="toggleFlash()">
 
 <button
 class="cameraCircle"
+aria-label="Capture photo"
 onclick="capturePhoto()">
 </button>
 
 <button
 class="switchBtn"
+aria-label="Switch camera"
 onclick="switchCamera()">
 
 🔄
@@ -1076,7 +1185,7 @@ document
 document
 .getElementById(
 "translatedText"
-).innerHTML=
+).textContent=
 "Translating...";
 
 try{
@@ -1087,8 +1196,9 @@ await callGroq(
 {
 role:"user",
 content:
-`Translate into ${lang}
+`You are a careful professional translator. Detect the source language and translate the user's exact text into ${lang}. Do not add extra words, explanations, guesses, examples, or alternate translations. Preserve names, numbers, punctuation, and the original meaning. If the text is already ${lang}, return it unchanged.
 
+Text:
 ${text}
 
 Return only translation`
@@ -1110,7 +1220,7 @@ document
 .getElementById(
 "translatedText"
 ).innerText=
-"Translation Failed";
+`Translation Failed: ${err.message}`;
 
 }
 
@@ -1170,8 +1280,12 @@ document
 "dashboardResponse"
 );
 
-output.innerHTML=
-"Thinking...";
+output.classList.add(
+"loading"
+);
+
+output.textContent=
+"Thinking";
 
 try{
 
@@ -1180,7 +1294,11 @@ await callGroq(
 [
 {
 role:"user",
-content:query
+content:
+`Answer clearly and accurately. If the user asks for a translation, translate only the requested text and do not invent content.
+
+User request:
+${query}`
 }
 ]
 );
@@ -1190,8 +1308,12 @@ result;
 
 }catch(err){
 
+output.classList.remove(
+"loading"
+);
+
 output.innerText=
-"Failed";
+`Failed: ${err.message}`;
 
 }
 
@@ -1266,8 +1388,9 @@ await navigator
 .getUserMedia({
 
 video:{
-facingMode:
-currentFacing
+facingMode:{ideal:currentFacing},
+width:{ideal:1920},
+height:{ideal:1080}
 }
 
 });
@@ -1345,7 +1468,7 @@ document
 .getElementById(
 "status"
 ).innerText=
-"Photo Captured";
+"Photo Captured — tap Translate Image when ready";
 
 closeCamera();
 
@@ -1450,6 +1573,91 @@ console.log(err);
 }
 
 /* ======================
+   OCR CLEANUP
+====================== */
+
+function cleanOcrText(data){
+
+const words=(data.words || [])
+.filter(word=>{
+
+const text=(word.text || "")
+.trim();
+
+const hasLetters=/[A-Za-z]/.test(text);
+const mostlyNoise=/^[^A-Za-z0-9]+$/.test(text);
+const shortJunk=text.length<=2 && !/^[AIai]$/.test(text);
+
+return word.confidence>=58 &&
+hasLetters &&
+!mostlyNoise &&
+!shortJunk;
+
+})
+.map(word=>word.text.trim());
+
+const fromWords=words.join(" ")
+.replace(/\s+/g," ")
+.trim();
+
+if(fromWords.length>=3){
+
+return fromWords;
+
+}
+
+return (data.text || "")
+.split(/\n+/)
+.map(line=>line.replace(/[^A-Za-z0-9.,!?\'"() -]/g," ").replace(/\s+/g," ").trim())
+.filter(line=>/[A-Za-z]{3,}/.test(line))
+.join("\n")
+.trim();
+
+}
+
+function prepareImageForOcr(source){
+
+return new Promise(resolve=>{
+
+const img=new Image();
+
+img.onload=()=>{
+
+const scale=Math.min(2.2,Math.max(1,1600/img.width));
+const width=Math.round(img.width*scale);
+const height=Math.round(img.height*scale);
+
+captureCanvas.width=width;
+captureCanvas.height=height;
+
+ctx.drawImage(img,0,0,width,height);
+
+const imageData=ctx.getImageData(0,0,width,height);
+const pixels=imageData.data;
+
+for(let i=0;i<pixels.length;i+=4){
+
+const gray=pixels[i]*.299+pixels[i+1]*.587+pixels[i+2]*.114;
+const contrast=gray>145 ? 255 : 0;
+
+pixels[i]=contrast;
+pixels[i+1]=contrast;
+pixels[i+2]=contrast;
+
+}
+
+ctx.putImageData(imageData,0,0);
+resolve(captureCanvas.toDataURL("image/png"));
+
+};
+
+img.src=source;
+
+});
+
+}
+
+/* ======================
    IMAGE TRANSLATOR
 ====================== */
 
@@ -1475,14 +1683,37 @@ status.innerHTML=
 
 try{
 
+if(!window.Tesseract){
+
+throw new Error(
+"OCR library did not load. Reload the page or allow jsDelivr/unpkg scripts in browser tracking settings."
+);
+
+}
+
+const imageForOcr=
+await prepareImageForOcr(
+capturedImage
+);
+
 const result=
 await Tesseract.recognize(
-capturedImage,
-"eng"
+imageForOcr,
+"eng",
+{
+tessedit_pageseg_mode:
+"6",
+preserve_interword_spaces:
+"1",
+tessedit_char_whitelist:
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,!?'-() "
+}
 );
 
 const extractedText=
-result.data.text.trim();
+cleanOcrText(
+result.data
+);
 
 document
 .getElementById(
@@ -1490,12 +1721,12 @@ document
 )
 .innerText=
 extractedText ||
-"No text found";
+"No reliable text found. Retake closer and keep the text straight.";
 
 if(!extractedText){
 
 status.innerHTML=
-"No text detected";
+"No readable text detected — retake a closer, brighter photo";
 
 return;
 
@@ -1517,8 +1748,9 @@ await callGroq(
 {
 role:"user",
 content:
-`Translate this into ${lang}
+`You are translating OCR text from a photo. Translate only the verified text below into ${lang}. Do not invent missing words, do not translate OCR garbage, and do not add explanations. Preserve names and numbers.
 
+Verified text:
 ${extractedText}
 
 Return only translation`
@@ -1604,8 +1836,8 @@ status.innerHTML=
 
 console.log(err);
 
-status.innerHTML=
-"❌ Translation Failed";
+status.innerText=
+`❌ Translation Failed: ${err.message}`;
 
 }
 
@@ -1629,7 +1861,7 @@ content:
 
 ${text}
 
-Give difficult words and meanings.
+Give only difficult words that actually appear in this text and their short meanings. Do not invent words.
 
 Format:
 
