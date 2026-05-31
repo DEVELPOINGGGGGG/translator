@@ -1,9 +1,11 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Translator & Math Solver</title>
-
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0f172a">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script>
@@ -19,7 +21,7 @@
 
 <style>
 /* =========================
-   AI TRANSLATOR & MATH V4
+   AI TRANSLATOR & MATH V5
    MOBILE FIRST CSS
 ========================= */
 
@@ -183,6 +185,14 @@ transition: border 0.3s;
 }
 select:focus { border: 2px solid #a855f7; }
 
+input{
+width:100%; padding:14px; margin-bottom:10px;
+border:2px solid rgba(255,255,255,.05); outline:none;
+background:rgba(15,23,42,.8); color:white; border-radius:16px;
+transition: border 0.3s;
+}
+input:focus { border: 2px solid #a855f7; }
+
 .outputBox, .meaningBox{
 margin-top:12px; background:rgba(2,6,23,.5);
 border: 1px solid rgba(255,255,255,.05); border-radius:18px;
@@ -287,7 +297,6 @@ box-shadow:0 8px 20px rgba(0,0,0,.3); transition:all .2s ease;
 </style>
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <div class="overlay" id="overlay"></div>
 
@@ -329,6 +338,15 @@ box-shadow:0 8px 20px rgba(0,0,0,.3); transition:all .2s ease;
     <div class="cardTitle">Step 3: Solution</div>
     <button class="btn orange" onclick="solveMath()">✨ Solve Problem</button>
     <div class="outputBox" id="mathSolutionBox">Waiting for problem...</div>
+
+    <div id="mathFollowUpSection" style="display:none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+      <div class="cardSub" style="color: #a855f7; font-weight: 600; margin-bottom: 8px;">💬 Have a question about this solution?</div>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="mathFollowUpInput" placeholder="e.g., Explain step 2, or Is there another way?" style="margin-bottom:0; flex:1;">
+        <button class="btn purple" style="width: 80px; margin-top: 0; padding: 10px;" onclick="askMathFollowUp()">Ask</button>
+      </div>
+      <div class="outputBox" id="mathFollowUpResponse" style="display:none; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3);"></div>
+    </div>
   </div>
 </div>
 
@@ -384,7 +402,7 @@ box-shadow:0 8px 20px rgba(0,0,0,.3); transition:all .2s ease;
       <button class="btn green" onclick="openCamera('translate')">📷 Take Photo</button>
       <button class="btn blue" onclick="viewPhoto('translate')">🖼 View Photo</button>
     </div>
-    <button class="btn purple" onclick="processImageText('translate')" id="extractBtn">🔍 Extract Text</button>
+    <button class="btn purple" onclick="processImageText('translate')" id="extractBtn">🔍 Extract Text with AI</button>
     <div class="status" id="imageStatus">No Photo Selected</div>
   </div>
 
@@ -520,7 +538,7 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     stopRecording();
   };
 } else {
-  micBtn.style.display = "none"; // Hide if not supported
+  micBtn.style.display = "none";
 }
 
 function toggleRecording() {
@@ -529,7 +547,6 @@ function toggleRecording() {
   if (isRecording) {
     recognition.stop();
   } else {
-    // Set language dynamically
     recognition.lang = document.getElementById("voiceSourceLang").value;
     inputText.value = "";
     recognition.start();
@@ -581,7 +598,7 @@ let capturedImage = null;
 let finalTranslatedImage = null;
 
 async function openCamera(mode){
-  currentMode = mode; // 'math' or 'translate'
+  currentMode = mode;
   cameraModal.classList.add("active");
   await startCamera();
 }
@@ -656,37 +673,7 @@ function processImageFromViewer() {
   processImageText(currentMode);
 }
 
-// --- OCR PROCESSING ---
-function prepareImageForOcr(source){
-  return new Promise(resolve=>{
-    const img=new Image();
-    img.onload=()=>{
-      const scale = Math.min(2.2, Math.max(1, 1600/img.width));
-      const width = Math.round(img.width * scale);
-      const height = Math.round(img.height * scale);
-      captureCanvas.width = width;
-      captureCanvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-      resolve(captureCanvas.toDataURL("image/png"));
-    };
-    img.src=source;
-  });
-}
-
-function cleanOcrText(data){
-  const words = (data.words || []).filter(word => {
-    const text = (word.text || "").trim();
-    const hasLettersOrNums = /[A-Za-z0-9]/.test(text);
-    const mostlyNoise = /^[^A-Za-z0-9+\-*/=()]+$/.test(text);
-    const shortJunk = text.length < 2 && !/^[AIai0-9xy+\-=]$/.test(text);
-    return word.confidence >= 40 && hasLettersOrNums && !mostlyNoise && !shortJunk;
-  }).map(word => word.text.trim());
-
-  const fromWords = words.join(" ").replace(/\s+/g," ").trim();
-  if(fromWords.length >= 2) return fromWords;
-  return (data.text || "").trim();
-}
-
+// --- NEW VISION AI EXTRACTION (MATH & TEXT) ---
 async function processImageText(mode){
   if(!capturedImage) return alert("Please take a photo first.");
   
@@ -694,88 +681,70 @@ async function processImageText(mode){
   const statusEl = document.getElementById(isMath ? "mathStatus" : "imageStatus");
   const inputEl = document.getElementById(isMath ? "mathExtractedText" : "imageExtractedText");
   
-  statusEl.innerHTML = "🔍 Extracting text...";
+  statusEl.innerHTML = "🔍 Extracting text with AI...";
   inputEl.value = "Reading image... please wait.";
 
-  // If it's math, use Groq Vision to read it (STRICT prompt to NOT solve)
-  if (isMath) {
-    try {
-     const response = await fetch("/api/groq-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct", 
-          temperature: 0,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: "Look at this image and EXTRACT ONLY THE MATH QUESTION. Do NOT solve it. Do NOT provide any answers. If the image already contains the answer or steps, IGNORE THEM. Just write the original question exactly as shown." },
-                { type: "image_url", image_url: { url: capturedImage } }
-              ]
-            }
-          ]
-        })
-      });
+  // Distinct prompts for Math vs Standard Translation
+  const systemPrompt = isMath 
+    ? "Look at this image and EXTRACT ONLY THE MATH QUESTION. Do NOT solve it. Do NOT provide any answers. Just write the original question exactly as shown."
+    : "Look at this image and EXTRACT ALL THE TEXT exactly as it is written. Do NOT translate it yet. Just transcribe the text cleanly.";
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Vision API failed");
-
-      // Put the read text into the edit box
-      inputEl.value = data.choices[0].message.content.trim();
-      statusEl.innerHTML = "✅ Extracted! Check the text for typos, then hit Solve.";
-      
-    } catch(err) {
-      statusEl.innerHTML = "❌ Extraction failed";
-      inputEl.value = `Error: ${err.message}`;
-    }
-    return; // Stop here for math
-  }
-
-  // Old Tesseract logic for regular translation images remains below
   try {
-    if(!window.Tesseract) throw new Error("OCR Library missing.");
-    const imageForOcr = await prepareImageForOcr(capturedImage);
-    const result = await Tesseract.recognize(imageForOcr, "eng", { tessedit_pageseg_mode: "6" });
-    const extractedText = cleanOcrText(result.data);
+    const response = await fetch("/api/groq-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "meta-llama/llama-4-scout-17b-16e-instruct", 
+        temperature: 0,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: systemPrompt },
+              { type: "image_url", image_url: { url: capturedImage } }
+            ]
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Vision API failed");
+
+    inputEl.value = data.choices[0].message.content.trim();
+    statusEl.innerHTML = "✅ Extracted! Check the text for typos, then hit the button below.";
     
-    if(!extractedText){
-      statusEl.innerHTML = "⚠️ No clear text found.";
-      inputEl.value = "";
-      alert("No reliable text found. Try taking a closer photo.");
-      return;
-    }
-    inputEl.value = extractedText;
-    statusEl.innerHTML = "✅ Extracted! Edit if needed, then hit the button below.";
   } catch(err) {
-    statusEl.innerHTML = "❌ Error reading image";
+    statusEl.innerHTML = "❌ Extraction failed";
     inputEl.value = `Error: ${err.message}`;
   }
 }
 
-// --- MATH SOLVER API ---
+// --- MATH SOLVER & FOLLOW UP API ---
+let lastMathSolution = "";
+
 async function solveMath() {
   const problem = document.getElementById("mathExtractedText").value.trim();
   if(!problem) return alert("Extract math text first, or type a problem manually.");
   
   const statusEl = document.getElementById("mathStatus");
   const outputBox = document.getElementById("mathSolutionBox");
+  const followUpSection = document.getElementById("mathFollowUpSection");
   
   statusEl.innerHTML = "🧠 Solving problem...";
   outputBox.innerHTML = "Analyzing and calculating step-by-step...";
+  followUpSection.style.display = "none"; // Hide follow up while calculating
   
   try {
-    // We send the clean text to the highly accurate Llama 3.3 Text model
     const solution = await callGroq([
       { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. Use standard LaTeX for all math formulas (e.g., \\frac{x}{y}, \\sqrt{x}). Clearly show the final answer at the end." },
       { role:"user", content: `Solve this exactly as written:\n\n${problem}` }
     ], {temperature: 0});
 
-    // Fix line breaks so they render properly in HTML
+    lastMathSolution = solution; // Save for the follow-up chat
     let formattedSolution = solution.replace(/\n/g, '<br>');
     outputBox.innerHTML = formattedSolution;
     
-    // TELL MATHJAX TO RENDER THE "BATTA" (FRACTIONS) AND SYMBOLS
     if (window.MathJax) {
       MathJax.typesetPromise([outputBox]).catch(function (err) {
         console.log('MathJax error: ', err.message);
@@ -783,9 +752,36 @@ async function solveMath() {
     }
 
     statusEl.innerHTML = "✅ Solved!";
+    followUpSection.style.display = "block"; // Show the follow-up chat!
   } catch(err) {
     statusEl.innerHTML = "❌ Solving failed";
     outputBox.innerText = `Error: ${err.message}`;
+  }
+}
+
+async function askMathFollowUp() {
+  const question = document.getElementById("mathFollowUpInput").value.trim();
+  if(!question) return;
+  
+  const originalProblem = document.getElementById("mathExtractedText").value.trim();
+  const responseBox = document.getElementById("mathFollowUpResponse");
+  
+  responseBox.style.display = "block";
+  responseBox.innerHTML = "Thinking...";
+
+  try {
+    const answer = await callGroq([
+      { role:"system", content: "You are an expert Math Tutor. The user is asking a follow-up question about a problem you just solved. Answer clearly and use LaTeX ($ or $$) for math." },
+      { role:"user", content: `Original Problem:\n${originalProblem}\n\nYour Solution:\n${lastMathSolution}\n\nUser's Follow-up Question:\n${question}` }
+    ], {temperature: 0.2});
+
+    responseBox.innerHTML = answer.replace(/\n/g, '<br>');
+    
+    if (window.MathJax) {
+      MathJax.typesetPromise([responseBox]);
+    }
+  } catch(err) {
+    responseBox.innerHTML = `Error: ${err.message}`;
   }
 }
 
