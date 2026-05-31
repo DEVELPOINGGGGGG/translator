@@ -1,0 +1,13 @@
+{
+  "name": "ai-translator-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI translator dashboard with a Render-compatible Groq API proxy.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
