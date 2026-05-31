@@ -25,7 +25,7 @@
 
 <style>
 /* =========================
-   AI TRANSLATOR & MATH V6 (History Added)
+   AI TRANSLATOR & MATH V9 (History Deletion)
    MOBILE FIRST CSS
 ========================= */
 
@@ -87,6 +87,7 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
 .green{ background:linear-gradient(135deg, #16a34a, #22c55e); color:white; }
 .yellow{ background:linear-gradient(135deg, #ca8a04, #eab308); color:black; }
 .purple{ background:linear-gradient(135deg, #7c3aed, #a855f7); color:white; }
+.red{ background:linear-gradient(135deg, #dc2626, #ef4444); color:white; }
 .orange{ background:linear-gradient(135deg, #ea580c, #f97316); color:white; }
 .btn-group { display: flex; gap: 10px; margin-top: 10px; } .btn-group .btn { margin-top: 0; }
 
@@ -129,6 +130,9 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
 .wordTitle{ font-weight:700; margin-bottom:4px; color: #a855f7; font-size: 16px; }
 .wordMeaning{ font-size:13px; color:#cbd5e1; text-transform: uppercase; letter-spacing: 1px; }
 
+.deleteItemBtn { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: white; border-radius: 10px; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+.deleteItemBtn:hover { background: rgba(239, 68, 68, 0.8); }
+
 @media(min-width:768px){
 .page{ max-width:700px; margin:auto; left:50%; transform:translateX(-50%); }
 .topbar{ justify-content:center; }
@@ -151,39 +155,46 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
   <div class="appTitle">Math & Translate</div>
 </div>
 
-<!-- PAGE 1: MATH SOLVER -->
+<!-- PAGE 1: MATH SOLVER (FULLY REVAMPED) -->
 <div class="page active" id="dashboardPage">
   <div class="mathHero">
     <h1>🧮 AI Math Solver</h1>
-    <p>Snap a photo of any math problem to get step-by-step solutions.</p>
+    <p>Snap a photo of a worksheet and tell AI which problem to solve.</p>
   </div>
 
   <div class="card">
-    <div class="cardTitle">Step 1: Capture Problem</div>
-    <div class="cardSub">Take a clear photo of your math equation or word problem.</div>
+    <div class="cardTitle">Step 1: Capture Document</div>
+    <div class="cardSub">Take a clear photo of the math worksheet.</div>
     <div class="btn-group">
       <button class="btn green" onclick="openCamera('math')">📷 Take Photo</button>
       <button class="btn blue" onclick="viewPhoto('math')">🖼 View Photo</button>
     </div>
-    <button class="btn purple" onclick="processImageText('math')" id="extractMathBtn">🔍 Extract Math Text</button>
     <div class="status" id="mathStatus">No Photo Selected</div>
   </div>
 
   <div class="card">
-    <div class="cardTitle">Step 2: Check Problem</div>
-    <div class="cardSub">Edit the text if the scanner missed any numbers or symbols.</div>
-    <textarea id="mathExtractedText" placeholder="Extracted math problem will appear here..."></textarea>
+    <div class="cardTitle">Step 2: Choose Question</div>
+    <div class="cardSub">Tell the AI exactly which question from the photo you want it to extract.</div>
+    
+    <input type="text" id="mathInstructionInput" placeholder="e.g., 'Extract question number 4' or 'The last question'">
+    <button class="btn purple" onclick="extractSpecificMathQuestion()">🔍 Find Question</button>
+    
+    <textarea id="mathExtractedText" placeholder="The extracted question will appear here. Edit it if needed..." style="margin-top: 15px;"></textarea>
   </div>
 
   <div class="card">
     <div class="cardTitle">Step 3: Solution</div>
     <button class="btn orange" onclick="solveMath()">✨ Solve Problem</button>
+    
     <div class="outputBox" id="mathSolutionBox">Waiting for problem...</div>
+    
+    <!-- SPEAK BUTTON FOR MATH -->
+    <button class="btn green" id="speakMathBtn" style="display:none;" onclick="speakText('mathSolutionBox')">🔊 Speak Solution</button>
 
     <div id="mathFollowUpSection" style="display:none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
       <div class="cardSub" style="color: #a855f7; font-weight: 600; margin-bottom: 8px;">💬 Have a question about this solution?</div>
       <div style="display: flex; gap: 10px;">
-        <input type="text" id="mathFollowUpInput" placeholder="e.g., Explain step 2, or Is there another way?" style="margin-bottom:0; flex:1;">
+        <input type="text" id="mathFollowUpInput" placeholder="e.g., Explain step 2" style="margin-bottom:0; flex:1;">
         <button class="btn purple" style="width: 80px; margin-top: 0; padding: 10px;" onclick="askMathFollowUp()">Ask</button>
       </div>
       <div class="outputBox" id="mathFollowUpResponse" style="display:none; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3);"></div>
@@ -228,6 +239,9 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
     <button class="btn blue" onclick="runTranslation()">🌍 Convert</button>
 
     <div class="outputBox" id="translatedText">Translation appears here...</div>
+    
+    <!-- SPEAK BUTTON FOR TRANSLATOR -->
+    <button class="btn green" id="speakTransBtn" style="display:none;" onclick="speakText('translatedText')">🔊 Speak Translation</button>
   </div>
 
   <div class="card">
@@ -273,6 +287,10 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
     <button class="btn yellow" onclick="translateExtractedText()">🌍 Translate Now</button>
     
     <div class="outputBox" id="translatedImageText" style="margin-top:15px;">Waiting for translation...</div>
+    
+    <!-- SPEAK BUTTON FOR IMAGE TRANSLATOR -->
+    <button class="btn green" id="speakImgTransBtn" style="display:none;" onclick="speakText('translatedImageText')">🔊 Speak Translation</button>
+
     <canvas id="canvas" style="display:none; width: 100%; border-radius: 18px; margin-top: 15px;"></canvas>
     <button class="btn blue" id="downloadBtn" onclick="downloadImage()" style="display:none;">💾 Download Image</button>
   </div>
@@ -283,11 +301,15 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
   </div>
 </div>
 
-<!-- PAGE 4: HISTORY (NEW) -->
+<!-- PAGE 4: HISTORY -->
 <div class="page" id="historyPage">
   <div class="card">
-    <div class="cardTitle" style="font-size: 22px;">🕒 History</div>
-    <div class="cardSub">Your past math solutions and translations.</div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="cardTitle" style="font-size: 22px; margin-bottom: 0;">🕒 History</div>
+      <button class="btn red" style="width: auto; padding: 8px 15px; margin-top: 0; font-size: 13px;" onclick="clearAllHistory()">🗑️ Clear All</button>
+    </div>
+    <div class="cardSub" style="margin-top: 10px;">Your past math solutions and translations.</div>
+    
     <div id="historyList" style="margin-top: 15px;">
       <!-- History items will load here -->
     </div>
@@ -312,12 +334,12 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
 <div class="photoViewer" id="photoViewer">
   <button class="closeBtn" onclick="closePreview()">✕</button>
   <img id="previewImage">
-  <div class="photoViewerControls">
-    <button class="btn purple" style="width: 200px;" onclick="processImageFromViewer()">🔍 Extract Text</button>
+  <div class="photoViewerControls" id="photoViewerControls">
+    <!-- Buttons injected dynamically -->
   </div>
 </div>
 
-<!-- HISTORY DETAILS MODAL (NEW) -->
+<!-- HISTORY DETAILS MODAL -->
 <div class="infoModal" id="historyModal">
   <button class="closeBtn" onclick="closeHistory()">✕</button>
   <div class="card">
@@ -328,6 +350,9 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
     
     <div class="cardSub" style="margin-top: 15px;">AI Response / Solution:</div>
     <div class="outputBox" id="histAnswer"></div>
+    
+    <!-- SPEAK BUTTON FOR HISTORY -->
+    <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak Answer</button>
   </div>
 </div>
 
@@ -360,6 +385,18 @@ async function callGroq(messages, options={}){
   return data.choices[0].message.content;
 }
 
+// --- TEXT TO SPEECH ---
+function speakText(elementId) {
+  const el = document.getElementById(elementId);
+  if(!el) return;
+  
+  let text = el.innerText.replace(/<[^>]*>?/gm, '').replace(/[\$\\]/g, ' ');
+  
+  window.speechSynthesis.cancel(); 
+  const utterance = new SpeechSynthesisUtterance(text);
+  window.speechSynthesis.speak(utterance);
+}
+
 // --- UI & NAVIGATION ---
 const sidebar = document.getElementById("sidebar");
 const overlay = document.getElementById("overlay");
@@ -384,11 +421,10 @@ function showPage(pageId){
   if (pageId === 'historyPage') renderHistory();
 }
 
-// --- HISTORY LOGIC (NEW) ---
+// --- HISTORY LOGIC ---
 let appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]');
 
 function saveToHistory(type, question, answer) {
-  // Ask AI to quickly generate a smart title in the background
   callGroq([{ 
     role: "user", 
     content: `Generate a very short 2-4 word title for this ${type} request. Return ONLY the title text, no quotes or extra words.\n\nInput: ${question}` 
@@ -402,7 +438,6 @@ function saveToHistory(type, question, answer) {
     localStorage.setItem('aiHistory', JSON.stringify(appHistory));
   })
   .catch(() => {
-    // Fallback if title generation fails
     const entry = { id: Date.now(), type, title: type === 'math' ? 'Math Problem' : 'Translation', question, answer };
     appHistory.unshift(entry);
     localStorage.setItem('aiHistory', JSON.stringify(appHistory));
@@ -423,7 +458,10 @@ function renderHistory() {
         <div class="wordTitle">${item.title}</div>
         <div class="wordMeaning">${item.type === 'math' ? '🧮 Math Solver' : '🌍 Translation'}</div>
       </div>
-      <div style="font-size: 20px;">➡️</div>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <button class="deleteItemBtn" onclick="deleteHistoryItem(event, ${item.id})">🗑️</button>
+        <div style="font-size: 20px;">➡️</div>
+      </div>
     </div>
   `).join('');
 }
@@ -433,14 +471,11 @@ function viewHistory(id) {
   if(!item) return;
   
   document.getElementById('histTitle').innerText = item.title;
-  
-  // Replace line breaks with HTML breaks so it renders cleanly
   document.getElementById('histQuestion').innerHTML = item.question.replace(/\n/g, '<br>');
   document.getElementById('histAnswer').innerHTML = item.answer.replace(/\n/g, '<br>');
   
   document.getElementById('historyModal').classList.add('active');
   
-  // Tell MathJax to render the fractions and formulas inside the history viewer!
   if(window.MathJax) {
     MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]);
   }
@@ -448,6 +483,23 @@ function viewHistory(id) {
 
 function closeHistory() {
   document.getElementById('historyModal').classList.remove('active');
+  window.speechSynthesis.cancel(); 
+}
+
+// History Deletion Features
+function clearAllHistory() {
+  if(!confirm("Are you sure you want to clear ALL history? This cannot be undone.")) return;
+  appHistory = [];
+  localStorage.removeItem('aiHistory');
+  renderHistory();
+}
+
+function deleteHistoryItem(event, id) {
+  event.stopPropagation(); // Stops the modal from opening when clicking delete
+  if(!confirm("Delete this history item?")) return;
+  appHistory = appHistory.filter(i => i.id !== id);
+  localStorage.setItem('aiHistory', JSON.stringify(appHistory));
+  renderHistory();
 }
 
 
@@ -487,14 +539,15 @@ async function runTranslation(){
   if(!text) return alert("Please type or speak something first.");
   const lang = document.getElementById("targetLang").value;
   document.getElementById("translatedText").textContent = "Converting...";
+  document.getElementById("speakTransBtn").style.display = "none";
   
   try{
     const result = await callGroq([
       { role:"user", content: `You are a careful professional translator. Detect the source language and translate the user's exact text into ${lang}. Do not add extra words, explanations, or alternate translations. Preserve names and punctuation.\n\nText:\n${text}\n\nReturn only translation` }
     ], {temperature:0});
     document.getElementById("translatedText").innerText = result;
+    document.getElementById("speakTransBtn").style.display = "block"; 
     
-    // Save to History!
     saveToHistory('translation', text, result);
     getMeaning(text);
   }catch(err){
@@ -550,8 +603,12 @@ function capturePhoto(){
   captureCanvas.width = video.videoWidth; captureCanvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0);
   capturedImage = captureCanvas.toDataURL("image/png");
-  if(currentMode === 'math') document.getElementById("mathStatus").innerText = "📸 Math Captured — Tap Extract";
-  else document.getElementById("imageStatus").innerText = "📸 Photo Captured — Tap Extract";
+  
+  if(currentMode === 'math') {
+    document.getElementById("mathStatus").innerText = "📸 Document Captured — Now, tell AI which question to extract!";
+  } else {
+    document.getElementById("imageStatus").innerText = "📸 Photo Captured — Tap Extract";
+  }
   closeCamera();
 }
 
@@ -559,25 +616,64 @@ function viewPhoto(mode){
   currentMode = mode;
   if(!capturedImage) return alert("Take a photo first!");
   document.getElementById("previewImage").src = capturedImage;
+  
+  const controls = document.getElementById("photoViewerControls");
+  if(mode === 'math') {
+    controls.innerHTML = `<button class="btn purple" style="width: 250px;" onclick="closePreview()">Close & Go to Step 2</button>`;
+  } else {
+    controls.innerHTML = `<button class="btn purple" style="width: 200px;" onclick="processImageFromViewer()">🔍 Extract Text</button>`;
+  }
+  
   document.getElementById("photoViewer").classList.add("active");
 }
 function closePreview(){ document.getElementById("photoViewer").classList.remove("active"); }
 function processImageFromViewer() { closePreview(); processImageText(currentMode); }
 
-// --- VISION AI EXTRACTION (MATH & TEXT) ---
+// --- TARGETED MATH EXTRACTION (NEW STEP 2) ---
+async function extractSpecificMathQuestion() {
+  if(!capturedImage) return alert("Please take a photo in Step 1 first.");
+  
+  const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract all the math questions";
+  const statusEl = document.getElementById("mathStatus");
+  const inputEl = document.getElementById("mathExtractedText");
+  
+  statusEl.innerHTML = "🔍 Scanning document for your question...";
+  inputEl.value = "AI is looking for the question... please wait.";
+
+  // STRICT PROMPT: Finds specific question based on user input, refuses to solve.
+  const systemPrompt = `You are a strict text extractor. Look at this document. The user asked: "${instruction}". Based on this instruction, FIND and EXTRACT ONLY the exact math question(s) requested. DO NOT solve the problem. DO NOT provide any steps or answers. Ignore any answers written in the image. Output ONLY the raw question text.`;
+
+  try {
+    const response = await fetch("/api/groq-chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "meta-llama/llama-4-scout-17b-16e-instruct", temperature: 0,
+        messages: [ { role: "user", content: [ { type: "text", text: systemPrompt }, { type: "image_url", image_url: { url: capturedImage } } ] } ]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Vision API failed");
+
+    inputEl.value = data.choices[0].message.content.trim();
+    statusEl.innerHTML = "✅ Question Found & Extracted! Check for typos, then hit Solve.";
+  } catch(err) {
+    statusEl.innerHTML = "❌ Extraction failed";
+    inputEl.value = `Error: ${err.message}`;
+  }
+}
+
+// --- STANDARD IMAGE TRANSLATION EXTRACTION ---
 async function processImageText(mode){
   if(!capturedImage) return alert("Please take a photo first.");
   
-  const isMath = mode === 'math';
-  const statusEl = document.getElementById(isMath ? "mathStatus" : "imageStatus");
-  const inputEl = document.getElementById(isMath ? "mathExtractedText" : "imageExtractedText");
+  const statusEl = document.getElementById("imageStatus");
+  const inputEl = document.getElementById("imageExtractedText");
   
   statusEl.innerHTML = "🔍 Extracting text with AI...";
   inputEl.value = "Reading image... please wait.";
 
-  const systemPrompt = isMath 
-    ? "Look at this image and EXTRACT ONLY THE MATH QUESTION. Do NOT solve it. Do NOT provide any answers. Just write the original question exactly as shown."
-    : "Look at this image and EXTRACT ALL THE TEXT exactly as it is written. Do NOT translate it yet. Just transcribe the text cleanly.";
+  const systemPrompt = "Look at this image and EXTRACT ALL THE TEXT exactly as it is written. Do NOT translate it yet. Just transcribe the text cleanly.";
 
   try {
     const response = await fetch("/api/groq-chat", {
@@ -613,10 +709,12 @@ async function solveMath() {
   statusEl.innerHTML = "🧠 Solving problem...";
   outputBox.innerHTML = "Analyzing and calculating step-by-step...";
   followUpSection.style.display = "none";
+  document.getElementById("speakMathBtn").style.display = "none";
   
   try {
+    // UPDATED STRICT PROMPT: Force language to match the question
     const solution = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. Use standard LaTeX for all math formulas (e.g., \\frac{x}{y}, \\sqrt{x}). Clearly show the final answer at the end." },
+      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. IMPORTANT RULE: You MUST detect the language of the provided math problem and write the ENTIRE solution (including explanations and the final answer) in that EXACT SAME LANGUAGE. (e.g., If the question is in Hindi, the entire solution must be in Hindi). Use standard LaTeX for all math formulas. Clearly show the final answer at the end." },
       { role:"user", content: `Solve this exactly as written:\n\n${problem}` }
     ], {temperature: 0});
 
@@ -628,11 +726,11 @@ async function solveMath() {
       MathJax.typesetPromise([outputBox]).catch(err => console.log('MathJax error: ', err.message));
     }
 
-    // Save to History!
     saveToHistory('math', problem, solution);
 
     statusEl.innerHTML = "✅ Solved!";
     followUpSection.style.display = "block"; 
+    document.getElementById("speakMathBtn").style.display = "block"; 
   } catch(err) {
     statusEl.innerHTML = "❌ Solving failed";
     outputBox.innerText = `Error: ${err.message}`;
@@ -651,7 +749,7 @@ async function askMathFollowUp() {
 
   try {
     const answer = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor. The user is asking a follow-up question about a problem you just solved. Answer clearly and use LaTeX ($ or $$) for math." },
+      { role:"system", content: "You are an expert Math Tutor. The user is asking a follow-up question about a problem you just solved. Respond in the same language the user is speaking. Answer clearly and use LaTeX ($ or $$) for math." },
       { role:"user", content: `Original Problem:\n${originalProblem}\n\nYour Solution:\n${lastMathSolution}\n\nUser's Follow-up Question:\n${question}` }
     ], {temperature: 0.2});
 
@@ -673,6 +771,7 @@ async function translateExtractedText(){
   
   status.innerHTML = "🌍 Translating...";
   outputBox.innerText = "Translating...";
+  document.getElementById("speakImgTransBtn").style.display = "none";
   
   try {
     const translated = await callGroq([
@@ -680,9 +779,10 @@ async function translateExtractedText(){
     ], {temperature:0});
 
     outputBox.innerText = translated;
+    document.getElementById("speakImgTransBtn").style.display = "block"; 
+    
     if(capturedImage) drawTranslatedImage(translated);
     
-    // Save to History!
     saveToHistory('translation', textToTranslate, translated);
     getImageHardWords(translated);
     status.innerHTML = "✅ Translation Complete!";
