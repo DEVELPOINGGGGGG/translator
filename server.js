@@ -3,13 +3,8 @@ const fs = require("fs");
 const path = require("path");
 
 const port = process.env.PORT || 3000;
+const groqApiKey = process.env.GROQ_API_KEY || process.env["GROQ-API-KEY"];
 const publicDir = __dirname;
-const groqEnvNames = [
-  "GROQ_API_KEY",
-  "GROQ-API-KEY",
-  "GROQ_APIKEY",
-  "GROQ_KEY",
-];
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -26,24 +21,6 @@ const contentTypes = {
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
-}
-
-function getGroqApiKey() {
-  for (const envName of groqEnvNames) {
-    const value = process.env[envName]?.trim().replace(/^['"]|['"]$/g, "");
-
-    if (value) {
-      return { key: value, envName };
-    }
-  }
-
-  return {
-    key: "",
-    envName: "",
-    configuredGroqEnvVars: Object.keys(process.env).filter((envName) =>
-      envName.toUpperCase().includes("GROQ")
-    ),
-  };
 }
 
 function readRequestBody(req) {
@@ -65,19 +42,10 @@ function readRequestBody(req) {
 }
 
 async function handleGroqChat(req, res) {
-  const groqConfig = getGroqApiKey();
-
-  if (!groqConfig.key) {
-    console.error("Groq API key is missing.", {
-      checkedEnvVars: groqEnvNames,
-      configuredGroqEnvVars: groqConfig.configuredGroqEnvVars,
-    });
-
+  if (!groqApiKey) {
     return sendJson(res, 500, {
       error:
-        "Groq API key is missing on the server. In Render, add GROQ_API_KEY with your Groq key, then redeploy/restart the Web Service.",
-      checkedEnvVars: groqEnvNames,
-      configuredGroqEnvVars: groqConfig.configuredGroqEnvVars,
+        "Missing GROQ_API_KEY environment variable. Add it in Render Environment settings.",
     });
   }
 
@@ -95,7 +63,7 @@ async function handleGroqChat(req, res) {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${groqConfig.key}`,
+          Authorization: `Bearer ${groqApiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ model, temperature, messages }),
@@ -105,35 +73,14 @@ async function handleGroqChat(req, res) {
     const data = await groqResponse.json().catch(() => ({}));
 
     if (!groqResponse.ok) {
-      const errorMessage = data.error?.message || "Groq API request failed.";
-
-      console.error("Groq API request failed.", {
-        status: groqResponse.status,
-        envName: groqConfig.envName,
-        error: errorMessage,
-      });
-
       return sendJson(res, groqResponse.status, {
-        error: errorMessage,
-        provider: "groq",
-        envName: groqConfig.envName,
+        error: data.error?.message || "Groq API request failed.",
       });
     }
 
     return sendJson(res, 200, data);
   } catch (error) {
-    const errorMessage = error.message || "Groq API unavailable.";
-
-    console.error("Groq proxy failed before receiving a Groq response.", {
-      envName: groqConfig.envName,
-      error: errorMessage,
-    });
-
-    return sendJson(res, 502, {
-      error: `Groq API unavailable while using ${groqConfig.envName}: ${errorMessage}`,
-      provider: "groq",
-      envName: groqConfig.envName,
-    });
+    return sendJson(res, 502, { error: error.message || "Groq API unavailable." });
   }
 }
 
@@ -166,9 +113,7 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer((req, res) => {
-  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-
-  if (req.method === "POST" && requestUrl.pathname === "/api/groq-chat") {
+  if (req.method === "POST" && req.url === "/api/groq-chat") {
     handleGroqChat(req, res);
     return;
   }

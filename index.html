@@ -447,17 +447,17 @@ background:black;
 }
 
 .cameraControls{
-min-height:110px;
+min-height:96px;
 display:flex;
 justify-content:center;
 align-items:center;
 gap:20px;
-background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.95) 32%);
-padding-bottom:12px;
+background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.95) 28%);
+padding-bottom:calc(28px + env(safe-area-inset-bottom));
 position:absolute;
 left:0;
 right:0;
-bottom:calc(28px + env(safe-area-inset-bottom));
+bottom:0;
 z-index:2;
 }
 
@@ -1058,10 +1058,7 @@ messages
 );
 
 const data=
-await response.json()
-.catch(()=>({
-error:"Server returned an invalid response."
-}));
+await response.json();
 
 if(
 !response.ok
@@ -1069,14 +1066,13 @@ if(
 
 throw new Error(
 data.error ||
-"Groq request failed. Check your Render GROQ_API_KEY environment variable."
+"Groq request failed"
 );
 
 }
 
-return data.choices?.[0]
-?.message?.content ||
-"";
+return data.choices[0]
+.message.content;
 
 }
 
@@ -1205,7 +1201,7 @@ content:
 Text:
 ${text}
 
-Translation only:`
+Return only translation`
 }
 ],
 {temperature:0}
@@ -1305,10 +1301,6 @@ User request:
 ${query}`
 }
 ]
-);
-
-output.classList.remove(
-"loading"
 );
 
 output.innerText=
@@ -1761,7 +1753,7 @@ content:
 Verified text:
 ${extractedText}
 
-Translation only:`
+Return only translation`
 }
 ],
 {temperature:0}
