@@ -5,13 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Math solver and translator</title>
 
-<!-- PWA APP SUPPORT -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0f172a">
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- MATHJAX CONFIGURATION -->
 <script>
   MathJax = {
     tex: {
@@ -25,7 +23,7 @@
 
 <style>
 /* =========================
-   AI TRANSLATOR & MATH V9 (History Deletion)
+   AI TRANSLATOR & MATH V11 (Ultimate Fix)
    MOBILE FIRST CSS
 ========================= */
 
@@ -77,7 +75,16 @@ color:white; height:100vh; height:100dvh; overflow:hidden;
 textarea, select, input { width:100%; padding:14px; margin-bottom:10px; border:2px solid rgba(255,255,255,.05); outline:none; background:rgba(15,23,42,.8); color:white; border-radius:16px; transition: border 0.3s; }
 textarea { min-height:120px; resize:vertical; font-size:15px; }
 textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
-.outputBox, .meaningBox{ margin-top:12px; background:rgba(2,6,23,.5); border: 1px solid rgba(255,255,255,.05); border-radius:18px; padding:16px; min-height:100px; white-space:pre-wrap; word-wrap:break-word; }
+
+/* FIXED SCROLL FOR LONG MATH */
+.outputBox, .meaningBox { 
+  margin-top:12px; background:rgba(2,6,23,.5); border: 1px solid rgba(255,255,255,.05); 
+  border-radius:18px; padding:16px; min-height:100px; 
+  white-space:pre-wrap; word-wrap:break-word;
+  overflow-x: auto; 
+  max-width: 100%;
+}
+.outputBox mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
 
 /* BUTTONS */
 .btn{ width:100%; padding:15px; border:none; border-radius:18px; font-weight:700; font-size:15px; cursor:pointer; margin-top:10px; box-shadow:0 8px 20px rgba(0,0,0,.3); transition:all .2s ease; }
@@ -96,6 +103,20 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
 .micBtn { width: 50px; height: 50px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; font-size: 20px; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; }
 .micBtn.recording { animation: pulseRed 1.2s infinite; background: #b91c1c; }
 @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+/* FLOATING DRAGGABLE TTS PLAYER */
+#ttsPlayer {
+  position: fixed; bottom: 30px; right: 20px;
+  background: linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98));
+  backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50px; padding: 10px 20px; display: none; align-items: center; gap: 15px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 9999;
+  cursor: grab; user-select: none; touch-action: none;
+}
+#ttsPlayer:active { cursor: grabbing; }
+.ttsBtn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; transition: 0.2s; }
+.ttsBtn:hover { transform: scale(1.1); color: #60a5fa; }
+.ttsIndicator { font-size: 14px; font-weight: 700; color: #60a5fa; margin-right: 5px; pointer-events: none;}
 
 /* MATH HERO */
 .mathHero { padding:22px; border-radius:26px; margin-bottom:15px; position:relative; overflow:hidden; background:linear-gradient(135deg,#0ea5e9,#3b82f6,#8b5cf6); box-shadow:0 24px 60px rgba(59,130,246,.3); text-align: center; }
@@ -143,6 +164,13 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
 
 <div class="overlay" id="overlay"></div>
 
+<div id="ttsPlayer">
+  <div class="ttsIndicator">🔊 Reading</div>
+  <button class="ttsBtn" onclick="toggleTTS()" id="ttsPlayBtn">⏸️</button>
+  <button class="ttsBtn" onclick="stopTTS()">⏹️</button>
+  <button class="ttsBtn" onclick="closeTTS()">✖️</button>
+</div>
+
 <div class="sidebar" id="sidebar">
   <button onclick="showPage('dashboardPage')">🧮 Math Solver</button>
   <button onclick="showPage('translatorPage')">🎙️ Voice & Text Translator</button>
@@ -155,7 +183,6 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
   <div class="appTitle">Math & Translate</div>
 </div>
 
-<!-- PAGE 1: MATH SOLVER (FULLY REVAMPED) -->
 <div class="page active" id="dashboardPage">
   <div class="mathHero">
     <h1>🧮 AI Math Solver</h1>
@@ -174,12 +201,12 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
 
   <div class="card">
     <div class="cardTitle">Step 2: Choose Question</div>
-    <div class="cardSub">Tell the AI exactly which question from the photo you want it to extract.</div>
+    <div class="cardSub">Tell the AI exactly which question from the photo you want it to extract. Leave blank to get the first question only.</div>
     
-    <input type="text" id="mathInstructionInput" placeholder="e.g., 'Extract question number 4' or 'The last question'">
+    <input type="text" id="mathInstructionInput" placeholder="e.g., 'Extract question number 12' or 'The last question'">
     <button class="btn purple" onclick="extractSpecificMathQuestion()">🔍 Find Question</button>
     
-    <textarea id="mathExtractedText" placeholder="The extracted question will appear here. Edit it if needed..." style="margin-top: 15px;"></textarea>
+    <textarea id="mathExtractedText" placeholder="The extracted question will appear here in plain text. Edit it if needed..." style="margin-top: 15px;"></textarea>
   </div>
 
   <div class="card">
@@ -188,7 +215,6 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
     
     <div class="outputBox" id="mathSolutionBox">Waiting for problem...</div>
     
-    <!-- SPEAK BUTTON FOR MATH -->
     <button class="btn green" id="speakMathBtn" style="display:none;" onclick="speakText('mathSolutionBox')">🔊 Speak Solution</button>
 
     <div id="mathFollowUpSection" style="display:none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -202,7 +228,6 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
   </div>
 </div>
 
-<!-- PAGE 2: TRANSLATOR -->
 <div class="page" id="translatorPage">
   <div class="card">
     <div class="voiceHeader">
@@ -239,8 +264,6 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
     <button class="btn blue" onclick="runTranslation()">🌍 Convert</button>
 
     <div class="outputBox" id="translatedText">Translation appears here...</div>
-    
-    <!-- SPEAK BUTTON FOR TRANSLATOR -->
     <button class="btn green" id="speakTransBtn" style="display:none;" onclick="speakText('translatedText')">🔊 Speak Translation</button>
   </div>
 
@@ -250,7 +273,6 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
   </div>
 </div>
 
-<!-- PAGE 3: IMAGE TRANSLATOR -->
 <div class="page" id="imagePage">
   <div class="card">
     <div class="cardTitle">Step 1: Capture Text</div>
@@ -287,8 +309,6 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
     <button class="btn yellow" onclick="translateExtractedText()">🌍 Translate Now</button>
     
     <div class="outputBox" id="translatedImageText" style="margin-top:15px;">Waiting for translation...</div>
-    
-    <!-- SPEAK BUTTON FOR IMAGE TRANSLATOR -->
     <button class="btn green" id="speakImgTransBtn" style="display:none;" onclick="speakText('translatedImageText')">🔊 Speak Translation</button>
 
     <canvas id="canvas" style="display:none; width: 100%; border-radius: 18px; margin-top: 15px;"></canvas>
@@ -301,7 +321,6 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
   </div>
 </div>
 
-<!-- PAGE 4: HISTORY -->
 <div class="page" id="historyPage">
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -309,14 +328,10 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
       <button class="btn red" style="width: auto; padding: 8px 15px; margin-top: 0; font-size: 13px;" onclick="clearAllHistory()">🗑️ Clear All</button>
     </div>
     <div class="cardSub" style="margin-top: 10px;">Your past math solutions and translations.</div>
-    
-    <div id="historyList" style="margin-top: 15px;">
-      <!-- History items will load here -->
-    </div>
+    <div id="historyList" style="margin-top: 15px;"></div>
   </div>
 </div>
 
-<!-- MODALS -->
 <div class="cameraModal" id="cameraModal">
   <div class="cameraHeader">
     <button onclick="closeCamera()">✕</button>
@@ -334,12 +349,9 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
 <div class="photoViewer" id="photoViewer">
   <button class="closeBtn" onclick="closePreview()">✕</button>
   <img id="previewImage">
-  <div class="photoViewerControls" id="photoViewerControls">
-    <!-- Buttons injected dynamically -->
-  </div>
+  <div class="photoViewerControls" id="photoViewerControls"></div>
 </div>
 
-<!-- HISTORY DETAILS MODAL -->
 <div class="infoModal" id="historyModal">
   <button class="closeBtn" onclick="closeHistory()">✕</button>
   <div class="card">
@@ -351,14 +363,12 @@ textarea:focus, select:focus, input:focus { border: 2px solid #3b82f6; }
     <div class="cardSub" style="margin-top: 15px;">AI Response / Solution:</div>
     <div class="outputBox" id="histAnswer"></div>
     
-    <!-- SPEAK BUTTON FOR HISTORY -->
     <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak Answer</button>
   </div>
 </div>
 
 <canvas id="captureCanvas" style="display:none;"></canvas>
 
-<!-- APP SCRIPTS -->
 <script>
 // --- PWA SERVICE WORKER ---
 if ('serviceWorker' in navigator) {
@@ -385,16 +395,94 @@ async function callGroq(messages, options={}){
   return data.choices[0].message.content;
 }
 
-// --- TEXT TO SPEECH ---
+// --- FLOATING DRAGGABLE TTS PLAYER ---
+const ttsPlayer = document.getElementById('ttsPlayer');
+let ttsUtterance = null;
+let isPaused = false;
+let isDragging = false;
+let currentX, currentY, initialX, initialY;
+let xOffset = 0, yOffset = 0;
+
+ttsPlayer.addEventListener("touchstart", dragStart, {passive: false});
+ttsPlayer.addEventListener("touchend", dragEnd, false);
+ttsPlayer.addEventListener("touchmove", drag, {passive: false});
+ttsPlayer.addEventListener("mousedown", dragStart, false);
+window.addEventListener("mouseup", dragEnd, false);
+window.addEventListener("mousemove", drag, false);
+
+function dragStart(e) {
+  if (e.target.closest('.ttsBtn')) return; 
+  if (e.type === "touchstart") {
+    initialX = e.touches[0].clientX - xOffset;
+    initialY = e.touches[0].clientY - yOffset;
+  } else {
+    initialX = e.clientX - xOffset;
+    initialY = e.clientY - yOffset;
+  }
+  if (e.target === ttsPlayer || ttsPlayer.contains(e.target)) {
+    isDragging = true;
+  }
+}
+function dragEnd(e) { initialX = currentX; initialY = currentY; isDragging = false; }
+function drag(e) {
+  if (isDragging) {
+    e.preventDefault();
+    if (e.type === "touchmove") {
+      currentX = e.touches[0].clientX - initialX;
+      currentY = e.touches[0].clientY - initialY;
+    } else {
+      currentX = e.clientX - initialX;
+      currentY = e.clientY - initialY;
+    }
+    xOffset = currentX; yOffset = currentY;
+    ttsPlayer.style.transform = "translate3d(" + currentX + "px, " + currentY + "px, 0)";
+  }
+}
+
+// --- TEXT TO SPEECH LOGIC ---
 function speakText(elementId) {
   const el = document.getElementById(elementId);
   if(!el) return;
   
-  let text = el.innerText.replace(/<[^>]*>?/gm, '').replace(/[\$\\]/g, ' ');
+  let text = el.innerText.replace(/<[^>]*>?/gm, '');
+  text = text.replace(/[\$\\]/g, ' '); 
+  text = text.replace(/\*\*/g, '').replace(/\*/g, ''); 
+  text = text.replace(/&&/g, ' '); 
+  text = text.replace(/[\(\)\[\]\{\}]/g, ' bracket '); 
   
   window.speechSynthesis.cancel(); 
-  const utterance = new SpeechSynthesisUtterance(text);
-  window.speechSynthesis.speak(utterance);
+  ttsUtterance = new SpeechSynthesisUtterance(text);
+  
+  ttsUtterance.onend = () => { document.getElementById('ttsPlayBtn').innerText = '▶️'; };
+  
+  window.speechSynthesis.speak(ttsUtterance);
+  isPaused = false;
+  
+  document.getElementById('ttsPlayBtn').innerText = '⏸️';
+  ttsPlayer.style.display = 'flex';
+}
+
+function toggleTTS() {
+  if (isPaused) {
+    window.speechSynthesis.resume();
+    isPaused = false;
+    document.getElementById('ttsPlayBtn').innerText = '⏸️';
+  } else {
+    window.speechSynthesis.pause();
+    isPaused = true;
+    document.getElementById('ttsPlayBtn').innerText = '▶️';
+  }
+}
+
+function stopTTS() {
+  window.speechSynthesis.cancel();
+  isPaused = false;
+  document.getElementById('ttsPlayBtn').innerText = '▶️';
+}
+
+function closeTTS() {
+  stopTTS();
+  ttsPlayer.style.display = 'none';
 }
 
 // --- UI & NAVIGATION ---
@@ -402,22 +490,14 @@ const sidebar = document.getElementById("sidebar");
 const overlay = document.getElementById("overlay");
 let currentMode = "math"; 
 
-function toggleSidebar(){
-  sidebar.classList.toggle("active");
-  overlay.classList.toggle("active");
-}
-
-overlay.onclick=()=>{
-  sidebar.classList.remove("active");
-  overlay.classList.remove("active");
-};
+function toggleSidebar(){ sidebar.classList.toggle("active"); overlay.classList.toggle("active"); }
+overlay.onclick=()=>{ sidebar.classList.remove("active"); overlay.classList.remove("active"); };
 
 function showPage(pageId){
   document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
   document.getElementById(pageId).classList.add("active");
   sidebar.classList.remove("active");
   overlay.classList.remove("active");
-  
   if (pageId === 'historyPage') renderHistory();
 }
 
@@ -430,7 +510,7 @@ function saveToHistory(type, question, answer) {
     content: `Generate a very short 2-4 word title for this ${type} request. Return ONLY the title text, no quotes or extra words.\n\nInput: ${question}` 
   }], {temperature: 0.3})
   .then(title => {
-    let cleanTitle = title.replace(/['"]/g, '').trim();
+    let cleanTitle = title.replace(/['"]/g, '').replace(/\*\*/g, '').trim();
     if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
     
     const entry = { id: Date.now(), type, title: cleanTitle, question, answer };
@@ -483,10 +563,9 @@ function viewHistory(id) {
 
 function closeHistory() {
   document.getElementById('historyModal').classList.remove('active');
-  window.speechSynthesis.cancel(); 
+  closeTTS(); 
 }
 
-// History Deletion Features
 function clearAllHistory() {
   if(!confirm("Are you sure you want to clear ALL history? This cannot be undone.")) return;
   appHistory = [];
@@ -495,13 +574,12 @@ function clearAllHistory() {
 }
 
 function deleteHistoryItem(event, id) {
-  event.stopPropagation(); // Stops the modal from opening when clicking delete
+  event.stopPropagation(); 
   if(!confirm("Delete this history item?")) return;
   appHistory = appHistory.filter(i => i.id !== id);
   localStorage.setItem('aiHistory', JSON.stringify(appHistory));
   renderHistory();
 }
-
 
 // --- VOICE RECOGNITION API ---
 const micBtn = document.getElementById("micBtn");
@@ -545,7 +623,7 @@ async function runTranslation(){
     const result = await callGroq([
       { role:"user", content: `You are a careful professional translator. Detect the source language and translate the user's exact text into ${lang}. Do not add extra words, explanations, or alternate translations. Preserve names and punctuation.\n\nText:\n${text}\n\nReturn only translation` }
     ], {temperature:0});
-    document.getElementById("translatedText").innerText = result;
+    document.getElementById("translatedText").innerText = result.replace(/\*\*/g, '');
     document.getElementById("speakTransBtn").style.display = "block"; 
     
     saveToHistory('translation', text, result);
@@ -558,7 +636,7 @@ async function runTranslation(){
 async function getMeaning(text){
   try{
     const result = await callGroq([{ role:"user", content: `Give meanings of important words from:\n\n${text}\n\nShort format` }]);
-    document.getElementById("meaningBox").innerText = result;
+    document.getElementById("meaningBox").innerText = result.replace(/\*\*/g, '');
   }catch(e){}
 }
 
@@ -583,7 +661,6 @@ async function startCamera(){
     video.srcObject = currentStream;
   }catch(err){ alert("Camera Error: Please allow camera permissions."); }
 }
-
 function stopCamera(){ if(currentStream) currentStream.getTracks().forEach(track => track.stop()); }
 async function switchCamera(){ currentFacing = (currentFacing === "environment") ? "user" : "environment"; await startCamera(); }
 
@@ -629,19 +706,26 @@ function viewPhoto(mode){
 function closePreview(){ document.getElementById("photoViewer").classList.remove("active"); }
 function processImageFromViewer() { closePreview(); processImageText(currentMode); }
 
-// --- TARGETED MATH EXTRACTION (NEW STEP 2) ---
+// --- TARGETED MATH EXTRACTION (NEW STEP 2 - PLAIN TEXT ONLY) ---
 async function extractSpecificMathQuestion() {
   if(!capturedImage) return alert("Please take a photo in Step 1 first.");
   
-  const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract all the math questions";
+  const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract the very first question only";
   const statusEl = document.getElementById("mathStatus");
   const inputEl = document.getElementById("mathExtractedText");
   
   statusEl.innerHTML = "🔍 Scanning document for your question...";
   inputEl.value = "AI is looking for the question... please wait.";
 
-  // STRICT PROMPT: Finds specific question based on user input, refuses to solve.
-  const systemPrompt = `You are a strict text extractor. Look at this document. The user asked: "${instruction}". Based on this instruction, FIND and EXTRACT ONLY the exact math question(s) requested. DO NOT solve the problem. DO NOT provide any steps or answers. Ignore any answers written in the image. Output ONLY the raw question text.`;
+  // STRICT PROMPT: Enforce PLAIN TEXT, forbid LaTeX, enforce ONLY ONE question.
+  const systemPrompt = `You are a strict text extractor. Look at this document. The user asked: "${instruction}". 
+  RULES:
+  1. FIND and EXTRACT ONLY ONE exact math question based on the instruction. If not specified, extract ONLY THE VERY FIRST question on the page.
+  2. DO NOT extract multiple questions. Stop after the first one you find.
+  3. DO NOT solve the problem or provide steps/answers.
+  4. DO NOT use LaTeX formatting like $, $$, \\frac, \\sqrt, etc.
+  5. Use PLAIN KEYBOARD TEXT ONLY. Write exponents like x^2, fractions like 1/4. 
+  6. Output ONLY the raw question text cleanly.`;
 
   try {
     const response = await fetch("/api/groq-chat", {
@@ -655,7 +739,11 @@ async function extractSpecificMathQuestion() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Vision API failed");
 
-    inputEl.value = data.choices[0].message.content.trim();
+    // Clean up artifacts just in case
+    let extractedText = data.choices[0].message.content.trim();
+    extractedText = extractedText.replace(/\*\*/g, '').replace(/&&/g, '').replace(/\$/g, ''); 
+    
+    inputEl.value = extractedText;
     statusEl.innerHTML = "✅ Question Found & Extracted! Check for typos, then hit Solve.";
   } catch(err) {
     statusEl.innerHTML = "❌ Extraction failed";
@@ -673,7 +761,7 @@ async function processImageText(mode){
   statusEl.innerHTML = "🔍 Extracting text with AI...";
   inputEl.value = "Reading image... please wait.";
 
-  const systemPrompt = "Look at this image and EXTRACT ALL THE TEXT exactly as it is written. Do NOT translate it yet. Just transcribe the text cleanly.";
+  const systemPrompt = "Look at this image and EXTRACT ALL THE TEXT exactly as it is written. Do NOT translate it yet. Just transcribe the text cleanly. Do NOT use markdown bolding.";
 
   try {
     const response = await fetch("/api/groq-chat", {
@@ -687,7 +775,8 @@ async function processImageText(mode){
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Vision API failed");
 
-    inputEl.value = data.choices[0].message.content.trim();
+    let extractedText = data.choices[0].message.content.trim().replace(/\*\*/g, '');
+    inputEl.value = extractedText;
     statusEl.innerHTML = "✅ Extracted! Check the text for typos, then hit the button below.";
   } catch(err) {
     statusEl.innerHTML = "❌ Extraction failed";
@@ -712,21 +801,21 @@ async function solveMath() {
   document.getElementById("speakMathBtn").style.display = "none";
   
   try {
-    // UPDATED STRICT PROMPT: Force language to match the question
     const solution = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. IMPORTANT RULE: You MUST detect the language of the provided math problem and write the ENTIRE solution (including explanations and the final answer) in that EXACT SAME LANGUAGE. (e.g., If the question is in Hindi, the entire solution must be in Hindi). Use standard LaTeX for all math formulas. Clearly show the final answer at the end." },
+      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. IMPORTANT RULE: Detect the language of the provided math problem and write the ENTIRE solution (including explanations and the final answer) in that EXACT SAME LANGUAGE. Use standard LaTeX for formulas. Do NOT use markdown bolding (**) anywhere. Write plain text and LaTeX only." },
       { role:"user", content: `Solve this exactly as written:\n\n${problem}` }
     ], {temperature: 0});
 
-    lastMathSolution = solution; 
-    let formattedSolution = solution.replace(/\n/g, '<br>');
+    // Clean any bleeding markdown
+    lastMathSolution = solution.replace(/\*\*/g, '').replace(/&&/g, ''); 
+    let formattedSolution = lastMathSolution.replace(/\n/g, '<br>');
     outputBox.innerHTML = formattedSolution;
     
     if (window.MathJax) {
       MathJax.typesetPromise([outputBox]).catch(err => console.log('MathJax error: ', err.message));
     }
 
-    saveToHistory('math', problem, solution);
+    saveToHistory('math', problem, lastMathSolution);
 
     statusEl.innerHTML = "✅ Solved!";
     followUpSection.style.display = "block"; 
@@ -748,11 +837,12 @@ async function askMathFollowUp() {
   responseBox.innerHTML = "Thinking...";
 
   try {
-    const answer = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor. The user is asking a follow-up question about a problem you just solved. Respond in the same language the user is speaking. Answer clearly and use LaTeX ($ or $$) for math." },
+    let answer = await callGroq([
+      { role:"system", content: "You are an expert Math Tutor. The user is asking a follow-up question about a problem you just solved. Respond in the same language the user is speaking. Answer clearly and use LaTeX ($ or $$) for math. Do NOT use markdown bolding (**)." },
       { role:"user", content: `Original Problem:\n${originalProblem}\n\nYour Solution:\n${lastMathSolution}\n\nUser's Follow-up Question:\n${question}` }
     ], {temperature: 0.2});
 
+    answer = answer.replace(/\*\*/g, '');
     responseBox.innerHTML = answer.replace(/\n/g, '<br>');
     if (window.MathJax) MathJax.typesetPromise([responseBox]);
   } catch(err) {
@@ -774,10 +864,11 @@ async function translateExtractedText(){
   document.getElementById("speakImgTransBtn").style.display = "none";
   
   try {
-    const translated = await callGroq([
-      { role:"user", content: `Translate this into ${targetLang}. Preserve names and numbers.\n\nText:\n${textToTranslate}\n\nReturn only translation` }
+    let translated = await callGroq([
+      { role:"user", content: `Translate this into ${targetLang}. Preserve names and numbers. Do NOT use markdown bolding.\n\nText:\n${textToTranslate}\n\nReturn only translation` }
     ], {temperature:0});
 
+    translated = translated.replace(/\*\*/g, '');
     outputBox.innerText = translated;
     document.getElementById("speakImgTransBtn").style.display = "block"; 
     
@@ -833,8 +924,8 @@ async function getImageHardWords(text){
   const hardWordsBox = document.getElementById("hardWords");
   hardWordsBox.innerHTML = "Loading meanings...";
   try{
-    const result = await callGroq([{ role:"user", content: `From this text:\n\n${text}\n\nGive difficult words and short meanings. Format ONLY as:\n<div class='wordItem'><div class='wordTitle'>Word</div><div class='wordMeaning'>Meaning</div></div>` }], {temperature:0});
-    hardWordsBox.innerHTML = result.replace(/```html/g, "").replace(/```/g, "");
+    let result = await callGroq([{ role:"user", content: `From this text:\n\n${text}\n\nGive difficult words and short meanings. Format ONLY as:\n<div class='wordItem'><div class='wordTitle'>Word</div><div class='wordMeaning'>Meaning</div></div>` }], {temperature:0});
+    hardWordsBox.innerHTML = result.replace(/```html/g, "").replace(/```/g, "").replace(/\*\*/g, '');
   }catch(err){ hardWordsBox.innerHTML = "Could not load meanings."; }
 }
 
