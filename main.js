@@ -235,53 +235,45 @@ async function playMathVideo() {
     if(!window.latestMathSolution) return;
     const container = document.getElementById("mathChatHistory");
 
-    // 1. Create a "Video Screen" bubble
     const videoId = "video_" + Date.now();
     container.insertAdjacentHTML('beforeend', `
         <div class="chat-msg chat-ai">
-            <div class="bubble" style="background: #000; border: 2px solid #ef4444; width: 100%; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);">
-                <div style="background: #1e293b; padding: 8px; font-size: 12px; font-weight: bold; color: #f87171; margin-bottom: 15px; text-align: center; border-radius: 8px; letter-spacing: 2px;">
-                    🔴 LIVE TUTOR VIDEO
+            <div class="bubble" style="background: #ffffff; color: #000; border: 2px solid #3b82f6; width: 100%;">
+                <div style="background: #3b82f6; padding: 8px; color: white; margin-bottom: 10px; border-radius: 8px; text-align: center; font-weight: bold;">
+                    ✍️ AI TUTOR - WATCH NOW
                 </div>
-                <div id="${videoId}" style="min-height: 120px; font-size: 16px; line-height: 1.8;"></div>
+                <div id="${videoId}" style="min-height: 150px; font-size: 18px; font-family: 'Courier New', monospace; padding: 10px;"></div>
             </div>
         </div>
     `);
     scrollToBottom("mathScrollArea");
 
-    const videoScreen = document.getElementById(videoId);
+    const screen = document.getElementById(videoId);
+    const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
     
-    // Split the solution into individual lines/steps
-    const steps = window.latestMathSolution.split('\n').filter(line => line.trim() !== '');
-    let currentHtml = "";
+    // Play Hindi Audio
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(window.latestMathSolution.replace(/[\$\\]/g, ' '));
+    utterance.lang = 'hi-IN';
+    window.speechSynthesis.speak(utterance);
 
-    // 2. Start speaking the Hindi audio immediately
-    window.speechSynthesis.cancel(); 
-    let ttsUtterance = new SpeechSynthesisUtterance(window.latestMathSolution.replace(/[\$\\]/g, ' ')); 
-    ttsUtterance.lang = 'hi-IN';
-    window.speechSynthesis.speak(ttsUtterance);
-
-    // 3. Animate the text line-by-line onto the screen
-    for(let i = 0; i < steps.length; i++) {
-        currentHtml += steps[i] + "<br><br>";
-        videoScreen.innerHTML = currentHtml;
+    // Write text like a pen
+    for(let line of lines) {
+        let p = document.createElement('div');
+        p.style.opacity = 0;
+        p.style.transition = "opacity 0.8s ease-in";
+        p.innerHTML = line;
+        screen.appendChild(p);
         
-        // Render math equations live as they appear
-        if (window.MathJax) {
-            MathJax.typesetClear([videoScreen]); 
-            await MathJax.typesetPromise([videoScreen]);
-        }
+        // Trigger fade-in
+        setTimeout(() => p.style.opacity = 1, 100);
+        
+        // Render MathJax if needed
+        if (window.MathJax) MathJax.typesetPromise([p]);
         
         scrollToBottom("mathScrollArea");
-        
-        // Calculate wait time based on how long the sentence is (simulates writing speed)
-        const waitTime = Math.max(1500, steps[i].length * 40);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise(r => setTimeout(r, 2000)); // Time between writing lines
     }
-    
-    // Video complete
-    videoScreen.innerHTML += `<div style="text-align:center; color: #22c55e; font-weight: bold; margin-top: 10px;">✅ Video Complete</div>`;
-    scrollToBottom("mathScrollArea");
 }
 // --- 7. CAMERA & FLASHLIGHT SYSTEM ---
 let currentStream = null, currentFacing = "environment";
