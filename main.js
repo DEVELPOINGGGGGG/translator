@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V39 - 10 NEW FEATURES)
+   AI PRO SUITE - THE ULTIMATE BUILD (V40 - STRICT MATH & SEARCH)
 ======================================================= */
 
 let appHistory = [];
@@ -19,7 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
         apiTime--; if(apiTime <= 0) { apiTime = 60; visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); }
         const t = document.getElementById('apiTimer'); if(t) t.innerText = apiTime + 's'; 
         
-        // FEATURE: Live Character Count
         const txtInput = document.getElementById('inputText');
         if(txtInput && document.getElementById('charCount')) document.getElementById('charCount').innerText = txtInput.value.length + " chars";
     }, 1000);
@@ -123,7 +122,7 @@ function speakAndHighlight(elId, langCode = 'hi-IN') {
     window.speechSynthesis.speak(u);
 }
 
-// --- STRICT HINDI MATH SOLVER ---
+// --- 🛑 STRICT NO SPECIAL CHARACTERS MATH SOLVER 🛑 ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -132,23 +131,27 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // STRICT HINDI CONSTRAINT
-    const sysPrompt = `You are an Expert Science and Math Tutor. 
-    1. EXPLAIN STRICTLY AND ONLY IN HINDI. DO NOT use English sentences for explanations.
-    2. Format math formulas and fractions using LaTeX wrapped in $ symbols (e.g. $\\frac{12}{1200}$).
-    3. CRITICAL RULE: NEVER put any Hindi text or words inside the $ symbols. ONLY numbers and operators inside $.
-    4. Provide clear, step-by-step reasoning.`;
+    const sysPrompt = `You are a Math Tutor. 
+    1. EXPLAIN STRICTLY AND ONLY IN HINDI.
+    2. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. 
+    3. Use ONLY plain words, math numbers, and basic math symbols.
+    4. Use LaTeX wrapped in $ ONLY for fractions, squares, and square roots.
+    5. NEVER put any text or words inside the $ symbols.`;
     
     try {
         let sol = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
-        let cleanSol = sol.replace(/[\*&]/g, ''); window.latestMathSolution = cleanSol;
+        
+        // FORCING DELETION OF ALL HASHTAGS, ASTERISKS, AND UNDERSCORES
+        let cleanSol = sol.replace(/[\*&#_]/g, ''); 
+        
+        window.latestMathSolution = cleanSol;
         updateAiBubble(lId, cleanSol);
         saveToHistory('math', instruction, cleanSol, capturedImage); scrollToBottom("mathScrollArea");
         clearMathImage();
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- VIDEO GUI ENGINE (TYPEWRITER SYNC & 0.75x DEFAULT) ---
+// --- VIDEO GUI ENGINE ---
 function initVideoGui() {
     if(!window.latestMathSolution) return;
     if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
@@ -188,7 +191,6 @@ async function playFractionVideo() {
         if (premium) u.voice = premium;
         u.lang = 'hi-IN'; u.rate = videoSpeed; window.speechSynthesis.speak(u);
         
-        // TYPEWRITER FADE EFFECT
         const lineDiv = document.createElement("div"); 
         lineDiv.style.opacity = 0; lineDiv.style.transform = "translateY(10px)";
         lineDiv.style.transition = "all 0.4s ease-out"; 
@@ -197,14 +199,13 @@ async function playFractionVideo() {
         
         if (window.MathJax) { MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); }
         
-        // Sync reveal roughly with speech start
         setTimeout(() => { lineDiv.style.opacity = 1; lineDiv.style.transform = "translateY(0)"; if(content.parentElement) content.parentElement.scrollTop = content.parentElement.scrollHeight; }, 100);
-        await new Promise(r => { u.onend = r; setTimeout(r, 3000); }); // Failsafe timer
+        await new Promise(r => { u.onend = r; setTimeout(r, 3000); }); 
     }
     document.getElementById('vPlayBtn').innerHTML = "✅ Done";
 }
 
-// --- DEEP SEARCH (NOW WITH IMAGE UPLOAD) ---
+// --- 🛑 DEEP SEARCH (INTERNET SEARCH ENGINE) 🛑 ---
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); if(!q && !capturedImage) return;
@@ -217,12 +218,14 @@ async function runGroqSearch() {
         if (capturedImage) {
             ans = await callGeminiVision(capturedImage, "Analyze this context carefully. Always reply in HINDI. \n\nQuery: " + q);
         } else {
-            const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: "Always write your response in HINDI by default.\n\nQuery: " + q }) });
+            const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
+                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual, informative search results. Always write your response in HINDI by default.\n\nSearch Query: " + q }) 
+            });
             const data = await res.json(); if(!res.ok) throw new Error(data.error);
             ans = data.text;
         }
         
-        ans = ans.replace(/\*/g, '');
+        ans = ans.replace(/[\*&#]/g, '');
         const bbl = document.getElementById(lId);
         if (bbl) {
             bbl.querySelector('.bubble').innerHTML = `
@@ -254,11 +257,10 @@ async function runTranslation(){
     const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value; if(!txt) return; 
     setStatusLoading("translatedTextStatus", "Translating..."); document.getElementById("translatedTextStatus").style.display = "block";
     try{ 
-        // Request translation AND Hard Words separated by |||
         let prompt = `Translate the following text to ${lang}. After the translation, type exactly "|||" and then list 3 to 5 difficult words from the original text along with their meanings in Hindi. Format the list simply as "Word - Meaning".\n\nText: ${txt}`;
         let r = await callGeminiText("You are a master translator and vocabulary builder.", prompt); 
         
-        let parts = r.replace(/\*/g, '').split('|||');
+        let parts = r.replace(/[\*&#]/g, '').split('|||');
         let cleanText = parts[0].trim();
         let hardWordsText = parts[1] ? parts[1].trim() : "No hard words found.";
         
@@ -273,7 +275,6 @@ async function runTranslation(){
             </div>`; 
         document.getElementById("translatedTextStatus").style.display = "none"; 
         
-        // Populate Hard words
         let hwDiv = document.getElementById("hardWords");
         if(!hwDiv) {
              document.getElementById("translatedText").insertAdjacentHTML('afterend', `<div class="cardTitle" style="margin-top: 20px;">Hard Words Meaning</div><div class="outputBox" id="hardWords">${hardWordsText.replace(/\n/g, '<br>')}</div>`);
@@ -287,7 +288,7 @@ async function runTranslation(){
 
 async function processImageText(){ 
     if(!capturedImage) return; setStatusLoading("imageStatus", "Extracting..."); document.getElementById("imageStatus").style.display = "block"; 
-    try { const r = await callGeminiVision(capturedImage, "Extract all text accurately."); document.getElementById("imageExtractedText").value = r.replace(/\*/g, ''); document.getElementById("imageStatus").innerHTML = "✅ Extraction Complete."; } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ " + e.message; } 
+    try { const r = await callGeminiVision(capturedImage, "Extract all text accurately."); document.getElementById("imageExtractedText").value = r.replace(/[\*&#]/g, ''); document.getElementById("imageStatus").innerHTML = "✅ Extraction Complete."; } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ " + e.message; } 
 }
 async function translateExtractedText(){ 
     const txt = document.getElementById("imageExtractedText").value.trim(); const lang = document.getElementById("imageTargetLang").value; if(!txt) return; document.getElementById("translatedImageText").innerText = "Translating..."; 
@@ -295,7 +296,7 @@ async function translateExtractedText(){
         let prompt = `Translate to ${lang}. Then type "|||" and list 3 to 5 difficult words from the original text with their meanings in Hindi. Format simply as "Word - Meaning".\n\nText: ${txt}`;
         let t = await callGeminiText("You are a master translator.", prompt); 
         
-        let parts = t.replace(/\*/g, '').split('|||');
+        let parts = t.replace(/[\*&#]/g, '').split('|||');
         let cleanText = parts[0].trim();
         let hardWordsText = parts[1] ? parts[1].trim() : "No hard words found.";
         
@@ -325,7 +326,7 @@ async function extractMultiImages() {
 }
 async function askDocument() { 
     const q = document.getElementById('qaQuestionInput').value; if(!q || !qaContextText) return; document.getElementById("qaAnswerBox").innerHTML = '<div class="spinner"></div> Analyzing...'; 
-    try { let a = await callGeminiText("Answer based ONLY on document text. Reply in HINDI.", `Doc Text:\n${qaContextText}\n\nQuestion: ${q}`); const clean = a.replace(/\*/g,''); const aId = "qa_ans_"+Date.now(); document.getElementById('qaAnswerBox').innerHTML = `<div id="${aId}">${clean}</div><button class="btn green" style="margin-top:10px;" onclick="speakAndHighlight('${aId}', 'hi-IN')">🔊 Listen</button>`; saveToHistory('qa', q, clean, null); } catch(e) { document.getElementById('qaAnswerBox').innerText = "❌ " + e.message; } 
+    try { let a = await callGeminiText("Answer based ONLY on document text. Reply in HINDI.", `Doc Text:\n${qaContextText}\n\nQuestion: ${q}`); const clean = a.replace(/[\*&#]/g,''); const aId = "qa_ans_"+Date.now(); document.getElementById('qaAnswerBox').innerHTML = `<div id="${aId}">${clean}</div><button class="btn green" style="margin-top:10px;" onclick="speakAndHighlight('${aId}', 'hi-IN')">🔊 Listen</button>`; saveToHistory('qa', q, clean, null); } catch(e) { document.getElementById('qaAnswerBox').innerText = "❌ " + e.message; } 
 }
 
 // --- RESTORED HISTORY SAVING & CLEAN DOWNLOAD ---
@@ -350,7 +351,6 @@ function renderHistory() {
 }
 function deleteHistoryItem(e, id) { e.stopPropagation(); appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); }
 
-// 🛑 CLEAN LATEX GARBAGE FOR DOWNLOAD 🛑
 function cleanLatexForDownload(text) {
     return text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)')
                .replace(/\\times/g, 'x')
@@ -368,7 +368,6 @@ function triggerFileDownload(item) {
     const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `AI_${item.title}.txt`; l.click(); 
 }
 
-// 🛑 FIXED: RESTORE ROUTING LOGIC 🛑
 function restoreSession(e, id) { 
     if(e) e.stopPropagation(); const item = appHistory.find(i => i.id == id); if(!item) return; 
     let targetPage = ''; 
@@ -423,7 +422,6 @@ function capturePhoto(){
     let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
     c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, w, h); capturedImage = c.toDataURL("image/jpeg", 0.7); 
     
-    // Check if we are on Math or Search since they share the same UI logic now
     if (currentMode === 'math' || currentMode === 'search') { 
         const chip = document.getElementById("mathPreviewChip"); 
         if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
@@ -433,5 +431,4 @@ function capturePhoto(){
     closeCamera(); 
 }
 
-// Global Bindings
 window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.processImageText = processImageText; window.translateExtractedText = translateExtractedText; window.handleMultiUpload = handleMultiUpload; window.clearQaImages = clearQaImages; window.extractMultiImages = extractMultiImages; window.askDocument = askDocument; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard;
