@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Pro Suite - Gemini Powered</title>
+<title>Maths solver & Translator</title>
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0f172a">
@@ -20,7 +20,7 @@
 
 <style>
 /* =========================
-   AI PRO SUITE - REDESIGN V21 (Restore Session & Live API Tracker)
+   AI PRO SUITE - REDESIGN V22 (Anti-Spam & Hard API Limits)
 ========================= */
 
 *{ margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
@@ -63,7 +63,7 @@ body{
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* PAGES & DASHBOARD GRID */
-.page{ display:none; position:absolute; top:105px; /* Pushed down for API Tracker */ left:0; right:0; bottom:0; overflow-y:auto; padding:20px; scroll-behavior:smooth; padding-bottom: 120px; }
+.page{ display:none; position:absolute; top:105px; left:0; right:0; bottom:0; overflow-y:auto; padding:20px; scroll-behavior:smooth; padding-bottom: 120px; }
 .page.active{ display:block; animation:fadePage .4s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadePage{ from{ opacity:0; transform:translateY(20px); filter: blur(4px); } to{ opacity:1; transform:translateY(0); filter: blur(0); } }
 
@@ -175,7 +175,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">AI Pro Suite</div>
+  <div class="appTitle">Maths Solver & Translator</div>
 </div>
 <div class="apiTracker">
     <div>⏱️ Resets: <span id="apiTimer" class="api-val timer">60s</span></div>
@@ -410,6 +410,7 @@ catch(e) { console.error("History reset due to data error"); appHistory = []; }
 let apiTime = 60;
 let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
 let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
+let isProcessing = false; // The Global Spam Lock
 
 setInterval(() => {
     apiTime--;
@@ -428,27 +429,41 @@ function trackText() { textReqs++; localStorage.setItem('textReqs', textReqs); d
 // --- UI LOADING HELPER ---
 function setStatusLoading(elementId, text) { document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`; }
 
-// --- CORE GEMINI API CALLS (WITH TRACKING) ---
+// --- CORE GEMINI API CALLS (WITH HARD LOCKS & ANTI-SPAM) ---
 async function callGeminiText(systemPrompt, userPrompt, temp = 0) {
+  if (textReqs >= 15) throw new Error("⏳ Text API Limit Reached! Please wait for the timer to reset.");
+  if (isProcessing) throw new Error("⏳ Please wait for the current AI request to finish.");
+  isProcessing = true;
   trackText();
-  const res = await fetch("/api/gemini-text", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ systemPrompt, userPrompt, temperature: temp })
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error);
-  return data.text;
+  
+  try {
+      const res = await fetch("/api/gemini-text", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ systemPrompt, userPrompt, temperature: temp })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || "Gemini Text API Error");
+      isProcessing = false;
+      return data.text;
+  } catch(e) { isProcessing = false; throw e; }
 }
 
 async function callGeminiVision(imageBase64, prompt, temp = 0) {
+  if (visionReqs >= 15) throw new Error("⏳ Vision Limit Reached! Please wait for the timer to reset.");
+  if (isProcessing) throw new Error("⏳ Please wait for the current AI request to finish.");
+  isProcessing = true;
   trackVision();
-  const res = await fetch("/api/gemini-vision", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageBase64, prompt, temperature: temp })
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error);
-  return data.text;
+  
+  try {
+      const res = await fetch("/api/gemini-vision", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64, prompt, temperature: temp })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || "Gemini Vision API Error");
+      isProcessing = false;
+      return data.text;
+  } catch(e) { isProcessing = false; throw e; }
 }
 
 // --- IMAGE AUTO-COMPRESSOR ---
@@ -553,7 +568,6 @@ function saveHistorySafe() {
   try {
       localStorage.setItem('aiHistory', JSON.stringify(appHistory));
   } catch(e) {
-      // If 5MB limit is hit, delete the oldest saved image to make room
       let freedSpace = false;
       for(let i = appHistory.length - 1; i >= 0; i--) {
           if(appHistory[i].image) { appHistory[i].image = null; freedSpace = true; break; }
@@ -563,11 +577,16 @@ function saveHistorySafe() {
 }
 
 function saveToHistory(type, question, answer, imgToSave = null) {
+  let isProcessingTemp = isProcessing; // Temporarily bypass lock just for background title generation
+  isProcessing = false;
+  
   callGeminiText("Generate a short 2-4 word title. Return ONLY the title text. No special characters.", question, 0.3)
   .then(title => {
+    isProcessing = isProcessingTemp;
     let cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').trim(); if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
     appHistory.unshift({ id: Date.now(), type, title: cleanTitle, question, answer, image: imgToSave }); saveHistorySafe();
   }).catch(() => {
+    isProcessing = isProcessingTemp;
     appHistory.unshift({ id: Date.now(), type, title: type === 'math' ? 'Math Problem' : 'Translation', question, answer, image: imgToSave }); saveHistorySafe();
   });
 }
@@ -663,7 +682,7 @@ CRITICAL RULES:
     let finalQ = await callGeminiVision(capturedImage, prompt, 0); 
     document.getElementById("mathExtractedText").value = finalQ.replace(/[\*\$]/g, '').trim();
     document.getElementById("mathStatus").innerHTML = "✅ Found! Ready to solve.";
-  } catch(e) { document.getElementById("mathExtractedText").value = `Error: ${e.message}`; document.getElementById("mathStatus").innerHTML = "❌ Failed."; }
+  } catch(e) { document.getElementById("mathExtractedText").value = `❌ Error: ${e.message}`; document.getElementById("mathStatus").innerHTML = "❌ Failed."; }
 }
 
 async function solveMath() {
@@ -680,7 +699,7 @@ async function solveMath() {
     if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
     saveToHistory('math', prob, lastMathSolution, capturedImage); 
     document.getElementById("speakMathBtn").style.display = "flex"; document.getElementById("explainMathBtn").style.display = "flex"; 
-  } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
+  } catch(e) { document.getElementById("mathSolutionBox").innerHTML = "❌ " + e.message; }
 }
 
 async function explainMoreMath() {
@@ -693,7 +712,7 @@ async function explainMoreMath() {
     lastMathSolution = exp.replace(/[\*&]/g, '');
     document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
     if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
-  } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
+  } catch(e) { document.getElementById("mathSolutionBox").innerHTML = "❌ " + e.message; }
 }
 
 // --- IMAGE TRANSLATOR ---
@@ -715,7 +734,7 @@ async function translateExtractedText(){
     trans = trans.replace(/\*/g, ''); document.getElementById("translatedImageText").innerText = trans;
     drawTranslatedImageOnWhite(trans); saveToHistory('translation', txt, trans, capturedImage); getImageHardWords(txt);
     document.getElementById("speakImgTransBtn").style.display = "flex"; 
-  } catch(e) { document.getElementById("translatedImageText").innerText = "Error: " + e.message; }
+  } catch(e) { document.getElementById("translatedImageText").innerText = "❌ Error: " + e.message; }
 }
 
 function drawTranslatedImageOnWhite(text) {
@@ -756,7 +775,10 @@ async function extractMultiImages() {
   setStatusLoading("qaStatus", "Reading pages via Gemini Vision..."); qaContextText = "";
   for(let i=0; i<qaImages.length; i++) {
     try {
+      // Intentionally bypassed the lock here because we are reading multiple pages sequentially
+      let isProcessingTemp = isProcessing; isProcessing = false;
       const rawText = await callGeminiVision(qaImages[i], "Read ALL text in this image. If it is a textbook, document, or handwritten page, extract all readable content exactly as written. If the image is blurry or has no text, describe what you see.", 0);
+      isProcessing = isProcessingTemp;
       if(rawText) qaContextText += `\n--- PAGE ${i+1} ---\n` + rawText;
     } catch(e) { 
       console.log(e); qaContextText += `\n--- PAGE ${i+1} ERROR ---\nCould not read: ${e.message}\n`;
@@ -773,7 +795,7 @@ async function askDocument() {
   try {
     let ans = await callGeminiText(systemPrompt, `Document Text:\n${qaContextText}\n\nQuestion: ${q}`);
     document.getElementById('qaAnswerBox').innerHTML = ans.replace(/\n/g, '<br>').replace(/\*/g,''); document.getElementById("speakQaBtn").style.display = "flex";
-  } catch(e) { document.getElementById('qaAnswerBox').innerText = "Error analyzing."; }
+  } catch(e) { document.getElementById('qaAnswerBox').innerText = "❌ " + e.message; }
 }
 
 // --- TEXT TRANSLATOR ---
@@ -783,7 +805,7 @@ async function runTranslation(){
   try{
     let res = await callGeminiText(null, `Translate exactly to ${lang}:\n${txt}`);
     document.getElementById("translatedText").innerText = res.replace(/\*/g, ''); document.getElementById("speakTransBtn").style.display = "flex";
-  }catch(e){}
+  }catch(e){ document.getElementById("translatedText").innerText = "❌ " + e.message; }
 }
 
 // --- CAMERA UTILS (WITH COMPRESSION) ---
