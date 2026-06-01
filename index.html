@@ -20,7 +20,7 @@
 
 <style>
 /* =========================
-   AI PRO SUITE - REDESIGN V19 (GEMINI EDITION)
+   AI PRO SUITE - REDESIGN V21 (Restore Session & Live API Tracker)
 ========================= */
 
 *{ margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
@@ -40,14 +40,20 @@ body{
 @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 ::-webkit-scrollbar{ width:4px; } ::-webkit-scrollbar-thumb{ background:#334155; border-radius:20px; }
 
-/* TOP BAR */
-.topbar{ height:70px; display:flex; align-items:center; padding:0 20px; background:rgba(17,24,39,.85); backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,.05); position:fixed; top:0; left:0; right:0; z-index:100; box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
+/* TOP BAR & LIVE API TRACKER */
+.topbar{ height:70px; display:flex; align-items:center; padding:0 20px; background:rgba(17,24,39,.95); border-bottom:1px solid rgba(255,255,255,.05); position:fixed; top:0; left:0; right:0; z-index:100; box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
 .menuBtn{ font-size:28px; cursor:pointer; transition: transform 0.2s; }
 .menuBtn:hover { transform: scale(1.1); color: var(--accent); }
 .appTitle{ font-size:20px; font-weight:800; margin-left:15px; background: linear-gradient(90deg, #60a5fa, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
 
+.apiTracker { position:fixed; top:70px; left:0; right:0; height:35px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); z-index:99; display:flex; justify-content:space-evenly; align-items:center; font-size:13px; font-weight:600; color:#94a3b8; border-bottom:1px solid rgba(255,255,255,0.05); box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
+.api-val { font-weight: 800; font-size: 14px;}
+.api-val.timer { color: #60a5fa; }
+.api-val.vision { color: #c084fc; }
+.api-val.text { color: #22c55e; }
+
 /* SIDEBAR */
-.sidebar{ position:fixed; top:0; left:-300px; width:280px; height:100%; background:#020617; z-index:999; transition:.4s cubic-bezier(0.4, 0, 0.2, 1); padding-top:90px; box-shadow: 5px 0 30px rgba(0,0,0,.8); }
+.sidebar{ position:fixed; top:0; left:-300px; width:280px; height:100%; background:#020617; z-index:999; transition:.4s cubic-bezier(0.4, 0, 0.2, 1); padding-top:110px; box-shadow: 5px 0 30px rgba(0,0,0,.8); }
 .sidebar.active{ left:0; }
 .sidebar button{ width:100%; background:none; border:none; color:white; padding:18px 25px; font-size:16px; font-weight: 500; text-align:left; cursor:pointer; transition:.3s; border-left: 0px solid transparent; }
 .sidebar button:hover{ background:#111827; padding-left:35px; border-left: 4px solid #3b82f6; color: #60a5fa; }
@@ -57,7 +63,7 @@ body{
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* PAGES & DASHBOARD GRID */
-.page{ display:none; position:absolute; top:70px; left:0; right:0; bottom:0; overflow-y:auto; padding:20px; scroll-behavior:smooth; padding-bottom: 120px; }
+.page{ display:none; position:absolute; top:105px; /* Pushed down for API Tracker */ left:0; right:0; bottom:0; overflow-y:auto; padding:20px; scroll-behavior:smooth; padding-bottom: 120px; }
 .page.active{ display:block; animation:fadePage .4s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadePage{ from{ opacity:0; transform:translateY(20px); filter: blur(4px); } to{ opacity:1; transform:translateY(0); filter: blur(0); } }
 
@@ -68,8 +74,6 @@ body{
 .dash-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 40px rgba(0,0,0,0.5); border-color: rgba(96,165,250,0.5); }
 .dash-icon { font-size: 45px; margin-bottom: 10px; display: inline-block; animation: float 3s ease-in-out infinite; }
 .dash-title { font-weight: 700; font-size: 16px; color: #e2e8f0; }
-
-@keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
 
 /* CARDS & INPUTS */
 .card{ background:linear-gradient(145deg, var(--card), var(--card2)); backdrop-filter: blur(15px); border-radius:24px; padding:20px; margin-bottom:20px; border:1px solid rgba(255,255,255,.05); box-shadow:0 15px 35px rgba(0,0,0,.3); transition: transform 0.3s; }
@@ -84,10 +88,8 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .outputBox, .meaningBox { 
   margin-top:12px; background:rgba(2,6,23,.7); border: 1px solid rgba(255,255,255,.05); 
   border-radius:20px; padding:20px; min-height:100px; 
-  white-space:pre-wrap; word-wrap:break-word; 
-  overflow-x: auto; 
-  max-width: 100%; font-size: 15px; line-height: 1.6;
-  -webkit-overflow-scrolling: touch; 
+  white-space:pre-wrap; word-wrap:break-word; overflow-x: auto; 
+  max-width: 100%; font-size: 15px; line-height: 1.6; -webkit-overflow-scrolling: touch; 
 }
 .outputBox mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; padding: 5px 0; -webkit-overflow-scrolling: touch; }
 
@@ -107,12 +109,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .orange{ background:linear-gradient(135deg, #ea580c, #f97316); color:white; }
 .btn-group { display: flex; gap: 12px; margin-top: 10px; } .btn-group .btn { margin-top: 0; flex: 1; }
 
-/* LOADER CSS */
-.spinner {
-  border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent);
-  border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;
-  display: inline-block; vertical-align: middle; margin-right: 8px;
-}
+.spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* MIC BUTTON */
@@ -122,19 +119,13 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
 /* BOUNDED FLOATING TTS PLAYER */
-#ttsPlayer {
-  position: fixed; bottom: 30px; right: 20px;
-  background: linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98));
-  backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 50px; padding: 12px 25px; display: none; align-items: center; gap: 15px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.8); z-index: 9999; cursor: grab; user-select: none; touch-action: none;
-}
+#ttsPlayer { position: fixed; bottom: 30px; right: 20px; background: linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98)); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 50px; padding: 12px 25px; display: none; align-items: center; gap: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); z-index: 9999; cursor: grab; user-select: none; touch-action: none; }
 #ttsPlayer:active { cursor: grabbing; }
 .ttsBtn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; transition: 0.2s; }
 .ttsBtn:hover { transform: scale(1.15); color: #60a5fa; }
 .ttsIndicator { font-size: 15px; font-weight: 700; color: #60a5fa; margin-right: 5px; pointer-events: none;}
 
-/* MODALS */
+/* MODALS & CAMERA */
 .cameraModal{ position:fixed; inset:0; background:black; display:none; z-index:5000; }
 .cameraModal.active{ display:flex; flex-direction:column; animation: fadeIn 0.3s; }
 .cameraHeader{ height:70px; display:flex; justify-content:space-between; align-items:center; padding:0 20px; background:linear-gradient(to bottom, rgba(0,0,0,.9), transparent); position:absolute; top:0; left:0; right:0; z-index:2; }
@@ -151,12 +142,12 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .closeBtn { width:45px; height:45px; border:none; border-radius:50%; background:rgba(255,255,255,0.15); color:white; font-size:20px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center;}
 .closeBtn:hover { background:rgba(255,255,255,0.3); }
 
-/* HISTORY MODAL SPECIFIC - FIXED FLEX LAYOUT */
+/* HISTORY MODAL */
 .infoModal .card { width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; padding: 20px; margin: 0; }
 .hist-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; margin-top: 15px; padding-right: 5px; -webkit-overflow-scrolling: touch; }
 .hist-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
 
-/* MISC */
+/* HISTORY LIST */
 .status{ margin-top:12px; padding:15px; border-radius:16px; background:rgba(0,0,0,0.4); font-weight:600; text-align:center; border: 1px solid rgba(255,255,255,0.1); color: #93c5fd; display: flex; justify-content: center; align-items: center; }
 .wordItem{ background:rgba(15,23,42,.6); padding:18px; border-radius:18px; margin-bottom:12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; }
 .wordItem:hover { background:rgba(30,41,59,.8); border: 1px solid rgba(96,165,250,.4); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
@@ -169,17 +160,28 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .actionBtnSmall.red:hover { background: rgba(239, 68, 68, 0.9); }
 .actionBtnSmall.blue { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); }
 .actionBtnSmall.blue:hover { background: rgba(59, 130, 246, 0.9); }
-.fileList { font-size: 14px; color: #60a5fa; font-weight: 600; }
+.actionBtnSmall.green { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4); }
+.actionBtnSmall.green:hover { background: rgba(34, 197, 94, 0.9); }
 
 @media(min-width:768px){
   .page{ max-width:800px; margin:auto; left:50%; transform:translateX(-50%); }
-  .topbar{ justify-content:center; }
+  .topbar, .apiTracker{ justify-content:center; gap: 40px; }
 }
 </style>
 </head>
 <body>
 
 <div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+<div class="apiTracker">
+    <div>⏱️ Resets: <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ Vision: <span id="apiVision" class="api-val vision">0</span>/15</div>
+    <div>📝 Text: <span id="apiText" class="api-val text">0</span>/15</div>
+</div>
 
 <div id="ttsPlayer">
   <div class="ttsIndicator">🔊 Reading</div>
@@ -195,11 +197,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   <button onclick="showPage('imagePage')">🖼️ Image Translator</button>
   <button onclick="showPage('qaPage')">📚 Document Q&A (Multi-Image)</button>
   <button onclick="showPage('historyPage')">🕒 History & Downloads</button>
-</div>
-
-<div class="topbar">
-  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">AI Pro Suite</div>
 </div>
 
 <div class="page active" id="homePage">
@@ -405,21 +402,37 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 <canvas id="captureCanvas" style="display:none;"></canvas>
 
 <script>
-// --- GLOBAL ERROR CATCH ---
+// --- GLOBAL ERROR CATCH & LIVE API TRACKER ---
 let appHistory = [];
 try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } 
 catch(e) { console.error("History reset due to data error"); appHistory = []; }
 
-// --- UI LOADING HELPER ---
-function setStatusLoading(elementId, text) {
-    document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`;
-}
+let apiTime = 60;
+let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
+let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
 
-// --- CORE GEMINI API CALLS ---
+setInterval(() => {
+    apiTime--;
+    if(apiTime <= 0) {
+        apiTime = 60; visionReqs = 0; textReqs = 0;
+        localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0');
+    }
+    document.getElementById('apiTimer').innerText = apiTime + 's';
+    document.getElementById('apiVision').innerText = visionReqs;
+    document.getElementById('apiText').innerText = textReqs;
+}, 1000);
+
+function trackVision() { visionReqs++; localStorage.setItem('visionReqs', visionReqs); document.getElementById('apiVision').innerText = visionReqs; }
+function trackText() { textReqs++; localStorage.setItem('textReqs', textReqs); document.getElementById('apiText').innerText = textReqs; }
+
+// --- UI LOADING HELPER ---
+function setStatusLoading(elementId, text) { document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`; }
+
+// --- CORE GEMINI API CALLS (WITH TRACKING) ---
 async function callGeminiText(systemPrompt, userPrompt, temp = 0) {
+  trackText();
   const res = await fetch("/api/gemini-text", {
-    method: "POST", 
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ systemPrompt, userPrompt, temperature: temp })
   });
   const data = await res.json();
@@ -428,14 +441,34 @@ async function callGeminiText(systemPrompt, userPrompt, temp = 0) {
 }
 
 async function callGeminiVision(imageBase64, prompt, temp = 0) {
+  trackVision();
   const res = await fetch("/api/gemini-vision", {
-    method: "POST", 
-    headers: { "Content-Type": "application/json" },
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ imageBase64, prompt, temperature: temp })
   });
   const data = await res.json();
   if(!res.ok) throw new Error(data.error);
   return data.text;
+}
+
+// --- IMAGE AUTO-COMPRESSOR ---
+function compressImageFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas'); const MAX_WIDTH = 1500; const MAX_HEIGHT = 1500;
+            let width = img.width; let height = img.height;
+            if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+            else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+            canvas.width = width; canvas.height = height; const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", 0.7)); 
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // --- FLOATING DRAGGABLE TTS PLAYER ---
@@ -456,14 +489,11 @@ function dragStart(e) {
 function dragEnd() { isDragging = false; }
 function drag(e) {
   if (isDragging) {
-    e.preventDefault();
-    let clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
-    let clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
+    e.preventDefault(); let clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX; let clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
     let newX = clientX - initialX; let newY = clientY - initialY;
     let maxX = window.innerWidth - ttsPlayer.offsetWidth; let maxY = window.innerHeight - ttsPlayer.offsetHeight;
     if(newX < 0) newX = 0; if(newX > maxX) newX = maxX; if(newY < 0) newY = 0; if(newY > maxY) newY = maxY;
-    ttsPlayer.style.left = newX + "px"; ttsPlayer.style.top = newY + "px";
-    ttsPlayer.style.right = "auto"; ttsPlayer.style.bottom = "auto"; ttsPlayer.style.transform = "none";
+    ttsPlayer.style.left = newX + "px"; ttsPlayer.style.top = newY + "px"; ttsPlayer.style.right = "auto"; ttsPlayer.style.bottom = "auto"; ttsPlayer.style.transform = "none";
   }
 }
 
@@ -478,8 +508,7 @@ function speakText(elementId) {
   ttsUtterance.onboundary = function(event) {
     if(event.name === 'word' && !el.querySelector('mjx-container')) {
         let charIndex = event.charIndex; let wordLength = event.charLength;
-        let originalHTML = el.dataset.originalHtml || el.innerHTML;
-        if(!el.dataset.originalHtml) el.dataset.originalHtml = originalHTML;
+        let originalHTML = el.dataset.originalHtml || el.innerHTML; if(!el.dataset.originalHtml) el.dataset.originalHtml = originalHTML;
         let before = text.slice(0, charIndex); let word = text.slice(charIndex, charIndex + wordLength); let after = text.slice(charIndex + wordLength);
         el.innerHTML = before + `<span class="tts-highlight">${word}</span>` + after;
     }
@@ -517,15 +546,29 @@ function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("a
 document.getElementById("overlay").onclick=()=>{ document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); };
 function showPage(pageId){ document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); document.getElementById(pageId).classList.add("active"); document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); if (pageId === 'historyPage') renderHistory(); }
 
-// --- HISTORY LOGIC ---
+// --- SMART HISTORY LOGIC (RESTORABLE SESSIONS) ---
 let currentViewingHistoryId = null;
-function saveToHistory(type, question, answer) {
-  callGeminiText("Generate a short 2-4 word title. Return ONLY the title text.", question, 0.3)
+
+function saveHistorySafe() {
+  try {
+      localStorage.setItem('aiHistory', JSON.stringify(appHistory));
+  } catch(e) {
+      // If 5MB limit is hit, delete the oldest saved image to make room
+      let freedSpace = false;
+      for(let i = appHistory.length - 1; i >= 0; i--) {
+          if(appHistory[i].image) { appHistory[i].image = null; freedSpace = true; break; }
+      }
+      if(freedSpace) saveHistorySafe(); else { appHistory.pop(); saveHistorySafe(); }
+  }
+}
+
+function saveToHistory(type, question, answer, imgToSave = null) {
+  callGeminiText("Generate a short 2-4 word title. Return ONLY the title text. No special characters.", question, 0.3)
   .then(title => {
-    let cleanTitle = title.replace(/['"\*]/g, '').trim(); if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
-    appHistory.unshift({ id: Date.now(), type, title: cleanTitle, question, answer }); localStorage.setItem('aiHistory', JSON.stringify(appHistory));
+    let cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').trim(); if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
+    appHistory.unshift({ id: Date.now(), type, title: cleanTitle, question, answer, image: imgToSave }); saveHistorySafe();
   }).catch(() => {
-    appHistory.unshift({ id: Date.now(), type, title: type === 'math' ? 'Math Problem' : 'Translation', question, answer }); localStorage.setItem('aiHistory', JSON.stringify(appHistory));
+    appHistory.unshift({ id: Date.now(), type, title: type === 'math' ? 'Math Problem' : 'Translation', question, answer, image: imgToSave }); saveHistorySafe();
   });
 }
 
@@ -534,12 +577,45 @@ function renderHistory() {
   if(appHistory.length === 0) return list.innerHTML = "<div style='color:var(--muted); text-align:center;'>No history saved yet.</div>";
   list.innerHTML = appHistory.map(item => `
     <div class="wordItem" style="display:flex; justify-content:space-between; align-items:center;" onclick="viewHistory(${item.id})">
-      <div><div class="wordTitle">${item.title}</div><div class="wordMeaning">${item.type.toUpperCase()}</div></div>
+      <div>
+        <div class="wordTitle">${item.title}</div>
+        <div class="wordMeaning">${item.type.toUpperCase()} ${item.image ? '📸' : ''}</div>
+      </div>
       <div style="display:flex; gap:10px; align-items:center;">
+        <button class="actionBtnSmall green" onclick="restoreSession(event, ${item.id})" title="Restore Session">🔄</button>
         <button class="actionBtnSmall blue" onclick="quickDownload(event, ${item.id})" title="Download">📥</button>
         <button class="actionBtnSmall red" onclick="deleteHistoryItem(event, ${item.id})" title="Delete">🗑️</button>
       </div>
     </div>`).join('');
+}
+
+function restoreSession(event, id) {
+    event.stopPropagation();
+    const item = appHistory.find(i => i.id === id); if(!item) return;
+    closeHistory();
+    
+    if(item.type === 'math') {
+        showPage('dashboardPage');
+        if(item.image) {
+            capturedImage = item.image;
+            document.getElementById("mathStatus").innerHTML = "📸 <b style='color:#22c55e;'>Session Restored!</b> Ask another question.";
+            document.getElementById("viewBtn_math").disabled = false; document.getElementById("extractBtn_math").disabled = false;
+        }
+        document.getElementById("mathExtractedText").value = item.question;
+        document.getElementById("mathSolutionBox").innerHTML = item.answer.replace(/\n/g, '<br>');
+        if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
+        document.getElementById("speakMathBtn").style.display = "flex"; document.getElementById("explainMathBtn").style.display = "flex"; 
+    } 
+    else if (item.type === 'translation') {
+        showPage('imagePage');
+        if(item.image) {
+            capturedImage = item.image;
+            document.getElementById("imageStatus").innerHTML = "📸 <b style='color:#22c55e;'>Session Restored!</b> Extract again.";
+            document.getElementById("viewBtn_trans").disabled = false; document.getElementById("extractBtn_trans").disabled = false;
+        }
+        document.getElementById("imageExtractedText").value = item.question;
+        document.getElementById("translatedImageText").innerText = item.answer.replace(/<br>/g, '\n');
+    }
 }
 
 function viewHistory(id) {
@@ -549,39 +625,45 @@ function viewHistory(id) {
   if(window.MathJax) { MathJax.typesetClear([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); }
 }
 function closeHistory() { document.getElementById('historyModal').classList.remove('active'); closeTTS(); }
-function clearAllHistory() { if(!confirm("Clear ALL history?")) return; appHistory = []; localStorage.removeItem('aiHistory'); renderHistory(); }
-function deleteHistoryItem(event, id) { event.stopPropagation(); if(!confirm("Delete item?")) return; appHistory = appHistory.filter(i => i.id !== id); localStorage.setItem('aiHistory', JSON.stringify(appHistory)); renderHistory(); }
+function clearAllHistory() { if(!confirm("Clear ALL history?")) return; appHistory = []; saveHistorySafe(); renderHistory(); }
+function deleteHistoryItem(event, id) { event.stopPropagation(); if(!confirm("Delete item?")) return; appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); }
 function quickDownload(event, id) { event.stopPropagation(); const item = appHistory.find(i => i.id === id); if(!item) return; triggerFileDownload(item); }
 function downloadHistoryFile() { const item = appHistory.find(i => i.id === currentViewingHistoryId); if(!item) return; triggerFileDownload(item); }
-function triggerFileDownload(item) {
-  const content = `Title: ${item.title}\nType: ${item.type}\n\n--- QUESTION/INPUT ---\n${item.question}\n\n--- ANSWER/TRANSLATION ---\n${item.answer.replace(/<br>/g, '\n')}`;
-  const blob = new Blob([content], { type: "text/plain" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`; a.click();
+
+function cleanLatexForDownload(text) {
+    if(!text) return "";
+    let t = text.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, ''); 
+    t = t.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1 / $2)').replace(/\\sqrt{([^}]+)}/g, '√($1)'); 
+    t = t.replace(/\\times/g, 'x').replace(/\\cdot/g, '*').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ'); 
+    return t.replace(/\\/g, '').replace(/\$/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
-// --- MATH SOLVER (GEMINI EDITION WITH STRICT EXTRACTION & HINDI EXPLANATION) ---
+function triggerFileDownload(item) {
+  const cleanQ = cleanLatexForDownload(item.question); const cleanA = cleanLatexForDownload(item.answer);
+  const content = `Title: ${item.title}\nType: ${item.type}\n\n--- QUESTION/INPUT ---\n${cleanQ}\n\n--- ANSWER/TRANSLATION ---\n${cleanA}`;
+  const blob = new Blob([content], { type: "text/plain" }); const a = document.createElement("a"); 
+  a.href = URL.createObjectURL(blob); a.download = `AI_Pro_${item.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`; a.click();
+}
+
+// --- MATH SOLVER ---
 let lastMathSolution = "";
 async function extractSpecificMathQuestion() {
   if(!capturedImage) return alert("Please take a photo first.");
   const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract all the math questions";
   setStatusLoading("mathStatus", "Scanning image via Gemini Vision...");
   
-  const prompt = `You are a strict text extractor. 
-User Instruction: "${instruction}"
-
+  const prompt = `You are a strict text extractor. User Instruction: "${instruction}"
 CRITICAL RULES:
-1. Extract EXACTLY what the user asked for from the image. If they ask for 5, 6, and 7, extract all three.
+1. Extract EXACTLY what the user asked for from the image.
 2. DO NOT invent, change, or guess any numbers. 
 3. DO NOT solve the problems. Just output the questions.
 4. If the questions do not exist in the image, reply with: "Error: Could not find those questions in the image."`;
 
   try {
-    let finalQ = await callGeminiVision(capturedImage, prompt, 0); // Temperature 0 for strict accuracy
+    let finalQ = await callGeminiVision(capturedImage, prompt, 0); 
     document.getElementById("mathExtractedText").value = finalQ.replace(/[\*\$]/g, '').trim();
     document.getElementById("mathStatus").innerHTML = "✅ Found! Ready to solve.";
-  } catch(e) { 
-    document.getElementById("mathExtractedText").value = `Error: ${e.message}`; 
-    document.getElementById("mathStatus").innerHTML = "❌ Failed."; 
-  }
+  } catch(e) { document.getElementById("mathExtractedText").value = `Error: ${e.message}`; document.getElementById("mathStatus").innerHTML = "❌ Failed."; }
 }
 
 async function solveMath() {
@@ -596,7 +678,7 @@ async function solveMath() {
     lastMathSolution = sol.replace(/[\*&]/g, ''); 
     document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
     if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
-    saveToHistory('math', prob, lastMathSolution); 
+    saveToHistory('math', prob, lastMathSolution, capturedImage); 
     document.getElementById("speakMathBtn").style.display = "flex"; document.getElementById("explainMathBtn").style.display = "flex"; 
   } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
 }
@@ -620,8 +702,7 @@ async function processImageText(mode){
   setStatusLoading("imageStatus", "Extracting...");
   try {
     const rawText = await callGeminiVision(capturedImage, "Extract all the text exactly as written. No explanations.", 0);
-    document.getElementById("imageExtractedText").value = rawText.replace(/\*/g, '');
-    document.getElementById("imageStatus").innerHTML = "✅ Ready.";
+    document.getElementById("imageExtractedText").value = rawText.replace(/\*/g, ''); document.getElementById("imageStatus").innerHTML = "✅ Ready.";
   } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ Error."; }
 }
 
@@ -632,7 +713,7 @@ async function translateExtractedText(){
   try {
     let trans = await callGeminiText(null, `Translate to ${lang}. No markdown.\n\n${txt}`);
     trans = trans.replace(/\*/g, ''); document.getElementById("translatedImageText").innerText = trans;
-    drawTranslatedImageOnWhite(trans); saveToHistory('translation', txt, trans); getImageHardWords(txt);
+    drawTranslatedImageOnWhite(trans); saveToHistory('translation', txt, trans, capturedImage); getImageHardWords(txt);
     document.getElementById("speakImgTransBtn").style.display = "flex"; 
   } catch(e) { document.getElementById("translatedImageText").innerText = "Error: " + e.message; }
 }
@@ -653,7 +734,7 @@ async function getImageHardWords(text){
   }catch(e){ box.innerHTML = "Could not load."; }
 }
 
-// --- DOCUMENT Q&A ---
+// --- DOCUMENT Q&A (COMPRESSOR ENABLED) ---
 let qaImages = []; let qaContextText = "";
 function updateQaImageCount() {
     document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`;
@@ -664,7 +745,7 @@ function clearQaImages() { qaImages = []; updateQaImageCount(); document.getElem
 async function handleMultiUpload(e) {
   const files = e.target.files;
   for(let i=0; i<files.length; i++) {
-    const base64 = await new Promise(res => { let reader = new FileReader(); reader.onload = () => res(reader.result); reader.readAsDataURL(files[i]); });
+    const base64 = await compressImageFile(files[i]);
     qaImages.push(base64);
   }
   updateQaImageCount();
@@ -675,9 +756,11 @@ async function extractMultiImages() {
   setStatusLoading("qaStatus", "Reading pages via Gemini Vision..."); qaContextText = "";
   for(let i=0; i<qaImages.length; i++) {
     try {
-      const rawText = await callGeminiVision(qaImages[i], "Extract all the text exactly as written. No explanations.", 0);
+      const rawText = await callGeminiVision(qaImages[i], "Read ALL text in this image. If it is a textbook, document, or handwritten page, extract all readable content exactly as written. If the image is blurry or has no text, describe what you see.", 0);
       if(rawText) qaContextText += `\n--- PAGE ${i+1} ---\n` + rawText;
-    } catch(e) { console.log(e); }
+    } catch(e) { 
+      console.log(e); qaContextText += `\n--- PAGE ${i+1} ERROR ---\nCould not read: ${e.message}\n`;
+    }
   }
   document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "...\n(Full text loaded in background)" : "No text found.";
   document.getElementById('qaStatus').innerText = "✅ All pages read! Ask your questions.";
@@ -703,7 +786,7 @@ async function runTranslation(){
   }catch(e){}
 }
 
-// --- CAMERA UTILS ---
+// --- CAMERA UTILS (WITH COMPRESSION) ---
 const cameraModal = document.getElementById("cameraModal"), video = document.getElementById("cameraVideo"), captureCanvas = document.getElementById("captureCanvas");
 let currentStream = null, capturedImage = null, currentFacing = "environment", flashEnabled = false;
 
@@ -729,8 +812,12 @@ async function toggleFlash() {
 }
 
 function capturePhoto(){ 
-    captureCanvas.width = video.videoWidth; captureCanvas.height = video.videoHeight; 
-    captureCanvas.getContext("2d").drawImage(video, 0, 0); capturedImage = captureCanvas.toDataURL("image/jpeg"); 
+    let w = video.videoWidth; let h = video.videoHeight;
+    if(w > 1500) { h *= 1500/w; w = 1500; }
+    captureCanvas.width = w; captureCanvas.height = h; 
+    captureCanvas.getContext("2d").drawImage(video, 0, 0, w, h); 
+    capturedImage = captureCanvas.toDataURL("image/jpeg", 0.7); 
+    
     if(currentMode === 'qa') { qaImages.push(capturedImage); updateQaImageCount(); } 
     else if (currentMode === 'math') { document.getElementById("mathStatus").innerText="📸 Photo Captured!"; document.getElementById("viewBtn_math").disabled = false; document.getElementById("extractBtn_math").disabled = false; } 
     else if (currentMode === 'translate') { document.getElementById("imageStatus").innerText="📸 Photo Captured!"; document.getElementById("viewBtn_trans").disabled = false; document.getElementById("extractBtn_trans").disabled = false; }
