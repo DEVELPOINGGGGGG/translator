@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Maths solver & Translator</title>
+<title>AI Pro Suite - Gemini Powered</title>
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0f172a">
@@ -11,32 +11,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script>
-  MathJax = {
-    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] }
-  };
+  MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
 </script>
 <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <style>
 /* =========================
-   AI PRO SUITE - REDESIGN V22 (Anti-Spam & Hard API Limits)
+   AI PRO SUITE - REDESIGN V24 (Premium Chat UI)
 ========================= */
-
 *{ margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
-
-:root{
-  --bg:#0f172a; --card:rgba(30,41,59,.8); --card2:rgba(15,23,42,.7);
-  --accent:#3b82f6; --green:#22c55e; --yellow:#facc15; --red:#ef4444;
-  --purple:#a855f7; --text:#ffffff; --muted:#94a3b8;
-}
-
-body{
-  background: linear-gradient(-45deg, #020617, #0f172a, #172033, #081124);
-  background-size: 400% 400%; animation: gradientBG 15s ease infinite;
-  color:white; height:100vh; height:100dvh; overflow:hidden;
-}
-
+:root{ --bg:#0f172a; --card:rgba(30,41,59,.8); --card2:rgba(15,23,42,.7); --accent:#3b82f6; --green:#22c55e; --yellow:#facc15; --red:#ef4444; --purple:#a855f7; --text:#ffffff; --muted:#94a3b8; }
+body{ background: linear-gradient(-45deg, #020617, #0f172a, #172033, #081124); background-size: 400% 400%; animation: gradientBG 15s ease infinite; color:white; height:100vh; height:100dvh; overflow:hidden; }
 @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 ::-webkit-scrollbar{ width:4px; } ::-webkit-scrollbar-thumb{ background:#334155; border-radius:20px; }
 
@@ -47,10 +33,7 @@ body{
 .appTitle{ font-size:20px; font-weight:800; margin-left:15px; background: linear-gradient(90deg, #60a5fa, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
 
 .apiTracker { position:fixed; top:70px; left:0; right:0; height:35px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); z-index:99; display:flex; justify-content:space-evenly; align-items:center; font-size:13px; font-weight:600; color:#94a3b8; border-bottom:1px solid rgba(255,255,255,0.05); box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
-.api-val { font-weight: 800; font-size: 14px;}
-.api-val.timer { color: #60a5fa; }
-.api-val.vision { color: #c084fc; }
-.api-val.text { color: #22c55e; }
+.api-val { font-weight: 800; font-size: 14px;} .api-val.timer { color: #60a5fa; } .api-val.vision { color: #c084fc; } .api-val.text { color: #22c55e; }
 
 /* SIDEBAR */
 .sidebar{ position:fixed; top:0; left:-300px; width:280px; height:100%; background:#020617; z-index:999; transition:.4s cubic-bezier(0.4, 0, 0.2, 1); padding-top:110px; box-shadow: 5px 0 30px rgba(0,0,0,.8); }
@@ -62,10 +45,22 @@ body{
 .overlay.active{ display:block; animation: fadeIn 0.3s; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* PAGES & DASHBOARD GRID */
+/* PAGES & STANDARD LAYOUT */
 .page{ display:none; position:absolute; top:105px; left:0; right:0; bottom:0; overflow-y:auto; padding:20px; scroll-behavior:smooth; padding-bottom: 120px; }
 .page.active{ display:block; animation:fadePage .4s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadePage{ from{ opacity:0; transform:translateY(20px); filter: blur(4px); } to{ opacity:1; transform:translateY(0); filter: blur(0); } }
+
+/* NEW CHAT UI LAYOUT (For Search & Math) */
+.chat-page-layout { display: flex !important; flex-direction: column; padding: 0 !important; overflow: hidden !important; }
+.chat-scroll-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 40px; scroll-behavior: smooth; }
+.chat-input-area { padding: 15px 20px; background: rgba(15,23,42,0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.05); position: relative; padding-bottom: max(15px, env(safe-area-inset-bottom)); }
+.chat-input-wrapper { display: flex; align-items: flex-end; background: rgba(30,41,59,0.8); border-radius: 24px; padding: 8px 12px; gap: 10px; border: 1px solid rgba(255,255,255,0.1); }
+.chat-input-wrapper textarea { margin: 0; min-height: 40px; max-height: 120px; height: 40px; border: none; background: transparent; box-shadow: none; padding: 10px 5px; flex: 1; resize: none; overflow-y: auto; font-size: 15px; color: white; outline: none; }
+.chat-action-btn { background: rgba(255,255,255,0.05); border: none; color: white; min-width: 40px; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; font-size: 18px; margin-bottom: 2px; }
+.chat-action-btn:hover { background: rgba(255,255,255,0.15); }
+.chat-action-btn.send { background: var(--accent); color: white; }
+.image-preview-chip { display: none; position: absolute; top: -70px; left: 20px; width: 60px; height: 60px; border-radius: 12px; border: 2px solid var(--accent); background-size: cover; background-position: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 10; }
+.image-preview-close { position: absolute; top: -8px; right: -8px; background: var(--red); color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
 
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
 .dash-card { background: linear-gradient(145deg, rgba(30,41,59,0.9), rgba(15,23,42,0.8)); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 25px 15px; text-align: center; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; overflow: hidden; }
@@ -75,27 +70,18 @@ body{
 .dash-icon { font-size: 45px; margin-bottom: 10px; display: inline-block; animation: float 3s ease-in-out infinite; }
 .dash-title { font-weight: 700; font-size: 16px; color: #e2e8f0; }
 
-/* CARDS & INPUTS */
 .card{ background:linear-gradient(145deg, var(--card), var(--card2)); backdrop-filter: blur(15px); border-radius:24px; padding:20px; margin-bottom:20px; border:1px solid rgba(255,255,255,.05); box-shadow:0 15px 35px rgba(0,0,0,.3); transition: transform 0.3s; }
 .cardTitle{ font-size:19px; font-weight:700; margin-bottom:8px; color: #bfdbfe; }
 .cardSub{ color:var(--muted); font-size:14px; margin-bottom: 15px; line-height: 1.4; }
 
-textarea, select, input[type="text"], input[type="file"] { width:100%; padding:15px; margin-bottom:12px; border:2px solid rgba(255,255,255,.08); outline:none; background:rgba(15,23,42,.9); color:white; border-radius:18px; transition: 0.3s; font-size: 15px; }
-textarea { min-height:130px; resize:vertical; }
-textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(59,130,246,0.2); }
+textarea.standard, select, input[type="text"], input[type="file"] { width:100%; padding:15px; margin-bottom:12px; border:2px solid rgba(255,255,255,.08); outline:none; background:rgba(15,23,42,.9); color:white; border-radius:18px; transition: 0.3s; font-size: 15px; }
+textarea.standard { min-height:130px; resize:vertical; }
+textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(59,130,246,0.2); }
 
-/* FIXED SCROLL FOR LONG MATH */
-.outputBox, .meaningBox { 
-  margin-top:12px; background:rgba(2,6,23,.7); border: 1px solid rgba(255,255,255,.05); 
-  border-radius:20px; padding:20px; min-height:100px; 
-  white-space:pre-wrap; word-wrap:break-word; overflow-x: auto; 
-  max-width: 100%; font-size: 15px; line-height: 1.6; -webkit-overflow-scrolling: touch; 
-}
+.outputBox, .meaningBox { margin-top:12px; background:rgba(2,6,23,.7); border: 1px solid rgba(255,255,255,.05); border-radius:20px; padding:20px; min-height:80px; white-space:pre-wrap; word-wrap:break-word; overflow-x: auto; max-width: 100%; font-size: 15px; line-height: 1.6; -webkit-overflow-scrolling: touch; }
 .outputBox mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; padding: 5px 0; -webkit-overflow-scrolling: touch; }
-
 .tts-highlight { background-color: rgba(96, 165, 250, 0.4); border-radius: 4px; padding: 0 2px; transition: background-color 0.1s; }
 
-/* BUTTONS & DISABLED STATE */
 .btn{ width:100%; padding:16px; border:none; border-radius:18px; font-weight:700; font-size:16px; cursor:pointer; margin-top:10px; box-shadow:0 8px 20px rgba(0,0,0,.3); transition:all .2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; justify-content: center; align-items: center; gap: 8px; }
 .btn:active{ transform:scale(.95); }
 .btn:hover:not(:disabled){ filter:brightness(1.15); box-shadow:0 12px 25px rgba(0,0,0,.5); }
@@ -112,20 +98,18 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* MIC BUTTON */
 .voiceHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .micBtn { width: 55px; height: 55px; border-radius: 50%; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; font-size: 22px; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); transition: all 0.3s; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
 .micBtn.recording { animation: pulseRed 1.2s infinite; background: #b91c1c; }
 @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-/* BOUNDED FLOATING TTS PLAYER */
 #ttsPlayer { position: fixed; bottom: 30px; right: 20px; background: linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98)); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 50px; padding: 12px 25px; display: none; align-items: center; gap: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.8); z-index: 9999; cursor: grab; user-select: none; touch-action: none; }
 #ttsPlayer:active { cursor: grabbing; }
 .ttsBtn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; transition: 0.2s; }
 .ttsBtn:hover { transform: scale(1.15); color: #60a5fa; }
 .ttsIndicator { font-size: 15px; font-weight: 700; color: #60a5fa; margin-right: 5px; pointer-events: none;}
 
-/* MODALS & CAMERA */
+/* MODALS */
 .cameraModal{ position:fixed; inset:0; background:black; display:none; z-index:5000; }
 .cameraModal.active{ display:flex; flex-direction:column; animation: fadeIn 0.3s; }
 .cameraHeader{ height:70px; display:flex; justify-content:space-between; align-items:center; padding:0 20px; background:linear-gradient(to bottom, rgba(0,0,0,.9), transparent); position:absolute; top:0; left:0; right:0; z-index:2; }
@@ -142,12 +126,10 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .closeBtn { width:45px; height:45px; border:none; border-radius:50%; background:rgba(255,255,255,0.15); color:white; font-size:20px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center;}
 .closeBtn:hover { background:rgba(255,255,255,0.3); }
 
-/* HISTORY MODAL */
 .infoModal .card { width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; padding: 20px; margin: 0; }
 .hist-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; margin-top: 15px; padding-right: 5px; -webkit-overflow-scrolling: touch; }
 .hist-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
 
-/* HISTORY LIST */
 .status{ margin-top:12px; padding:15px; border-radius:16px; background:rgba(0,0,0,0.4); font-weight:600; text-align:center; border: 1px solid rgba(255,255,255,0.1); color: #93c5fd; display: flex; justify-content: center; align-items: center; }
 .wordItem{ background:rgba(15,23,42,.6); padding:18px; border-radius:18px; margin-bottom:12px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: all 0.2s; }
 .wordItem:hover { background:rgba(30,41,59,.8); border: 1px solid rgba(96,165,250,.4); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
@@ -163,10 +145,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .actionBtnSmall.green { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4); }
 .actionBtnSmall.green:hover { background: rgba(34, 197, 94, 0.9); }
 
-@media(min-width:768px){
-  .page{ max-width:800px; margin:auto; left:50%; transform:translateX(-50%); }
-  .topbar, .apiTracker{ justify-content:center; gap: 40px; }
-}
+@media(min-width:768px){ .page{ max-width:800px; margin:auto; left:50%; transform:translateX(-50%); } .topbar, .apiTracker{ justify-content:center; gap: 40px; } }
 </style>
 </head>
 <body>
@@ -175,12 +154,12 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">Maths Solver & Translator</div>
+  <div class="appTitle">AI Pro Suite</div>
 </div>
 <div class="apiTracker">
-    <div>⏱️ Resets: <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ Vision: <span id="apiVision" class="api-val vision">0</span>/15</div>
-    <div>📝 Text: <span id="apiText" class="api-val text">0</span>/15</div>
+    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
 <div id="ttsPlayer">
@@ -192,10 +171,11 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 
 <div class="sidebar" id="sidebar">
   <button onclick="showPage('homePage')">🏠 Dashboard</button>
-  <button onclick="showPage('dashboardPage')">🧮 Math Solver</button>
+  <button onclick="showPage('searchPage')">🔎 Deep Search (Groq)</button>
+  <button onclick="showPage('dashboardPage')">🧮 Math Solver (Gemini)</button>
   <button onclick="showPage('translatorPage')">🎙️ Text Translator</button>
   <button onclick="showPage('imagePage')">🖼️ Image Translator</button>
-  <button onclick="showPage('qaPage')">📚 Document Q&A (Multi-Image)</button>
+  <button onclick="showPage('qaPage')">📚 Document Q&A</button>
   <button onclick="showPage('historyPage')">🕒 History & Downloads</button>
 </div>
 
@@ -204,8 +184,11 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
     <h1 style="font-size: 28px; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome to AI Pro Suite</h1>
     <p style="color: var(--muted); margin-top: 10px;">Select a tool below to get started</p>
   </div>
-
   <div class="dashboard-grid">
+    <div class="dash-card" onclick="showPage('searchPage')">
+      <div class="dash-icon">🔎</div>
+      <div class="dash-title">Deep Search</div>
+    </div>
     <div class="dash-card" onclick="showPage('dashboardPage')">
       <div class="dash-icon">🧮</div>
       <div class="dash-title">Math Solver</div>
@@ -225,126 +208,105 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   </div>
 </div>
 
-<div class="page" id="dashboardPage">
-  <div class="card" style="background:linear-gradient(135deg,#0ea5e9,#3b82f6,#8b5cf6); text-align: center; border: none;">
-    <h1 style="font-size: 24px;">🧮 Smart Math Solver</h1>
-    <p style="font-size: 14px; opacity: 0.9;">Powered by Gemini. 9th-grade level Hindi explanations.</p>
-  </div>
-
-  <div class="card">
-    <div class="cardTitle">Step 1: Capture Document</div>
-    <div class="btn-group">
-      <button class="btn green" onclick="openCamera('math')">📷 Camera</button>
-      <button class="btn blue" id="viewBtn_math" onclick="viewPhoto('math')" disabled>🖼 View</button>
+<div class="page chat-page-layout" id="searchPage">
+  <div class="chat-scroll-area" id="searchScrollArea">
+    <div class="card" style="background:linear-gradient(135deg,#10b981,#059669); border:none; text-align:center;">
+        <h1 style="font-size: 24px;">🔎 Deep Search AI</h1>
+        <p style="font-size: 14px; opacity: 0.9;">Powered by Groq. Lightning fast, zero limits.</p>
     </div>
-    <div class="status" id="mathStatus">No Photo Selected</div>
+    <div class="status" id="searchStatus" style="display:none; margin-bottom:15px;"></div>
+    <div class="outputBox" id="searchOutput" style="display:none; border:none; background:transparent;"></div>
+    <div class="btn-group" id="searchActionBtns" style="display:none; margin-top:15px;">
+        <button class="btn blue" onclick="speakText('searchOutput')">🔊 Speak Answer</button>
+    </div>
   </div>
-
-  <div class="card">
-    <div class="cardTitle">Step 2: Find Question</div>
-    <div class="cardSub">Type the numbers you want (e.g., 'Solve 5, 6, and 7')</div>
-    <input type="text" id="mathInstructionInput" placeholder="e.g., 'Extract question 4'">
-    <button class="btn purple" id="extractBtn_math" onclick="extractSpecificMathQuestion()" disabled>🔍 Extract Clean Text</button>
-    <textarea id="mathExtractedText" placeholder="Clean question will appear here..."></textarea>
+  <div class="chat-input-area">
+    <div class="chat-input-wrapper">
+        <textarea id="searchInput" placeholder="Ask Groq anything... (Press Enter to send)" oninput="autoResize(this)"></textarea>
+        <button class="chat-action-btn send" onclick="runGroqSearch()">↑</button>
+    </div>
   </div>
+</div>
 
-  <div class="card">
-    <div class="cardTitle">Step 3: Solution</div>
-    <button class="btn orange" onclick="solveMath()">✨ Solve Problem</button>
-    <div class="outputBox" id="mathSolutionBox">Waiting for problem...</div>
-    <div class="btn-group">
-        <button class="btn green" id="speakMathBtn" style="display:none;" onclick="speakText('mathSolutionBox')">🔊 Speak</button>
-        <button class="btn blue" id="explainMathBtn" style="display:none;" onclick="explainMoreMath()">💡 Explain More</button>
+<div class="page chat-page-layout" id="dashboardPage">
+  <div class="chat-scroll-area" id="mathScrollArea">
+    <div class="card" style="background:linear-gradient(135deg,#0ea5e9,#3b82f6,#8b5cf6); text-align: center; border: none;">
+        <h1 style="font-size: 24px;">🧮 Smart Math Solver</h1>
+        <p style="font-size: 14px; opacity: 0.9;">Powered by Gemini Vision.</p>
+    </div>
+    <div class="status" id="mathStatus" style="display:none; margin-bottom:15px;"></div>
+    <div class="outputBox" id="mathSolutionBox" style="display:none; border:none; background:transparent;"></div>
+    <div class="btn-group" id="mathActionBtns" style="display:none; margin-top:15px;">
+        <button class="btn green" onclick="speakText('mathSolutionBox')">🔊 Speak</button>
+        <button class="btn blue" onclick="explainMoreMath()">💡 Explain More</button>
+    </div>
+  </div>
+  <div class="chat-input-area">
+    <div class="image-preview-chip" id="mathPreviewChip">
+        <div class="image-preview-close" onclick="clearMathImage()">✕</div>
+    </div>
+    <div class="chat-input-wrapper">
+        <button class="chat-action-btn" onclick="openCamera('math')" title="Take Photo">➕</button>
+        <textarea id="mathInstructionInput" placeholder="Ask math question or attach image... (Press Enter)" oninput="autoResize(this)"></textarea>
+        <button class="chat-action-btn send" onclick="executeMathFlow()">↑</button>
     </div>
   </div>
 </div>
 
 <div class="page" id="translatorPage">
   <div class="card">
-    <div class="voiceHeader">
-      <div><div class="cardTitle">Voice & Text</div></div>
-      <button class="micBtn" id="micBtn" onclick="toggleRecording()">🎤</button>
-    </div>
+    <div class="voiceHeader"><div><div class="cardTitle">Voice & Text</div></div><button class="micBtn" id="micBtn" onclick="toggleRecording()">🎤</button></div>
     <select id="voiceSourceLang"><option value="hi-IN">Speak in: Hindi</option><option value="en-US">Speak in: English</option></select>
-    <textarea id="inputText" placeholder="Speak or type here..."></textarea>
+    <textarea class="standard" id="inputText" placeholder="Speak or type here..."></textarea>
     <div class="cardTitle" style="margin-top: 15px;">Translate Into:</div>
-    <select id="targetLang">
-      <option>Hindi</option><option>English</option><option>French</option><option>Spanish</option>
-    </select>
+    <select id="targetLang"><option>Hindi</option><option>English</option><option>French</option><option>Spanish</option></select>
     <button class="btn blue" onclick="runTranslation()">🌍 Convert</button>
     <div class="outputBox" id="translatedText">Translation appears here...</div>
     <button class="btn green" id="speakTransBtn" style="display:none;" onclick="speakText('translatedText')">🔊 Speak Translation</button>
   </div>
-  <div class="card">
-    <div class="cardTitle">Word Meanings</div>
-    <div class="meaningBox" id="meaningBox">Meanings appear here...</div>
-  </div>
+  <div class="card"><div class="cardTitle">Word Meanings</div><div class="meaningBox" id="meaningBox">Meanings appear here...</div></div>
 </div>
 
 <div class="page" id="imagePage">
   <div class="card">
     <div class="cardTitle">Step 1: Capture Text</div>
-    <div class="btn-group">
-      <button class="btn green" onclick="openCamera('translate')">📷 Take Photo</button>
-      <button class="btn blue" id="viewBtn_trans" onclick="viewPhoto('translate')" disabled>🖼 View Photo</button>
-    </div>
+    <div class="btn-group"><button class="btn green" onclick="openCamera('translate')">📷 Take Photo</button><button class="btn blue" id="viewBtn_trans" onclick="viewPhoto('translate')" disabled>🖼 View</button></div>
     <button class="btn purple" id="extractBtn_trans" onclick="processImageText('translate')" disabled>🔍 Extract Text</button>
     <div class="status" id="imageStatus">No Photo Selected</div>
   </div>
-
   <div class="card">
     <div class="cardTitle">Step 2: Edit & Translate</div>
-    <textarea id="imageExtractedText" placeholder="Extracted text..."></textarea>
+    <textarea class="standard" id="imageExtractedText" placeholder="Extracted text..."></textarea>
     <select id="imageTargetLang"><option>Hindi</option><option>English</option><option>French</option></select>
     <button class="btn yellow" onclick="translateExtractedText()">🌍 Translate Text</button>
-    
     <div class="cardTitle" style="margin-top: 15px; font-size: 16px;">Translation Output:</div>
     <div class="outputBox" id="translatedImageText">Waiting for translation...</div>
-    
-    <div class="btn-group">
-      <button class="btn green" id="speakImgTransBtn" style="display:none;" onclick="speakText('translatedImageText')">🔊 Speak</button>
-      <button class="btn blue" id="downloadBtn" onclick="downloadImage()" style="display:none;">💾 Download Image</button>
-    </div>
+    <div class="btn-group"><button class="btn green" id="speakImgTransBtn" style="display:none;" onclick="speakText('translatedImageText')">🔊 Speak</button><button class="btn blue" id="downloadBtn" onclick="downloadImage()" style="display:none;">💾 Download</button></div>
     <canvas id="canvas" style="display:none; width: 100%; border-radius: 18px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.2);"></canvas>
   </div>
-
-  <div class="card">
-    <div class="cardTitle">Hard Words Meaning</div>
-    <div class="wordList" id="hardWords">No data yet.</div>
-  </div>
+  <div class="card"><div class="cardTitle">Hard Words Meaning</div><div class="wordList" id="hardWords">No data yet.</div></div>
 </div>
 
 <div class="page" id="qaPage">
   <div class="card" style="background:linear-gradient(135deg,#f59e0b,#ef4444); border:none;">
     <h1 style="font-size: 24px; text-align: center;">📚 Document Q&A</h1>
-    <p style="font-size: 14px; text-align: center; opacity: 0.9;">Snap or upload multiple pages of a chapter and ask questions.</p>
+    <p style="font-size: 14px; text-align: center; opacity: 0.9;">Snap multiple pages of a chapter and ask questions.</p>
   </div>
-
   <div class="card">
     <div class="cardTitle">Step 1: Add Pages</div>
-    <div class="cardSub">Take photos of the pages or upload them directly.</div>
-    
-    <div class="btn-group" style="margin-bottom: 15px;">
-      <button class="btn green" onclick="openCamera('qa')">📷 Take Photo</button>
-      <button class="btn blue" onclick="document.getElementById('multiImageUpload').click()">📁 Upload Files</button>
-    </div>
+    <div class="btn-group" style="margin-bottom: 15px;"><button class="btn green" onclick="openCamera('qa')">📷 Take Photo</button><button class="btn blue" onclick="document.getElementById('multiImageUpload').click()">📁 Upload</button></div>
     <input type="file" id="multiImageUpload" accept="image/*" multiple onchange="handleMultiUpload(event)" style="display:none;">
-
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="fileList" id="fileListDisplay">0 pages ready</div>
-        <button class="btn red" style="width: auto; padding: 6px 16px; margin-top:0; font-size:13px;" onclick="clearQaImages()">🗑️ Clear</button>
+        <div class="fileList" id="fileListDisplay">0 pages ready</div><button class="btn red" style="width: auto; padding: 6px 16px; margin-top:0; font-size:13px;" onclick="clearQaImages()">🗑️ Clear</button>
     </div>
-
     <button class="btn purple" id="extractBtn_qa" onclick="extractMultiImages()" style="margin-top: 15px;" disabled>📄 Read All Pages</button>
     <div class="status" id="qaStatus">Ready</div>
   </div>
-
   <div class="card">
     <div class="cardTitle">Step 2: Ask Anything</div>
-    <div class="outputBox" id="qaContextBox" style="max-height: 150px; font-size: 12px; color: var(--muted);">Extracted text will appear here as context...</div>
-    <textarea id="qaQuestionInput" placeholder="Ask a question about the uploaded pages... e.g. 'Summarize this chapter' or 'What is defined on page 2?'" style="margin-top: 15px; min-height: 80px;"></textarea>
+    <div class="outputBox" id="qaContextBox" style="max-height: 150px; font-size: 12px; color: var(--muted);">Context will appear here...</div>
+    <textarea class="standard" id="qaQuestionInput" placeholder="Ask a question..." style="margin-top: 15px; min-height: 80px;"></textarea>
     <button class="btn blue" onclick="askDocument()">🧠 Answer Question</button>
-    
     <div class="outputBox" id="qaAnswerBox">Answer will appear here...</div>
     <button class="btn green" id="speakQaBtn" style="display:none;" onclick="speakText('qaAnswerBox')">🔊 Speak Answer</button>
   </div>
@@ -371,9 +333,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 </div>
 
 <div class="photoViewer" id="photoViewer">
-  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
-      <button class="closeBtn" onclick="closePreview()">✕</button>
-  </div>
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;"><button class="closeBtn" onclick="closePreview()">✕</button></div>
   <img id="previewImage">
   <div class="photoViewerControls" id="photoViewerControls"></div>
 </div>
@@ -384,470 +344,259 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
       <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0;">Title</div>
       <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0;">✕</button>
     </div>
-    <div class="hist-scroll-area">
-        <div class="cardSub" style="margin-top: 5px;">Original Request:</div>
-        <div class="outputBox" id="histQuestion"></div>
-        <div class="cardSub" style="margin-top: 15px;">Solution:</div>
-        <div class="outputBox" id="histAnswer"></div>
-    </div>
-    <div class="hist-footer">
-        <div class="btn-group" style="margin-top: 0;">
-          <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button>
-          <button class="btn blue" onclick="downloadHistoryFile()">💾 Download TXT</button>
-        </div>
-    </div>
+    <div class="hist-scroll-area"><div class="cardSub" style="margin-top: 5px;">Original Request:</div><div class="outputBox" id="histQuestion"></div><div class="cardSub" style="margin-top: 15px;">Solution:</div><div class="outputBox" id="histAnswer"></div></div>
+    <div class="hist-footer"><div class="btn-group" style="margin-top: 0;"><button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button><button class="btn blue" onclick="downloadHistoryFile()">💾 Download</button></div></div>
   </div>
 </div>
 
 <canvas id="captureCanvas" style="display:none;"></canvas>
 
 <script>
-// --- GLOBAL ERROR CATCH & LIVE API TRACKER ---
+// --- CHAT UI AUTO-RESIZE & SUBMIT ---
+function autoResize(textarea) {
+    textarea.style.height = '40px';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
+document.getElementById("searchInput").addEventListener("keypress", function(e) {
+    if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runGroqSearch(); }
+});
+document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
+    if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
+});
+
+// --- GLOBAL CATCH & API TRACKER ---
 let appHistory = [];
 try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } 
-catch(e) { console.error("History reset due to data error"); appHistory = []; }
+catch(e) { console.error("History error"); appHistory = []; }
 
-let apiTime = 60;
-let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
-let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
-let isProcessing = false; // The Global Spam Lock
+let apiTime = 60; let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'); let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
+let isProcessing = false;
 
 setInterval(() => {
     apiTime--;
-    if(apiTime <= 0) {
-        apiTime = 60; visionReqs = 0; textReqs = 0;
-        localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0');
-    }
-    document.getElementById('apiTimer').innerText = apiTime + 's';
-    document.getElementById('apiVision').innerText = visionReqs;
-    document.getElementById('apiText').innerText = textReqs;
+    if(apiTime <= 0) { apiTime = 60; visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); }
+    document.getElementById('apiTimer').innerText = apiTime + 's'; document.getElementById('apiVision').innerText = visionReqs; document.getElementById('apiText').innerText = textReqs;
 }, 1000);
 
 function trackVision() { visionReqs++; localStorage.setItem('visionReqs', visionReqs); document.getElementById('apiVision').innerText = visionReqs; }
 function trackText() { textReqs++; localStorage.setItem('textReqs', textReqs); document.getElementById('apiText').innerText = textReqs; }
+function setStatusLoading(elementId, text) { document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`; document.getElementById(elementId).style.display = "flex"; }
 
-// --- UI LOADING HELPER ---
-function setStatusLoading(elementId, text) { document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`; }
-
-// --- CORE GEMINI API CALLS (WITH HARD LOCKS & ANTI-SPAM) ---
+// --- CORE APIs ---
 async function callGeminiText(systemPrompt, userPrompt, temp = 0) {
-  if (textReqs >= 15) throw new Error("⏳ Text API Limit Reached! Please wait for the timer to reset.");
-  if (isProcessing) throw new Error("⏳ Please wait for the current AI request to finish.");
-  isProcessing = true;
-  trackText();
-  
+  if (textReqs >= 20) throw new Error("⏳ Text Limit Reached! Wait for timer.");
+  if (isProcessing) throw new Error("⏳ AI is already processing.");
+  isProcessing = true; trackText();
   try {
-      const res = await fetch("/api/gemini-text", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemPrompt, userPrompt, temperature: temp })
-      });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.error || "Gemini Text API Error");
-      isProcessing = false;
-      return data.text;
+      const res = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemPrompt, userPrompt, temperature: temp }) });
+      const data = await res.json(); if(!res.ok) throw new Error(data.error); isProcessing = false; return data.text;
   } catch(e) { isProcessing = false; throw e; }
 }
 
 async function callGeminiVision(imageBase64, prompt, temp = 0) {
-  if (visionReqs >= 15) throw new Error("⏳ Vision Limit Reached! Please wait for the timer to reset.");
-  if (isProcessing) throw new Error("⏳ Please wait for the current AI request to finish.");
-  isProcessing = true;
-  trackVision();
-  
+  if (visionReqs >= 20) throw new Error("⏳ Vision Limit Reached! Wait for timer.");
+  if (isProcessing) throw new Error("⏳ AI is already processing.");
+  isProcessing = true; trackVision();
   try {
-      const res = await fetch("/api/gemini-vision", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64, prompt, temperature: temp })
-      });
-      const data = await res.json();
-      if(!res.ok) throw new Error(data.error || "Gemini Vision API Error");
-      isProcessing = false;
-      return data.text;
+      const res = await fetch("/api/gemini-vision", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64, prompt, temperature: temp }) });
+      const data = await res.json(); if(!res.ok) throw new Error(data.error); isProcessing = false; return data.text;
   } catch(e) { isProcessing = false; throw e; }
 }
 
-// --- IMAGE AUTO-COMPRESSOR ---
-function compressImageFile(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas'); const MAX_WIDTH = 1500; const MAX_HEIGHT = 1500;
-            let width = img.width; let height = img.height;
-            if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-            else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-            canvas.width = width; canvas.height = height; const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL("image/jpeg", 0.7)); 
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-// --- FLOATING DRAGGABLE TTS PLAYER ---
-const ttsPlayer = document.getElementById('ttsPlayer');
-let ttsUtterance = null; let isPaused = false; let isDragging = false; let initialX, initialY;
-
-ttsPlayer.addEventListener("touchstart", dragStart, {passive: false}); ttsPlayer.addEventListener("touchend", dragEnd, false);
-ttsPlayer.addEventListener("touchmove", drag, {passive: false}); ttsPlayer.addEventListener("mousedown", dragStart, false);
-window.addEventListener("mouseup", dragEnd, false); window.addEventListener("mousemove", drag, false);
-
-function dragStart(e) {
-  if (e.target.closest('.ttsBtn')) return; 
-  let rect = ttsPlayer.getBoundingClientRect();
-  initialX = (e.type === "touchstart" ? e.touches[0].clientX : e.clientX) - rect.left;
-  initialY = (e.type === "touchstart" ? e.touches[0].clientY : e.clientY) - rect.top;
-  if (e.target === ttsPlayer || ttsPlayer.contains(e.target)) isDragging = true;
-}
-function dragEnd() { isDragging = false; }
-function drag(e) {
-  if (isDragging) {
-    e.preventDefault(); let clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX; let clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
-    let newX = clientX - initialX; let newY = clientY - initialY;
-    let maxX = window.innerWidth - ttsPlayer.offsetWidth; let maxY = window.innerHeight - ttsPlayer.offsetHeight;
-    if(newX < 0) newX = 0; if(newX > maxX) newX = maxX; if(newY < 0) newY = 0; if(newY > maxY) newY = maxY;
-    ttsPlayer.style.left = newX + "px"; ttsPlayer.style.top = newY + "px"; ttsPlayer.style.right = "auto"; ttsPlayer.style.bottom = "auto"; ttsPlayer.style.transform = "none";
-  }
-}
-
-// --- TEXT TO SPEECH LOGIC ---
-let currentSpeakingElement = null;
-function speakText(elementId) {
-  const el = document.getElementById(elementId); if(!el) return;
-  let text = el.innerText.replace(/<[^>]*>?/gm, '').replace(/[\$\\]/g, ' ').replace(/\*\*/g, '').replace(/&&/g, ' ').replace(/[\(\)\[\]\{\}]/g, ' bracket '); 
-  window.speechSynthesis.cancel(); ttsUtterance = new SpeechSynthesisUtterance(text); currentSpeakingElement = el;
-  el.style.border = "2px solid var(--accent)"; el.style.boxShadow = "0 0 15px rgba(59,130,246,0.5)";
-  
-  ttsUtterance.onboundary = function(event) {
-    if(event.name === 'word' && !el.querySelector('mjx-container')) {
-        let charIndex = event.charIndex; let wordLength = event.charLength;
-        let originalHTML = el.dataset.originalHtml || el.innerHTML; if(!el.dataset.originalHtml) el.dataset.originalHtml = originalHTML;
-        let before = text.slice(0, charIndex); let word = text.slice(charIndex, charIndex + wordLength); let after = text.slice(charIndex + wordLength);
-        el.innerHTML = before + `<span class="tts-highlight">${word}</span>` + after;
-    }
-  };
-
-  ttsUtterance.onend = () => { document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); };
-  window.speechSynthesis.speak(ttsUtterance); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; ttsPlayer.style.display = 'flex';
-}
-
-function resetHighlight() {
-    if(currentSpeakingElement) {
-        currentSpeakingElement.style.border = "1px solid rgba(255,255,255,.05)"; currentSpeakingElement.style.boxShadow = "none";
-        if(currentSpeakingElement.dataset.originalHtml) { currentSpeakingElement.innerHTML = currentSpeakingElement.dataset.originalHtml; }
-    }
-}
-
-function toggleTTS() { if (isPaused) { window.speechSynthesis.resume(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; } else { window.speechSynthesis.pause(); isPaused = true; document.getElementById('ttsPlayBtn').innerText = '▶️'; } }
-function stopTTS() { window.speechSynthesis.cancel(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); }
-function closeTTS() { stopTTS(); ttsPlayer.style.display = 'none'; }
-
-// --- VOICE RECOGNITION ---
-let recognition; let isRecording = false;
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true;
-  recognition.onstart = () => { isRecording = true; document.getElementById("micBtn").classList.add("recording"); };
-  recognition.onresult = (event) => { let transcript = ""; for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript; document.getElementById("inputText").value = transcript; };
-  recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording();
-}
-function toggleRecording() { if (!recognition) return alert("Speech recognition not supported in this browser."); if (isRecording) recognition.stop(); else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); } }
-function stopRecording() { isRecording = false; document.getElementById("micBtn").classList.remove("recording"); }
-
-// --- UI NAVIGATION ---
-function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
-document.getElementById("overlay").onclick=()=>{ document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); };
-function showPage(pageId){ document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); document.getElementById(pageId).classList.add("active"); document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); if (pageId === 'historyPage') renderHistory(); }
-
-// --- SMART HISTORY LOGIC (RESTORABLE SESSIONS) ---
-let currentViewingHistoryId = null;
-
-function saveHistorySafe() {
-  try {
-      localStorage.setItem('aiHistory', JSON.stringify(appHistory));
-  } catch(e) {
-      let freedSpace = false;
-      for(let i = appHistory.length - 1; i >= 0; i--) {
-          if(appHistory[i].image) { appHistory[i].image = null; freedSpace = true; break; }
-      }
-      if(freedSpace) saveHistorySafe(); else { appHistory.pop(); saveHistorySafe(); }
-  }
-}
-
-function saveToHistory(type, question, answer, imgToSave = null) {
-  let isProcessingTemp = isProcessing; // Temporarily bypass lock just for background title generation
-  isProcessing = false;
-  
-  callGeminiText("Generate a short 2-4 word title. Return ONLY the title text. No special characters.", question, 0.3)
-  .then(title => {
-    isProcessing = isProcessingTemp;
-    let cleanTitle = title.replace(/[^a-zA-Z0-9\s]/g, '').trim(); if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
-    appHistory.unshift({ id: Date.now(), type, title: cleanTitle, question, answer, image: imgToSave }); saveHistorySafe();
-  }).catch(() => {
-    isProcessing = isProcessingTemp;
-    appHistory.unshift({ id: Date.now(), type, title: type === 'math' ? 'Math Problem' : 'Translation', question, answer, image: imgToSave }); saveHistorySafe();
-  });
-}
-
-function renderHistory() {
-  const list = document.getElementById('historyList'); if(!list) return;
-  if(appHistory.length === 0) return list.innerHTML = "<div style='color:var(--muted); text-align:center;'>No history saved yet.</div>";
-  list.innerHTML = appHistory.map(item => `
-    <div class="wordItem" style="display:flex; justify-content:space-between; align-items:center;" onclick="viewHistory(${item.id})">
-      <div>
-        <div class="wordTitle">${item.title}</div>
-        <div class="wordMeaning">${item.type.toUpperCase()} ${item.image ? '📸' : ''}</div>
-      </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button class="actionBtnSmall green" onclick="restoreSession(event, ${item.id})" title="Restore Session">🔄</button>
-        <button class="actionBtnSmall blue" onclick="quickDownload(event, ${item.id})" title="Download">📥</button>
-        <button class="actionBtnSmall red" onclick="deleteHistoryItem(event, ${item.id})" title="Delete">🗑️</button>
-      </div>
-    </div>`).join('');
-}
-
-function restoreSession(event, id) {
-    event.stopPropagation();
-    const item = appHistory.find(i => i.id === id); if(!item) return;
-    closeHistory();
+// --- DEEP SEARCH (CHAT STYLE) ---
+async function runGroqSearch() {
+    const inputField = document.getElementById("searchInput");
+    const q = inputField.value.trim();
+    if(!q) return;
     
-    if(item.type === 'math') {
-        showPage('dashboardPage');
-        if(item.image) {
-            capturedImage = item.image;
-            document.getElementById("mathStatus").innerHTML = "📸 <b style='color:#22c55e;'>Session Restored!</b> Ask another question.";
-            document.getElementById("viewBtn_math").disabled = false; document.getElementById("extractBtn_math").disabled = false;
-        }
-        document.getElementById("mathExtractedText").value = item.question;
-        document.getElementById("mathSolutionBox").innerHTML = item.answer.replace(/\n/g, '<br>');
-        if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
-        document.getElementById("speakMathBtn").style.display = "flex"; document.getElementById("explainMathBtn").style.display = "flex"; 
-    } 
-    else if (item.type === 'translation') {
-        showPage('imagePage');
-        if(item.image) {
-            capturedImage = item.image;
-            document.getElementById("imageStatus").innerHTML = "📸 <b style='color:#22c55e;'>Session Restored!</b> Extract again.";
-            document.getElementById("viewBtn_trans").disabled = false; document.getElementById("extractBtn_trans").disabled = false;
-        }
-        document.getElementById("imageExtractedText").value = item.question;
-        document.getElementById("translatedImageText").innerText = item.answer.replace(/<br>/g, '\n');
+    document.getElementById("searchActionBtns").style.display = "none";
+    document.getElementById("searchOutput").style.display = "none";
+    setStatusLoading("searchStatus", "Groq is searching...");
+    
+    try {
+        const res = await fetch("/api/groq-search", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ prompt: q })
+        });
+        const data = await res.json();
+        if(!res.ok) throw new Error(data.error || "Search failed");
+        
+        const ans = data.text.replace(/\*/g, '');
+        document.getElementById("searchStatus").style.display = "none";
+        document.getElementById("searchOutput").style.display = "block";
+        document.getElementById("searchOutput").innerHTML = ans.replace(/\n/g, '<br>');
+        
+        if (window.MathJax) { MathJax.typesetClear([document.getElementById("searchOutput")]); MathJax.typesetPromise([document.getElementById("searchOutput")]); }
+        
+        document.getElementById("searchActionBtns").style.display = "flex";
+        saveToHistory('search', q, ans);
+        
+        // Clear input and scroll to bottom
+        inputField.value = ""; autoResize(inputField);
+        setTimeout(() => { document.getElementById("searchScrollArea").scrollTop = document.getElementById("searchScrollArea").scrollHeight; }, 100);
+        
+    } catch(e) {
+        document.getElementById("searchStatus").style.display = "none";
+        document.getElementById("searchOutput").style.display = "block";
+        document.getElementById("searchOutput").innerHTML = "❌ " + e.message;
     }
 }
 
-function viewHistory(id) {
-  const item = appHistory.find(i => i.id === id); if(!item) return;
-  currentViewingHistoryId = id; document.getElementById('histTitle').innerText = item.title;
-  document.getElementById('histQuestion').innerHTML = item.question.replace(/\n/g, '<br>'); document.getElementById('histAnswer').innerHTML = item.answer.replace(/\n/g, '<br>'); document.getElementById('historyModal').classList.add('active');
-  if(window.MathJax) { MathJax.typesetClear([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); }
-}
-function closeHistory() { document.getElementById('historyModal').classList.remove('active'); closeTTS(); }
-function clearAllHistory() { if(!confirm("Clear ALL history?")) return; appHistory = []; saveHistorySafe(); renderHistory(); }
-function deleteHistoryItem(event, id) { event.stopPropagation(); if(!confirm("Delete item?")) return; appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); }
-function quickDownload(event, id) { event.stopPropagation(); const item = appHistory.find(i => i.id === id); if(!item) return; triggerFileDownload(item); }
-function downloadHistoryFile() { const item = appHistory.find(i => i.id === currentViewingHistoryId); if(!item) return; triggerFileDownload(item); }
+// --- MATH SOLVER (UNIFIED CHAT FLOW) ---
+let capturedImage = null; let currentMode = ""; let lastMathSolution = "";
 
-function cleanLatexForDownload(text) {
-    if(!text) return "";
-    let t = text.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, ''); 
-    t = t.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1 / $2)').replace(/\\sqrt{([^}]+)}/g, '√($1)'); 
-    t = t.replace(/\\times/g, 'x').replace(/\\cdot/g, '*').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ'); 
-    return t.replace(/\\/g, '').replace(/\$/g, '').replace(/&nbsp;/g, ' ').trim();
+function clearMathImage() {
+    capturedImage = null;
+    document.getElementById("mathPreviewChip").style.display = "none";
 }
 
-function triggerFileDownload(item) {
-  const cleanQ = cleanLatexForDownload(item.question); const cleanA = cleanLatexForDownload(item.answer);
-  const content = `Title: ${item.title}\nType: ${item.type}\n\n--- QUESTION/INPUT ---\n${cleanQ}\n\n--- ANSWER/TRANSLATION ---\n${cleanA}`;
-  const blob = new Blob([content], { type: "text/plain" }); const a = document.createElement("a"); 
-  a.href = URL.createObjectURL(blob); a.download = `AI_Pro_${item.title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`; a.click();
-}
+async function executeMathFlow() {
+    const inputField = document.getElementById("mathInstructionInput");
+    const instruction = inputField.value.trim();
+    const outputBox = document.getElementById("mathSolutionBox");
+    const statusBox = document.getElementById("mathStatus");
+    const actionBtns = document.getElementById("mathActionBtns");
 
-// --- MATH SOLVER ---
-let lastMathSolution = "";
-async function extractSpecificMathQuestion() {
-  if(!capturedImage) return alert("Please take a photo first.");
-  const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract all the math questions";
-  setStatusLoading("mathStatus", "Scanning image via Gemini Vision...");
-  
-  const prompt = `You are a strict text extractor. User Instruction: "${instruction}"
-CRITICAL RULES:
-1. Extract EXACTLY what the user asked for from the image.
-2. DO NOT invent, change, or guess any numbers. 
-3. DO NOT solve the problems. Just output the questions.
-4. If the questions do not exist in the image, reply with: "Error: Could not find those questions in the image."`;
+    if (!capturedImage && !instruction) return alert("Please type a question or snap a photo.");
 
-  try {
-    let finalQ = await callGeminiVision(capturedImage, prompt, 0); 
-    document.getElementById("mathExtractedText").value = finalQ.replace(/[\*\$]/g, '').trim();
-    document.getElementById("mathStatus").innerHTML = "✅ Found! Ready to solve.";
-  } catch(e) { document.getElementById("mathExtractedText").value = `❌ Error: ${e.message}`; document.getElementById("mathStatus").innerHTML = "❌ Failed."; }
-}
+    outputBox.style.display = "none"; actionBtns.style.display = "none";
+    let problemText = instruction;
 
-async function solveMath() {
-  const prob = document.getElementById("mathExtractedText").value.trim(); if(!prob) return;
-  setStatusLoading("mathSolutionBox", "Thinking..."); 
-  document.getElementById("speakMathBtn").style.display = "none"; document.getElementById("explainMathBtn").style.display = "none";
-  
-  const systemPrompt = "You are an expert Math Tutor for a class 9 student. IMPORTANT RULES:\n1. You MUST write the ENTIRE solution and explanation strictly in HINDI.\n2. Explain the concepts clearly and simply.\n3. ALL math fractions, roots, and numbers MUST be wrapped in $ symbols so the renderer works (e.g., $\\frac{47.55}{100}$ or $\\sqrt{47.55}$). NEVER write raw LaTeX like \\frac without the $ symbols.\n4. Do NOT use markdown bolding (**) or weird symbols like &&.";
-  
-  try {
-    let sol = await callGeminiText(systemPrompt, `Solve this exactly:\n\n${prob}`, 0);
-    lastMathSolution = sol.replace(/[\*&]/g, ''); 
-    document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
-    if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
-    saveToHistory('math', prob, lastMathSolution, capturedImage); 
-    document.getElementById("speakMathBtn").style.display = "flex"; document.getElementById("explainMathBtn").style.display = "flex"; 
-  } catch(e) { document.getElementById("mathSolutionBox").innerHTML = "❌ " + e.message; }
+    // STEP 1: OCR if image exists
+    if (capturedImage) {
+        setStatusLoading("mathStatus", "Scanning image via Vision...");
+        const prompt = `You are a strict text extractor. User Instruction: "${instruction || 'Extract all math questions'}". Extract exactly what is asked. Do not solve.`;
+        try {
+            problemText = await callGeminiVision(capturedImage, prompt, 0);
+            problemText = problemText.replace(/[\*\$]/g, '').trim();
+            statusBox.innerHTML = "✅ Image scanned! Solving now...";
+        } catch(e) {
+            statusBox.style.display = "none"; outputBox.style.display = "block"; outputBox.innerHTML = "❌ Failed to read image: " + e.message; return;
+        }
+    }
+
+    // STEP 2: Solve
+    setStatusLoading("mathStatus", "Thinking...");
+    const systemPrompt = "You are an expert Math Tutor for a class 9 student. IMPORTANT RULES:\n1. You MUST write the ENTIRE solution and explanation strictly in HINDI.\n2. Explain the concepts clearly and simply.\n3. ALL math fractions, roots, and numbers MUST be wrapped in $ symbols so the renderer works (e.g., $\\frac{47.55}{100}$ or $\\sqrt{47.55}$). NEVER write raw LaTeX like \\frac without the $ symbols.\n4. Do NOT use markdown bolding (**) or weird symbols like &&.";
+    
+    try {
+        let sol = await callGeminiText(systemPrompt, `Solve this exactly:\n\n${problemText}`, 0);
+        lastMathSolution = sol.replace(/[\*&]/g, ''); 
+        
+        statusBox.style.display = "none";
+        outputBox.style.display = "block";
+        outputBox.innerHTML = lastMathSolution.replace(/\n/g, '<br>');
+        
+        if (window.MathJax) { MathJax.typesetClear([outputBox]); MathJax.typesetPromise([outputBox]); }
+        
+        saveToHistory('math', problemText, lastMathSolution, capturedImage); 
+        actionBtns.style.display = "flex"; 
+        
+        // Clear input/image and scroll down
+        inputField.value = ""; autoResize(inputField); clearMathImage();
+        setTimeout(() => { document.getElementById("mathScrollArea").scrollTop = document.getElementById("mathScrollArea").scrollHeight; }, 100);
+        
+    } catch(e) { 
+        statusBox.style.display = "none"; outputBox.style.display = "block"; outputBox.innerHTML = "❌ " + e.message; 
+    }
 }
 
 async function explainMoreMath() {
-  const prob = document.getElementById("mathExtractedText").value.trim();
-  setStatusLoading("mathSolutionBox", "Generating simpler Hindi explanation...");
-  const systemPrompt = "You are a class 9 Math Tutor. The user didn't fully understand the last solution. Break it down even simpler, step-by-step, strictly in HINDI. Use easy concepts. MUST wrap ALL math in $ symbols (e.g., $\\frac{1}{2}$).";
-  
+  const outputBox = document.getElementById("mathSolutionBox");
+  setStatusLoading("mathStatus", "Simplifying...");
+  const systemPrompt = "You are a class 9 Math Tutor. Break it down even simpler, step-by-step, strictly in HINDI. Use easy concepts. MUST wrap ALL math in $ symbols.";
   try {
-    let exp = await callGeminiText(systemPrompt, `Please explain this problem again in a much simpler way: ${prob}`);
+    let exp = await callGeminiText(systemPrompt, `Please explain this problem again in a much simpler way:\n\n${lastMathSolution}`);
     lastMathSolution = exp.replace(/[\*&]/g, '');
-    document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
-    if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
-  } catch(e) { document.getElementById("mathSolutionBox").innerHTML = "❌ " + e.message; }
+    document.getElementById("mathStatus").style.display = "none";
+    outputBox.innerHTML = lastMathSolution.replace(/\n/g, '<br>');
+    if (window.MathJax) { MathJax.typesetClear([outputBox]); MathJax.typesetPromise([outputBox]); }
+    setTimeout(() => { document.getElementById("mathScrollArea").scrollTop = document.getElementById("mathScrollArea").scrollHeight; }, 100);
+  } catch(e) { document.getElementById("mathStatus").style.display = "none"; outputBox.innerHTML = "❌ " + e.message; }
 }
 
-// --- IMAGE TRANSLATOR ---
-async function processImageText(mode){
-  if(!capturedImage) return;
-  setStatusLoading("imageStatus", "Extracting...");
-  try {
-    const rawText = await callGeminiVision(capturedImage, "Extract all the text exactly as written. No explanations.", 0);
-    document.getElementById("imageExtractedText").value = rawText.replace(/\*/g, ''); document.getElementById("imageStatus").innerHTML = "✅ Ready.";
-  } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ Error."; }
-}
-
-async function translateExtractedText(){
-  const txt = document.getElementById("imageExtractedText").value.trim(); if(!txt) return;
-  const lang = document.getElementById("imageTargetLang").value;
-  setStatusLoading("translatedImageText", "Translating...");
-  try {
-    let trans = await callGeminiText(null, `Translate to ${lang}. No markdown.\n\n${txt}`);
-    trans = trans.replace(/\*/g, ''); document.getElementById("translatedImageText").innerText = trans;
-    drawTranslatedImageOnWhite(trans); saveToHistory('translation', txt, trans, capturedImage); getImageHardWords(txt);
-    document.getElementById("speakImgTransBtn").style.display = "flex"; 
-  } catch(e) { document.getElementById("translatedImageText").innerText = "❌ Error: " + e.message; }
-}
-
-function drawTranslatedImageOnWhite(text) {
-  const c = document.getElementById("canvas"); const ctx = c.getContext("2d"); c.width = 1000; c.height = 1400; ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); ctx.fillStyle = "#000000"; ctx.font = "bold 36px 'Poppins', sans-serif";
-  let words = text.split(" "); let line = ""; let y = 80;
-  for(let n = 0; n < words.length; n++){ let testLine = line + words[n] + " "; let w = ctx.measureText(testLine).width; if(w > c.width - 100 && n > 0){ ctx.fillText(line, 50, y); line = words[n] + " "; y += 50; } else { line = testLine; } }
-  ctx.fillText(line, 50, y); document.getElementById("downloadBtn").style.display = "flex";
-}
-function downloadImage(){ const a = document.createElement("a"); a.href = document.getElementById("canvas").toDataURL("image/png"); a.download = "Translation.png"; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-
-async function getImageHardWords(text){
-  const box = document.getElementById("hardWords"); setStatusLoading("hardWords", "Loading meanings...");
-  try{
-    let prompt = `Find difficult words in this text:\n\n${text}\n\nIMPORTANT: Provide the original word in English, and the meaning in Hindi. Format ONLY as HTML:\n<div class='wordItem'><div class='wordTitle'>English Word</div><div class='wordMeaning'>Hindi Meaning</div></div>`;
-    let res = await callGeminiText(null, prompt); box.innerHTML = res.replace(/```html/g, "").replace(/```/g, "").replace(/\*/g, '');
-  }catch(e){ box.innerHTML = "Could not load."; }
-}
-
-// --- DOCUMENT Q&A (COMPRESSOR ENABLED) ---
-let qaImages = []; let qaContextText = "";
-function updateQaImageCount() {
-    document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`;
-    if(qaImages.length > 0) document.getElementById('extractBtn_qa').disabled = false; else document.getElementById('extractBtn_qa').disabled = true;
-}
-function clearQaImages() { qaImages = []; updateQaImageCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Extracted text will appear here as context..."; }
-
-async function handleMultiUpload(e) {
-  const files = e.target.files;
-  for(let i=0; i<files.length; i++) {
-    const base64 = await compressImageFile(files[i]);
-    qaImages.push(base64);
-  }
-  updateQaImageCount();
-}
-
-async function extractMultiImages() {
-  if(qaImages.length === 0) return alert("Please take a photo or upload pages first.");
-  setStatusLoading("qaStatus", "Reading pages via Gemini Vision..."); qaContextText = "";
-  for(let i=0; i<qaImages.length; i++) {
-    try {
-      // Intentionally bypassed the lock here because we are reading multiple pages sequentially
-      let isProcessingTemp = isProcessing; isProcessing = false;
-      const rawText = await callGeminiVision(qaImages[i], "Read ALL text in this image. If it is a textbook, document, or handwritten page, extract all readable content exactly as written. If the image is blurry or has no text, describe what you see.", 0);
-      isProcessing = isProcessingTemp;
-      if(rawText) qaContextText += `\n--- PAGE ${i+1} ---\n` + rawText;
-    } catch(e) { 
-      console.log(e); qaContextText += `\n--- PAGE ${i+1} ERROR ---\nCould not read: ${e.message}\n`;
-    }
-  }
-  document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "...\n(Full text loaded in background)" : "No text found.";
-  document.getElementById('qaStatus').innerText = "✅ All pages read! Ask your questions.";
-}
-
-async function askDocument() {
-  const q = document.getElementById('qaQuestionInput').value; if(!q || !qaContextText) return alert("Ensure pages are read and a question is typed.");
-  setStatusLoading("qaAnswerBox", "Analyzing chapter...");
-  const systemPrompt = "You are a helpful study assistant. Answer the user's question based ONLY on the provided document text. Explain clearly for a student.";
-  try {
-    let ans = await callGeminiText(systemPrompt, `Document Text:\n${qaContextText}\n\nQuestion: ${q}`);
-    document.getElementById('qaAnswerBox').innerHTML = ans.replace(/\n/g, '<br>').replace(/\*/g,''); document.getElementById("speakQaBtn").style.display = "flex";
-  } catch(e) { document.getElementById('qaAnswerBox').innerText = "❌ " + e.message; }
-}
-
-// --- TEXT TRANSLATOR ---
-async function runTranslation(){
-  const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value;
-  if(!txt) return; setStatusLoading("translatedText", "Converting...");
-  try{
-    let res = await callGeminiText(null, `Translate exactly to ${lang}:\n${txt}`);
-    document.getElementById("translatedText").innerText = res.replace(/\*/g, ''); document.getElementById("speakTransBtn").style.display = "flex";
-  }catch(e){ document.getElementById("translatedText").innerText = "❌ " + e.message; }
-}
-
-// --- CAMERA UTILS (WITH COMPRESSION) ---
-const cameraModal = document.getElementById("cameraModal"), video = document.getElementById("cameraVideo"), captureCanvas = document.getElementById("captureCanvas");
-let currentStream = null, capturedImage = null, currentFacing = "environment", flashEnabled = false;
-
-async function startCamera() {
-  try {
-    if(currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
-    currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
-    video.srcObject = currentStream; flashEnabled = false;
-  } catch(e) { alert("Camera Error: " + e.message); }
-}
-
-async function openCamera(mode){ currentMode = mode; cameraModal.classList.add("active"); await startCamera(); }
-function closeCamera(){ cameraModal.classList.remove("active"); if(currentStream) currentStream.getTracks().forEach(t => { t.stop(); }); }
+// --- CAMERA UTILS ---
+const cameraModal = document.getElementById("cameraModal"), video = document.getElementById("cameraVideo"), captureCanvas = document.getElementById("captureCanvas"); let currentStream = null, currentFacing = "environment";
+async function startCamera() { try { if(currentStream) currentStream.getTracks().forEach(t => t.stop()); currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); video.srcObject = currentStream; } catch(e) { alert("Camera Error"); } }
+async function openCamera(m){ currentMode = m; cameraModal.classList.add("active"); await startCamera(); }
+function closeCamera(){ cameraModal.classList.remove("active"); if(currentStream) currentStream.getTracks().forEach(t => t.stop()); }
 async function switchCamera() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); }
-
-async function toggleFlash() {
-    if(!currentStream) return;
-    try {
-        const track = currentStream.getVideoTracks()[0]; const caps = track.getCapabilities();
-        if(!caps.torch) return alert("Flashlight not supported on this lens.");
-        flashEnabled = !flashEnabled; await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
-    } catch(e) { alert("Flashlight error: " + e.message); }
-}
-
 function capturePhoto(){ 
-    let w = video.videoWidth; let h = video.videoHeight;
-    if(w > 1500) { h *= 1500/w; w = 1500; }
-    captureCanvas.width = w; captureCanvas.height = h; 
-    captureCanvas.getContext("2d").drawImage(video, 0, 0, w, h); 
+    let w = video.videoWidth; let h = video.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
+    captureCanvas.width = w; captureCanvas.height = h; captureCanvas.getContext("2d").drawImage(video, 0, 0, w, h); 
     capturedImage = captureCanvas.toDataURL("image/jpeg", 0.7); 
     
     if(currentMode === 'qa') { qaImages.push(capturedImage); updateQaImageCount(); } 
-    else if (currentMode === 'math') { document.getElementById("mathStatus").innerText="📸 Photo Captured!"; document.getElementById("viewBtn_math").disabled = false; document.getElementById("extractBtn_math").disabled = false; } 
-    else if (currentMode === 'translate') { document.getElementById("imageStatus").innerText="📸 Photo Captured!"; document.getElementById("viewBtn_trans").disabled = false; document.getElementById("extractBtn_trans").disabled = false; }
+    else if (currentMode === 'math') { 
+        document.getElementById("mathPreviewChip").style.display = "block";
+        document.getElementById("mathPreviewChip").style.backgroundImage = `url(${capturedImage})`;
+    } 
+    else if (currentMode === 'translate') { 
+        document.getElementById("imageStatus").innerText="📸 Captured!"; document.getElementById("viewBtn_trans").disabled = false; document.getElementById("extractBtn_trans").disabled = false; 
+    } 
     closeCamera(); 
 }
-
-function viewPhoto(mode){ currentMode = mode; document.getElementById("previewImage").src = capturedImage; document.getElementById("photoViewerControls").innerHTML = `<button class="btn purple" onclick="closePreview()">Close</button>`; document.getElementById("photoViewer").classList.add("active"); }
+function viewPhoto(){ document.getElementById("previewImage").src = capturedImage; document.getElementById("photoViewer").classList.add("active"); }
 function closePreview(){ document.getElementById("photoViewer").classList.remove("active"); }
+
+// --- TTS PLAYER ---
+const ttsPlayer = document.getElementById('ttsPlayer'); let ttsUtterance = null; let isPaused = false; let isDragging = false; let initialX, initialY;
+ttsPlayer.addEventListener("touchstart", dragStart, {passive: false}); ttsPlayer.addEventListener("touchmove", drag, {passive: false});
+function dragStart(e) { if (e.target.closest('.ttsBtn')) return; let rect = ttsPlayer.getBoundingClientRect(); initialX = (e.type === "touchstart" ? e.touches[0].clientX : e.clientX) - rect.left; initialY = (e.type === "touchstart" ? e.touches[0].clientY : e.clientY) - rect.top; isDragging = true; }
+function dragEnd() { isDragging = false; } window.addEventListener("mouseup", dragEnd); window.addEventListener("touchend", dragEnd);
+function drag(e) { if (isDragging) { e.preventDefault(); let x = e.type === "touchmove" ? e.touches[0].clientX : e.clientX; let y = e.type === "touchmove" ? e.touches[0].clientY : e.clientY; let nx = x - initialX; let ny = y - initialY; ttsPlayer.style.left = nx + "px"; ttsPlayer.style.top = ny + "px"; ttsPlayer.style.right = "auto"; ttsPlayer.style.bottom = "auto"; ttsPlayer.style.transform = "none"; } } window.addEventListener("mousemove", drag);
+let currentSpeakingElement = null;
+function speakText(id) { const el = document.getElementById(id); if(!el) return; let text = el.innerText.replace(/<[^>]*>?/gm, '').replace(/[\$\\]/g, ' ').replace(/\*\*/g, '').replace(/&&/g, ' '); window.speechSynthesis.cancel(); ttsUtterance = new SpeechSynthesisUtterance(text); currentSpeakingElement = el; el.style.border = "2px solid var(--accent)"; ttsUtterance.onend = () => { document.getElementById('ttsPlayBtn').innerText = '▶️'; if(currentSpeakingElement) currentSpeakingElement.style.border = "1px solid rgba(255,255,255,.05)"; }; window.speechSynthesis.speak(ttsUtterance); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; ttsPlayer.style.display = 'flex'; }
+function toggleTTS() { if (isPaused) { window.speechSynthesis.resume(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; } else { window.speechSynthesis.pause(); isPaused = true; document.getElementById('ttsPlayBtn').innerText = '▶️'; } }
+function stopTTS() { window.speechSynthesis.cancel(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '▶️'; if(currentSpeakingElement) currentSpeakingElement.style.border = "1px solid rgba(255,255,255,.05)"; }
+function closeTTS() { stopTTS(); ttsPlayer.style.display = 'none'; }
+
+// --- VOICE ---
+let recognition; let isRecording = false;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) { const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true; recognition.onstart = () => { isRecording = true; document.getElementById("micBtn").classList.add("recording"); }; recognition.onresult = (event) => { let tr = ""; for (let i = 0; i < event.results.length; i++) tr += event.results[i][0].transcript; document.getElementById("inputText").value = tr; }; recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording(); }
+function toggleRecording() { if (!recognition) return alert("Not supported."); if (isRecording) recognition.stop(); else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); } }
+function stopRecording() { isRecording = false; document.getElementById("micBtn").classList.remove("recording"); }
+
+// --- NAV ---
+function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+document.getElementById("overlay").onclick=()=>{ document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); };
+function showPage(id){ document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); document.getElementById(id).classList.add("active"); document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); if (id === 'historyPage') renderHistory(); }
+
+// --- COMPRESSOR ---
+function compressImageFile(file) { return new Promise((resolve) => { const reader = new FileReader(); reader.onload = function(event) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const MAX_WIDTH = 1500; const MAX_HEIGHT = 1500; let width = img.width; let height = img.height; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; canvas.getContext("2d").drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL("image/jpeg", 0.7)); }; img.src = event.target.result; }; reader.readAsDataURL(file); }); }
+
+// --- IMAGE TRANSLATOR ---
+async function processImageText(m){ if(!capturedImage) return; setStatusLoading("imageStatus", "Extracting..."); try { const r = await callGeminiVision(capturedImage, "Extract text exactly.", 0); document.getElementById("imageExtractedText").value = r.replace(/\*/g, ''); document.getElementById("imageStatus").innerHTML = "✅ Ready."; } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ Error."; } }
+async function translateExtractedText(){ const txt = document.getElementById("imageExtractedText").value.trim(); const lang = document.getElementById("imageTargetLang").value; if(!txt) return; setStatusLoading("translatedImageText", "Translating..."); try { let t = await callGeminiText(null, `Translate to ${lang}:\n\n${txt}`); t = t.replace(/\*/g, ''); document.getElementById("translatedImageText").innerText = t; saveToHistory('translation', txt, t, capturedImage); document.getElementById("speakImgTransBtn").style.display = "flex"; } catch(e) { document.getElementById("translatedImageText").innerText = "❌ " + e.message; } }
+
+// --- QA ---
+let qaImages = []; let qaContextText = "";
+function updateQaImageCount() { document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`; document.getElementById('extractBtn_qa').disabled = qaImages.length === 0; }
+function clearQaImages() { qaImages = []; updateQaImageCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Context will appear here..."; }
+async function handleMultiUpload(e) { const files = e.target.files; for(let i=0; i<files.length; i++) { qaImages.push(await compressImageFile(files[i])); } updateQaImageCount(); }
+async function extractMultiImages() { if(qaImages.length===0) return; setStatusLoading("qaStatus", "Reading..."); qaContextText = ""; for(let i=0; i<qaImages.length; i++) { try { let t = isProcessing; isProcessing = false; const r = await callGeminiVision(qaImages[i], "Read all text.", 0); isProcessing = t; if(r) qaContextText += `\n--- PAGE ${i+1} ---\n` + r; } catch(e) { qaContextText += `\n--- PAGE ${i+1} ERROR ---\n`; } } document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "..." : "No text found."; document.getElementById('qaStatus').innerText = "✅ Read!"; }
+async function askDocument() { const q = document.getElementById('qaQuestionInput').value; if(!q || !qaContextText) return; setStatusLoading("qaAnswerBox", "Analyzing..."); try { let a = await callGeminiText("Answer based ONLY on document.", `Text:\n${qaContextText}\n\nQ: ${q}`); document.getElementById('qaAnswerBox').innerHTML = a.replace(/\n/g, '<br>').replace(/\*/g,''); document.getElementById("speakQaBtn").style.display = "flex"; } catch(e) { document.getElementById('qaAnswerBox').innerText = "❌ " + e.message; } }
+
+// --- TEXT TRANS ---
+async function runTranslation(){ const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value; if(!txt) return; setStatusLoading("translatedText", "Converting..."); try{ let r = await callGeminiText(null, `Translate to ${lang}:\n${txt}`); document.getElementById("translatedText").innerText = r.replace(/\*/g, ''); document.getElementById("speakTransBtn").style.display = "flex"; }catch(e){ document.getElementById("translatedText").innerText = "❌ " + e.message; } }
+
+// --- HISTORY ---
+let currentViewingHistoryId = null;
+function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { let freed = false; for(let i = appHistory.length - 1; i >= 0; i--) { if(appHistory[i].image) { appHistory[i].image = null; freed = true; break; } } if(freed) saveHistorySafe(); else { appHistory.pop(); saveHistorySafe(); } } }
+function saveToHistory(type, question, answer, img = null) { let temp = isProcessing; isProcessing = false; fetch("/api/groq-search", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({prompt:`Generate 2-4 word title for: ${question.substring(0,50)}`})}).then(r=>r.json()).then(d => { isProcessing = temp; let t = (d.text||'').replace(/[^a-zA-Z0-9\s]/g, '').trim().substring(0,35); appHistory.unshift({ id: Date.now(), type, title: t||'Saved Item', question, answer, image: img }); saveHistorySafe(); }).catch(() => { isProcessing = temp; appHistory.unshift({ id: Date.now(), type, title: 'Saved Item', question, answer, image: img }); saveHistorySafe(); }); }
+function renderHistory() { const list = document.getElementById('historyList'); if(!list) return; if(appHistory.length === 0) return list.innerHTML = "<div style='color:var(--muted); text-align:center;'>No history saved yet.</div>"; list.innerHTML = appHistory.map(item => `<div class="wordItem" style="display:flex; justify-content:space-between; align-items:center;" onclick="viewHistory(${item.id})"><div><div class="wordTitle">${item.title}</div><div class="wordMeaning">${item.type.toUpperCase()} ${item.image ? '📸' : ''}</div></div><div style="display:flex; gap:10px; align-items:center;"><button class="actionBtnSmall green" onclick="restoreSession(event, ${item.id})">🔄</button><button class="actionBtnSmall blue" onclick="quickDownload(event, ${item.id})">📥</button><button class="actionBtnSmall red" onclick="deleteHistoryItem(event, ${item.id})">🗑️</button></div></div>`).join(''); }
+function restoreSession(e, id) { e.stopPropagation(); const item = appHistory.find(i => i.id === id); if(!item) return; closeHistory(); 
+    if(item.type === 'math') { showPage('dashboardPage'); if(item.image) { capturedImage = item.image; document.getElementById("mathPreviewChip").style.display = "block"; document.getElementById("mathPreviewChip").style.backgroundImage = `url(${capturedImage})`; } document.getElementById("mathInstructionInput").value = item.question; document.getElementById("mathSolutionBox").innerHTML = item.answer.replace(/\n/g, '<br>'); document.getElementById("mathSolutionBox").style.display = "block"; if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); } document.getElementById("mathActionBtns").style.display = "flex"; } 
+    else if (item.type === 'translation') { showPage('imagePage'); if(item.image) { capturedImage = item.image; document.getElementById("imageStatus").innerHTML = "📸 Restored!"; document.getElementById("viewBtn_trans").disabled = false; document.getElementById("extractBtn_trans").disabled = false; } document.getElementById("imageExtractedText").value = item.question; document.getElementById("translatedImageText").innerText = item.answer.replace(/<br>/g, '\n'); }
+    else if (item.type === 'search') { showPage('searchPage'); document.getElementById("searchInput").value = item.question; document.getElementById("searchOutput").innerHTML = item.answer.replace(/\n/g, '<br>'); document.getElementById("searchOutput").style.display = "block"; document.getElementById("searchActionBtns").style.display = "flex"; }
+}
+function viewHistory(id) { const item = appHistory.find(i => i.id === id); if(!item) return; currentViewingHistoryId = id; document.getElementById('histTitle').innerText = item.title; document.getElementById('histQuestion').innerHTML = item.question.replace(/\n/g, '<br>'); document.getElementById('histAnswer').innerHTML = item.answer.replace(/\n/g, '<br>'); document.getElementById('historyModal').classList.add('active'); if(window.MathJax) { MathJax.typesetClear([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); } }
+function closeHistory() { document.getElementById('historyModal').classList.remove('active'); closeTTS(); }
+function clearAllHistory() { if(confirm("Clear ALL?")) { appHistory = []; saveHistorySafe(); renderHistory(); } }
+function deleteHistoryItem(e, id) { e.stopPropagation(); if(confirm("Delete item?")) { appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); } }
+function quickDownload(e, id) { e.stopPropagation(); const item = appHistory.find(i => i.id === id); if(item) triggerFileDownload(item); }
+function downloadHistoryFile() { const item = appHistory.find(i => i.id === currentViewingHistoryId); if(item) triggerFileDownload(item); }
+function triggerFileDownload(item) { let q = item.question.replace(/<[^>]*>?/gm, ''); let a = item.answer.replace(/<[^>]*>?/gm, ''); const b = new Blob([`Title: ${item.title}\n\n--- INPUT ---\n${q}\n\n--- OUTPUT ---\n${a}`], { type: "text/plain" }); const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `AI_${item.title}.txt`; l.click(); }
 
 showPage("homePage");
 </script>
