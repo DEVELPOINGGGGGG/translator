@@ -4,7 +4,7 @@ const path = require("path");
 
 const port = process.env.PORT || 3000;
 
-// Environment Variables (KEEP THESE SECRET ON RENDER)
+// Pulling your keys directly from Render's Environment Variables
 const groqApiKey = process.env.GROQ_API_KEY || process.env["GROQ-API-KEY"];
 const googleVisionKey = process.env.GOOGLE_VISION_API_KEY; 
 
@@ -27,7 +27,7 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
-// MASSIVE UPGRADE: Increased limit to 50MB to handle multi-image chapter uploads!
+// 50MB limit to easily handle 5+ photos of math chapters at once
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -43,9 +43,9 @@ function readRequestBody(req) {
   });
 }
 
-// --- GROQ TEXT & VISION AI HANDLER ---
+// --- GROQ AI CHAT & SOLVER ROUTE ---
 async function handleGroqChat(req, res) {
-  if (!groqApiKey) return sendJson(res, 500, { error: "Missing GROQ_API_KEY. Add it to Render settings." });
+  if (!groqApiKey) return sendJson(res, 500, { error: "Missing GROQ_API_KEY." });
 
   try {
     const body = await readRequestBody(req);
@@ -66,26 +66,25 @@ async function handleGroqChat(req, res) {
   }
 }
 
-// --- GOOGLE CLOUD VISION OCR HANDLER ---
+// --- GOOGLE CLOUD VISION OCR ROUTE ---
 async function handleGoogleVision(req, res) {
-  if (!googleVisionKey) return sendJson(res, 500, { error: "Missing GOOGLE_VISION_API_KEY. Add it to Render settings." });
+  if (!googleVisionKey) return sendJson(res, 500, { error: "Missing GOOGLE_VISION_API_KEY." });
 
   try {
     const body = await readRequestBody(req);
     const { imageBase64 } = JSON.parse(body || "{}");
     if (!imageBase64) return sendJson(res, 400, { error: "No image provided." });
 
-    // Clean the Base64 string for Google API
+    // Clean the Base64 string for the Google API
     const base64Data = imageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-    // Using DOCUMENT_TEXT_DETECTION for highly accurate Math and Chapter reading
     const visionRes = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${googleVisionKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         requests: [{
           image: { content: base64Data },
-          features: [{ type: "DOCUMENT_TEXT_DETECTION" }] 
+          features: [{ type: "DOCUMENT_TEXT_DETECTION" }] // Best for reading math/textbooks
         }]
       })
     });
@@ -100,7 +99,7 @@ async function handleGoogleVision(req, res) {
   }
 }
 
-// --- STATIC FILE SERVER (HTML, CSS, JS) ---
+// --- STATIC FILE SERVER ---
 function serveStatic(req, res) {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const safePath = path.normalize(decodeURIComponent(requestUrl.pathname)).replace(/^(\.\.[/\\])+/, "");
