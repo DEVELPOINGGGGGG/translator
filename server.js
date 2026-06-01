@@ -4,8 +4,9 @@ const path = require("path");
 
 const port = process.env.PORT || 3000;
 
-// Look for the Gemini API Key from Render Environment Variables
-const geminiApiKey = process.env.GEMINI_API_KEY;
+// Pulling BOTH of your Gemini API Keys from Render
+const geminiVisionKey = process.env.GEMINI_API_KEY_VISION;
+const geminiTextKey = process.env.GEMINI_API_KEY_TEXT;
 
 const publicDir = __dirname;
 
@@ -43,8 +44,9 @@ function readRequestBody(req) {
 }
 
 // --- GEMINI TEXT ROUTE (Math Solving, Translation, Chat) ---
+// THIS USES KEY 2 (TEXT KEY)
 async function handleGeminiText(req, res) {
-  if (!geminiApiKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY in Render." });
+  if (!geminiTextKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY_TEXT in Render." });
 
   try {
     const { systemPrompt, userPrompt, temperature = 0 } = JSON.parse(await readRequestBody(req));
@@ -54,35 +56,34 @@ async function handleGeminiText(req, res) {
       generationConfig: { temperature: temperature }
     };
 
-    // Add system instruction if provided
     if (systemPrompt) {
         payload.systemInstruction = { parts: [{ text: systemPrompt }] };
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiTextKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "Gemini request failed.");
+    if (!response.ok) throw new Error(data.error?.message || "Gemini text request failed.");
 
     return sendJson(res, 200, { text: data.candidates[0].content.parts[0].text });
   } catch (error) {
-    return sendJson(res, 502, { error: error.message || "Gemini unavailable." });
+    return sendJson(res, 502, { error: error.message || "Gemini text service unavailable." });
   }
 }
 
 // --- GEMINI VISION ROUTE (Image OCR, Multi-page reading) ---
+// THIS USES KEY 1 (VISION KEY)
 async function handleGeminiVision(req, res) {
-  if (!geminiApiKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY in Render." });
+  if (!geminiVisionKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY_VISION in Render." });
 
   try {
     const { imageBase64, prompt, temperature = 0 } = JSON.parse(await readRequestBody(req));
     if (!imageBase64) return sendJson(res, 400, { error: "No image provided." });
 
-    // Clean base64 for Gemini
     const cleanBase64 = imageBase64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, "");
 
     const payload = {
@@ -95,18 +96,18 @@ async function handleGeminiVision(req, res) {
         generationConfig: { temperature: temperature }
     };
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiVisionKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed.");
+    if (!response.ok) throw new Error(data.error?.message || "Gemini Vision request failed.");
 
     return sendJson(res, 200, { text: data.candidates[0].content.parts[0].text });
   } catch (error) {
-    return sendJson(res, 502, { error: error.message || "Gemini Vision unavailable." });
+    return sendJson(res, 502, { error: error.message || "Gemini Vision service unavailable." });
   }
 }
 
@@ -140,4 +141,4 @@ const server = http.createServer((req, res) => {
   sendJson(res, 405, { error: "Method not allowed." });
 });
 
-server.listen(port, () => console.log(`AI Pro Suite running on port ${port} with Gemini`));
+server.listen(port, () => console.log(`AI Pro Suite running on port ${port} with Dual Gemini Keys`));
