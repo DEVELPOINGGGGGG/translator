@@ -2,7 +2,6 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-// Render prefers port 10000
 const port = process.env.PORT || 10000;
 
 // Config: Your hierarchy of keys from Render Environment Variables
@@ -43,7 +42,6 @@ function readRequestBody(req) {
         let body = ""; 
         req.on("data", chunk => {
             body += chunk;
-            // 50MB Limit
             if (body.length > 50_000_000) { 
                 reject(new Error("Request body is too large."));
                 req.destroy();
@@ -90,11 +88,10 @@ async function handleGeminiText(req, res) {
                 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed");
-                if (!data.candidates || data.candidates.length === 0) throw new Error("Empty response from Gemini. Likely blocked by safety filter.");
+                if (!data.candidates || data.candidates.length === 0) throw new Error("Empty response from Gemini.");
                 
                 return data.candidates[0].content.parts[0].text;
             } else {
-                // Groq Fallback
                 const messages = [];
                 if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
                 messages.push({ role: "user", content: userPrompt });
@@ -106,14 +103,11 @@ async function handleGeminiText(req, res) {
                 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || "Groq Text failed");
-                
                 return data.choices[0].message.content;
             }
         });
         return sendJson(res, 200, { text: result });
-    } catch (e) { 
-        return sendJson(res, 502, { error: e.message || "All Text APIs failed." }); 
-    }
+    } catch (e) { return sendJson(res, 502, { error: e.message || "All Text APIs failed." }); }
 }
 
 async function handleGeminiVision(req, res) {
@@ -137,17 +131,15 @@ async function handleGeminiVision(req, res) {
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed");
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Empty response from Gemini.");
-                
                 return data.candidates[0].content.parts[0].text;
             } else {
-                // Groq Vision Fallback
                 let formattedBase64 = imageBase64;
                 if (!formattedBase64.startsWith("data:image")) formattedBase64 = `data:image/jpeg;base64,${formattedBase64}`;
                 
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ 
-                        model: "meta-llama/llama-4-scout-17b-16e-instruct", // Supported Groq Vision Model
+                        model: "meta-llama/llama-4-scout-17b-16e-instruct", 
                         messages: [{ role: "user", content: [{type: "text", text: prompt}, {type: "image_url", image_url: {url: formattedBase64}}] }],
                         temperature
                     })
@@ -155,13 +147,41 @@ async function handleGeminiVision(req, res) {
                 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || "Groq Vision failed");
-                
                 return data.choices[0].message.content;
             }
         });
         return sendJson(res, 200, { text: result });
-    } catch (e) { 
-        return sendJson(res, 502, { error: e.message || "All Vision APIs failed." }); 
+    } catch (e) { return sendJson(res, 502, { error: e.message || "All Vision APIs failed." }); }
+}
+
+// --- NEW: DEDICATED GROQ SEARCH ROUTE ---
+async function handleGroqSearch(req, res) {
+    try {
+        const groqKey = process.env.GROQ_API_KEY;
+        if (!groqKey) return sendJson(res, 500, { error: "Missing GROQ_API_KEY in Render." });
+
+        const body = await readRequestBody(req);
+        const { prompt, temperature = 0.5 } = JSON.parse(body);
+
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                model: "llama-3.3-70b-versatile", // Lightning fast search model
+                messages: [
+                    { role: "system", content: "You are a highly intelligent, direct study assistant. Answer the user's questions clearly, accurately, and concisely. Use markdown for structuring." },
+                    { role: "user", content: prompt }
+                ],
+                temperature 
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || "Groq search failed");
+
+        return sendJson(res, 200, { text: data.choices[0].message.content });
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
     }
 }
 
@@ -189,13 +209,13 @@ function serveStatic(req, res) {
 const server = http.createServer((req, res) => {
   if (req.method === "POST" && req.url === "/api/gemini-text") return handleGeminiText(req, res);
   if (req.method === "POST" && req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
+  if (req.method === "POST" && req.url === "/api/groq-search") return handleGroqSearch(req, res); // New Route
   
   if (req.method === "GET" || req.method === "HEAD") return serveStatic(req, res);
   
   sendJson(res, 405, { error: "Method not allowed." });
 });
 
-// CRITICAL FOR RENDER: Bind to 0.0.0.0
 server.listen(port, '0.0.0.0', () => {
-    console.log(`AI Pro Suite Triple-Failover Server running on port ${port}`);
+    console.log(`AI Pro Suite running on port ${port}`);
 });
