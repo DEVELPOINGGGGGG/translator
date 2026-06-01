@@ -598,24 +598,47 @@ function triggerFileDownload(item) {
 }
 
 // --- MATH SOLVER (FIXED HINDI & MATH RENDER) ---
+// --- MATH SOLVER (STRICT EXTRACTION FIX) ---
 let lastMathSolution = "";
+
 async function extractSpecificMathQuestion() {
   if(!capturedImage) return alert("Please take a photo first.");
-  const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract the first question";
+  const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract all the math questions";
   setStatusLoading("mathStatus", "Scanning image via Groq Vision...");
   
   try {
     const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: capturedImage }) });
     const vData = await vRes.json();
     if (!vRes.ok) throw new Error(vData.error);
-    const rawText = vData.text; if(!rawText) throw new Error("No text found.");
+    const rawText = vData.text; 
+    if(!rawText) throw new Error("No text found.");
     
     setStatusLoading("mathStatus", "Filtering question...");
-    const prompt = `Extract ONE exact math question based on: "${instruction}". Plain text only. From text:\n${rawText}`;
-    let finalQ = await callGroq([ { role: "user", content: prompt } ], { temperature: 0 });
+    
+    // NEW BULLETPROOF PROMPT: Forces AI to only use real numbers from the image
+    const prompt = `You are a strict text extractor. 
+User Instruction: "${instruction}"
+
+Raw Image Text:
+"""
+${rawText}
+"""
+
+CRITICAL RULES:
+1. Extract EXACTLY the questions the user asked for. If they ask for 5, 6, and 7, extract all three.
+2. DO NOT invent, change, or guess any numbers. 
+3. DO NOT solve the problems yet. Just output the questions.
+4. ONLY output the exact text and numbers found in the Raw Image Text above.
+5. If the questions do not exist in the text, reply with: "Error: Could not find those questions in the image."`;
+
+    let finalQ = await callGroq([ { role: "user", content: prompt } ], { temperature: 0 }); // Temperature 0 stops it from being creative
+    
     document.getElementById("mathExtractedText").value = finalQ.replace(/[\*\$]/g, '').trim();
     document.getElementById("mathStatus").innerHTML = "✅ Found! Ready to solve.";
-  } catch(e) { document.getElementById("mathExtractedText").value = `Error: ${e.message}`; document.getElementById("mathStatus").innerHTML = "❌ Failed."; }
+  } catch(e) { 
+    document.getElementById("mathExtractedText").value = `Error: ${e.message}`; 
+    document.getElementById("mathStatus").innerHTML = "❌ Failed."; 
+  }
 }
 
 async function solveMath() {
