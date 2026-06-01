@@ -159,6 +159,7 @@ async function runGroqSearch() {
 }
 
 // --- 6. MATH SOLVER ---
+// --- 6. MATH SOLVER ---
 function clearMathImage(e) {
     if(e) e.stopPropagation();
     capturedImage = null;
@@ -171,21 +172,15 @@ async function executeMathFlow() {
     if(!inputField) return;
     const instruction = inputField.value.trim();
 
+    // Do nothing if both are empty
     if (!capturedImage && !instruction) return;
     
-    if (!capturedImage) {
-        appendUserBubble(instruction, null, "mathChatHistory");
-        inputField.value = ""; autoResize(inputField);
-        let loadingId = appendAiLoading("mathChatHistory");
-        updateAiBubble(loadingId, "⚠️ Please provide an image of the problem first.");
-        return;
-    }
-
-    appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
+    // Add User Bubble instantly
+    appendUserBubble(instruction || "Solve this image", capturedImage, "mathChatHistory");
     inputField.value = ""; autoResize(inputField);
     let loadingId = appendAiLoading("mathChatHistory");
 
-    const prompt = `You are an expert Math Tutor for a class 9 student. User instruction: "${instruction || 'Solve the math problem in this image'}". 
+    const systemPrompt = `You are an expert Math Tutor for a class 9 student. 
     IMPORTANT RULES:
     1. Extract and solve the problem based on the user's instruction.
     2. Write the ENTIRE solution strictly in HINDI.
@@ -193,14 +188,25 @@ async function executeMathFlow() {
     4. MUST wrap ALL math fractions, roots, and numbers in $ symbols (e.g., $\\frac{47}{100}$ or $\\sqrt{43}$). Never use raw LaTeX without $.`;
     
     try {
-        let sol = await callGeminiVision(capturedImage, prompt, 0);
+        let sol = "";
+        
+        // SMART ROUTING: Vision if image exists, Text if no image
+        if (capturedImage) {
+            const prompt = `User instruction: "${instruction || 'Solve the math problem in this image'}".\n\n${systemPrompt}`;
+            sol = await callGeminiVision(capturedImage, prompt, 0);
+        } else {
+            sol = await callGeminiText(systemPrompt, `Solve this problem:\n\n${instruction}`, 0);
+        }
+
         let cleanSol = sol.replace(/[\*&]/g, ''); 
         updateAiBubble(loadingId, cleanSol);
         saveToHistory('math', instruction || "Solve Image", cleanSol, capturedImage); 
         scrollToBottom("mathScrollArea");
-    } catch(e) { updateAiBubble(loadingId, "❌ " + e.message); }
+        
+    } catch(e) { 
+        updateAiBubble(loadingId, "❌ " + e.message); 
+    }
 }
-
 // --- 7. CAMERA SYSTEM ---
 let currentStream = null, currentFacing = "environment";
 async function startCamera() { 
