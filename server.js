@@ -5,8 +5,8 @@ const path = require("path");
 const port = process.env.PORT || 3000;
 
 // Pulling BOTH of your Gemini API Keys from Render
-const geminiVisionKey = process.env.GEMINI_API_KEY_VISION;
-const geminiTextKey = process.env.GEMINI_API_KEY_TEXT;
+const geminiVisionKey = process.env.GEMINI_API_KEY_VISION || process.env.GEMINI_API_KEY; 
+const geminiTextKey = process.env.GEMINI_API_KEY_TEXT || process.env.GEMINI_API_KEY;
 
 const publicDir = __dirname;
 
@@ -43,8 +43,27 @@ function readRequestBody(req) {
   });
 }
 
-// --- GEMINI TEXT ROUTE (Math Solving, Translation, Chat) ---
-// THIS USES KEY 2 (TEXT KEY)
+// --- SAFE GEMINI RESPONSE PARSER ---
+function parseGeminiResponse(data) {
+    if (data.error) {
+        throw new Error(data.error.message || "Unknown Gemini API Error.");
+    }
+    // Check if Google completely blocked the prompt before generating
+    if (data.promptFeedback && data.promptFeedback.blockReason) {
+        throw new Error("Google blocked this prompt. Reason: " + data.promptFeedback.blockReason);
+    }
+    if (!data.candidates || data.candidates.length === 0) {
+        throw new Error("Google returned an empty response. (Usually a safety filter).");
+    }
+    // Check if it generated something but then blocked it
+    const candidate = data.candidates[0];
+    if (!candidate.content || !candidate.content.parts) {
+        throw new Error("Google blocked the response. Reason: " + (candidate.finishReason || "Unknown Filter"));
+    }
+    return candidate.content.parts[0].text;
+}
+
+// --- GEMINI TEXT ROUTE ---
 async function handleGeminiText(req, res) {
   if (!geminiTextKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY_TEXT in Render." });
 
@@ -67,16 +86,15 @@ async function handleGeminiText(req, res) {
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "Gemini text request failed.");
+    const text = parseGeminiResponse(data); // Safely parse the response
 
-    return sendJson(res, 200, { text: data.candidates[0].content.parts[0].text });
+    return sendJson(res, 200, { text: text });
   } catch (error) {
-    return sendJson(res, 502, { error: error.message || "Gemini text service unavailable." });
+    return sendJson(res, 502, { error: error.message || "Gemini text service failed." });
   }
 }
 
-// --- GEMINI VISION ROUTE (Image OCR, Multi-page reading) ---
-// THIS USES KEY 1 (VISION KEY)
+// --- GEMINI VISION ROUTE ---
 async function handleGeminiVision(req, res) {
   if (!geminiVisionKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY_VISION in Render." });
 
@@ -103,11 +121,11 @@ async function handleGeminiVision(req, res) {
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "Gemini Vision request failed.");
+    const text = parseGeminiResponse(data); // Safely parse the response
 
-    return sendJson(res, 200, { text: data.candidates[0].content.parts[0].text });
+    return sendJson(res, 200, { text: text });
   } catch (error) {
-    return sendJson(res, 502, { error: error.message || "Gemini Vision service unavailable." });
+    return sendJson(res, 502, { error: error.message || "Gemini Vision service failed." });
   }
 }
 
