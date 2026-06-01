@@ -99,9 +99,13 @@ async function handleGeminiText(req, res) {
                 if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
                 messages.push({ role: "user", content: userPrompt });
 
-                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+               const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages, temperature })
+                    body: JSON.stringify({ 
+                        model: "llama-3.2-11b-vision-preview", // Updated to the active 11B Vision Model
+                        messages: [{ role: "user", content: [{type: "text", text: prompt}, {type: "image_url", image_url: {url: formattedBase64}}] }],
+                        temperature
+                    })
                 });
                 
                 const data = await response.json();
