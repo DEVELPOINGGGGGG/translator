@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - ULTIMATE BUILD (FRACTIONS + PREMIUM VOICE)
+   AI PRO SUITE - ULTIMATE BUILD (V35 - SEND BUTTONS FIXED)
 ======================================================= */
 
 let appHistory = [];
@@ -10,7 +10,7 @@ let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [],
 window.latestMathSolution = "";
 let availableVoices = [];
 
-// Force load voices immediately to fix the "reading English" bug
+// Force load voices immediately to ensure Hindi loads
 function loadVoices() {
     availableVoices = window.speechSynthesis.getVoices();
 }
@@ -22,6 +22,20 @@ document.addEventListener("DOMContentLoaded", () => {
         apiTime--; if(apiTime <= 0) { apiTime = 60; visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); }
         const t = document.getElementById('apiTimer'); if(t) t.innerText = apiTime + 's'; 
     }, 1000);
+    
+    // BIND ENTER KEYS
+    const inputs = [{id:"searchInput", fn:runGroqSearch}, {id:"mathInstructionInput", fn:executeMathFlow}];
+    inputs.forEach(i => { const el = document.getElementById(i.id); if(el) el.addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); i.fn(); } }); });
+    
+    // BIND SEND BUTTONS (THE FIX FOR DEAD BUTTONS)
+    const buttons = [
+        {id: "sendMathBtn", fn: executeMathFlow},
+        {id: "sendSearchBtn", fn: runGroqSearch},
+        {id: "sendQaBtn", fn: askDocument},
+        {id: "askQaBtn", fn: askDocument}
+    ];
+    buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
+
     if (document.getElementById('historyList')) renderHistory();
 });
 
@@ -79,7 +93,7 @@ async function executeMathFlow() {
     // SAFE MATHJAX PROMPT: Allows fractions but explicitly bans Hindi inside math tags
     const sysPrompt = `You are a Math Tutor. 
     1. Write the explanation strictly in HINDI.
-    2. Format math formulas and FRACTIONS using LaTeX wrapped in $ symbols (e.g. $\\frac{1}{2}$).
+    2. Format math formulas and FRACTIONS using LaTeX wrapped in $ symbols.
     3. CRITICAL RULE: NEVER put any Hindi text or words inside the $ symbols. ONLY math numbers and operators inside $.
     4. Keep it clear and step-by-step.`;
     
