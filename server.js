@@ -43,11 +43,7 @@ async function tryProviders(providers, requestFn) {
     let lastError;
     if (providers.length === 0) throw new Error("No API keys found!");
     for (const p of providers) { 
-        try { 
-            return await requestFn(p); 
-        } catch (error) { 
-            lastError = error; 
-        } 
+        try { return await requestFn(p); } catch (error) { lastError = error; } 
     }
     throw lastError;
 }
@@ -64,9 +60,7 @@ async function handleGeminiText(req, res) {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify(payload) 
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) 
                 });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); 
@@ -76,9 +70,7 @@ async function handleGeminiText(req, res) {
                 if (sysText) messages.push({ role: "system", content: sysText });
                 messages.push({ role: "user", content: userText });
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
-                    method: "POST", 
-                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages }) 
+                    method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages }) 
                 });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Groq Text failed"); 
@@ -101,29 +93,18 @@ async function handleGeminiVision(req, res) {
                 const cleanBase64 = img.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, "");
                 const payload = { contents: [{ parts: [{ text: userText }, { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }] }] };
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify(payload) 
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) 
                 });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); 
                 return data.candidates[0].content.parts[0].text;
             } else {
                 let formattedBase64 = img.startsWith("data:image") ? img : `data:image/jpeg;base64,${img}`;
-                
-                // 🛑 FIXED: Changed to the active Llama 4 Scout Multimodal Vision Model 🛑
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
-                    method: "POST", 
-                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
+                    method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
                     body: JSON.stringify({ 
                         model: "meta-llama/llama-4-scout-17b-16e-instruct", 
-                        messages: [{ 
-                            role: "user", 
-                            content: [
-                                {type: "text", text: userText}, 
-                                {type: "image_url", image_url: {url: formattedBase64}}
-                            ] 
-                        }] 
+                        messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] 
                     }) 
                 });
                 const data = await response.json(); 
@@ -146,7 +127,8 @@ async function handleGroqSearch(req, res) {
             headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" }, 
             body: JSON.stringify({ 
                 model: "llama-3.3-70b-versatile", 
-                messages: [{ role: "system", content: "Direct study assistant." }, { role: "user", content: userText }] 
+                // 🛑 FIXED: Deep Search now acts exclusively as an Internet Search Engine 🛑
+                messages: [{ role: "system", content: "You are an advanced Internet Search Engine. Search your knowledge base to provide factual, comprehensive, and up-to-date web search results." }, { role: "user", content: userText }] 
             }) 
         });
         const data = await response.json(); 
@@ -163,14 +145,9 @@ function serveStatic(req, res) {
     
     fs.readFile(filePath, (error, data) => {
         if (error) { 
-            fs.readFile(path.join(publicDir, "index.html"), (err, fData) => { 
-                res.writeHead(200, { "Content-Type": contentTypes[".html"] }); 
-                res.end(fData); 
-            }); 
-            return; 
+            fs.readFile(path.join(publicDir, "index.html"), (err, fData) => { res.writeHead(200, { "Content-Type": contentTypes[".html"] }); res.end(fData); }); return; 
         }
-        res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); 
-        res.end(data);
+        res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); res.end(data);
     });
 }
 
