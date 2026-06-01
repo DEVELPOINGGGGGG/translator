@@ -187,6 +187,14 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .red { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
 .orange { background: linear-gradient(135deg, #ea580c, #f97316); color: white; }
 .btn-group { display: flex; gap: 12px; margin-top: 10px; } 
+.char-counter {
+    position: absolute;
+    right: 20px;
+    bottom: -20px;
+    font-size: 11px;
+    color: var(--muted);
+}
+.voiceHeader { position: relative; }
 .btn-group .btn { margin-top: 0; flex: 1; }
 
 .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--accent); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
