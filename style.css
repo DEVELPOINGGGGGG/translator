@@ -1,5 +1,5 @@
 /* =========================
-   AI PRO SUITE - MASTER CSS (V25)
+   AI PRO SUITE - MASTER CSS (V28)
 ========================= */
 
 * { 
@@ -28,7 +28,7 @@ body {
     background: linear-gradient(-45deg, #020617, #0f172a, #172033, #081124); 
     background-size: 400% 400%; 
     animation: gradientBG 15s ease infinite; 
-    background-attachment: fixed; /* FIXES THE SCROLLING GLITCH */
+    background-attachment: fixed; 
     color: white; 
     height: 100vh; 
     height: 100dvh; 
@@ -115,7 +115,7 @@ body {
     to { opacity: 1; transform: translateY(0); filter: blur(0); } 
 }
 
-/* CHAT UI LAYOUT (For Search & Math) */
+/* CHAT UI LAYOUT */
 .chat-page-layout { display: flex !important; flex-direction: column; padding: 0 !important; overflow: hidden !important; }
 .chat-scroll-area { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 40px; scroll-behavior: smooth; display: flex; flex-direction: column; }
 .chat-input-area { padding: 15px 20px; background: rgba(15,23,42,0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.05); position: relative; padding-bottom: max(15px, env(safe-area-inset-bottom)); }
@@ -127,15 +127,30 @@ body {
 .image-preview-chip { display: none; position: absolute; top: -70px; left: 20px; width: 60px; height: 60px; border-radius: 12px; border: 2px solid var(--accent); background-size: cover; background-position: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 10; cursor: pointer; }
 .image-preview-close { position: absolute; top: -8px; right: -8px; background: var(--red); color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
 
-/* CHAT BUBBLES */
+/* CHAT BUBBLES WITH SCROLL FIX */
 .chat-msg { margin-bottom: 20px; display: flex; flex-direction: column; width: 100%; clear: both; animation: fadeIn 0.3s ease; }
 .chat-user { align-items: flex-end; }
 .chat-ai { align-items: flex-start; }
-.bubble { max-width: 85%; padding: 14px 18px; border-radius: 20px; line-height: 1.5; font-size: 15px; word-wrap: break-word; position: relative; }
+.bubble { 
+    max-width: 85%; 
+    padding: 14px 18px; 
+    border-radius: 20px; 
+    line-height: 1.5; 
+    font-size: 15px; 
+    word-wrap: break-word; 
+    position: relative; 
+    overflow-x: auto; /* SCROLL FIX FOR LONG EQUATIONS */
+}
 .chat-user .bubble { background: var(--accent); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
 .chat-ai .bubble { background: rgba(30,41,59,0.95); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .bubble-img { max-width: 100%; max-height: 200px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
-.bubble mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; -webkit-overflow-scrolling: touch; }
+
+.bubble mjx-container { 
+    overflow-x: auto !important; 
+    overflow-y: hidden !important; 
+    max-width: 100%; 
+    -webkit-overflow-scrolling: touch; 
+}
 
 /* DASHBOARD GRID */
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
@@ -229,7 +244,6 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .actionBtnSmall.green { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4); }
 .actionBtnSmall.green:hover { background: rgba(34, 197, 94, 0.9); }
 
-/* DESKTOP MEDIA QUERY */
 @media(min-width: 768px) { 
     .page { max-width: 800px; margin: auto; left: 50%; transform: translateX(-50%); } 
     .topbar, .apiTracker { justify-content: center; gap: 40px; } 
