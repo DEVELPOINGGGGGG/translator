@@ -84,7 +84,7 @@ async function handleGroqVision(req, res) {
       method: "POST",
       headers: { Authorization: `Bearer ${groqApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        model: "llama-3.2-90b-vision-preview", // Groq's high-power vision model
+        model: "meta-llama/llama-4-scout-17b-16e-instruct", // Groq's new multimodal vision model
         temperature: 0,
         messages: [
             {
