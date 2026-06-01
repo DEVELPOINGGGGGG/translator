@@ -4,8 +4,8 @@ const path = require("path");
 
 const port = process.env.PORT || 3000;
 
-// ONLY ONE KEY NEEDED NOW!
-const groqApiKey = process.env.GROQ_API_KEY || process.env["GROQ-API-KEY"];
+// Look for the Gemini API Key from Render Environment Variables
+const geminiApiKey = process.env.GEMINI_API_KEY;
 
 const publicDir = __dirname;
 
@@ -26,7 +26,7 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
-// 50MB limit to handle multiple high-res math/textbook photos
+// 50MB limit to handle high-res photos
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -42,69 +42,71 @@ function readRequestBody(req) {
   });
 }
 
-// --- GROQ AI CHAT & SOLVER ROUTE ---
-async function handleGroqChat(req, res) {
-  if (!groqApiKey) return sendJson(res, 500, { error: "Missing GROQ_API_KEY." });
+// --- GEMINI TEXT ROUTE (Math Solving, Translation, Chat) ---
+async function handleGeminiText(req, res) {
+  if (!geminiApiKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY in Render." });
 
   try {
-    const body = await readRequestBody(req);
-    const { messages, model = "llama-3.3-70b-versatile", temperature = 0 } = JSON.parse(body || "{}");
+    const { systemPrompt, userPrompt, temperature = 0 } = JSON.parse(await readRequestBody(req));
 
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const payload = {
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: { temperature: temperature }
+    };
+
+    // Add system instruction if provided
+    if (systemPrompt) {
+        payload.systemInstruction = { parts: [{ text: systemPrompt }] };
+    }
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${groqApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, temperature, messages }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
 
-    const data = await groqResponse.json().catch(() => ({}));
-    if (!groqResponse.ok) return sendJson(res, groqResponse.status, { error: data.error?.message || "Groq request failed." });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "Gemini request failed.");
 
-    return sendJson(res, 200, data);
+    return sendJson(res, 200, { text: data.candidates[0].content.parts[0].text });
   } catch (error) {
-    return sendJson(res, 502, { error: error.message || "Groq unavailable." });
+    return sendJson(res, 502, { error: error.message || "Gemini unavailable." });
   }
 }
 
-// --- GROQ VISION OCR ROUTE (REPLACES GOOGLE) ---
-async function handleGroqVision(req, res) {
-  if (!groqApiKey) return sendJson(res, 500, { error: "Missing GROQ_API_KEY." });
+// --- GEMINI VISION ROUTE (Image OCR, Multi-page reading) ---
+async function handleGeminiVision(req, res) {
+  if (!geminiApiKey) return sendJson(res, 500, { error: "Missing GEMINI_API_KEY in Render." });
 
   try {
-    const body = await readRequestBody(req);
-    const { imageBase64 } = JSON.parse(body || "{}");
+    const { imageBase64, prompt, temperature = 0 } = JSON.parse(await readRequestBody(req));
     if (!imageBase64) return sendJson(res, 400, { error: "No image provided." });
 
-    // Ensure the image has the correct prefix for the API
-    let formattedBase64 = imageBase64;
-    if (!formattedBase64.startsWith("data:image")) {
-        formattedBase64 = `data:image/jpeg;base64,${formattedBase64}`;
-    }
+    // Clean base64 for Gemini
+    const cleanBase64 = imageBase64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, "");
 
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const payload = {
+        contents: [{
+            parts: [
+                { text: prompt },
+                { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
+            ]
+        }],
+        generationConfig: { temperature: temperature }
+    };
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${groqApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        model: "meta-llama/llama-4-scout-17b-16e-instruct", // Groq's new multimodal vision model
-        temperature: 0,
-        messages: [
-            {
-                role: "user",
-                content: [
-                    { type: "text", text: "Extract all the text and math from this image exactly as written. Return ONLY the raw text, with no introductory words or explanations." },
-                    { type: "image_url", image_url: { url: formattedBase64 } }
-                ]
-            }
-        ]
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
 
-    const data = await groqResponse.json();
-    if (!groqResponse.ok) return sendJson(res, groqResponse.status, { error: data.error?.message || "Groq Vision failed." });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed.");
 
-    const text = data.choices[0]?.message?.content || "";
-    return sendJson(res, 200, { text });
+    return sendJson(res, 200, { text: data.candidates[0].content.parts[0].text });
   } catch (error) {
-    return sendJson(res, 502, { error: error.message || "Groq Vision unavailable." });
+    return sendJson(res, 502, { error: error.message || "Gemini Vision unavailable." });
   }
 }
 
@@ -130,13 +132,12 @@ function serveStatic(req, res) {
 
 // --- ROUTER ---
 const server = http.createServer((req, res) => {
-  if (req.method === "POST" && req.url === "/api/groq-chat") return handleGroqChat(req, res);
-  // NEW ENDPOINT POINTING TO GROQ VISION
-  if (req.method === "POST" && req.url === "/api/groq-ocr") return handleGroqVision(req, res);
+  if (req.method === "POST" && req.url === "/api/gemini-text") return handleGeminiText(req, res);
+  if (req.method === "POST" && req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
   
   if (req.method === "GET" || req.method === "HEAD") return serveStatic(req, res);
   
   sendJson(res, 405, { error: "Method not allowed." });
 });
 
-server.listen(port, () => console.log(`AI Pro Suite running on port ${port}`));
+server.listen(port, () => console.log(`AI Pro Suite running on port ${port} with Gemini`));
