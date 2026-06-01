@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pro Suite - History</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+<div class="apiTracker">
+    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
+</div>
+
+<div id="ttsPlayer">
+  <div class="ttsIndicator">🔊 Reading</div>
+  <button class="ttsBtn" id="ttsPlayBtn">⏸️</button>
+  <button class="ttsBtn" id="ttsStopBtn">⏹️</button>
+  <button class="ttsBtn" id="ttsCloseBtn">✖️</button>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🕒 History & Downloads</button>
+</div>
+
+<div class="page active" id="historyPage">
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="cardTitle" style="font-size: 22px; margin-bottom: 0;">🕒 Saved History</div>
+      <button class="btn red" style="width: auto; padding: 8px 15px; margin-top: 0; font-size: 13px;" onclick="clearAllHistory()">🗑️ Clear All</button>
+    </div>
+    
+    <div id="historyList" style="margin-top: 15px;"></div>
+  </div>
+</div>
+
+<div class="infoModal" id="historyModal">
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0;">Title</div>
+      <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0;">✕</button>
+    </div>
+    <div class="hist-scroll-area">
+        <div class="cardSub" style="margin-top: 5px;">Original Request:</div>
+        <div class="outputBox" id="histQuestion"></div>
+        <div class="cardSub" style="margin-top: 15px;">Solution:</div>
+        <div class="outputBox" id="histAnswer"></div>
+    </div>
+    <div class="hist-footer">
+        <div class="btn-group" style="margin-top: 0;">
+            <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button>
+            <button class="btn blue" onclick="downloadHistoryFile()">💾 Download Text</button>
+        </div>
+    </div>
+  </div>
+</div>
+
+<script src="main.js" defer></script>
+
+</body>
+</html>
