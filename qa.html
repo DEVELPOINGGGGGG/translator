@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pro Suite - Document Q&A</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+<div class="apiTracker">
+    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
+</div>
+
+<div id="ttsPlayer">
+  <div class="ttsIndicator">🔊 Reading</div>
+  <button class="ttsBtn" id="ttsPlayBtn">⏸️</button>
+  <button class="ttsBtn" id="ttsStopBtn">⏹️</button>
+  <button class="ttsBtn" id="ttsCloseBtn">✖️</button>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='qa.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+</div>
+
+<div class="page active" id="qaPage">
+  <div class="card" style="background:linear-gradient(135deg,#f59e0b,#ef4444); border:none;">
+    <h1 style="font-size: 24px; text-align: center;">📚 Document Q&A</h1>
+    <p style="font-size: 14px; text-align: center; opacity: 0.9;">Snap multiple pages of a chapter and ask questions.</p>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Step 1: Add Pages</div>
+    <div class="btn-group" style="margin-bottom: 15px;">
+        <button class="btn green" onclick="openCamera('qa')">📷 Take Photo</button>
+        <button class="btn blue" onclick="document.getElementById('multiImageUpload').click()">📁 Upload</button>
+    </div>
+    
+    <input type="file" id="multiImageUpload" accept="image/*" multiple onchange="handleMultiUpload(event)" style="display:none;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="fileList" id="fileListDisplay" style="font-weight: 600; color: #93c5fd;">0 pages ready</div>
+        <button class="btn red" style="width: auto; padding: 6px 16px; margin-top:0; font-size:13px;" onclick="clearQaImages()">🗑️ Clear</button>
+    </div>
+    
+    <button class="btn purple" id="extractBtn_qa" onclick="extractMultiImages()" style="margin-top: 15px;" disabled>📄 Read All Pages</button>
+    <div class="status" id="qaStatus" style="display:none; margin-top:10px; padding:10px;">Ready</div>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Step 2: Ask Anything</div>
+    <div class="outputBox" id="qaContextBox" style="max-height: 150px; font-size: 12px; color: var(--muted);">Context will appear here...</div>
+    
+    <textarea class="standard" id="qaQuestionInput" placeholder="Ask a question based on the scanned pages..." style="margin-top: 15px; min-height: 80px;"></textarea>
+    <button class="btn blue" onclick="askDocument()">🧠 Answer Question</button>
+    
+    <div class="cardTitle" style="margin-top: 20px;">AI Answer:</div>
+    <div class="outputBox" id="qaAnswerBox">Answer will appear here...</div>
+    
+    <button class="btn green" id="speakQaBtn" style="display:none; margin-top: 15px;" onclick="speakText('qaAnswerBox')">🔊 Speak Answer</button>
+  </div>
+</div>
+
+<div class="cameraModal" id="cameraModal">
+  <div class="cameraHeader"><button id="closeCameraBtn">✕</button><div>Camera</div><div></div></div>
+  <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
+  <div class="cameraControls">
+    <button class="flashBtn" id="toggleFlashBtn">🔦</button>
+    <button class="cameraCircle" id="capturePhotoBtn"></button>
+    <button class="switchBtn" id="switchCameraBtn">🔄</button>
+  </div>
+</div>
+
+<canvas id="captureCanvas" style="display:none;"></canvas>
+
+<script src="main.js" defer></script>
+
+</body>
+</html>
