@@ -111,12 +111,12 @@ async function handleGeminiVision(req, res) {
             } else {
                 let formattedBase64 = img.startsWith("data:image") ? img : `data:image/jpeg;base64,${img}`;
                 
-                // 🛑 THE FIX: Changed to the active 11b vision model 🛑
+                // 🛑 FIXED: Changed to the active Llama 4 Scout Multimodal Vision Model 🛑
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
                     method: "POST", 
                     headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
                     body: JSON.stringify({ 
-                        model: "llama-3.2-11b-vision-preview", 
+                        model: "meta-llama/llama-4-scout-17b-16e-instruct", 
                         messages: [{ 
                             role: "user", 
                             content: [
