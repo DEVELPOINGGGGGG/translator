@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - ULTIMATE BUILD (V35 - SEND BUTTONS FIXED)
+   AI PRO SUITE - ULTIMATE BUILD (V37 - MOBILE BUTTON FIX)
 ======================================================= */
 
 let appHistory = [];
@@ -10,7 +10,6 @@ let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [],
 window.latestMathSolution = "";
 let availableVoices = [];
 
-// Force load voices immediately to ensure Hindi loads
 function loadVoices() {
     availableVoices = window.speechSynthesis.getVoices();
 }
@@ -27,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputs = [{id:"searchInput", fn:runGroqSearch}, {id:"mathInstructionInput", fn:executeMathFlow}];
     inputs.forEach(i => { const el = document.getElementById(i.id); if(el) el.addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); i.fn(); } }); });
     
-    // BIND SEND BUTTONS (THE FIX FOR DEAD BUTTONS)
+    // BIND SEND BUTTONS
     const buttons = [
         {id: "sendMathBtn", fn: executeMathFlow},
         {id: "sendSearchBtn", fn: runGroqSearch},
@@ -39,22 +38,30 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById('historyList')) renderHistory();
 });
 
-// --- CORE HELPERS ---
+// --- SAFE CONTAINER DETECTOR (FIXES MOBILE BUTTONS) ---
+function getActiveChatContainer(defaultId) {
+    let container = document.getElementById(defaultId);
+    if (!container) container = document.getElementById("mathsChatHistory");
+    if (!container) container = document.getElementById("chatHistory");
+    if (!container) container = document.querySelector(".chat-scroll-area");
+    return container;
+}
+
 function track(type) { if(type==='v'){ visionReqs++; localStorage.setItem('visionReqs', visionReqs); } else { textReqs++; localStorage.setItem('textReqs', textReqs); } }
 function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
 if(document.getElementById("overlay")) document.getElementById("overlay").onclick = toggleSidebar;
 function setStatusLoading(id, txt) { const el = document.getElementById(id); if(el) { el.innerHTML = `<div class="spinner"></div> ${txt}`; el.style.display = "flex"; } }
-function scrollToBottom(aid) { setTimeout(() => { const a = document.getElementById(aid); if(a) a.scrollTop = a.scrollHeight; }, 50); }
+function scrollToBottom(aid) { setTimeout(() => { const a = document.getElementById(aid) || document.querySelector(".chat-scroll-area"); if(a) a.scrollTop = a.scrollHeight; }, 50); }
 
 function appendUserBubble(txt, img, cid) {
-    const c = document.getElementById(cid); if(!c) return;
+    const c = getActiveChatContainer(cid); if(!c) return;
     let iH = img ? `<img src="${img}" class="bubble-img">` : '';
     let tH = txt ? `<div>${txt.replace(/\n/g, '<br>')}</div>` : '';
     c.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${iH}${tH}</div></div>`);
     scrollToBottom(cid.replace('ChatHistory', 'ScrollArea'));
 }
 function appendAiLoading(cid) {
-    const c = document.getElementById(cid); if(!c) return null;
+    const c = getActiveChatContainer(cid); if(!c) return null;
     const id = "loading_" + Date.now();
     c.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${id}"><div class="bubble"><div class="spinner"></div> Thinking...</div></div>`);
     scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); return id;
@@ -63,25 +70,35 @@ function appendAiLoading(cid) {
 // --- API FETCHERS ---
 async function callGeminiText(sysText, usrText, temp=0) {
   if (isProcessing) throw new Error("Processing"); isProcessing = true; track('t');
-  try { const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt:sysText, userPrompt:usrText, temperature:temp }) }); const d = await r.json(); if(!r.ok) throw new Error(d.error); isProcessing = false; return d.text; } catch(e) { isProcessing = false; throw e; }
+  try { 
+      const payload = { systemPrompt: sysText, userPrompt: usrText, prompt: usrText, temperature: temp };
+      const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) }); 
+      const d = await r.json(); if(!r.ok) throw new Error(d.error || "API Error"); 
+      isProcessing = false; return d.text; 
+  } catch(e) { isProcessing = false; throw e; }
 }
+
 async function callGeminiVision(imgData, aiQuery, temp=0) {
   if (isProcessing) throw new Error("Processing"); isProcessing = true; track('v');
-  try { const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64:imgData, prompt:aiQuery, temperature:temp }) }); const d = await r.json(); if(!r.ok) throw new Error(d.error); isProcessing = false; return d.text; } catch(e) { isProcessing = false; throw e; }
+  try { 
+      const payload = { imageBase64: imgData, prompt: aiQuery, userPrompt: aiQuery, temperature: temp };
+      const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) }); 
+      const d = await r.json(); if(!r.ok) throw new Error(d.error || "API Error"); 
+      isProcessing = false; return d.text; 
+  } catch(e) { isProcessing = false; throw e; }
 }
 
 // --- PREMIUM HUMAN VOICE MATCHER ---
 function applyBestHindiVoice(utterance) {
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-    // Search for Premium Google Network Hindi Voice
     let premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('hi'));
     let fallback = availableVoices.find(v => v.lang.includes('hi'));
     if (premium) utterance.voice = premium;
     else if (fallback) utterance.voice = fallback;
-    utterance.lang = 'hi-IN'; // Force Hindi engine
+    utterance.lang = 'hi-IN';
 }
 
-// --- MATH SOLVER (FRACTIONS SUPPORTED & SAFE) ---
+// --- MATH SOLVER (WITH FIXED MOBILE BUTTON INJECTION) ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -90,10 +107,9 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // SAFE MATHJAX PROMPT: Allows fractions but explicitly bans Hindi inside math tags
     const sysPrompt = `You are a Math Tutor. 
     1. Write the explanation strictly in HINDI.
-    2. Format math formulas and FRACTIONS using LaTeX wrapped in $ symbols.
+    2. Format math formulas and FRACTIONS using LaTeX wrapped in $ symbols (e.g. $\\frac{1}{2}$).
     3. CRITICAL RULE: NEVER put any Hindi text or words inside the $ symbols. ONLY math numbers and operators inside $.
     4. Keep it clear and step-by-step.`;
     
@@ -102,21 +118,28 @@ async function executeMathFlow() {
         let cleanSol = sol.replace(/[\*&]/g, ''); 
         window.latestMathSolution = cleanSol;
         
-        const bbl = document.getElementById(lId).querySelector('.bubble');
-        bbl.innerHTML = `<div id="text_${lId}">${cleanSol.replace(/\n/g, '<br>')}</div>`;
-        if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
-        
-        bbl.insertAdjacentHTML('beforeend', `
-            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px;">
-                <button class="btn green" style="padding:10px; margin:0; flex:1;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
-                <button class="btn blue" style="padding:10px; margin:0; flex:1; background:var(--red);" onclick="initVideoGui()">▶️ Video Tutor</button>
-            </div>
-        `);
+        const loadingBubble = document.getElementById(lId);
+        if (loadingBubble) {
+            const bbl = loadingBubble.querySelector('.bubble');
+            bbl.innerHTML = `<div id="text_${lId}">${cleanSol.replace(/\n/g, '<br>')}</div>`;
+            if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
+            
+            // Injects absolute safe buttons for mobile
+            bbl.insertAdjacentHTML('beforeend', `
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+                    <button class="btn green" style="padding:12px; margin:0; flex:1; font-size:14px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
+                    <button class="btn blue" style="padding:12px; margin:0; flex:1; font-size:14px; background:rgb(220,38,38);" onclick="initVideoGui()">▶️ Video Tutor</button>
+                </div>
+            `);
+        }
         saveToHistory('math', instruction, cleanSol, capturedImage); scrollToBottom("mathScrollArea");
-    } catch(e) { document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
+    } catch(e) { 
+        const el = document.getElementById(lId);
+        if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
+    }
 }
 
-// --- VIDEO GUI (LINE-BY-LINE FRACTION EXPLAINER) ---
+// --- VIDEO GUI ---
 function initVideoGui() {
     if(!window.latestMathSolution) return;
     if(screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(()=>{}); }
@@ -153,14 +176,12 @@ async function playFractionVideo() {
         if(!document.getElementById('videoGuiOverlay')) return; 
         const lineText = lines[i];
         
-        // 1. Speak the line
         const cleanSpeech = lineText.replace(/[\$\\]/g, ' ').replace(/frac/g, ' divided by ');
         const u = new SpeechSynthesisUtterance(cleanSpeech);
         applyBestHindiVoice(u);
         u.rate = videoSpeed;
         window.speechSynthesis.speak(u);
         
-        // 2. Fade in the line with rendered MathJax fractions
         const lineDiv = document.createElement("div");
         lineDiv.style.opacity = 0;
         lineDiv.style.transition = "opacity 0.5s ease-in";
@@ -168,10 +189,8 @@ async function playFractionVideo() {
         content.appendChild(lineDiv);
         
         if (window.MathJax) { MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); }
+        setTimeout(() => { lineDiv.style.opacity = 1; if(content.parentElement) content.parentElement.scrollTop = content.parentElement.scrollHeight; }, 200);
         
-        setTimeout(() => { lineDiv.style.opacity = 1; content.scrollIntoView({behavior: "smooth", block: "end"}); }, 200);
-        
-        // Wait for voice to finish
         await new Promise(r => { u.onend = r; setTimeout(r, 2000); }); 
     }
     document.getElementById('vPlayBtn').innerHTML = "✅ Done";
@@ -201,12 +220,15 @@ async function runGroqSearch() {
     appendUserBubble(q, null, "searchChatHistory"); inp.value = ""; let lId = appendAiLoading("searchChatHistory");
     const safePrompt = "Always write your response in HINDI by default.\n\nQuery: " + q;
     try {
-        const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ prompt: safePrompt }) });
+        const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: safePrompt }) });
         const data = await res.json(); if(!res.ok) throw new Error(data.error);
         const ans = data.text.replace(/\*/g, '');
-        document.getElementById(lId).querySelector('.bubble').innerHTML = `<div id="search_${lId}">${ans.replace(/\n/g, '<br>')}</div><button class="btn green" style="margin-top:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>`;
+        const targetBubble = document.getElementById(lId);
+        if (targetBubble) {
+            targetBubble.querySelector('.bubble').innerHTML = `<div id="search_${lId}">${ans.replace(/\n/g, '<br>')}</div><button class="btn green" style="margin-top:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>`;
+        }
         saveToHistory('search', q, ans); scrollToBottom("searchScrollArea");
-    } catch(e) { document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
+    } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
 // --- TRANSLATORS (VOICE & IMAGE) ---
