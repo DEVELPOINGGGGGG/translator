@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - MASTER JAVASCRIPT (V27 - MathJax Fix & Flashlight)
+   AI PRO SUITE - MASTER JAVASCRIPT (V29 - AI Hindi Writing Default)
 ======================================================= */
 
 // --- 1. GLOBAL STATE & INITIALIZATION ---
@@ -15,7 +15,7 @@ let capturedImage = null;
 let currentMode = ""; 
 let qaImages = []; 
 let qaContextText = "";
-let isFlashOn = true; // Default flashlight state
+let isFlashOn = true; 
 
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Setup API Trackers
@@ -126,12 +126,12 @@ async function callGeminiText(systemPrompt, userPrompt, temp = 0) {
   } catch(e) { isProcessing = false; throw e; }
 }
 
-async function callGeminiVision(imageBase64, prompt, temp = 0) {
+async function callGeminiVision(imageBase64, aiPrompt, temp = 0) {
   if (visionReqs >= 20) throw new Error("⏳ Vision Limit Reached! Wait for timer.");
   if (isProcessing) throw new Error("⏳ AI is already processing.");
   isProcessing = true; trackVision();
   try {
-      const res = await fetch("/api/gemini-vision", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64, prompt, temperature: temp }) });
+      const res = await fetch("/api/gemini-vision", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ imageBase64, prompt: aiPrompt, temperature: temp }) });
       const data = await res.json(); if(!res.ok) throw new Error(data.error); isProcessing = false; return data.text;
   } catch(e) { isProcessing = false; throw e; }
 }
@@ -147,10 +147,13 @@ async function runGroqSearch() {
     inputField.value = ""; autoResize(inputField);
     let loadingId = appendAiLoading("searchChatHistory");
     
+    // Inject the Hindi rule directly into the payload so we don't have to change server.js
+    const groqPrompt = "CRITICAL RULE: You MUST always write your response in HINDI by default. ONLY reply in another language if the user explicitly asks for it in their query (e.g., 'talk in English', 'explain in French').\n\nUser Query: " + q;
+
     try {
         const res = await fetch("/api/groq-search", {
             method: "POST", headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ prompt: q })
+            body: JSON.stringify({ prompt: groqPrompt })
         });
         const data = await res.json();
         if(!res.ok) throw new Error(data.error || "Search failed");
@@ -162,7 +165,7 @@ async function runGroqSearch() {
     } catch(e) { updateAiBubble(loadingId, "❌ " + e.message); }
 }
 
-// --- 6. MATH SOLVER (UPDATED WITH MATHJAX FIX) ---
+// --- 6. MATH SOLVER ---
 function clearMathImage(e) {
     if(e) e.stopPropagation();
     capturedImage = null;
@@ -179,32 +182,28 @@ async function executeMathFlow() {
     if(!inputField) return;
     const instruction = inputField.value.trim();
 
-    // Do nothing if both are empty
     if (!capturedImage && !instruction) return;
     
-    // Add User Bubble instantly
     appendUserBubble(instruction || "Solve this image", capturedImage, "mathChatHistory");
     inputField.value = ""; autoResize(inputField);
     let loadingId = appendAiLoading("mathChatHistory");
 
-    // UPDATED PROMPT: Strict instructions to keep Hindi OUT of the MathJax tags
+    // UPDATED PROMPT: Write in Hindi by default, but respect user language requests
     const systemPrompt = `You are an expert Math Tutor for a class 9 student. 
     IMPORTANT RULES:
     1. Extract and solve the problem based on the user's instruction.
-    2. Write the ENTIRE solution strictly in HINDI.
+    2. Write the ENTIRE solution strictly in HINDI by default. IF the user specifically asks to explain in another language (e.g., 'talk in English'), use that requested language instead.
     3. Explain simply and step-by-step.
     4. MUST wrap ALL math fractions, roots, and equations in $ symbols (e.g., $\\frac{47}{100}$ or $\\sqrt{43}$).
-    5. CRITICAL RULE: NEVER put Hindi words inside the $ symbols. ONLY numbers and math operators go inside $. MathJax will break if you put Hindi inside $! 
+    5. CRITICAL RULE: NEVER put text words inside the $ symbols. ONLY numbers and math operators go inside $. MathJax will break if you put text inside $! 
        - BAD Example: $कुल हानि = 12$
        - GOOD Example: कुल हानि = $12$`;
     
     try {
         let sol = "";
-        
-        // SMART ROUTING: Vision if image exists, Text if no image
         if (capturedImage) {
-            const prompt = `User instruction: "${instruction || 'Solve the math problem in this image'}".\n\n${systemPrompt}`;
-            sol = await callGeminiVision(capturedImage, prompt, 0);
+            const aiPrompt = `User instruction: "${instruction || 'Solve the math problem in this image'}".\n\n${systemPrompt}`;
+            sol = await callGeminiVision(capturedImage, aiPrompt, 0);
         } else {
             sol = await callGeminiText(systemPrompt, `Solve this problem:\n\n${instruction}`, 0);
         }
@@ -213,7 +212,6 @@ async function executeMathFlow() {
         updateAiBubble(loadingId, cleanSol);
         saveToHistory('math', instruction || "Solve Image", cleanSol, capturedImage); 
         scrollToBottom("mathScrollArea");
-        
     } catch(e) { 
         updateAiBubble(loadingId, "❌ " + e.message); 
     }
@@ -228,12 +226,10 @@ async function startCamera() {
         currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
         document.getElementById("cameraVideo").srcObject = currentStream; 
         
-        // --- AUTO-FLASHLIGHT LOGIC ---
         const track = currentStream.getVideoTracks()[0];
         setTimeout(async () => {
             try {
                 const capabilities = track.getCapabilities();
-                // Only turn on if supported AND we are using the back camera
                 if (capabilities.torch && currentFacing === "environment") {
                     isFlashOn = true;
                     await track.applyConstraints({ advanced: [{ torch: true }] });
@@ -242,9 +238,8 @@ async function startCamera() {
                     isFlashOn = false;
                     updateFlashUI();
                 }
-            } catch(err) { console.log("Torch not supported on this device."); }
-        }, 500); // Give camera 500ms to initialize before triggering flash
-
+            } catch(err) { console.log("Torch not supported."); }
+        }, 500); 
     } catch(e) { alert("Camera Error. Please allow permissions."); } 
 }
 
@@ -260,9 +255,7 @@ async function toggleFlash() {
         } else {
             alert("Flashlight not supported on this camera lens.");
         }
-    } catch(err) {
-        console.error("Error toggling flash", err);
-    }
+    } catch(err) { console.error("Error toggling flash", err); }
 }
 
 function updateFlashUI() {
@@ -290,11 +283,10 @@ async function switchCamera() {
     await startCamera(); 
 }
 
-// Bind Camera buttons safely
 if(document.getElementById('closeCameraBtn')) document.getElementById('closeCameraBtn').onclick = closeCamera;
 if(document.getElementById('switchCameraBtn')) document.getElementById('switchCameraBtn').onclick = switchCamera;
 if(document.getElementById('capturePhotoBtn')) document.getElementById('capturePhotoBtn').onclick = capturePhoto;
-if(document.getElementById('toggleFlashBtn')) document.getElementById('toggleFlashBtn').onclick = toggleFlash; // Added Flashlight Toggle
+if(document.getElementById('toggleFlashBtn')) document.getElementById('toggleFlashBtn').onclick = toggleFlash;
 if(document.getElementById('closePreviewBtn')) document.getElementById('closePreviewBtn').onclick = () => { document.getElementById('photoViewer').classList.remove('active'); };
 if(document.getElementById('clearMathImgBtn')) document.getElementById('clearMathImgBtn').onclick = clearMathImage;
 if(document.getElementById('openMathCameraBtn')) document.getElementById('openMathCameraBtn').onclick = () => openCamera('math');
@@ -342,15 +334,43 @@ function dragEnd() { isDragging = false; }
 function drag(e) { if (isDragging && ttsPlayer) { e.preventDefault(); let x = e.type === "touchmove" ? e.touches[0].clientX : e.clientX; let y = e.type === "touchmove" ? e.touches[0].clientY : e.clientY; let nx = x - initialX; let ny = y - initialY; ttsPlayer.style.left = nx + "px"; ttsPlayer.style.top = ny + "px"; ttsPlayer.style.right = "auto"; ttsPlayer.style.bottom = "auto"; ttsPlayer.style.transform = "none"; } } 
 
 let currentSpeakingElement = null;
+
 function speakText(id) { 
     const el = document.getElementById(id); if(!el) return; 
     let text = el.innerText.replace(/<[^>]*>?/gm, '').replace(/[\$\\]/g, ' ').replace(/\*\*/g, '').replace(/&&/g, ' '); 
-    window.speechSynthesis.cancel(); ttsUtterance = new SpeechSynthesisUtterance(text); currentSpeakingElement = el; 
+    window.speechSynthesis.cancel(); 
+    ttsUtterance = new SpeechSynthesisUtterance(text); 
+    
+    // Default to Hindi TTS voice
+    let langCode = 'hi-IN'; 
+    
+    if (id === 'translatedText' && document.getElementById("targetLang")) {
+        const val = document.getElementById("targetLang").value.toLowerCase();
+        if(val.includes('english')) langCode = 'en-US';
+        else if(val.includes('french')) langCode = 'fr-FR';
+        else if(val.includes('spanish')) langCode = 'es-ES';
+        else if(val.includes('german')) langCode = 'de-DE';
+        else if(val.includes('japanese')) langCode = 'ja-JP';
+    } else if (id === 'translatedImageText' && document.getElementById("imageTargetLang")) {
+        const val = document.getElementById("imageTargetLang").value.toLowerCase();
+        if(val.includes('english')) langCode = 'en-US';
+        else if(val.includes('french')) langCode = 'fr-FR';
+        else if(val.includes('spanish')) langCode = 'es-ES';
+        else if(val.includes('german')) langCode = 'de-DE';
+        else if(val.includes('japanese')) langCode = 'ja-JP';
+    }
+    
+    ttsUtterance.lang = langCode; 
+    
+    currentSpeakingElement = el; 
     el.style.border = "2px solid var(--accent)"; 
     ttsUtterance.onend = () => { document.getElementById('ttsPlayBtn').innerText = '▶️'; if(currentSpeakingElement) currentSpeakingElement.style.border = "1px solid rgba(255,255,255,.05)"; }; 
-    window.speechSynthesis.speak(ttsUtterance); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; 
+    window.speechSynthesis.speak(ttsUtterance); 
+    isPaused = false; 
+    document.getElementById('ttsPlayBtn').innerText = '⏸️'; 
     if(ttsPlayer) ttsPlayer.style.display = 'flex'; 
 }
+
 function toggleTTS() { if(!ttsUtterance) return; if (isPaused) { window.speechSynthesis.resume(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; } else { window.speechSynthesis.pause(); isPaused = true; document.getElementById('ttsPlayBtn').innerText = '▶️'; } }
 function stopTTS() { window.speechSynthesis.cancel(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '▶️'; if(currentSpeakingElement) currentSpeakingElement.style.border = "1px solid rgba(255,255,255,.05)"; }
 function closeTTS() { stopTTS(); if(ttsPlayer) ttsPlayer.style.display = 'none'; }
@@ -380,7 +400,6 @@ function restoreSession(e, id) {
     if(e) e.stopPropagation(); 
     const item = appHistory.find(i => i.id == id); if(!item) return; 
     
-    // Determine target page
     let targetPage = '';
     if(item.type === 'math') targetPage = 'maths.html';
     else if(item.type === 'search') targetPage = 'search.html';
@@ -389,13 +408,11 @@ function restoreSession(e, id) {
 
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-    // Redirect if on wrong page
     if (currentPage !== targetPage && targetPage !== '') {
         window.location.href = `${targetPage}?restore=${id}`;
         return;
     }
 
-    // Rebuild chat/UI
     closeHistory(); 
     if(item.type === 'math') { 
         const hist = document.getElementById("mathChatHistory");
@@ -512,7 +529,7 @@ async function askDocument() {
     if(!q || !qaContextText) return; 
     document.getElementById("qaAnswerBox").innerHTML = '<div class="spinner"></div> Analyzing...'; 
     try { 
-        let a = await callGeminiText("Answer based ONLY on the provided document text.", `Document Text:\n${qaContextText}\n\nQuestion: ${q}`); 
+        let a = await callGeminiText("Answer based ONLY on the provided document text. CRITICAL RULE: You MUST always reply in HINDI by default. ONLY reply in another language if the user explicitly asks (e.g., 'talk in English').", `Document Text:\n${qaContextText}\n\nQuestion: ${q}`); 
         document.getElementById('qaAnswerBox').innerHTML = a.replace(/\n/g, '<br>').replace(/\*/g,''); 
         document.getElementById("speakQaBtn").style.display = "flex"; 
         saveToHistory('qa', q, a, null);
