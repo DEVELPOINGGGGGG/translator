@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pro Suite - Dashboard</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="window.location.href='dashboard.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+</div>
+
+<div class="page active" id="homePage" style="top: 70px;">
+  <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
+    <h1 style="font-size: 28px; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome to AI Pro Suite</h1>
+    <p style="color: var(--muted); margin-top: 10px;">Select a tool below to get started</p>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="dash-card" onclick="window.location.href='maths.html'">
+      <div class="dash-icon">🧮</div>
+      <div class="dash-title">Math Solver</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='search.html'">
+      <div class="dash-icon">🔎</div>
+      <div class="dash-title">Deep Search</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='translator.html'">
+      <div class="dash-icon">🎙️</div>
+      <div class="dash-title">Text & Voice</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='image.html'">
+      <div class="dash-icon">🖼️</div>
+      <div class="dash-title">Image Translate</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='qa.html'">
+      <div class="dash-icon">📚</div>
+      <div class="dash-title">Document Q&A</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='history.html'">
+      <div class="dash-icon">🕒</div>
+      <div class="dash-title">History</div>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Simple logic to open and close the side menu
+    function toggleSidebar() { 
+        document.getElementById("sidebar").classList.toggle("active"); 
+        document.getElementById("overlay").classList.toggle("active"); 
+    }
+    
+    // Clicking the dark background closes the menu
+    document.getElementById("overlay").onclick = () => { 
+        document.getElementById("sidebar").classList.remove("active"); 
+        document.getElementById("overlay").classList.remove("active"); 
+    };
+</script>
+
+</body>
+</html>
