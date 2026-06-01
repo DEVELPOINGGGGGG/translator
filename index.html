@@ -20,7 +20,7 @@
 
 <style>
 /* =========================
-   AI PRO SUITE - REDESIGN V17 (100% Groq / No Google)
+   AI PRO SUITE - REDESIGN V18 (Hindi & Math Rendering Fix)
 ========================= */
 
 *{ margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
@@ -105,7 +105,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .purple{ background:linear-gradient(135deg, #7c3aed, #a855f7); color:white; }
 .red{ background:linear-gradient(135deg, #dc2626, #ef4444); color:white; }
 .orange{ background:linear-gradient(135deg, #ea580c, #f97316); color:white; }
-.btn-group { display: flex; gap: 12px; margin-top: 10px; } .btn-group .btn { margin-top: 0; }
+.btn-group { display: flex; gap: 12px; margin-top: 10px; } .btn-group .btn { margin-top: 0; flex: 1; }
 
 /* LOADER CSS */
 .spinner {
@@ -273,7 +273,10 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
     <div class="cardTitle">Step 3: Solution</div>
     <button class="btn orange" onclick="solveMath()">✨ Solve Problem</button>
     <div class="outputBox" id="mathSolutionBox">Waiting for problem...</div>
-    <button class="btn green" id="speakMathBtn" style="display:none;" onclick="speakText('mathSolutionBox')">🔊 Speak Solution</button>
+    <div class="btn-group">
+        <button class="btn green" id="speakMathBtn" style="display:none;" onclick="speakText('mathSolutionBox')">🔊 Speak</button>
+        <button class="btn blue" id="explainMathBtn" style="display:none;" onclick="explainMoreMath()">💡 Explain More</button>
+    </div>
   </div>
 </div>
 
@@ -420,7 +423,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 <canvas id="captureCanvas" style="display:none;"></canvas>
 
 <script>
-// --- GLOBAL ERROR CATCH TO PREVENT BRICKING ---
+// --- GLOBAL ERROR CATCH ---
 let appHistory = [];
 try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } 
 catch(e) { console.error("History reset due to data error"); appHistory = []; }
@@ -479,7 +482,6 @@ function drag(e) {
 
 // --- TEXT TO SPEECH LOGIC ---
 let currentSpeakingElement = null;
-
 function speakText(elementId) {
   const el = document.getElementById(elementId);
   if(!el) return;
@@ -581,7 +583,7 @@ function viewHistory(id) {
   document.getElementById('histQuestion').innerHTML = item.question.replace(/\n/g, '<br>');
   document.getElementById('histAnswer').innerHTML = item.answer.replace(/\n/g, '<br>');
   document.getElementById('historyModal').classList.add('active');
-  if(window.MathJax) MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]);
+  if(window.MathJax) { MathJax.typesetClear([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); }
 }
 function closeHistory() { document.getElementById('historyModal').classList.remove('active'); closeTTS(); }
 function clearAllHistory() { if(!confirm("Clear ALL history?")) return; appHistory = []; localStorage.removeItem('aiHistory'); renderHistory(); }
@@ -595,7 +597,7 @@ function triggerFileDownload(item) {
   a.href = URL.createObjectURL(blob); a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`; a.click();
 }
 
-// --- MATH SOLVER (GROQ VISION REPLACES GOOGLE) ---
+// --- MATH SOLVER (FIXED HINDI & MATH RENDER) ---
 let lastMathSolution = "";
 async function extractSpecificMathQuestion() {
   if(!capturedImage) return alert("Please take a photo first.");
@@ -609,7 +611,7 @@ async function extractSpecificMathQuestion() {
     const rawText = vData.text; if(!rawText) throw new Error("No text found.");
     
     setStatusLoading("mathStatus", "Filtering question...");
-    const prompt = `Extract ONE exact math question based on: "${instruction}". Plain text only. No LaTeX (no $). Write fractions like 1/4. From text:\n${rawText}`;
+    const prompt = `Extract ONE exact math question based on: "${instruction}". Plain text only. From text:\n${rawText}`;
     let finalQ = await callGroq([ { role: "user", content: prompt } ], { temperature: 0 });
     document.getElementById("mathExtractedText").value = finalQ.replace(/[\*\$]/g, '').trim();
     document.getElementById("mathStatus").innerHTML = "✅ Found! Ready to solve.";
@@ -618,22 +620,49 @@ async function extractSpecificMathQuestion() {
 
 async function solveMath() {
   const prob = document.getElementById("mathExtractedText").value.trim(); if(!prob) return;
-  setStatusLoading("mathSolutionBox", "Thinking..."); document.getElementById("speakMathBtn").style.display = "none";
+  setStatusLoading("mathSolutionBox", "Thinking..."); 
+  document.getElementById("speakMathBtn").style.display = "none";
+  document.getElementById("explainMathBtn").style.display = "none";
   
   try {
     let sol = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor. Solve the user's math problem step-by-step. IMPORTANT RULES:\n1. Detect the language of the problem and write the ENTIRE solution in that EXACT SAME LANGUAGE.\n2. Explain the concepts clearly and simply, suitable for a 9th-grade student. Avoid overly complex higher-level methods.\n3. Always format fractions properly using LaTeX (e.g., \\frac{numerator}{denominator}). NEVER use slashes like 4/5 or 4\\5.\n4. Do NOT use markdown bolding (**) or weird symbols like &&.\n5. Write plain text and LaTeX only." },
+      { role:"system", content: "You are an expert Math Tutor for a class 9 student. IMPORTANT RULES:\n1. You MUST write the ENTIRE solution and explanation strictly in HINDI.\n2. Explain the concepts clearly and simply.\n3. ALL math fractions, roots, and numbers MUST be wrapped in $ symbols so the renderer works (e.g., $\\frac{47.55}{100}$ or $\\sqrt{47.55}$). NEVER write raw LaTeX like \\frac without the $ symbols.\n4. Do NOT use markdown bolding (**) or weird symbols like &&." },
       { role:"user", content: `Solve this exactly:\n\n${prob}` }
     ], {temperature: 0});
 
     lastMathSolution = sol.replace(/[\*&]/g, ''); 
     document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
-    if (window.MathJax) MathJax.typesetPromise([document.getElementById("mathSolutionBox")]);
-    saveToHistory('math', prob, lastMathSolution); document.getElementById("speakMathBtn").style.display = "flex"; 
+    
+    // Force MathJax to redraw the new content
+    if (window.MathJax) {
+        MathJax.typesetClear([document.getElementById("mathSolutionBox")]);
+        MathJax.typesetPromise([document.getElementById("mathSolutionBox")]);
+    }
+    
+    saveToHistory('math', prob, lastMathSolution); 
+    document.getElementById("speakMathBtn").style.display = "flex"; 
+    document.getElementById("explainMathBtn").style.display = "flex"; 
   } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
 }
 
-// --- IMAGE TRANSLATOR (GROQ VISION REPLACES GOOGLE) ---
+async function explainMoreMath() {
+  const prob = document.getElementById("mathExtractedText").value.trim();
+  setStatusLoading("mathSolutionBox", "Generating simpler Hindi explanation...");
+  try {
+    let exp = await callGroq([
+      { role:"system", content: "You are a class 9 Math Tutor. The user didn't fully understand the last solution. Break it down even simpler, step-by-step, strictly in HINDI. Use easy concepts. MUST wrap ALL math in $ symbols (e.g., $\\frac{1}{2}$)." },
+      { role:"user", content: `Please explain this problem again in a much simpler way: ${prob}` }
+    ]);
+    lastMathSolution = exp.replace(/[\*&]/g, '');
+    document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
+    if (window.MathJax) {
+        MathJax.typesetClear([document.getElementById("mathSolutionBox")]);
+        MathJax.typesetPromise([document.getElementById("mathSolutionBox")]);
+    }
+  } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
+}
+
+// --- IMAGE TRANSLATOR ---
 async function processImageText(mode){
   if(!capturedImage) return;
   setStatusLoading("imageStatus", "Extracting...");
@@ -678,9 +707,8 @@ async function getImageHardWords(text){
   }catch(e){ box.innerHTML = "Could not load."; }
 }
 
-// --- NEW FEATURE: MULTI-IMAGE Q&A (GROQ VISION REPLACES GOOGLE) ---
+// --- NEW FEATURE: MULTI-IMAGE Q&A ---
 let qaImages = []; let qaContextText = "";
-
 function updateQaImageCount() {
     document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`;
     if(qaImages.length > 0) document.getElementById('extractBtn_qa').disabled = false;
@@ -704,7 +732,6 @@ async function handleMultiUpload(e) {
 async function extractMultiImages() {
   if(qaImages.length === 0) return alert("Please take a photo or upload pages first.");
   setStatusLoading("qaStatus", "Reading pages via Groq Vision..."); qaContextText = "";
-  
   for(let i=0; i<qaImages.length; i++) {
     try {
       const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: qaImages[i] }) });
