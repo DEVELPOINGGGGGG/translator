@@ -4,9 +4,8 @@ const path = require("path");
 
 const port = process.env.PORT || 3000;
 
-// Pulling your keys directly from Render's Environment Variables
+// ONLY ONE KEY NEEDED NOW!
 const groqApiKey = process.env.GROQ_API_KEY || process.env["GROQ-API-KEY"];
-const googleVisionKey = process.env.GOOGLE_VISION_API_KEY; 
 
 const publicDir = __dirname;
 
@@ -27,14 +26,14 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
-// 50MB limit to easily handle 5+ photos of math chapters at once
+// 50MB limit to handle multiple high-res math/textbook photos
 function readRequestBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
       if (body.length > 50_000_000) { 
-        reject(new Error("Request body is too large. Image file size limit exceeded."));
+        reject(new Error("Request body is too large."));
         req.destroy();
       }
     });
@@ -66,36 +65,46 @@ async function handleGroqChat(req, res) {
   }
 }
 
-// --- GOOGLE CLOUD VISION OCR ROUTE ---
-async function handleGoogleVision(req, res) {
-  if (!googleVisionKey) return sendJson(res, 500, { error: "Missing GOOGLE_VISION_API_KEY." });
+// --- GROQ VISION OCR ROUTE (REPLACES GOOGLE) ---
+async function handleGroqVision(req, res) {
+  if (!groqApiKey) return sendJson(res, 500, { error: "Missing GROQ_API_KEY." });
 
   try {
     const body = await readRequestBody(req);
     const { imageBase64 } = JSON.parse(body || "{}");
     if (!imageBase64) return sendJson(res, 400, { error: "No image provided." });
 
-    // Clean the Base64 string for the Google API
-    const base64Data = imageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    // Ensure the image has the correct prefix for the API
+    let formattedBase64 = imageBase64;
+    if (!formattedBase64.startsWith("data:image")) {
+        formattedBase64 = `data:image/jpeg;base64,${formattedBase64}`;
+    }
 
-    const visionRes = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${googleVisionKey}`, {
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        requests: [{
-          image: { content: base64Data },
-          features: [{ type: "DOCUMENT_TEXT_DETECTION" }] // Best for reading math/textbooks
-        }]
+      headers: { Authorization: `Bearer ${groqApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        model: "llama-3.2-90b-vision-preview", // Groq's high-power vision model
+        temperature: 0,
+        messages: [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "Extract all the text and math from this image exactly as written. Return ONLY the raw text, with no introductory words or explanations." },
+                    { type: "image_url", image_url: { url: formattedBase64 } }
+                ]
+            }
+        ]
       })
     });
 
-    const data = await visionRes.json();
-    if (!visionRes.ok) return sendJson(res, visionRes.status, { error: data.error?.message || "Google Vision failed." });
+    const data = await groqResponse.json();
+    if (!groqResponse.ok) return sendJson(res, groqResponse.status, { error: data.error?.message || "Groq Vision failed." });
 
-    const text = data.responses[0]?.fullTextAnnotation?.text || "";
+    const text = data.choices[0]?.message?.content || "";
     return sendJson(res, 200, { text });
   } catch (error) {
-    return sendJson(res, 502, { error: error.message || "Google Vision unavailable." });
+    return sendJson(res, 502, { error: error.message || "Groq Vision unavailable." });
   }
 }
 
@@ -122,7 +131,8 @@ function serveStatic(req, res) {
 // --- ROUTER ---
 const server = http.createServer((req, res) => {
   if (req.method === "POST" && req.url === "/api/groq-chat") return handleGroqChat(req, res);
-  if (req.method === "POST" && req.url === "/api/google-ocr") return handleGoogleVision(req, res);
+  // NEW ENDPOINT POINTING TO GROQ VISION
+  if (req.method === "POST" && req.url === "/api/groq-ocr") return handleGroqVision(req, res);
   
   if (req.method === "GET" || req.method === "HEAD") return serveStatic(req, res);
   
