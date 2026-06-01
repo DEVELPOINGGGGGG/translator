@@ -20,7 +20,7 @@
 
 <style>
 /* =========================
-   AI PRO SUITE - REDESIGN V16 (Crash Fix & Camera Rescue)
+   AI PRO SUITE - REDESIGN V17 (100% Groq / No Google)
 ========================= */
 
 *{ margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
@@ -199,7 +199,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 
 <div class="overlay" id="overlay"></div>
 
-<!-- BOUNDED FLOATING TTS PLAYER -->
 <div id="ttsPlayer">
   <div class="ttsIndicator">🔊 Reading</div>
   <button class="ttsBtn" onclick="toggleTTS()" id="ttsPlayBtn">⏸️</button>
@@ -207,7 +206,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   <button class="ttsBtn" onclick="closeTTS()">✖️</button>
 </div>
 
-<!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <button onclick="showPage('homePage')">🏠 Dashboard</button>
   <button onclick="showPage('dashboardPage')">🧮 Math Solver</button>
@@ -222,7 +220,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   <div class="appTitle">AI Pro Suite</div>
 </div>
 
-<!-- NEW HOME DASHBOARD -->
 <div class="page active" id="homePage">
   <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
     <h1 style="font-size: 28px; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome to AI Pro Suite</h1>
@@ -249,7 +246,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   </div>
 </div>
 
-<!-- PAGE 1: MATH SOLVER -->
 <div class="page" id="dashboardPage">
   <div class="card" style="background:linear-gradient(135deg,#0ea5e9,#3b82f6,#8b5cf6); text-align: center; border: none;">
     <h1 style="font-size: 24px;">🧮 Smart Math Solver</h1>
@@ -281,7 +277,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   </div>
 </div>
 
-<!-- PAGE 2: TRANSLATOR -->
 <div class="page" id="translatorPage">
   <div class="card">
     <div class="voiceHeader">
@@ -304,7 +299,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   </div>
 </div>
 
-<!-- PAGE 3: IMAGE TRANSLATOR -->
 <div class="page" id="imagePage">
   <div class="card">
     <div class="cardTitle">Step 1: Capture Text</div>
@@ -338,7 +332,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   </div>
 </div>
 
-<!-- PAGE 4: DOCUMENT Q&A -->
 <div class="page" id="qaPage">
   <div class="card" style="background:linear-gradient(135deg,#f59e0b,#ef4444); border:none;">
     <h1 style="font-size: 24px; text-align: center;">📚 Document Q&A</h1>
@@ -375,7 +368,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   </div>
 </div>
 
-<!-- PAGE 5: HISTORY -->
 <div class="page" id="historyPage">
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -386,7 +378,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   </div>
 </div>
 
-<!-- MODALS -->
 <div class="cameraModal" id="cameraModal">
   <div class="cameraHeader"><button onclick="closeCamera()">✕</button><div>Camera</div><div></div></div>
   <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
@@ -405,25 +396,18 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
   <div class="photoViewerControls" id="photoViewerControls"></div>
 </div>
 
-<!-- FIXED HISTORY MODAL: Flex layout so buttons stick to bottom and content scrolls -->
 <div class="infoModal" id="historyModal">
   <div class="card">
-    <!-- Header Area (Pinned) -->
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0;">Title</div>
       <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0;">✕</button>
     </div>
-    
-    <!-- Scrolling Content Area -->
     <div class="hist-scroll-area">
         <div class="cardSub" style="margin-top: 5px;">Original Request:</div>
         <div class="outputBox" id="histQuestion"></div>
-        
         <div class="cardSub" style="margin-top: 15px;">Solution:</div>
         <div class="outputBox" id="histAnswer"></div>
     </div>
-
-    <!-- Footer Area (Pinned) -->
     <div class="hist-footer">
         <div class="btn-group" style="margin-top: 0;">
           <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button>
@@ -438,19 +422,15 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 <script>
 // --- GLOBAL ERROR CATCH TO PREVENT BRICKING ---
 let appHistory = [];
-try {
-    appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]');
-} catch(e) {
-    console.error("History reset due to data error");
-    appHistory = [];
-}
+try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } 
+catch(e) { console.error("History reset due to data error"); appHistory = []; }
 
 // --- UI LOADING HELPER ---
 function setStatusLoading(elementId, text) {
     document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`;
 }
 
-// --- CORE API ---
+// --- CORE API (GROQ ONLY) ---
 async function callGroq(messages, options={}){
   const response = await fetch("/api/groq-chat", {
     method:"POST", headers:{ "Content-Type": "application/json" },
@@ -466,7 +446,7 @@ const ttsPlayer = document.getElementById('ttsPlayer');
 let ttsUtterance = null;
 let isPaused = false;
 let isDragging = false;
-let initialX, initialY, currentX = 0, currentY = 0;
+let initialX, initialY;
 
 ttsPlayer.addEventListener("touchstart", dragStart, {passive: false});
 ttsPlayer.addEventListener("touchend", dragEnd, false);
@@ -488,20 +468,12 @@ function drag(e) {
     e.preventDefault();
     let clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
     let clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
-    
-    let newX = clientX - initialX;
-    let newY = clientY - initialY;
-    let maxX = window.innerWidth - ttsPlayer.offsetWidth;
-    let maxY = window.innerHeight - ttsPlayer.offsetHeight;
-    
+    let newX = clientX - initialX; let newY = clientY - initialY;
+    let maxX = window.innerWidth - ttsPlayer.offsetWidth; let maxY = window.innerHeight - ttsPlayer.offsetHeight;
     if(newX < 0) newX = 0; if(newX > maxX) newX = maxX;
     if(newY < 0) newY = 0; if(newY > maxY) newY = maxY;
-    
-    ttsPlayer.style.left = newX + "px";
-    ttsPlayer.style.top = newY + "px";
-    ttsPlayer.style.right = "auto";
-    ttsPlayer.style.bottom = "auto";
-    ttsPlayer.style.transform = "none";
+    ttsPlayer.style.left = newX + "px"; ttsPlayer.style.top = newY + "px";
+    ttsPlayer.style.right = "auto"; ttsPlayer.style.bottom = "auto"; ttsPlayer.style.transform = "none";
   }
 }
 
@@ -511,45 +483,31 @@ let currentSpeakingElement = null;
 function speakText(elementId) {
   const el = document.getElementById(elementId);
   if(!el) return;
-  
   let text = el.innerText.replace(/<[^>]*>?/gm, '').replace(/[\$\\]/g, ' ').replace(/\*\*/g, '').replace(/&&/g, ' ').replace(/[\(\)\[\]\{\}]/g, ' bracket '); 
-  
   window.speechSynthesis.cancel(); 
   ttsUtterance = new SpeechSynthesisUtterance(text);
-  
   currentSpeakingElement = el;
-  el.style.border = "2px solid var(--accent)";
-  el.style.boxShadow = "0 0 15px rgba(59,130,246,0.5)";
+  el.style.border = "2px solid var(--accent)"; el.style.boxShadow = "0 0 15px rgba(59,130,246,0.5)";
   
   ttsUtterance.onboundary = function(event) {
     if(event.name === 'word' && !el.querySelector('mjx-container')) {
-        let charIndex = event.charIndex;
-        let wordLength = event.charLength;
+        let charIndex = event.charIndex; let wordLength = event.charLength;
         let originalHTML = el.dataset.originalHtml || el.innerHTML;
         if(!el.dataset.originalHtml) el.dataset.originalHtml = originalHTML;
-        
-        let before = text.slice(0, charIndex);
-        let word = text.slice(charIndex, charIndex + wordLength);
-        let after = text.slice(charIndex + wordLength);
-        
+        let before = text.slice(0, charIndex); let word = text.slice(charIndex, charIndex + wordLength); let after = text.slice(charIndex + wordLength);
         el.innerHTML = before + `<span class="tts-highlight">${word}</span>` + after;
     }
   };
 
   ttsUtterance.onend = () => { document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); };
   window.speechSynthesis.speak(ttsUtterance);
-  isPaused = false;
-  document.getElementById('ttsPlayBtn').innerText = '⏸️';
-  ttsPlayer.style.display = 'flex';
+  isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; ttsPlayer.style.display = 'flex';
 }
 
 function resetHighlight() {
     if(currentSpeakingElement) {
-        currentSpeakingElement.style.border = "1px solid rgba(255,255,255,.05)";
-        currentSpeakingElement.style.boxShadow = "none";
-        if(currentSpeakingElement.dataset.originalHtml) {
-            currentSpeakingElement.innerHTML = currentSpeakingElement.dataset.originalHtml;
-        }
+        currentSpeakingElement.style.border = "1px solid rgba(255,255,255,.05)"; currentSpeakingElement.style.boxShadow = "none";
+        if(currentSpeakingElement.dataset.originalHtml) { currentSpeakingElement.innerHTML = currentSpeakingElement.dataset.originalHtml; }
     }
 }
 
@@ -560,22 +518,18 @@ function toggleTTS() {
 function stopTTS() { window.speechSynthesis.cancel(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); }
 function closeTTS() { stopTTS(); ttsPlayer.style.display = 'none'; }
 
-// --- VOICE RECOGNITION (RESTORED) ---
-let recognition;
-let isRecording = false;
+// --- VOICE RECOGNITION ---
+let recognition; let isRecording = false;
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SpeechRec();
-  recognition.continuous = false;
-  recognition.interimResults = true;
+  recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true;
   recognition.onstart = () => { isRecording = true; document.getElementById("micBtn").classList.add("recording"); };
   recognition.onresult = (event) => {
     let transcript = "";
     for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
     document.getElementById("inputText").value = transcript;
   };
-  recognition.onerror = () => stopRecording();
-  recognition.onend = () => stopRecording();
+  recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording();
 }
 function toggleRecording() {
   if (!recognition) return alert("Speech recognition not supported in this browser.");
@@ -594,14 +548,12 @@ function showPage(pageId){
   if (pageId === 'historyPage') renderHistory();
 }
 
-// --- HISTORY & DOWNLOAD LOGIC ---
+// --- HISTORY LOGIC ---
 let currentViewingHistoryId = null;
-
 function saveToHistory(type, question, answer) {
   callGroq([{ role: "user", content: `Generate a short 2-4 word title. Return ONLY the title text.\n\nInput: ${question}` }], {temperature: 0.3})
   .then(title => {
-    let cleanTitle = title.replace(/['"\*]/g, '').trim();
-    if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
+    let cleanTitle = title.replace(/['"\*]/g, '').trim(); if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
     appHistory.unshift({ id: Date.now(), type, title: cleanTitle, question, answer });
     localStorage.setItem('aiHistory', JSON.stringify(appHistory));
   }).catch(() => {
@@ -611,15 +563,11 @@ function saveToHistory(type, question, answer) {
 }
 
 function renderHistory() {
-  const list = document.getElementById('historyList');
-  if(!list) return;
+  const list = document.getElementById('historyList'); if(!list) return;
   if(appHistory.length === 0) return list.innerHTML = "<div style='color:var(--muted); text-align:center;'>No history saved yet.</div>";
   list.innerHTML = appHistory.map(item => `
     <div class="wordItem" style="display:flex; justify-content:space-between; align-items:center;" onclick="viewHistory(${item.id})">
-      <div>
-        <div class="wordTitle">${item.title}</div>
-        <div class="wordMeaning">${item.type.toUpperCase()}</div>
-      </div>
+      <div><div class="wordTitle">${item.title}</div><div class="wordMeaning">${item.type.toUpperCase()}</div></div>
       <div style="display:flex; gap:10px; align-items:center;">
         <button class="actionBtnSmall blue" onclick="quickDownload(event, ${item.id})" title="Download">📥</button>
         <button class="actionBtnSmall red" onclick="deleteHistoryItem(event, ${item.id})" title="Delete">🗑️</button>
@@ -628,10 +576,8 @@ function renderHistory() {
 }
 
 function viewHistory(id) {
-  const item = appHistory.find(i => i.id === id);
-  if(!item) return;
-  currentViewingHistoryId = id;
-  document.getElementById('histTitle').innerText = item.title;
+  const item = appHistory.find(i => i.id === id); if(!item) return;
+  currentViewingHistoryId = id; document.getElementById('histTitle').innerText = item.title;
   document.getElementById('histQuestion').innerHTML = item.question.replace(/\n/g, '<br>');
   document.getElementById('histAnswer').innerHTML = item.answer.replace(/\n/g, '<br>');
   document.getElementById('historyModal').classList.add('active');
@@ -641,31 +587,23 @@ function closeHistory() { document.getElementById('historyModal').classList.remo
 function clearAllHistory() { if(!confirm("Clear ALL history?")) return; appHistory = []; localStorage.removeItem('aiHistory'); renderHistory(); }
 function deleteHistoryItem(event, id) { event.stopPropagation(); if(!confirm("Delete item?")) return; appHistory = appHistory.filter(i => i.id !== id); localStorage.setItem('aiHistory', JSON.stringify(appHistory)); renderHistory(); }
 
-function quickDownload(event, id) {
-  event.stopPropagation();
-  const item = appHistory.find(i => i.id === id);
-  if(!item) return; triggerFileDownload(item);
-}
-function downloadHistoryFile() {
-  const item = appHistory.find(i => i.id === currentViewingHistoryId);
-  if(!item) return; triggerFileDownload(item);
-}
+function quickDownload(event, id) { event.stopPropagation(); const item = appHistory.find(i => i.id === id); if(!item) return; triggerFileDownload(item); }
+function downloadHistoryFile() { const item = appHistory.find(i => i.id === currentViewingHistoryId); if(!item) return; triggerFileDownload(item); }
 function triggerFileDownload(item) {
   const content = `Title: ${item.title}\nType: ${item.type}\n\n--- QUESTION/INPUT ---\n${item.question}\n\n--- ANSWER/TRANSLATION ---\n${item.answer.replace(/<br>/g, '\n')}`;
-  const blob = new Blob([content], { type: "text/plain" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-  a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`; a.click();
+  const blob = new Blob([content], { type: "text/plain" }); const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`; a.click();
 }
 
-// --- MATH SOLVER ---
+// --- MATH SOLVER (GROQ VISION REPLACES GOOGLE) ---
 let lastMathSolution = "";
 async function extractSpecificMathQuestion() {
   if(!capturedImage) return alert("Please take a photo first.");
   const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract the first question";
-  setStatusLoading("mathStatus", "Scanning via Google OCR...");
+  setStatusLoading("mathStatus", "Scanning image via Groq Vision...");
   
   try {
-    const vRes = await fetch("/api/google-ocr", { method: "POST", body: JSON.stringify({ imageBase64: capturedImage }) });
+    const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: capturedImage }) });
     const vData = await vRes.json();
     if (!vRes.ok) throw new Error(vData.error);
     const rawText = vData.text; if(!rawText) throw new Error("No text found.");
@@ -679,10 +617,8 @@ async function extractSpecificMathQuestion() {
 }
 
 async function solveMath() {
-  const prob = document.getElementById("mathExtractedText").value.trim();
-  if(!prob) return;
-  setStatusLoading("mathSolutionBox", "Thinking...");
-  document.getElementById("speakMathBtn").style.display = "none";
+  const prob = document.getElementById("mathExtractedText").value.trim(); if(!prob) return;
+  setStatusLoading("mathSolutionBox", "Thinking..."); document.getElementById("speakMathBtn").style.display = "none";
   
   try {
     let sol = await callGroq([
@@ -693,17 +629,16 @@ async function solveMath() {
     lastMathSolution = sol.replace(/[\*&]/g, ''); 
     document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
     if (window.MathJax) MathJax.typesetPromise([document.getElementById("mathSolutionBox")]);
-    saveToHistory('math', prob, lastMathSolution);
-    document.getElementById("speakMathBtn").style.display = "flex"; 
+    saveToHistory('math', prob, lastMathSolution); document.getElementById("speakMathBtn").style.display = "flex"; 
   } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
 }
 
-// --- IMAGE TRANSLATOR ---
+// --- IMAGE TRANSLATOR (GROQ VISION REPLACES GOOGLE) ---
 async function processImageText(mode){
   if(!capturedImage) return;
   setStatusLoading("imageStatus", "Extracting...");
   try {
-    const vRes = await fetch("/api/google-ocr", { method: "POST", body: JSON.stringify({ imageBase64: capturedImage }) });
+    const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: capturedImage }) });
     const vData = await vRes.json();
     document.getElementById("imageExtractedText").value = (vData.text || "").replace(/\*/g, '');
     document.getElementById("imageStatus").innerHTML = "✅ Ready.";
@@ -711,57 +646,40 @@ async function processImageText(mode){
 }
 
 async function translateExtractedText(){
-  const txt = document.getElementById("imageExtractedText").value.trim();
-  if(!txt) return;
+  const txt = document.getElementById("imageExtractedText").value.trim(); if(!txt) return;
   const lang = document.getElementById("imageTargetLang").value;
   setStatusLoading("translatedImageText", "Translating...");
-  
   try {
     let trans = await callGroq([ { role:"user", content: `Translate to ${lang}. No markdown.\n\n${txt}` } ]);
-    trans = trans.replace(/\*/g, '');
-    
-    document.getElementById("translatedImageText").innerText = trans;
-    drawTranslatedImageOnWhite(trans);
-    saveToHistory('translation', txt, trans);
-    getImageHardWords(txt);
+    trans = trans.replace(/\*/g, ''); document.getElementById("translatedImageText").innerText = trans;
+    drawTranslatedImageOnWhite(trans); saveToHistory('translation', txt, trans); getImageHardWords(txt);
     document.getElementById("speakImgTransBtn").style.display = "flex"; 
   } catch(e) { document.getElementById("translatedImageText").innerText = "Error: " + e.message; }
 }
 
 function drawTranslatedImageOnWhite(text) {
   const c = document.getElementById("canvas"); const ctx = c.getContext("2d");
-  c.width = 1000; c.height = 1400; 
-  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); 
+  c.width = 1000; c.height = 1400; ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); 
   ctx.fillStyle = "#000000"; ctx.font = "bold 36px 'Poppins', sans-serif";
-  
   let words = text.split(" "); let line = ""; let y = 80;
   for(let n = 0; n < words.length; n++){
     let testLine = line + words[n] + " "; let w = ctx.measureText(testLine).width;
-    if(w > c.width - 100 && n > 0){ ctx.fillText(line, 50, y); line = words[n] + " "; y += 50; } 
-    else { line = testLine; }
+    if(w > c.width - 100 && n > 0){ ctx.fillText(line, 50, y); line = words[n] + " "; y += 50; } else { line = testLine; }
   }
-  ctx.fillText(line, 50, y);
-  document.getElementById("downloadBtn").style.display = "flex";
+  ctx.fillText(line, 50, y); document.getElementById("downloadBtn").style.display = "flex";
 }
-
-function downloadImage(){
-  const a = document.createElement("a"); a.href = document.getElementById("canvas").toDataURL("image/png");
-  a.download = "Translation.png"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
+function downloadImage(){ const a = document.createElement("a"); a.href = document.getElementById("canvas").toDataURL("image/png"); a.download = "Translation.png"; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 
 async function getImageHardWords(text){
-  const box = document.getElementById("hardWords");
-  setStatusLoading("hardWords", "Loading meanings...");
+  const box = document.getElementById("hardWords"); setStatusLoading("hardWords", "Loading meanings...");
   try{
     let prompt = `Find difficult words in this text:\n\n${text}\n\nIMPORTANT: Provide the original word in English, and the meaning in Hindi. Format ONLY as HTML:\n<div class='wordItem'><div class='wordTitle'>English Word</div><div class='wordMeaning'>Hindi Meaning</div></div>`;
-    let res = await callGroq([{ role:"user", content: prompt }]);
-    box.innerHTML = res.replace(/```html/g, "").replace(/```/g, "").replace(/\*/g, '');
+    let res = await callGroq([{ role:"user", content: prompt }]); box.innerHTML = res.replace(/```html/g, "").replace(/```/g, "").replace(/\*/g, '');
   }catch(e){ box.innerHTML = "Could not load."; }
 }
 
-// --- NEW FEATURE: MULTI-IMAGE Q&A ---
-let qaImages = []; 
-let qaContextText = "";
+// --- NEW FEATURE: MULTI-IMAGE Q&A (GROQ VISION REPLACES GOOGLE) ---
+let qaImages = []; let qaContextText = "";
 
 function updateQaImageCount() {
     document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`;
@@ -770,9 +688,8 @@ function updateQaImageCount() {
 }
 
 function clearQaImages() {
-    qaImages = []; updateQaImageCount();
-    document.getElementById('qaStatus').innerText = "Ready"; qaContextText = "";
-    document.getElementById('qaContextBox').innerText = "Extracted text will appear here as context...";
+    qaImages = []; updateQaImageCount(); document.getElementById('qaStatus').innerText = "Ready";
+    qaContextText = ""; document.getElementById('qaContextBox').innerText = "Extracted text will appear here as context...";
 }
 
 async function handleMultiUpload(e) {
@@ -786,12 +703,11 @@ async function handleMultiUpload(e) {
 
 async function extractMultiImages() {
   if(qaImages.length === 0) return alert("Please take a photo or upload pages first.");
-  setStatusLoading("qaStatus", "Reading pages... please wait (this takes a moment)");
-  qaContextText = "";
+  setStatusLoading("qaStatus", "Reading pages via Groq Vision..."); qaContextText = "";
   
   for(let i=0; i<qaImages.length; i++) {
     try {
-      const vRes = await fetch("/api/google-ocr", { method: "POST", body: JSON.stringify({ imageBase64: qaImages[i] }) });
+      const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: qaImages[i] }) });
       const vData = await vRes.json();
       if(vData.text) qaContextText += `\n--- PAGE ${i+1} ---\n` + vData.text;
     } catch(e) { console.log(e); }
@@ -814,94 +730,52 @@ async function askDocument() {
   } catch(e) { document.getElementById('qaAnswerBox').innerText = "Error analyzing."; }
 }
 
-// --- STANDARD VOICE TRANSLATOR & CAMERA UTILS ---
 async function runTranslation(){
-  const txt = document.getElementById("inputText").value.trim();
-  const lang = document.getElementById("targetLang").value;
-  if(!txt) return; 
-  setStatusLoading("translatedText", "Converting...");
+  const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value;
+  if(!txt) return; setStatusLoading("translatedText", "Converting...");
   try{
     let res = await callGroq([{ role:"user", content: `Translate exactly to ${lang}:\n${txt}` }]);
-    document.getElementById("translatedText").innerText = res.replace(/\*/g, '');
-    document.getElementById("speakTransBtn").style.display = "flex";
+    document.getElementById("translatedText").innerText = res.replace(/\*/g, ''); document.getElementById("speakTransBtn").style.display = "flex";
   }catch(e){}
 }
 
-// --- STRICT HARDWARE CAMERA & FLASHLIGHT ENGINE (CRASH FIXED) ---
+// --- STRICT HARDWARE CAMERA & FLASHLIGHT ENGINE ---
 const cameraModal = document.getElementById("cameraModal"), video = document.getElementById("cameraVideo"), captureCanvas = document.getElementById("captureCanvas");
 let currentStream = null, capturedImage = null, currentFacing = "environment", flashEnabled = false;
 
 async function startCamera() {
   try {
     if(currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
-    currentStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } 
-    }); 
-    video.srcObject = currentStream; 
-    flashEnabled = false; // Reset flash state safely
+    currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
+    video.srcObject = currentStream; flashEnabled = false;
   } catch(e) { alert("Camera Error: " + e.message); }
 }
 
-async function openCamera(mode){ 
-    currentMode = mode; 
-    cameraModal.classList.add("active"); 
-    await startCamera();
-}
-
-function closeCamera(){ 
-    cameraModal.classList.remove("active"); 
-    if(currentStream) currentStream.getTracks().forEach(t => { t.stop(); }); 
-}
-
-async function switchCamera() {
-    currentFacing = currentFacing === "environment" ? "user" : "environment";
-    await startCamera();
-}
+async function openCamera(mode){ currentMode = mode; cameraModal.classList.add("active"); await startCamera(); }
+function closeCamera(){ cameraModal.classList.remove("active"); if(currentStream) currentStream.getTracks().forEach(t => { t.stop(); }); }
+async function switchCamera() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); }
 
 async function toggleFlash() {
     if(!currentStream) return;
     try {
-        const track = currentStream.getVideoTracks()[0];
-        const caps = track.getCapabilities();
+        const track = currentStream.getVideoTracks()[0]; const caps = track.getCapabilities();
         if(!caps.torch) return alert("Flashlight not supported on this lens.");
-        flashEnabled = !flashEnabled;
-        await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
-    } catch(e) {
-        alert("Flashlight error: " + e.message);
-    }
+        flashEnabled = !flashEnabled; await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
+    } catch(e) { alert("Flashlight error: " + e.message); }
 }
 
 function capturePhoto(){ 
-    captureCanvas.width = video.videoWidth; 
-    captureCanvas.height = video.videoHeight; 
-    captureCanvas.getContext("2d").drawImage(video, 0, 0); 
-    capturedImage = captureCanvas.toDataURL("image/jpeg"); 
-    
-    if(currentMode === 'qa') {
-        qaImages.push(capturedImage);
-        updateQaImageCount();
-    } else if (currentMode === 'math') {
-        document.getElementById("mathStatus").innerText="📸 Photo Captured!"; 
-        document.getElementById("viewBtn_math").disabled = false;
-        document.getElementById("extractBtn_math").disabled = false;
-    } else if (currentMode === 'translate') {
-        document.getElementById("imageStatus").innerText="📸 Photo Captured!"; 
-        document.getElementById("viewBtn_trans").disabled = false;
-        document.getElementById("extractBtn_trans").disabled = false;
-    }
+    captureCanvas.width = video.videoWidth; captureCanvas.height = video.videoHeight; 
+    captureCanvas.getContext("2d").drawImage(video, 0, 0); capturedImage = captureCanvas.toDataURL("image/jpeg"); 
+    if(currentMode === 'qa') { qaImages.push(capturedImage); updateQaImageCount(); } 
+    else if (currentMode === 'math') { document.getElementById("mathStatus").innerText="📸 Photo Captured!"; document.getElementById("viewBtn_math").disabled = false; document.getElementById("extractBtn_math").disabled = false; } 
+    else if (currentMode === 'translate') { document.getElementById("imageStatus").innerText="📸 Photo Captured!"; document.getElementById("viewBtn_trans").disabled = false; document.getElementById("extractBtn_trans").disabled = false; }
     closeCamera(); 
 }
 
-function viewPhoto(mode){ 
-    currentMode = mode; 
-    document.getElementById("previewImage").src = capturedImage; 
-    document.getElementById("photoViewerControls").innerHTML = `<button class="btn purple" onclick="closePreview()">Close</button>`; 
-    document.getElementById("photoViewer").classList.add("active"); 
-}
-
+function viewPhoto(mode){ currentMode = mode; document.getElementById("previewImage").src = capturedImage; document.getElementById("photoViewerControls").innerHTML = `<button class="btn purple" onclick="closePreview()">Close</button>`; document.getElementById("photoViewer").classList.add("active"); }
 function closePreview(){ document.getElementById("photoViewer").classList.remove("active"); }
 
-// Init app safely
 showPage("homePage");
 </script>
 </body>
