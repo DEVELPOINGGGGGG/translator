@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pro Suite - Image Translator</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+<div class="apiTracker">
+    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
+</div>
+
+<div id="ttsPlayer">
+  <div class="ttsIndicator">🔊 Reading</div>
+  <button class="ttsBtn" id="ttsPlayBtn">⏸️</button>
+  <button class="ttsBtn" id="ttsStopBtn">⏹️</button>
+  <button class="ttsBtn" id="ttsCloseBtn">✖️</button>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🖼️ Image Translator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+</div>
+
+<div class="page active" id="imagePage">
+  <div class="card" style="background:linear-gradient(135deg,#ec4899,#10b981); border:none; text-align:center;">
+    <h1 style="font-size: 24px;">🖼️ Image Translator</h1>
+    <p style="font-size: 14px; opacity: 0.9;">Extract text from images and translate instantly.</p>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Step 1: Capture Text</div>
+    <div class="btn-group">
+      <button class="btn green" onclick="openCamera('translate')">📷 Take Photo</button>
+      <button class="btn blue" id="viewBtn_trans" onclick="viewPhoto('translate')" disabled>🖼 View</button>
+    </div>
+    <button class="btn purple" id="extractBtn_trans" onclick="processImageText('translate')" disabled>🔍 Extract Text</button>
+    <div class="status" id="imageStatus" style="margin-top:10px; padding:10px; display:none;">No Photo Selected</div>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Step 2: Edit & Translate</div>
+    <textarea class="standard" id="imageExtractedText" placeholder="Extracted text..."></textarea>
+    <select id="imageTargetLang">
+      <option>Hindi</option>
+      <option>English</option>
+      <option>French</option>
+      <option>Spanish</option>
+      <option>German</option>
+    </select>
+    <button class="btn yellow" onclick="translateExtractedText()">🌍 Translate Text</button>
+    
+    <div class="cardTitle" style="margin-top: 15px; font-size: 16px;">Translation Output:</div>
+    <div class="outputBox" id="translatedImageText">Waiting for translation...</div>
+    
+    <div class="btn-group">
+      <button class="btn green" id="speakImgTransBtn" style="display:none;" onclick="speakText('translatedImageText')">🔊 Speak</button>
+      <button class="btn blue" id="downloadBtn" onclick="downloadImage()" style="display:none;">💾 Download</button>
+    </div>
+    <canvas id="canvas" style="display:none; width: 100%; border-radius: 18px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.2);"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Hard Words Meaning</div>
+    <div class="wordList" id="hardWords">No data yet.</div>
+  </div>
+</div>
+
+<div class="cameraModal" id="cameraModal">
+  <div class="cameraHeader"><button id="closeCameraBtn">✕</button><div>Camera</div><div></div></div>
+  <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
+  <div class="cameraControls">
+    <button class="flashBtn" id="toggleFlashBtn">🔦</button>
+    <button class="cameraCircle" id="capturePhotoBtn"></button>
+    <button class="switchBtn" id="switchCameraBtn">🔄</button>
+  </div>
+</div>
+
+<div class="photoViewer" id="photoViewer">
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
+      <button class="closeBtn" id="closePreviewBtn">✕</button>
+  </div>
+  <img id="previewImage">
+</div>
+
+<canvas id="captureCanvas" style="display:none;"></canvas>
+
+<script src="main.js" defer></script>
+
+</body>
+</html>
