@@ -27,6 +27,14 @@ document.addEventListener("DOMContentLoaded", () => {
     buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
 
     if (document.getElementById('historyList')) renderHistory();
+
+    // --- 🛑 FIX: LISTEN FOR RESTORE COMMAND IN THE URL 🛑 ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const restoreId = urlParams.get('restore');
+    if (restoreId) {
+        setTimeout(() => restoreSession(null, restoreId), 300);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 });
 
 // --- CORE HELPERS ---
@@ -58,6 +66,29 @@ function appendAiLoading(cid) {
     scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); return id;
 }
 
+// --- 🛑 FIX: MISSING RENDER BUBBLE FUNCTION FOR RESTORE 🛑 ---
+function updateAiBubble(lId, answer) {
+    const loadingBubble = document.getElementById(lId);
+    if (loadingBubble) {
+        const bbl = loadingBubble.querySelector('.bubble');
+        bbl.innerHTML = `<div id="text_${lId}">${answer.replace(/\n/g, '<br>')}</div>`;
+        window.latestMathSolution = answer; // Make video tutor work for restored items
+        
+        if (window.MathJax) { 
+            MathJax.typesetClear([bbl]); 
+            MathJax.typesetPromise([bbl]); 
+        }
+        
+        // Restore the listen/video buttons
+        bbl.insertAdjacentHTML('beforeend', `
+            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+                <button class="btn green" style="padding:12px; flex:1; font-size:14px;" onclick="speakAndHighlight('text_${lId}', 'hi-IN')">🔊 Listen</button>
+                <button class="btn blue" style="padding:12px; flex:1; font-size:14px; background:rgb(220,38,38);" onclick="initVideoGui()">▶️ Video Tutor</button>
+            </div>
+        `);
+    }
+}
+
 // --- SAFE API FETCHERS ---
 async function callGeminiText(sysText, usrText) {
   if (isProcessing) throw new Error("Processing"); isProcessing = true; track('t');
@@ -79,7 +110,6 @@ function speakAndHighlight(elId, langCode = 'hi-IN') {
     const spans = el.querySelectorAll('.word');
     const u = new SpeechSynthesisUtterance(Array.from(spans).map(s => s.innerText).join(' '));
     
-    // Find highest quality voice for the REQUESTED language
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
     let premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes(langCode.split('-')[0]));
     let fallback = availableVoices.find(v => v.lang.includes(langCode.split('-')[0]));
@@ -100,7 +130,6 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // The Ultimate Math Prompt: Allows fractions, strictly forbids Hindi inside them.
     const sysPrompt = `You are a Math Tutor. 
     1. Write explanations purely in HINDI.
     2. Format math formulas and FRACTIONS using LaTeX wrapped in $ symbols (e.g. $\\frac{12}{1200}$).
@@ -211,7 +240,7 @@ async function runTranslation(){
     try{ 
         let r = await callGeminiText("You are a master translator.", `Translate to ${lang}:\n${txt}`); 
         let cleanText = r.replace(/\*/g, ''); const tId = "trans_" + Date.now();
-        const code = langMap[lang] || 'en-US'; // Dynamic Voice match!
+        const code = langMap[lang] || 'en-US'; 
         document.getElementById("translatedText").innerHTML = `<div id="${tId}">${cleanText}</div><button class="btn green" style="margin-top:10px;" onclick="speakAndHighlight('${tId}', '${code}')">🔊 Listen</button>`; 
         document.getElementById("translatedTextStatus").style.display = "none"; saveToHistory('translation', txt, cleanText, null);
     }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
@@ -253,7 +282,6 @@ function saveToHistory(type, q, a, img = null) { appHistory.unshift({ id: Date.n
 function renderHistory() { 
     const list = document.getElementById('historyList'); if(!list) return; 
     if(appHistory.length === 0) return list.innerHTML = "<div style='color:var(--muted);text-align:center;'>No history saved yet.</div>"; 
-    // RESTORED DOWNLOAD & RESTORE BUTTONS!
     list.innerHTML = appHistory.map(item => `
         <div class="wordItem" style="display:flex; justify-content:space-between; align-items:center;">
             <div onclick="viewHistory(${item.id})" style="flex:1;">
