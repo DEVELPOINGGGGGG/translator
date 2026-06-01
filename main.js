@@ -166,6 +166,7 @@ async function runGroqSearch() {
 }
 
 // --- 6. MATH SOLVER ---
+// --- 6. MATH SOLVER ---
 function clearMathImage(e) {
     if(e) e.stopPropagation();
     capturedImage = null;
@@ -176,6 +177,9 @@ function viewLoadedImage(e) {
     if(e.target.classList.contains('image-preview-close')) return;
     if(capturedImage) viewSpecificImage(capturedImage);
 }
+
+// Global variable to hold the latest math for the video player
+window.latestMathSolution = "";
 
 async function executeMathFlow() {
     const inputField = document.getElementById("mathInstructionInput");
@@ -188,16 +192,13 @@ async function executeMathFlow() {
     inputField.value = ""; autoResize(inputField);
     let loadingId = appendAiLoading("mathChatHistory");
 
-    // UPDATED PROMPT: Write in Hindi by default, but respect user language requests
     const systemPrompt = `You are an expert Math Tutor for a class 9 student. 
     IMPORTANT RULES:
     1. Extract and solve the problem based on the user's instruction.
-    2. Write the ENTIRE solution strictly in HINDI by default. IF the user specifically asks to explain in another language (e.g., 'talk in English'), use that requested language instead.
+    2. Write the ENTIRE solution strictly in HINDI by default.
     3. Explain simply and step-by-step.
-    4. MUST wrap ALL math fractions, roots, and equations in $ symbols (e.g., $\\frac{47}{100}$ or $\\sqrt{43}$).
-    5. CRITICAL RULE: NEVER put text words inside the $ symbols. ONLY numbers and math operators go inside $. MathJax will break if you put text inside $! 
-       - BAD Example: $कुल हानि = 12$
-       - GOOD Example: कुल हानि = $12$`;
+    4. MUST wrap ALL math fractions, roots, and equations in $ symbols.
+    5. NEVER put Hindi words inside the $ symbols. ONLY numbers and math operators go inside $.`;
     
     try {
         let sol = "";
@@ -209,7 +210,19 @@ async function executeMathFlow() {
         }
 
         let cleanSol = sol.replace(/[\*&]/g, ''); 
+        window.latestMathSolution = cleanSol; // Save for video mode
+        
         updateAiBubble(loadingId, cleanSol);
+        
+        // Add the "Play Video" button inside the AI's chat bubble
+        const bubble = document.getElementById(loadingId).querySelector('.bubble');
+        bubble.insertAdjacentHTML('beforeend', `
+            <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; display: flex; gap: 10px;">
+                <button class="btn green" style="padding: 10px; font-size: 14px; margin-top: 0;" onclick="speakText('${loadingId}')">🔊 Speak</button>
+                <button class="btn blue" style="padding: 10px; font-size: 14px; margin-top: 0; background: linear-gradient(135deg, #ef4444, #dc2626);" onclick="playMathVideo()">▶️ Play Video</button>
+            </div>
+        `);
+
         saveToHistory('math', instruction || "Solve Image", cleanSol, capturedImage); 
         scrollToBottom("mathScrollArea");
     } catch(e) { 
@@ -217,6 +230,59 @@ async function executeMathFlow() {
     }
 }
 
+// --- NEW: ANIMATED VIDEO PLAYER ENGINE ---
+async function playMathVideo() {
+    if(!window.latestMathSolution) return;
+    const container = document.getElementById("mathChatHistory");
+
+    // 1. Create a "Video Screen" bubble
+    const videoId = "video_" + Date.now();
+    container.insertAdjacentHTML('beforeend', `
+        <div class="chat-msg chat-ai">
+            <div class="bubble" style="background: #000; border: 2px solid #ef4444; width: 100%; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);">
+                <div style="background: #1e293b; padding: 8px; font-size: 12px; font-weight: bold; color: #f87171; margin-bottom: 15px; text-align: center; border-radius: 8px; letter-spacing: 2px;">
+                    🔴 LIVE TUTOR VIDEO
+                </div>
+                <div id="${videoId}" style="min-height: 120px; font-size: 16px; line-height: 1.8;"></div>
+            </div>
+        </div>
+    `);
+    scrollToBottom("mathScrollArea");
+
+    const videoScreen = document.getElementById(videoId);
+    
+    // Split the solution into individual lines/steps
+    const steps = window.latestMathSolution.split('\n').filter(line => line.trim() !== '');
+    let currentHtml = "";
+
+    // 2. Start speaking the Hindi audio immediately
+    window.speechSynthesis.cancel(); 
+    let ttsUtterance = new SpeechSynthesisUtterance(window.latestMathSolution.replace(/[\$\\]/g, ' ')); 
+    ttsUtterance.lang = 'hi-IN';
+    window.speechSynthesis.speak(ttsUtterance);
+
+    // 3. Animate the text line-by-line onto the screen
+    for(let i = 0; i < steps.length; i++) {
+        currentHtml += steps[i] + "<br><br>";
+        videoScreen.innerHTML = currentHtml;
+        
+        // Render math equations live as they appear
+        if (window.MathJax) {
+            MathJax.typesetClear([videoScreen]); 
+            await MathJax.typesetPromise([videoScreen]);
+        }
+        
+        scrollToBottom("mathScrollArea");
+        
+        // Calculate wait time based on how long the sentence is (simulates writing speed)
+        const waitTime = Math.max(1500, steps[i].length * 40);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    // Video complete
+    videoScreen.innerHTML += `<div style="text-align:center; color: #22c55e; font-weight: bold; margin-top: 10px;">✅ Video Complete</div>`;
+    scrollToBottom("mathScrollArea");
+}
 // --- 7. CAMERA & FLASHLIGHT SYSTEM ---
 let currentStream = null, currentFacing = "environment";
 
