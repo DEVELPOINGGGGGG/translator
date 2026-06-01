@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - MASTER JAVASCRIPT (V25)
+   AI PRO SUITE - MASTER JAVASCRIPT (V27 - MathJax Fix & Flashlight)
 ======================================================= */
 
 // --- 1. GLOBAL STATE & INITIALIZATION ---
@@ -15,6 +15,7 @@ let capturedImage = null;
 let currentMode = ""; 
 let qaImages = []; 
 let qaContextText = "";
+let isFlashOn = true; // Default flashlight state
 
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Setup API Trackers
@@ -73,6 +74,9 @@ function autoResize(textarea) {
 function toggleSidebar() { 
     document.getElementById("sidebar").classList.toggle("active"); 
     document.getElementById("overlay").classList.toggle("active"); 
+}
+if(document.getElementById("overlay")) {
+    document.getElementById("overlay").onclick = () => { document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); };
 }
 
 // --- 3. CHAT BUBBLE HELPERS ---
@@ -158,13 +162,16 @@ async function runGroqSearch() {
     } catch(e) { updateAiBubble(loadingId, "❌ " + e.message); }
 }
 
-// --- 6. MATH SOLVER ---
-// --- 6. MATH SOLVER ---
+// --- 6. MATH SOLVER (UPDATED WITH MATHJAX FIX) ---
 function clearMathImage(e) {
     if(e) e.stopPropagation();
     capturedImage = null;
     const chip = document.getElementById("mathPreviewChip");
     if(chip) chip.style.display = "none";
+}
+function viewLoadedImage(e) {
+    if(e.target.classList.contains('image-preview-close')) return;
+    if(capturedImage) viewSpecificImage(capturedImage);
 }
 
 async function executeMathFlow() {
@@ -180,12 +187,16 @@ async function executeMathFlow() {
     inputField.value = ""; autoResize(inputField);
     let loadingId = appendAiLoading("mathChatHistory");
 
+    // UPDATED PROMPT: Strict instructions to keep Hindi OUT of the MathJax tags
     const systemPrompt = `You are an expert Math Tutor for a class 9 student. 
     IMPORTANT RULES:
     1. Extract and solve the problem based on the user's instruction.
     2. Write the ENTIRE solution strictly in HINDI.
     3. Explain simply and step-by-step.
-    4. MUST wrap ALL math fractions, roots, and numbers in $ symbols (e.g., $\\frac{47}{100}$ or $\\sqrt{43}$). Never use raw LaTeX without $.`;
+    4. MUST wrap ALL math fractions, roots, and equations in $ symbols (e.g., $\\frac{47}{100}$ or $\\sqrt{43}$).
+    5. CRITICAL RULE: NEVER put Hindi words inside the $ symbols. ONLY numbers and math operators go inside $. MathJax will break if you put Hindi inside $! 
+       - BAD Example: $कुल हानि = 12$
+       - GOOD Example: कुल हानि = $12$`;
     
     try {
         let sol = "";
@@ -207,31 +218,83 @@ async function executeMathFlow() {
         updateAiBubble(loadingId, "❌ " + e.message); 
     }
 }
-// --- 7. CAMERA SYSTEM ---
+
+// --- 7. CAMERA & FLASHLIGHT SYSTEM ---
 let currentStream = null, currentFacing = "environment";
+
 async function startCamera() { 
     try { 
         if(currentStream) currentStream.getTracks().forEach(t => t.stop()); 
         currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
         document.getElementById("cameraVideo").srcObject = currentStream; 
+        
+        // --- AUTO-FLASHLIGHT LOGIC ---
+        const track = currentStream.getVideoTracks()[0];
+        setTimeout(async () => {
+            try {
+                const capabilities = track.getCapabilities();
+                // Only turn on if supported AND we are using the back camera
+                if (capabilities.torch && currentFacing === "environment") {
+                    isFlashOn = true;
+                    await track.applyConstraints({ advanced: [{ torch: true }] });
+                    updateFlashUI();
+                } else {
+                    isFlashOn = false;
+                    updateFlashUI();
+                }
+            } catch(err) { console.log("Torch not supported on this device."); }
+        }, 500); // Give camera 500ms to initialize before triggering flash
+
     } catch(e) { alert("Camera Error. Please allow permissions."); } 
 }
+
+async function toggleFlash() {
+    if (!currentStream) return;
+    const track = currentStream.getVideoTracks()[0];
+    try {
+        const capabilities = track.getCapabilities();
+        if (capabilities.torch) {
+            isFlashOn = !isFlashOn;
+            await track.applyConstraints({ advanced: [{ torch: isFlashOn }] });
+            updateFlashUI();
+        } else {
+            alert("Flashlight not supported on this camera lens.");
+        }
+    } catch(err) {
+        console.error("Error toggling flash", err);
+    }
+}
+
+function updateFlashUI() {
+    const btn = document.getElementById("toggleFlashBtn");
+    if(btn) {
+        btn.innerText = isFlashOn ? "💡" : "🔦";
+        btn.style.background = isFlashOn ? "rgba(255, 255, 255, 0.4)" : "rgba(255,255,255,0.15)";
+    }
+}
+
 async function openCamera(m){ 
     currentMode = m; 
     const mod = document.getElementById("cameraModal");
     if(mod) { mod.classList.add("active"); await startCamera(); }
 }
+
 function closeCamera(){ 
     const mod = document.getElementById("cameraModal");
     if(mod) mod.classList.remove("active"); 
     if(currentStream) currentStream.getTracks().forEach(t => t.stop()); 
 }
-async function switchCamera() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); }
+
+async function switchCamera() { 
+    currentFacing = currentFacing === "environment" ? "user" : "environment"; 
+    await startCamera(); 
+}
 
 // Bind Camera buttons safely
 if(document.getElementById('closeCameraBtn')) document.getElementById('closeCameraBtn').onclick = closeCamera;
 if(document.getElementById('switchCameraBtn')) document.getElementById('switchCameraBtn').onclick = switchCamera;
 if(document.getElementById('capturePhotoBtn')) document.getElementById('capturePhotoBtn').onclick = capturePhoto;
+if(document.getElementById('toggleFlashBtn')) document.getElementById('toggleFlashBtn').onclick = toggleFlash; // Added Flashlight Toggle
 if(document.getElementById('closePreviewBtn')) document.getElementById('closePreviewBtn').onclick = () => { document.getElementById('photoViewer').classList.remove('active'); };
 if(document.getElementById('clearMathImgBtn')) document.getElementById('clearMathImgBtn').onclick = clearMathImage;
 if(document.getElementById('openMathCameraBtn')) document.getElementById('openMathCameraBtn').onclick = () => openCamera('math');
@@ -483,3 +546,4 @@ window.clearQaImages = clearQaImages;
 window.handleMultiUpload = handleMultiUpload;
 window.extractMultiImages = extractMultiImages;
 window.askDocument = askDocument;
+window.toggleFlash = toggleFlash;
