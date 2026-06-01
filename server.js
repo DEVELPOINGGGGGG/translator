@@ -39,7 +39,6 @@ async function tryProviders(providers, requestFn) {
 async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
-        // Catches any variable name the frontend sends so it NEVER reads undefined
         const userText = body.userPrompt || body.prompt || body.text || "Explain this."; 
         const sysText = body.systemPrompt || "";
 
@@ -76,7 +75,15 @@ async function handleGeminiVision(req, res) {
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); return data.candidates[0].content.parts[0].text;
             } else {
                 let formattedBase64 = img.startsWith("data:image") ? img : `data:image/jpeg;base64,${img}`;
-                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
+                // 🛑 THE FIX IS HERE: Changed from 11b to 90b 🛑
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
+                    method: "POST", 
+                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ 
+                        model: "llama-3.2-90b-vision-preview", 
+                        messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] 
+                    }) 
+                });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Groq Vision failed"); return data.choices[0].message.content;
             }
         });
