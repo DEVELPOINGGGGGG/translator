@@ -20,7 +20,7 @@
 
 <style>
 /* =========================
-   AI PRO SUITE - REDESIGN V14 (Hardware & GUI Fixes)
+   AI PRO SUITE - REDESIGN V16 (Crash Fix & Camera Rescue)
 ========================= */
 
 *{ margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
@@ -57,7 +57,7 @@ body{
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* PAGES & DASHBOARD GRID */
-.page{ display:none; position:absolute; top:70px; left:0; right:0; bottom:0; overflow-y:auto; padding:20px; scroll-behavior:smooth; padding-bottom:calc(40px + env(safe-area-inset-bottom)); }
+.page{ display:none; position:absolute; top:70px; left:0; right:0; bottom:0; overflow-y:auto; padding:20px; scroll-behavior:smooth; padding-bottom: 120px; }
 .page.active{ display:block; animation:fadePage .4s cubic-bezier(0.4, 0, 0.2, 1); }
 @keyframes fadePage{ from{ opacity:0; transform:translateY(20px); filter: blur(4px); } to{ opacity:1; transform:translateY(0); filter: blur(0); } }
 
@@ -80,8 +80,16 @@ textarea, select, input[type="text"], input[type="file"] { width:100%; padding:1
 textarea { min-height:130px; resize:vertical; }
 textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(59,130,246,0.2); }
 
-.outputBox, .meaningBox { margin-top:12px; background:rgba(2,6,23,.7); border: 1px solid rgba(255,255,255,.05); border-radius:20px; padding:20px; min-height:100px; white-space:pre-wrap; word-wrap:break-word; overflow-x: auto; max-width: 100%; font-size: 15px; line-height: 1.6; }
-.outputBox mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; padding: 5px 0; }
+/* FIXED SCROLL FOR LONG MATH */
+.outputBox, .meaningBox { 
+  margin-top:12px; background:rgba(2,6,23,.7); border: 1px solid rgba(255,255,255,.05); 
+  border-radius:20px; padding:20px; min-height:100px; 
+  white-space:pre-wrap; word-wrap:break-word; 
+  overflow-x: auto; 
+  max-width: 100%; font-size: 15px; line-height: 1.6;
+  -webkit-overflow-scrolling: touch; 
+}
+.outputBox mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; padding: 5px 0; -webkit-overflow-scrolling: touch; }
 
 .tts-highlight { background-color: rgba(96, 165, 250, 0.4); border-radius: 4px; padding: 0 2px; transition: background-color 0.1s; }
 
@@ -130,18 +138,40 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .cameraModal{ position:fixed; inset:0; background:black; display:none; z-index:5000; }
 .cameraModal.active{ display:flex; flex-direction:column; animation: fadeIn 0.3s; }
 .cameraHeader{ height:70px; display:flex; justify-content:space-between; align-items:center; padding:0 20px; background:linear-gradient(to bottom, rgba(0,0,0,.9), transparent); position:absolute; top:0; left:0; right:0; z-index:2; }
-.cameraHeader button{ background:none; border:none; color:white; font-size:26px; }
+.cameraHeader button{ background:none; border:none; color:white; font-size:26px; cursor: pointer; }
 .cameraVideo{ width:100%; height:100%; object-fit:cover; background:black; }
 .cameraControls{ min-height:120px; display:flex; justify-content:center; align-items:center; gap:40px; background:linear-gradient(180deg,transparent,rgba(0,0,0,1)); padding-bottom:calc(30px + env(safe-area-inset-bottom)); position:absolute; left:0; right:0; bottom:0; z-index:2; }
-.cameraCircle{ width:80px; height:80px; border-radius:50%; border:5px solid white; background:rgba(255,255,255,.2); box-shadow:0 0 20px rgba(255,255,255,.5); transition: transform 0.2s; }
+.cameraCircle{ width:80px; height:80px; border-radius:50%; border:5px solid white; background:rgba(255,255,255,.2); box-shadow:0 0 20px rgba(255,255,255,.5); transition: transform 0.2s; cursor: pointer;}
 .cameraCircle:active { transform: scale(0.9); background: white; }
-.switchBtn, .flashBtn{ width:55px; height:55px; border-radius:50%; border:none; background:rgba(255,255,255,0.15); backdrop-filter: blur(5px); color:white; font-size:22px; }
+.switchBtn, .flashBtn{ width:55px; height:55px; border-radius:50%; border:none; background:rgba(255,255,255,0.15); backdrop-filter: blur(5px); color:white; font-size:22px; cursor: pointer;}
 
-.photoViewer, .infoModal { position:fixed; inset:0; background:rgba(0,0,0,.95); display:none; z-index:4500; flex-direction: column; justify-content:center; align-items:center; }
+.photoViewer, .infoModal { position:fixed; inset:0; background:rgba(0,0,0,.95); display:none; z-index:4500; flex-direction: column; justify-content:center; align-items:center; padding: 20px;}
 .photoViewer.active, .infoModal.active { display:flex; animation: fadeIn 0.3s; }
 .photoViewer img { max-width:95%; max-height:75%; border-radius:20px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
-.closeBtn { position:absolute; top:calc(20px + env(safe-area-inset-top)); right:20px; width:50px; height:50px; border:none; border-radius:50%; background:rgba(255,255,255,0.15); backdrop-filter: blur(10px); color:white; font-size:22px; z-index: 6000; cursor: pointer; transition: 0.2s;}
+.closeBtn { width:45px; height:45px; border:none; border-radius:50%; background:rgba(255,255,255,0.15); color:white; font-size:20px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center;}
 .closeBtn:hover { background:rgba(255,255,255,0.3); }
+
+/* HISTORY MODAL SPECIFIC - FIXED FLEX LAYOUT */
+.infoModal .card { 
+    width: 100%; max-width: 600px; 
+    max-height: 85vh; 
+    display: flex; flex-direction: column; 
+    padding: 20px; margin: 0;
+}
+.hist-scroll-area {
+    overflow-y: auto; 
+    overflow-x: hidden;
+    flex-grow: 1;
+    margin-top: 15px;
+    padding-right: 5px;
+    -webkit-overflow-scrolling: touch;
+}
+.hist-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
 
 /* MISC */
 .status{ margin-top:12px; padding:15px; border-radius:16px; background:rgba(0,0,0,0.4); font-weight:600; text-align:center; border: 1px solid rgba(255,255,255,0.1); color: #93c5fd; display: flex; justify-content: center; align-items: center; }
@@ -150,8 +180,13 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .wordTitle{ font-weight:700; margin-bottom:5px; color: #a855f7; font-size: 17px; }
 .wordMeaning{ font-size:14px; color:#cbd5e1; }
 
-.deleteItemBtn { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: white; border-radius: 12px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
-.deleteItemBtn:hover { background: rgba(239, 68, 68, 0.9); }
+.actionBtnSmall { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; border-radius: 12px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+.actionBtnSmall:hover { background: rgba(255, 255, 255, 0.3); }
+.actionBtnSmall.red { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); }
+.actionBtnSmall.red:hover { background: rgba(239, 68, 68, 0.9); }
+.actionBtnSmall.blue { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); }
+.actionBtnSmall.blue:hover { background: rgba(59, 130, 246, 0.9); }
+
 .fileList { font-size: 14px; color: #60a5fa; font-weight: 600; }
 
 @media(min-width:768px){
@@ -287,7 +322,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
     <select id="imageTargetLang"><option>Hindi</option><option>English</option><option>French</option></select>
     <button class="btn yellow" onclick="translateExtractedText()">🌍 Translate Text</button>
     
-    <!-- GUI Output Text Box (Always Visible) -->
     <div class="cardTitle" style="margin-top: 15px; font-size: 16px;">Translation Output:</div>
     <div class="outputBox" id="translatedImageText">Waiting for translation...</div>
     
@@ -364,22 +398,37 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 </div>
 
 <div class="photoViewer" id="photoViewer">
-  <button class="closeBtn" onclick="closePreview()">✕</button>
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
+      <button class="closeBtn" onclick="closePreview()">✕</button>
+  </div>
   <img id="previewImage">
   <div class="photoViewerControls" id="photoViewerControls"></div>
 </div>
 
+<!-- FIXED HISTORY MODAL: Flex layout so buttons stick to bottom and content scrolls -->
 <div class="infoModal" id="historyModal">
-  <button class="closeBtn" onclick="closeHistory()">✕</button>
   <div class="card">
-    <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa;">Title</div>
-    <div class="cardSub" style="margin-top: 15px;">Original Request:</div>
-    <div class="outputBox" id="histQuestion"></div>
-    <div class="cardSub" style="margin-top: 15px;">Solution:</div>
-    <div class="outputBox" id="histAnswer"></div>
-    <div class="btn-group">
-      <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button>
-      <button class="btn blue" onclick="downloadHistoryFile()">💾 Download TXT</button>
+    <!-- Header Area (Pinned) -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0;">Title</div>
+      <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0;">✕</button>
+    </div>
+    
+    <!-- Scrolling Content Area -->
+    <div class="hist-scroll-area">
+        <div class="cardSub" style="margin-top: 5px;">Original Request:</div>
+        <div class="outputBox" id="histQuestion"></div>
+        
+        <div class="cardSub" style="margin-top: 15px;">Solution:</div>
+        <div class="outputBox" id="histAnswer"></div>
+    </div>
+
+    <!-- Footer Area (Pinned) -->
+    <div class="hist-footer">
+        <div class="btn-group" style="margin-top: 0;">
+          <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button>
+          <button class="btn blue" onclick="downloadHistoryFile()">💾 Download TXT</button>
+        </div>
     </div>
   </div>
 </div>
@@ -387,6 +436,15 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 <canvas id="captureCanvas" style="display:none;"></canvas>
 
 <script>
+// --- GLOBAL ERROR CATCH TO PREVENT BRICKING ---
+let appHistory = [];
+try {
+    appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]');
+} catch(e) {
+    console.error("History reset due to data error");
+    appHistory = [];
+}
+
 // --- UI LOADING HELPER ---
 function setStatusLoading(elementId, text) {
     document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`;
@@ -403,7 +461,7 @@ async function callGroq(messages, options={}){
   return data.choices[0].message.content;
 }
 
-// --- FLOATING DRAGGABLE TTS PLAYER (BOUNDED) ---
+// --- FLOATING DRAGGABLE TTS PLAYER ---
 const ttsPlayer = document.getElementById('ttsPlayer');
 let ttsUtterance = null;
 let isPaused = false;
@@ -447,7 +505,7 @@ function drag(e) {
   }
 }
 
-// --- TEXT TO SPEECH LOGIC (WITH HIGHLIGHTING) ---
+// --- TEXT TO SPEECH LOGIC ---
 let currentSpeakingElement = null;
 
 function speakText(elementId) {
@@ -479,7 +537,6 @@ function speakText(elementId) {
   };
 
   ttsUtterance.onend = () => { document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); };
-  
   window.speechSynthesis.speak(ttsUtterance);
   isPaused = false;
   document.getElementById('ttsPlayBtn').innerText = '⏸️';
@@ -503,20 +560,41 @@ function toggleTTS() {
 function stopTTS() { window.speechSynthesis.cancel(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); }
 function closeTTS() { stopTTS(); ttsPlayer.style.display = 'none'; }
 
+// --- VOICE RECOGNITION (RESTORED) ---
+let recognition;
+let isRecording = false;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRec();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onstart = () => { isRecording = true; document.getElementById("micBtn").classList.add("recording"); };
+  recognition.onresult = (event) => {
+    let transcript = "";
+    for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
+    document.getElementById("inputText").value = transcript;
+  };
+  recognition.onerror = () => stopRecording();
+  recognition.onend = () => stopRecording();
+}
+function toggleRecording() {
+  if (!recognition) return alert("Speech recognition not supported in this browser.");
+  if (isRecording) recognition.stop();
+  else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); }
+}
+function stopRecording() { isRecording = false; document.getElementById("micBtn").classList.remove("recording"); }
+
 // --- UI NAVIGATION ---
-const sidebar = document.getElementById("sidebar");
-const overlay = document.getElementById("overlay");
-function toggleSidebar(){ sidebar.classList.toggle("active"); overlay.classList.toggle("active"); }
-overlay.onclick=()=>{ sidebar.classList.remove("active"); overlay.classList.remove("active"); };
+function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+document.getElementById("overlay").onclick=()=>{ document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); };
 function showPage(pageId){
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById(pageId).classList.add("active");
-  sidebar.classList.remove("active"); overlay.classList.remove("active");
+  document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active");
   if (pageId === 'historyPage') renderHistory();
 }
 
 // --- HISTORY & DOWNLOAD LOGIC ---
-let appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]');
 let currentViewingHistoryId = null;
 
 function saveToHistory(type, question, answer) {
@@ -538,8 +616,14 @@ function renderHistory() {
   if(appHistory.length === 0) return list.innerHTML = "<div style='color:var(--muted); text-align:center;'>No history saved yet.</div>";
   list.innerHTML = appHistory.map(item => `
     <div class="wordItem" style="display:flex; justify-content:space-between; align-items:center;" onclick="viewHistory(${item.id})">
-      <div><div class="wordTitle">${item.title}</div><div class="wordMeaning">${item.type.toUpperCase()}</div></div>
-      <div style="display:flex; gap:10px;"><button class="deleteItemBtn" onclick="deleteHistoryItem(event, ${item.id})">🗑️</button></div>
+      <div>
+        <div class="wordTitle">${item.title}</div>
+        <div class="wordMeaning">${item.type.toUpperCase()}</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="actionBtnSmall blue" onclick="quickDownload(event, ${item.id})" title="Download">📥</button>
+        <button class="actionBtnSmall red" onclick="deleteHistoryItem(event, ${item.id})" title="Delete">🗑️</button>
+      </div>
     </div>`).join('');
 }
 
@@ -557,15 +641,20 @@ function closeHistory() { document.getElementById('historyModal').classList.remo
 function clearAllHistory() { if(!confirm("Clear ALL history?")) return; appHistory = []; localStorage.removeItem('aiHistory'); renderHistory(); }
 function deleteHistoryItem(event, id) { event.stopPropagation(); if(!confirm("Delete item?")) return; appHistory = appHistory.filter(i => i.id !== id); localStorage.setItem('aiHistory', JSON.stringify(appHistory)); renderHistory(); }
 
+function quickDownload(event, id) {
+  event.stopPropagation();
+  const item = appHistory.find(i => i.id === id);
+  if(!item) return; triggerFileDownload(item);
+}
 function downloadHistoryFile() {
   const item = appHistory.find(i => i.id === currentViewingHistoryId);
-  if(!item) return;
+  if(!item) return; triggerFileDownload(item);
+}
+function triggerFileDownload(item) {
   const content = `Title: ${item.title}\nType: ${item.type}\n\n--- QUESTION/INPUT ---\n${item.question}\n\n--- ANSWER/TRANSLATION ---\n${item.answer.replace(/<br>/g, '\n')}`;
   const blob = new Blob([content], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`;
-  a.click();
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`; a.click();
 }
 
 // --- MATH SOLVER ---
@@ -628,17 +717,11 @@ async function translateExtractedText(){
   setStatusLoading("translatedImageText", "Translating...");
   
   try {
-    let trans = await callGroq([
-      { role:"user", content: `Translate to ${lang}. No markdown.\n\n${txt}` }
-    ]);
+    let trans = await callGroq([ { role:"user", content: `Translate to ${lang}. No markdown.\n\n${txt}` } ]);
     trans = trans.replace(/\*/g, '');
     
-    // DISPLAY IN GUI TEXT BOX
     document.getElementById("translatedImageText").innerText = trans;
-    
-    // ALSO DRAW TO CANVAS
     drawTranslatedImageOnWhite(trans);
-    
     saveToHistory('translation', txt, trans);
     getImageHardWords(txt);
     document.getElementById("speakImgTransBtn").style.display = "flex"; 
@@ -646,8 +729,7 @@ async function translateExtractedText(){
 }
 
 function drawTranslatedImageOnWhite(text) {
-  const c = document.getElementById("canvas");
-  const ctx = c.getContext("2d");
+  const c = document.getElementById("canvas"); const ctx = c.getContext("2d");
   c.width = 1000; c.height = 1400; 
   ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); 
   ctx.fillStyle = "#000000"; ctx.font = "bold 36px 'Poppins', sans-serif";
@@ -673,8 +755,7 @@ async function getImageHardWords(text){
   try{
     let prompt = `Find difficult words in this text:\n\n${text}\n\nIMPORTANT: Provide the original word in English, and the meaning in Hindi. Format ONLY as HTML:\n<div class='wordItem'><div class='wordTitle'>English Word</div><div class='wordMeaning'>Hindi Meaning</div></div>`;
     let res = await callGroq([{ role:"user", content: prompt }]);
-    box.innerHTML = res.replace(/```html/g, "").replace(/
-```/g, "").replace(/\*/g, '');
+    box.innerHTML = res.replace(/```html/g, "").replace(/```/g, "").replace(/\*/g, '');
   }catch(e){ box.innerHTML = "Could not load."; }
 }
 
@@ -689,21 +770,15 @@ function updateQaImageCount() {
 }
 
 function clearQaImages() {
-    qaImages = [];
-    updateQaImageCount();
-    document.getElementById('qaStatus').innerText = "Ready";
-    qaContextText = "";
+    qaImages = []; updateQaImageCount();
+    document.getElementById('qaStatus').innerText = "Ready"; qaContextText = "";
     document.getElementById('qaContextBox').innerText = "Extracted text will appear here as context...";
 }
 
 async function handleMultiUpload(e) {
   const files = e.target.files;
   for(let i=0; i<files.length; i++) {
-    const base64 = await new Promise(res => {
-      let reader = new FileReader(); 
-      reader.onload = () => res(reader.result); 
-      reader.readAsDataURL(files[i]);
-    });
+    const base64 = await new Promise(res => { let reader = new FileReader(); reader.onload = () => res(reader.result); reader.readAsDataURL(files[i]); });
     qaImages.push(base64);
   }
   updateQaImageCount();
@@ -752,7 +827,7 @@ async function runTranslation(){
   }catch(e){}
 }
 
-// --- STRICT HARDWARE CAMERA & FLASHLIGHT ENGINE ---
+// --- STRICT HARDWARE CAMERA & FLASHLIGHT ENGINE (CRASH FIXED) ---
 const cameraModal = document.getElementById("cameraModal"), video = document.getElementById("cameraVideo"), captureCanvas = document.getElementById("captureCanvas");
 let currentStream = null, capturedImage = null, currentFacing = "environment", flashEnabled = false;
 
@@ -763,18 +838,8 @@ async function startCamera() {
         video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } 
     }); 
     video.srcObject = currentStream; 
-    
-    // Auto-Flashlight Engine
-    setTimeout(async () => {
-        const track = currentStream.getVideoTracks()[0];
-        const caps = track.getCapabilities();
-        if(caps.torch) {
-            flashEnabled = true;
-            await track.applyConstraints({ advanced: [{ torch: true }] }).catch(e=>console.log("Torch auto-fail", e));
-        }
-    }, 500); // Slight delay ensures camera is fully initialized before firing torch
-
-  } catch(e) { alert("Camera Error: Please allow permissions."); }
+    flashEnabled = false; // Reset flash state safely
+  } catch(e) { alert("Camera Error: " + e.message); }
 }
 
 async function openCamera(mode){ 
@@ -795,10 +860,15 @@ async function switchCamera() {
 
 async function toggleFlash() {
     if(!currentStream) return;
-    const track = currentStream.getVideoTracks()[0];
-    if(!track.getCapabilities().torch) return alert("Flashlight not supported on this lens.");
-    flashEnabled = !flashEnabled;
-    await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
+    try {
+        const track = currentStream.getVideoTracks()[0];
+        const caps = track.getCapabilities();
+        if(!caps.torch) return alert("Flashlight not supported on this lens.");
+        flashEnabled = !flashEnabled;
+        await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
+    } catch(e) {
+        alert("Flashlight error: " + e.message);
+    }
 }
 
 function capturePhoto(){ 
@@ -831,6 +901,7 @@ function viewPhoto(mode){
 
 function closePreview(){ document.getElementById("photoViewer").classList.remove("active"); }
 
+// Init app safely
 showPage("homePage");
 </script>
 </body>
