@@ -248,3 +248,19 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
     .page { max-width: 800px; margin: auto; left: 50%; transform: translateX(-50%); } 
     .topbar, .apiTracker { justify-content: center; gap: 40px; } 
 }
+#videoGuiOverlay { position: fixed; inset: 0; background: radial-gradient(circle, #1e293b 0%, #000000 100%); z-index: 9999; display: none; flex-direction: column; justify-content: space-between; font-family: 'Poppins', sans-serif; }
+#videoTopBar { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: linear-gradient(180deg, rgba(0,0,0,0.8), transparent); }
+#videoTitle { font-size: 18px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+#videoCloseBtn { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--red); color: white; border-radius: 12px; padding: 8px 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+#videoCloseBtn:active { transform: scale(0.9); }
+
+#videoDisplayArea { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; overflow-y: auto; }
+#videoContent { font-size: 22px; line-height: 1.8; color: white; max-width: 800px; width: 100%; text-align: left; background: rgba(0,0,0,0.4); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+#videoContent .word { padding: 0 4px; border-radius: 4px; transition: background 0.1s; }
+#videoContent .highlighted-word { background-color: var(--yellow); color: black; font-weight: bold; }
+
+#videoControlsBar { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px; background: linear-gradient(0deg, rgba(0,0,0,0.9), transparent); padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+.vc-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 50px; padding: 12px 25px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px); }
+.vc-btn:active { transform: scale(0.95); }
+.vc-btn.play { background: var(--accent); border-color: #60a5fa; }
+.vc-btn.speed { background: rgba(34, 197, 94, 0.2); border-color: var(--green); }
