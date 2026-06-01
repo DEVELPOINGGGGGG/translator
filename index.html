@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Pro Suite</title>
+<title>AI Pro Suite - Gemini Powered</title>
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0f172a">
@@ -20,7 +20,7 @@
 
 <style>
 /* =========================
-   AI PRO SUITE - REDESIGN V18 (Hindi & Math Rendering Fix)
+   AI PRO SUITE - REDESIGN V19 (GEMINI EDITION)
 ========================= */
 
 *{ margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; -webkit-tap-highlight-color:transparent; }
@@ -152,26 +152,9 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .closeBtn:hover { background:rgba(255,255,255,0.3); }
 
 /* HISTORY MODAL SPECIFIC - FIXED FLEX LAYOUT */
-.infoModal .card { 
-    width: 100%; max-width: 600px; 
-    max-height: 85vh; 
-    display: flex; flex-direction: column; 
-    padding: 20px; margin: 0;
-}
-.hist-scroll-area {
-    overflow-y: auto; 
-    overflow-x: hidden;
-    flex-grow: 1;
-    margin-top: 15px;
-    padding-right: 5px;
-    -webkit-overflow-scrolling: touch;
-}
-.hist-footer {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    flex-shrink: 0;
-}
+.infoModal .card { width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; padding: 20px; margin: 0; }
+.hist-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; margin-top: 15px; padding-right: 5px; -webkit-overflow-scrolling: touch; }
+.hist-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
 
 /* MISC */
 .status{ margin-top:12px; padding:15px; border-radius:16px; background:rgba(0,0,0,0.4); font-weight:600; text-align:center; border: 1px solid rgba(255,255,255,0.1); color: #93c5fd; display: flex; justify-content: center; align-items: center; }
@@ -186,7 +169,6 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 .actionBtnSmall.red:hover { background: rgba(239, 68, 68, 0.9); }
 .actionBtnSmall.blue { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); }
 .actionBtnSmall.blue:hover { background: rgba(59, 130, 246, 0.9); }
-
 .fileList { font-size: 14px; color: #60a5fa; font-weight: 600; }
 
 @media(min-width:768px){
@@ -249,7 +231,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 <div class="page" id="dashboardPage">
   <div class="card" style="background:linear-gradient(135deg,#0ea5e9,#3b82f6,#8b5cf6); text-align: center; border: none;">
     <h1 style="font-size: 24px;">🧮 Smart Math Solver</h1>
-    <p style="font-size: 14px; opacity: 0.9;">Reliable, simple, 9th-grade level explanations.</p>
+    <p style="font-size: 14px; opacity: 0.9;">Powered by Gemini. 9th-grade level Hindi explanations.</p>
   </div>
 
   <div class="card">
@@ -263,7 +245,7 @@ textarea:focus, select:focus, input[type="text"]:focus { border-color: var(--acc
 
   <div class="card">
     <div class="cardTitle">Step 2: Find Question</div>
-    <div class="cardSub">Leave blank for the first question. No weird codes!</div>
+    <div class="cardSub">Type the numbers you want (e.g., 'Solve 5, 6, and 7')</div>
     <input type="text" id="mathInstructionInput" placeholder="e.g., 'Extract question 4'">
     <button class="btn purple" id="extractBtn_math" onclick="extractSpecificMathQuestion()" disabled>🔍 Extract Clean Text</button>
     <textarea id="mathExtractedText" placeholder="Clean question will appear here..."></textarea>
@@ -433,30 +415,36 @@ function setStatusLoading(elementId, text) {
     document.getElementById(elementId).innerHTML = `<div class="spinner"></div> ${text}`;
 }
 
-// --- CORE API (GROQ ONLY) ---
-async function callGroq(messages, options={}){
-  const response = await fetch("/api/groq-chat", {
-    method:"POST", headers:{ "Content-Type": "application/json" },
-    body:JSON.stringify({ model: "llama-3.3-70b-versatile", temperature: options.temperature ?? 0, messages })
+// --- CORE GEMINI API CALLS ---
+async function callGeminiText(systemPrompt, userPrompt, temp = 0) {
+  const res = await fetch("/api/gemini-text", {
+    method: "POST", 
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ systemPrompt, userPrompt, temperature: temp })
   });
-  const data = await response.json();
-  if(!response.ok) throw new Error(data.error || "Groq request failed");
-  return data.choices[0].message.content;
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error);
+  return data.text;
+}
+
+async function callGeminiVision(imageBase64, prompt, temp = 0) {
+  const res = await fetch("/api/gemini-vision", {
+    method: "POST", 
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageBase64, prompt, temperature: temp })
+  });
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error);
+  return data.text;
 }
 
 // --- FLOATING DRAGGABLE TTS PLAYER ---
 const ttsPlayer = document.getElementById('ttsPlayer');
-let ttsUtterance = null;
-let isPaused = false;
-let isDragging = false;
-let initialX, initialY;
+let ttsUtterance = null; let isPaused = false; let isDragging = false; let initialX, initialY;
 
-ttsPlayer.addEventListener("touchstart", dragStart, {passive: false});
-ttsPlayer.addEventListener("touchend", dragEnd, false);
-ttsPlayer.addEventListener("touchmove", drag, {passive: false});
-ttsPlayer.addEventListener("mousedown", dragStart, false);
-window.addEventListener("mouseup", dragEnd, false);
-window.addEventListener("mousemove", drag, false);
+ttsPlayer.addEventListener("touchstart", dragStart, {passive: false}); ttsPlayer.addEventListener("touchend", dragEnd, false);
+ttsPlayer.addEventListener("touchmove", drag, {passive: false}); ttsPlayer.addEventListener("mousedown", dragStart, false);
+window.addEventListener("mouseup", dragEnd, false); window.addEventListener("mousemove", drag, false);
 
 function dragStart(e) {
   if (e.target.closest('.ttsBtn')) return; 
@@ -473,8 +461,7 @@ function drag(e) {
     let clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
     let newX = clientX - initialX; let newY = clientY - initialY;
     let maxX = window.innerWidth - ttsPlayer.offsetWidth; let maxY = window.innerHeight - ttsPlayer.offsetHeight;
-    if(newX < 0) newX = 0; if(newX > maxX) newX = maxX;
-    if(newY < 0) newY = 0; if(newY > maxY) newY = maxY;
+    if(newX < 0) newX = 0; if(newX > maxX) newX = maxX; if(newY < 0) newY = 0; if(newY > maxY) newY = maxY;
     ttsPlayer.style.left = newX + "px"; ttsPlayer.style.top = newY + "px";
     ttsPlayer.style.right = "auto"; ttsPlayer.style.bottom = "auto"; ttsPlayer.style.transform = "none";
   }
@@ -483,12 +470,9 @@ function drag(e) {
 // --- TEXT TO SPEECH LOGIC ---
 let currentSpeakingElement = null;
 function speakText(elementId) {
-  const el = document.getElementById(elementId);
-  if(!el) return;
+  const el = document.getElementById(elementId); if(!el) return;
   let text = el.innerText.replace(/<[^>]*>?/gm, '').replace(/[\$\\]/g, ' ').replace(/\*\*/g, '').replace(/&&/g, ' ').replace(/[\(\)\[\]\{\}]/g, ' bracket '); 
-  window.speechSynthesis.cancel(); 
-  ttsUtterance = new SpeechSynthesisUtterance(text);
-  currentSpeakingElement = el;
+  window.speechSynthesis.cancel(); ttsUtterance = new SpeechSynthesisUtterance(text); currentSpeakingElement = el;
   el.style.border = "2px solid var(--accent)"; el.style.boxShadow = "0 0 15px rgba(59,130,246,0.5)";
   
   ttsUtterance.onboundary = function(event) {
@@ -502,8 +486,7 @@ function speakText(elementId) {
   };
 
   ttsUtterance.onend = () => { document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); };
-  window.speechSynthesis.speak(ttsUtterance);
-  isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; ttsPlayer.style.display = 'flex';
+  window.speechSynthesis.speak(ttsUtterance); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; ttsPlayer.style.display = 'flex';
 }
 
 function resetHighlight() {
@@ -513,10 +496,7 @@ function resetHighlight() {
     }
 }
 
-function toggleTTS() {
-  if (isPaused) { window.speechSynthesis.resume(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; } 
-  else { window.speechSynthesis.pause(); isPaused = true; document.getElementById('ttsPlayBtn').innerText = '▶️'; }
-}
+function toggleTTS() { if (isPaused) { window.speechSynthesis.resume(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '⏸️'; } else { window.speechSynthesis.pause(); isPaused = true; document.getElementById('ttsPlayBtn').innerText = '▶️'; } }
 function stopTTS() { window.speechSynthesis.cancel(); isPaused = false; document.getElementById('ttsPlayBtn').innerText = '▶️'; resetHighlight(); }
 function closeTTS() { stopTTS(); ttsPlayer.style.display = 'none'; }
 
@@ -526,41 +506,26 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true;
   recognition.onstart = () => { isRecording = true; document.getElementById("micBtn").classList.add("recording"); };
-  recognition.onresult = (event) => {
-    let transcript = "";
-    for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript;
-    document.getElementById("inputText").value = transcript;
-  };
+  recognition.onresult = (event) => { let transcript = ""; for (let i = 0; i < event.results.length; i++) transcript += event.results[i][0].transcript; document.getElementById("inputText").value = transcript; };
   recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording();
 }
-function toggleRecording() {
-  if (!recognition) return alert("Speech recognition not supported in this browser.");
-  if (isRecording) recognition.stop();
-  else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); }
-}
+function toggleRecording() { if (!recognition) return alert("Speech recognition not supported in this browser."); if (isRecording) recognition.stop(); else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); } }
 function stopRecording() { isRecording = false; document.getElementById("micBtn").classList.remove("recording"); }
 
 // --- UI NAVIGATION ---
 function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
 document.getElementById("overlay").onclick=()=>{ document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); };
-function showPage(pageId){
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById(pageId).classList.add("active");
-  document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active");
-  if (pageId === 'historyPage') renderHistory();
-}
+function showPage(pageId){ document.querySelectorAll(".page").forEach(p => p.classList.remove("active")); document.getElementById(pageId).classList.add("active"); document.getElementById("sidebar").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); if (pageId === 'historyPage') renderHistory(); }
 
 // --- HISTORY LOGIC ---
 let currentViewingHistoryId = null;
 function saveToHistory(type, question, answer) {
-  callGroq([{ role: "user", content: `Generate a short 2-4 word title. Return ONLY the title text.\n\nInput: ${question}` }], {temperature: 0.3})
+  callGeminiText("Generate a short 2-4 word title. Return ONLY the title text.", question, 0.3)
   .then(title => {
     let cleanTitle = title.replace(/['"\*]/g, '').trim(); if(cleanTitle.length > 35) cleanTitle = cleanTitle.substring(0, 35) + "...";
-    appHistory.unshift({ id: Date.now(), type, title: cleanTitle, question, answer });
-    localStorage.setItem('aiHistory', JSON.stringify(appHistory));
+    appHistory.unshift({ id: Date.now(), type, title: cleanTitle, question, answer }); localStorage.setItem('aiHistory', JSON.stringify(appHistory));
   }).catch(() => {
-    appHistory.unshift({ id: Date.now(), type, title: type === 'math' ? 'Math Problem' : 'Translation', question, answer });
-    localStorage.setItem('aiHistory', JSON.stringify(appHistory));
+    appHistory.unshift({ id: Date.now(), type, title: type === 'math' ? 'Math Problem' : 'Translation', question, answer }); localStorage.setItem('aiHistory', JSON.stringify(appHistory));
   });
 }
 
@@ -580,59 +545,37 @@ function renderHistory() {
 function viewHistory(id) {
   const item = appHistory.find(i => i.id === id); if(!item) return;
   currentViewingHistoryId = id; document.getElementById('histTitle').innerText = item.title;
-  document.getElementById('histQuestion').innerHTML = item.question.replace(/\n/g, '<br>');
-  document.getElementById('histAnswer').innerHTML = item.answer.replace(/\n/g, '<br>');
-  document.getElementById('historyModal').classList.add('active');
+  document.getElementById('histQuestion').innerHTML = item.question.replace(/\n/g, '<br>'); document.getElementById('histAnswer').innerHTML = item.answer.replace(/\n/g, '<br>'); document.getElementById('historyModal').classList.add('active');
   if(window.MathJax) { MathJax.typesetClear([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]); }
 }
 function closeHistory() { document.getElementById('historyModal').classList.remove('active'); closeTTS(); }
 function clearAllHistory() { if(!confirm("Clear ALL history?")) return; appHistory = []; localStorage.removeItem('aiHistory'); renderHistory(); }
 function deleteHistoryItem(event, id) { event.stopPropagation(); if(!confirm("Delete item?")) return; appHistory = appHistory.filter(i => i.id !== id); localStorage.setItem('aiHistory', JSON.stringify(appHistory)); renderHistory(); }
-
 function quickDownload(event, id) { event.stopPropagation(); const item = appHistory.find(i => i.id === id); if(!item) return; triggerFileDownload(item); }
 function downloadHistoryFile() { const item = appHistory.find(i => i.id === currentViewingHistoryId); if(!item) return; triggerFileDownload(item); }
 function triggerFileDownload(item) {
   const content = `Title: ${item.title}\nType: ${item.type}\n\n--- QUESTION/INPUT ---\n${item.question}\n\n--- ANSWER/TRANSLATION ---\n${item.answer.replace(/<br>/g, '\n')}`;
-  const blob = new Blob([content], { type: "text/plain" }); const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`; a.click();
+  const blob = new Blob([content], { type: "text/plain" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `AI_Pro_${item.title.replace(/\s+/g, '_')}.txt`; a.click();
 }
 
-// --- MATH SOLVER (FIXED HINDI & MATH RENDER) ---
-// --- MATH SOLVER (STRICT EXTRACTION FIX) ---
+// --- MATH SOLVER (GEMINI EDITION WITH STRICT EXTRACTION & HINDI EXPLANATION) ---
 let lastMathSolution = "";
-
 async function extractSpecificMathQuestion() {
   if(!capturedImage) return alert("Please take a photo first.");
   const instruction = document.getElementById("mathInstructionInput").value.trim() || "Extract all the math questions";
-  setStatusLoading("mathStatus", "Scanning image via Groq Vision...");
+  setStatusLoading("mathStatus", "Scanning image via Gemini Vision...");
   
-  try {
-    const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: capturedImage }) });
-    const vData = await vRes.json();
-    if (!vRes.ok) throw new Error(vData.error);
-    const rawText = vData.text; 
-    if(!rawText) throw new Error("No text found.");
-    
-    setStatusLoading("mathStatus", "Filtering question...");
-    
-    // NEW BULLETPROOF PROMPT: Forces AI to only use real numbers from the image
-    const prompt = `You are a strict text extractor. 
+  const prompt = `You are a strict text extractor. 
 User Instruction: "${instruction}"
 
-Raw Image Text:
-"""
-${rawText}
-"""
-
 CRITICAL RULES:
-1. Extract EXACTLY the questions the user asked for. If they ask for 5, 6, and 7, extract all three.
+1. Extract EXACTLY what the user asked for from the image. If they ask for 5, 6, and 7, extract all three.
 2. DO NOT invent, change, or guess any numbers. 
-3. DO NOT solve the problems yet. Just output the questions.
-4. ONLY output the exact text and numbers found in the Raw Image Text above.
-5. If the questions do not exist in the text, reply with: "Error: Could not find those questions in the image."`;
+3. DO NOT solve the problems. Just output the questions.
+4. If the questions do not exist in the image, reply with: "Error: Could not find those questions in the image."`;
 
-    let finalQ = await callGroq([ { role: "user", content: prompt } ], { temperature: 0 }); // Temperature 0 stops it from being creative
-    
+  try {
+    let finalQ = await callGeminiVision(capturedImage, prompt, 0); // Temperature 0 for strict accuracy
     document.getElementById("mathExtractedText").value = finalQ.replace(/[\*\$]/g, '').trim();
     document.getElementById("mathStatus").innerHTML = "✅ Found! Ready to solve.";
   } catch(e) { 
@@ -644,44 +587,30 @@ CRITICAL RULES:
 async function solveMath() {
   const prob = document.getElementById("mathExtractedText").value.trim(); if(!prob) return;
   setStatusLoading("mathSolutionBox", "Thinking..."); 
-  document.getElementById("speakMathBtn").style.display = "none";
-  document.getElementById("explainMathBtn").style.display = "none";
+  document.getElementById("speakMathBtn").style.display = "none"; document.getElementById("explainMathBtn").style.display = "none";
+  
+  const systemPrompt = "You are an expert Math Tutor for a class 9 student. IMPORTANT RULES:\n1. You MUST write the ENTIRE solution and explanation strictly in HINDI.\n2. Explain the concepts clearly and simply.\n3. ALL math fractions, roots, and numbers MUST be wrapped in $ symbols so the renderer works (e.g., $\\frac{47.55}{100}$ or $\\sqrt{47.55}$). NEVER write raw LaTeX like \\frac without the $ symbols.\n4. Do NOT use markdown bolding (**) or weird symbols like &&.";
   
   try {
-    let sol = await callGroq([
-      { role:"system", content: "You are an expert Math Tutor for a class 9 student. IMPORTANT RULES:\n1. You MUST write the ENTIRE solution and explanation strictly in HINDI.\n2. Explain the concepts clearly and simply.\n3. ALL math fractions, roots, and numbers MUST be wrapped in $ symbols so the renderer works (e.g., $\\frac{47.55}{100}$ or $\\sqrt{47.55}$). NEVER write raw LaTeX like \\frac without the $ symbols.\n4. Do NOT use markdown bolding (**) or weird symbols like &&." },
-      { role:"user", content: `Solve this exactly:\n\n${prob}` }
-    ], {temperature: 0});
-
+    let sol = await callGeminiText(systemPrompt, `Solve this exactly:\n\n${prob}`, 0);
     lastMathSolution = sol.replace(/[\*&]/g, ''); 
     document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
-    
-    // Force MathJax to redraw the new content
-    if (window.MathJax) {
-        MathJax.typesetClear([document.getElementById("mathSolutionBox")]);
-        MathJax.typesetPromise([document.getElementById("mathSolutionBox")]);
-    }
-    
+    if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
     saveToHistory('math', prob, lastMathSolution); 
-    document.getElementById("speakMathBtn").style.display = "flex"; 
-    document.getElementById("explainMathBtn").style.display = "flex"; 
+    document.getElementById("speakMathBtn").style.display = "flex"; document.getElementById("explainMathBtn").style.display = "flex"; 
   } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
 }
 
 async function explainMoreMath() {
   const prob = document.getElementById("mathExtractedText").value.trim();
   setStatusLoading("mathSolutionBox", "Generating simpler Hindi explanation...");
+  const systemPrompt = "You are a class 9 Math Tutor. The user didn't fully understand the last solution. Break it down even simpler, step-by-step, strictly in HINDI. Use easy concepts. MUST wrap ALL math in $ symbols (e.g., $\\frac{1}{2}$).";
+  
   try {
-    let exp = await callGroq([
-      { role:"system", content: "You are a class 9 Math Tutor. The user didn't fully understand the last solution. Break it down even simpler, step-by-step, strictly in HINDI. Use easy concepts. MUST wrap ALL math in $ symbols (e.g., $\\frac{1}{2}$)." },
-      { role:"user", content: `Please explain this problem again in a much simpler way: ${prob}` }
-    ]);
+    let exp = await callGeminiText(systemPrompt, `Please explain this problem again in a much simpler way: ${prob}`);
     lastMathSolution = exp.replace(/[\*&]/g, '');
     document.getElementById("mathSolutionBox").innerHTML = lastMathSolution.replace(/\n/g, '<br>');
-    if (window.MathJax) {
-        MathJax.typesetClear([document.getElementById("mathSolutionBox")]);
-        MathJax.typesetPromise([document.getElementById("mathSolutionBox")]);
-    }
+    if (window.MathJax) { MathJax.typesetClear([document.getElementById("mathSolutionBox")]); MathJax.typesetPromise([document.getElementById("mathSolutionBox")]); }
   } catch(e) { document.getElementById("mathSolutionBox").innerHTML = e.message; }
 }
 
@@ -690,11 +619,10 @@ async function processImageText(mode){
   if(!capturedImage) return;
   setStatusLoading("imageStatus", "Extracting...");
   try {
-    const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: capturedImage }) });
-    const vData = await vRes.json();
-    document.getElementById("imageExtractedText").value = (vData.text || "").replace(/\*/g, '');
+    const rawText = await callGeminiVision(capturedImage, "Extract all the text exactly as written. No explanations.", 0);
+    document.getElementById("imageExtractedText").value = rawText.replace(/\*/g, '');
     document.getElementById("imageStatus").innerHTML = "✅ Ready.";
-  } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ Error.";}
+  } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ Error."; }
 }
 
 async function translateExtractedText(){
@@ -702,7 +630,7 @@ async function translateExtractedText(){
   const lang = document.getElementById("imageTargetLang").value;
   setStatusLoading("translatedImageText", "Translating...");
   try {
-    let trans = await callGroq([ { role:"user", content: `Translate to ${lang}. No markdown.\n\n${txt}` } ]);
+    let trans = await callGeminiText(null, `Translate to ${lang}. No markdown.\n\n${txt}`);
     trans = trans.replace(/\*/g, ''); document.getElementById("translatedImageText").innerText = trans;
     drawTranslatedImageOnWhite(trans); saveToHistory('translation', txt, trans); getImageHardWords(txt);
     document.getElementById("speakImgTransBtn").style.display = "flex"; 
@@ -710,14 +638,9 @@ async function translateExtractedText(){
 }
 
 function drawTranslatedImageOnWhite(text) {
-  const c = document.getElementById("canvas"); const ctx = c.getContext("2d");
-  c.width = 1000; c.height = 1400; ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); 
-  ctx.fillStyle = "#000000"; ctx.font = "bold 36px 'Poppins', sans-serif";
+  const c = document.getElementById("canvas"); const ctx = c.getContext("2d"); c.width = 1000; c.height = 1400; ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); ctx.fillStyle = "#000000"; ctx.font = "bold 36px 'Poppins', sans-serif";
   let words = text.split(" "); let line = ""; let y = 80;
-  for(let n = 0; n < words.length; n++){
-    let testLine = line + words[n] + " "; let w = ctx.measureText(testLine).width;
-    if(w > c.width - 100 && n > 0){ ctx.fillText(line, 50, y); line = words[n] + " "; y += 50; } else { line = testLine; }
-  }
+  for(let n = 0; n < words.length; n++){ let testLine = line + words[n] + " "; let w = ctx.measureText(testLine).width; if(w > c.width - 100 && n > 0){ ctx.fillText(line, 50, y); line = words[n] + " "; y += 50; } else { line = testLine; } }
   ctx.fillText(line, 50, y); document.getElementById("downloadBtn").style.display = "flex";
 }
 function downloadImage(){ const a = document.createElement("a"); a.href = document.getElementById("canvas").toDataURL("image/png"); a.download = "Translation.png"; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
@@ -726,22 +649,17 @@ async function getImageHardWords(text){
   const box = document.getElementById("hardWords"); setStatusLoading("hardWords", "Loading meanings...");
   try{
     let prompt = `Find difficult words in this text:\n\n${text}\n\nIMPORTANT: Provide the original word in English, and the meaning in Hindi. Format ONLY as HTML:\n<div class='wordItem'><div class='wordTitle'>English Word</div><div class='wordMeaning'>Hindi Meaning</div></div>`;
-    let res = await callGroq([{ role:"user", content: prompt }]); box.innerHTML = res.replace(/```html/g, "").replace(/```/g, "").replace(/\*/g, '');
+    let res = await callGeminiText(null, prompt); box.innerHTML = res.replace(/```html/g, "").replace(/```/g, "").replace(/\*/g, '');
   }catch(e){ box.innerHTML = "Could not load."; }
 }
 
-// --- NEW FEATURE: MULTI-IMAGE Q&A ---
+// --- DOCUMENT Q&A ---
 let qaImages = []; let qaContextText = "";
 function updateQaImageCount() {
     document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`;
-    if(qaImages.length > 0) document.getElementById('extractBtn_qa').disabled = false;
-    else document.getElementById('extractBtn_qa').disabled = true;
+    if(qaImages.length > 0) document.getElementById('extractBtn_qa').disabled = false; else document.getElementById('extractBtn_qa').disabled = true;
 }
-
-function clearQaImages() {
-    qaImages = []; updateQaImageCount(); document.getElementById('qaStatus').innerText = "Ready";
-    qaContextText = ""; document.getElementById('qaContextBox').innerText = "Extracted text will appear here as context...";
-}
+function clearQaImages() { qaImages = []; updateQaImageCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Extracted text will appear here as context..."; }
 
 async function handleMultiUpload(e) {
   const files = e.target.files;
@@ -754,12 +672,11 @@ async function handleMultiUpload(e) {
 
 async function extractMultiImages() {
   if(qaImages.length === 0) return alert("Please take a photo or upload pages first.");
-  setStatusLoading("qaStatus", "Reading pages via Groq Vision..."); qaContextText = "";
+  setStatusLoading("qaStatus", "Reading pages via Gemini Vision..."); qaContextText = "";
   for(let i=0; i<qaImages.length; i++) {
     try {
-      const vRes = await fetch("/api/groq-ocr", { method: "POST", body: JSON.stringify({ imageBase64: qaImages[i] }) });
-      const vData = await vRes.json();
-      if(vData.text) qaContextText += `\n--- PAGE ${i+1} ---\n` + vData.text;
+      const rawText = await callGeminiVision(qaImages[i], "Extract all the text exactly as written. No explanations.", 0);
+      if(rawText) qaContextText += `\n--- PAGE ${i+1} ---\n` + rawText;
     } catch(e) { console.log(e); }
   }
   document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "...\n(Full text loaded in background)" : "No text found.";
@@ -767,29 +684,26 @@ async function extractMultiImages() {
 }
 
 async function askDocument() {
-  const q = document.getElementById('qaQuestionInput').value;
-  if(!q || !qaContextText) return alert("Ensure pages are read and a question is typed.");
+  const q = document.getElementById('qaQuestionInput').value; if(!q || !qaContextText) return alert("Ensure pages are read and a question is typed.");
   setStatusLoading("qaAnswerBox", "Analyzing chapter...");
+  const systemPrompt = "You are a helpful study assistant. Answer the user's question based ONLY on the provided document text. Explain clearly for a student.";
   try {
-    let ans = await callGroq([
-      { role:"system", content: "You are a helpful study assistant. Answer the user's question based ONLY on the provided document text. Explain clearly for a student." },
-      { role:"user", content: `Document Text:\n${qaContextText}\n\nQuestion: ${q}` }
-    ]);
-    document.getElementById('qaAnswerBox').innerHTML = ans.replace(/\n/g, '<br>').replace(/\*/g,'');
-    document.getElementById("speakQaBtn").style.display = "flex";
+    let ans = await callGeminiText(systemPrompt, `Document Text:\n${qaContextText}\n\nQuestion: ${q}`);
+    document.getElementById('qaAnswerBox').innerHTML = ans.replace(/\n/g, '<br>').replace(/\*/g,''); document.getElementById("speakQaBtn").style.display = "flex";
   } catch(e) { document.getElementById('qaAnswerBox').innerText = "Error analyzing."; }
 }
 
+// --- TEXT TRANSLATOR ---
 async function runTranslation(){
   const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value;
   if(!txt) return; setStatusLoading("translatedText", "Converting...");
   try{
-    let res = await callGroq([{ role:"user", content: `Translate exactly to ${lang}:\n${txt}` }]);
+    let res = await callGeminiText(null, `Translate exactly to ${lang}:\n${txt}`);
     document.getElementById("translatedText").innerText = res.replace(/\*/g, ''); document.getElementById("speakTransBtn").style.display = "flex";
   }catch(e){}
 }
 
-// --- STRICT HARDWARE CAMERA & FLASHLIGHT ENGINE ---
+// --- CAMERA UTILS ---
 const cameraModal = document.getElementById("cameraModal"), video = document.getElementById("cameraVideo"), captureCanvas = document.getElementById("captureCanvas");
 let currentStream = null, capturedImage = null, currentFacing = "environment", flashEnabled = false;
 
