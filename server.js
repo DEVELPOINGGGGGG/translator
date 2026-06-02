@@ -4,7 +4,6 @@ const path = require("path");
 
 const port = process.env.PORT || 10000;
 
-// Setup account parameters for Cloudflare Edge Network
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
@@ -13,14 +12,14 @@ const VISION_PROVIDERS = [
     { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_1 },
     { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_2 },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
-    { type: 'groq', key: process.env.GROQ_API_KEY } // Doomsday Backup
+    { type: 'groq', key: process.env.GROQ_API_KEY } 
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
     { type: 'gemini', key: process.env.GEMINI_API_KEY_TEXT_1 },
     { type: 'gemini', key: process.env.GEMINI_API_KEY_TEXT_2 },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
-    { type: 'groq', key: process.env.GROQ_API_KEY } // Doomsday Backup
+    { type: 'groq', key: process.env.GROQ_API_KEY } 
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const publicDir = __dirname;
@@ -43,30 +42,30 @@ function readRequestBody(req) {
     }); 
 }
 
-// Unified Fallback Engine
+// 🛑 ADDED: Returns both the text and the Provider Signature 🛑
 async function tryProviders(providers, requestFn) {
     let lastError;
     if (providers.length === 0) throw new Error("No operational API keys found inside server config!");
     
     for (const p of providers) { 
         try { 
-            return await requestFn(p); 
+            const textResult = await requestFn(p);
+            return { text: textResult, provider: p.type.toUpperCase() }; 
         } catch (error) { 
             lastError = error; 
-            console.log(`[Engine Fail] ${p.type} failed. Rerouting to next available fallback...`); 
+            console.log(`[Engine Fail] ${p.type} failed. Rerouting...`); 
         } 
     }
     throw lastError;
 }
 
-// --- BULLETPROOF API HANDLERS (GEMINI -> CLOUDFLARE PIPELINE) ---
 async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Explain this."; 
         const sysText = body.systemPrompt || "";
 
-        const result = await tryProviders(TEXT_PROVIDERS, async (p) => {
+        const resultObj = await tryProviders(TEXT_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
@@ -100,7 +99,7 @@ async function handleGeminiText(req, res) {
                 return data.choices[0].message.content;
             }
         });
-        return sendJson(res, 200, { text: result });
+        return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
@@ -110,14 +109,13 @@ async function handleGeminiVision(req, res) {
         const img = body.imageBase64;
         const userText = body.userPrompt || body.prompt || body.text || "Solve this.";
         
-        if (!img || img === "data:,") return sendJson(res, 400, { error: "No image provided or camera wasn't ready." });
+        if (!img || img === "data:,") return sendJson(res, 400, { error: "No image provided." });
         
-        // Base64 Data Cleaner (Stops Strict APIs from crashing)
         let rawBase64 = img.includes(',') ? img.substring(img.indexOf(',') + 1) : img;
         rawBase64 = rawBase64.replace(/\s+/g, '');
         let formattedBase64 = `data:image/jpeg;base64,${rawBase64}`;
         
-        const result = await tryProviders(VISION_PROVIDERS, async (p) => {
+        const resultObj = await tryProviders(VISION_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ parts: [{ text: userText }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { 
@@ -150,7 +148,6 @@ async function handleGeminiVision(req, res) {
                 let data = await response.json(); 
                 
                 if (!response.ok) {
-                    // Fallback to older Vision model on Groq if Scout fails
                     response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
                         method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
                         body: JSON.stringify({ 
@@ -165,7 +162,7 @@ async function handleGeminiVision(req, res) {
                 return data.choices[0].message.content;
             }
         });
-        return sendJson(res, 200, { text: result });
+        return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
@@ -175,7 +172,7 @@ async function handleGroqSearch(req, res) {
         const userText = body.userPrompt || body.prompt || body.text || "Search";
         const sysText = "You are an advanced Internet Search Engine. Search your knowledge base to provide factual, comprehensive, and up-to-date web search results.";
 
-        const result = await tryProviders(TEXT_PROVIDERS, async (p) => {
+        const resultObj = await tryProviders(TEXT_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
                 const payload = { 
                     systemInstruction: { parts: [{ text: sysText }] },
@@ -210,7 +207,7 @@ async function handleGroqSearch(req, res) {
                 return data.choices[0].message.content;
             }
         });
-        return sendJson(res, 200, { text: result });
+        return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
