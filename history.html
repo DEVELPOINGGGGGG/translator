@@ -6,7 +6,7 @@
     <title>AI Pro Suite - History</title>
     
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#050510">
+    <meta name="theme-color" content="#0f172a">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script>
@@ -15,217 +15,11 @@
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <style>
-        /* =========================================================
-           MAXIMUM DECORATION: ULTRA-PREMIUM HOLOGRAPHIC AURORA
-           HISTORY & ARCHIVE EDITION
-        ========================================================= */
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        /* --- EXTREME AURORA BACKGROUND --- */
-        body {
-            background-color: #050510;
-            color: #ffffff;
-            min-height: 100vh;
-            overflow: hidden;
-            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e, #0f172a, #3b0764);
-            background-size: 400% 400%;
-            animation: liquidBackground 15s ease infinite, pulseGlow 10s alternate infinite;
-            position: relative;
-        }
-
-        @keyframes liquidBackground {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Ambient Floating Orbs */
-        body::before, body::after {
-            content: ""; position: absolute; border-radius: 50%; z-index: -1;
-            filter: blur(90px); animation: floatOrbs 20s infinite ease-in-out alternate;
-        }
-        body::before { top: -10%; left: -10%; width: 50vw; height: 50vw; background: rgba(168, 85, 247, 0.4); }
-        body::after { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: rgba(59, 130, 246, 0.4); animation-delay: -5s; }
-
-        @keyframes floatOrbs {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(100px, 100px) scale(1.5); }
-        }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #3b82f6, #a855f7); border-radius: 20px; box-shadow: 0 0 10px rgba(168, 85, 247, 0.5); }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-
-        /* --- DECORATED TOP NAV --- */
-        .topbar {
-            position: fixed; top: 0; left: 0; right: 0; height: 75px; display: flex; align-items: center; padding: 0 25px;
-            background: rgba(10, 10, 20, 0.5); backdrop-filter: blur(30px); 
-            border-bottom: 2px solid rgba(255,255,255,0.1); z-index: 100;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 -1px 10px rgba(168,85,247,0.2);
-        }
-        .menuBtn {
-            font-size: 26px; color: #fff; cursor: pointer; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
-            border-radius: 15px; transition: 0.3s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 0 15px rgba(255,255,255,0.05);
-        }
-        .menuBtn:hover { background: rgba(255, 255, 255, 0.15); transform: scale(1.1) rotate(5deg); box-shadow: 0 0 20px rgba(168,85,247,0.4); }
-        .appTitle { 
-            font-size: 24px; font-weight: 800; margin-left: 20px; letter-spacing: 1px; 
-            background: linear-gradient(90deg, #60a5fa, #c084fc, #f472b6);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(192, 132, 252, 0.4);
-        }
-
-        .apiTracker {
-            position: fixed; top: 75px; left: 0; right: 0; height: 40px;
-            background: rgba(15, 15, 25, 0.85); backdrop-filter: blur(20px); z-index: 99; display: flex; justify-content: space-evenly; align-items: center;
-            font-size: 13px; font-weight: 600; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-        }
-        .api-val { font-weight: 800; font-size: 15px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .api-val.timer { color: #60a5fa; } .api-val.vision { color: #c084fc; } .api-val.text { color: #34d399; }
-
-        /* --- GLOWING SIDEBAR --- */
-        .sidebar {
-            position: fixed; top: 0; left: -320px; width: 300px; height: 100%;
-            background: rgba(10, 10, 20, 0.85); backdrop-filter: blur(40px); border-right: 1px solid rgba(255,255,255,0.1); z-index: 999;
-            padding: 100px 20px 20px 20px; transition: 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-            box-shadow: 20px 0 50px rgba(0,0,0,0.5);
-        }
-        .sidebar.active { left: 0; }
-        .sidebar button {
-            width: 100%; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; padding: 16px 20px; font-size: 15px; font-weight: 600;
-            text-align: left; cursor: pointer; border-radius: 16px; margin-bottom: 10px; transition: all 0.3s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .sidebar button:hover { 
-            background: linear-gradient(90deg, rgba(59,130,246,0.2), rgba(168,85,247,0.2)); 
-            color: #fff; transform: translateX(10px); border-color: rgba(168,85,247,0.5);
-            box-shadow: 0 5px 20px rgba(168,85,247,0.3);
-        }
-        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); z-index: 998; opacity: 0; pointer-events: none; transition: 0.4s; }
-        .overlay.active { opacity: 1; pointer-events: auto; }
-
-        /* --- MAIN HISTORY PAGE LAYOUT --- */
-        .page {
-            display: none; position: absolute; top: 115px; left: 50%; transform: translateX(-50%); 
-            width: 100%; max-width: 900px; bottom: 0; overflow-y: auto; padding: 20px; padding-bottom: 120px;
-        }
-        .page.active { display: block; animation: zoomFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes zoomFade { from { opacity: 0; transform: translateX(-50%) translateY(30px) scale(0.95); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
-
-        /* --- EXTREME GLASS CARDS --- */
-        .card {
-            background: linear-gradient(145deg, rgba(30,41,59,0.7), rgba(15,23,42,0.8)); 
-            border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 30px; margin-bottom: 25px;
-            backdrop-filter: blur(25px); color: white; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 2px 20px rgba(255,255,255,0.05);
-            width: 100%; transition: 0.3s; position: relative; overflow: hidden;
-        }
-        
-        .card::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
-            transform: rotate(45deg); animation: shimmer 6s infinite linear; pointer-events: none;
-        }
-        @keyframes shimmer { 0% { transform: translateX(-100%) rotate(45deg); } 100% { transform: translateX(100%) rotate(45deg); } }
-
-        .cardTitle { font-size: 26px; font-weight: 800; text-shadow: 0 0 20px rgba(96, 165, 250, 0.8); margin-bottom: 10px; }
-        .cardSub { color: #94a3b8; font-size: 15px; margin-bottom: 15px; font-weight: 500; }
-
-        /* --- BEAUTIFUL HISTORY ITEMS (Generated by JS) --- */
-        .wordItem { 
-            background: rgba(255,255,255,0.03); padding: 22px; border-radius: 20px; margin-bottom: 15px; 
-            border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            backdrop-filter: blur(10px); display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .wordItem:hover { 
-            background: rgba(255,255,255,0.08); border: 1px solid #c084fc; 
-            transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(168, 85, 247, 0.3); 
-        }
-        .wordTitle { font-weight: 800; margin-bottom: 8px; color: #e2e8f0; font-size: 18px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .wordMeaning { font-size: 13px; font-weight: 600; color: #c084fc; letter-spacing: 1px; text-transform: uppercase; }
-
-        /* --- THE ULTIMATE ACTION BUTTONS --- */
-        .actionBtnSmall { 
-            border-radius: 14px; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; 
-            cursor: pointer; border: none; font-size: 18px; transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .actionBtnSmall:hover { transform: scale(1.15) rotate(5deg); }
-        .actionBtnSmall:active { transform: scale(0.9); }
-        
-        .actionBtnSmall.green { background: linear-gradient(135deg, #10b981, #059669); color: white; border: 1px solid #34d399; }
-        .actionBtnSmall.green:hover { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
-        
-        .actionBtnSmall.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: 1px solid #60a5fa; }
-        .actionBtnSmall.blue:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.6); }
-        
-        .actionBtnSmall.red { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: 1px solid #f87171; }
-        .actionBtnSmall.red:hover { box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
-
-        .btn { 
-            width: 100%; padding: 16px; border: none; border-radius: 16px; font-weight: 700; font-size: 16px; 
-            cursor: pointer; margin-top: 10px; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
-        }
-        .btn:active { transform: scale(0.95); }
-        .btn:hover { transform: translateY(-3px); border-color: white; }
-        
-        .btn.red { background: linear-gradient(45deg, #ff0055, #ff007f); color: white; }
-        .btn.red:hover { box-shadow: 0 10px 30px rgba(255, 0, 85, 0.6); }
-        .btn.green { background: linear-gradient(45deg, #00f2fe, #4facfe); color: white; }
-        .btn.green:hover { box-shadow: 0 10px 30px rgba(79, 172, 254, 0.6); }
-        .btn.blue { background: linear-gradient(45deg, #7f00ff, #e100ff); color: white; }
-        .btn.blue:hover { box-shadow: 0 10px 30px rgba(127, 0, 255, 0.6); }
-
-        .btn-group { display: flex; gap: 15px; margin-top: 15px; } 
-        .btn-group .btn { margin-top: 0; flex: 1; }
-
-        /* --- OUTPUT BOXES FOR MODAL --- */
-        .outputBox { 
-            margin-top: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 18px; padding: 25px; min-height: 80px; white-space: pre-wrap; word-wrap: break-word; 
-            overflow-x: auto; max-width: 100%; font-size: 15px; line-height: 1.7; color: #f8fafc;
-            box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
-        }
-
-        /* --- HOLOGRAPHIC MODAL --- */
-        .infoModal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; z-index: 5000; flex-direction: column; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(20px); }
-        .infoModal.active { display: flex; animation: holographicPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes holographicPop { 0% { opacity: 0; transform: scale(0.8) translateY(50px); filter: blur(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } }
-        
-        .infoModal .card { width: 100%; max-width: 700px; max-height: 85vh; display: flex; flex-direction: column; padding: 35px; margin: 0; border: 2px solid #a855f7; box-shadow: 0 0 50px rgba(168, 85, 247, 0.4), inset 0 0 30px rgba(168, 85, 247, 0.2); }
-        .hist-scroll-area { overflow-y: auto; overflow-x: hidden; flex-grow: 1; margin-top: 15px; padding-right: 10px; }
-        .hist-footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.15); flex-shrink: 0; }
-
-        .closeBtn { width: 50px; height: 50px; border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; background: rgba(255,255,255,0.05); color: white; font-size: 22px; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .closeBtn:hover { background: #ff0055; border-color: #ff0055; transform: scale(1.1) rotate(90deg); box-shadow: 0 0 20px rgba(255,0,85,0.6); }
-
-        /* --- FLOATING TTS PLAYER --- */
-        #ttsPlayer { 
-            position: fixed; bottom: 40px; right: 30px; 
-            background: linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98)); 
-            backdrop-filter: blur(20px); border: 2px solid #00d4ff; border-radius: 50px; 
-            padding: 15px 30px; display: none; align-items: center; gap: 20px; 
-            box-shadow: 0 15px 50px rgba(0, 212, 255, 0.4); z-index: 9999; cursor: grab; user-select: none;
-            animation: pulseGlowPlayer 3s infinite alternate;
-        }
-        @keyframes pulseGlowPlayer { 0% { box-shadow: 0 10px 30px rgba(0,212,255,0.3); } 100% { box-shadow: 0 15px 50px rgba(0,212,255,0.6); } }
-        
-        #ttsPlayer:active { cursor: grabbing; transform: scale(0.95); }
-        .ttsBtn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 45px; height: 45px; color: white; font-size: 20px; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; }
-        .ttsBtn:hover { transform: scale(1.15); background: #00d4ff; border-color: #00d4ff; color: black; box-shadow: 0 0 20px rgba(0,212,255,0.8); }
-        .ttsIndicator { font-size: 16px; font-weight: 800; color: #00d4ff; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
-
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="overlay" id="overlay"></div>
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
@@ -251,14 +45,14 @@
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'" style="background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(168, 85, 247, 0.3)); border: 1px solid #a855f7; color: #fff; box-shadow: 0 0 20px rgba(168,85,247,0.4);">🕒 History & Downloads</button>
+  <button onclick="window.location.href='history.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🕒 History & Downloads</button>
 </div>
 
 <div class="page active" id="historyPage">
   <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <div class="cardTitle" style="margin-bottom: 0;">🕒 Saved History</div>
-      <button class="btn red" style="width: auto; padding: 12px 25px; margin-top: 0; font-size: 14px; border-radius: 12px;" onclick="clearAllHistory()">🗑️ Clear All</button>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="cardTitle" style="font-size: 22px; margin-bottom: 0;">🕒 Saved History</div>
+      <button class="btn red" style="width: auto; padding: 8px 15px; margin-top: 0; font-size: 13px;" onclick="clearAllHistory()">🗑️ Clear All</button>
     </div>
     
     <div id="historyList" style="margin-top: 15px;"></div>
@@ -268,13 +62,13 @@
 <div class="infoModal" id="historyModal">
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div class="cardTitle" id="histTitle" style="font-size: 24px; color: #c084fc; margin: 0; text-shadow: 0 0 15px rgba(192, 132, 252, 0.6);">Title</div>
+      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0;">Title</div>
       <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0;">✕</button>
     </div>
     <div class="hist-scroll-area">
-        <div class="cardSub" style="margin-top: 10px; color: #60a5fa;">Original Request:</div>
+        <div class="cardSub" style="margin-top: 5px;">Original Request:</div>
         <div class="outputBox" id="histQuestion"></div>
-        <div class="cardSub" style="margin-top: 25px; color: #34d399;">Solution:</div>
+        <div class="cardSub" style="margin-top: 15px;">Solution:</div>
         <div class="outputBox" id="histAnswer"></div>
     </div>
     <div class="hist-footer">
@@ -285,14 +79,6 @@
     </div>
   </div>
 </div>
-
-<script>
-    // Keep sidebar toggle working smoothly natively
-    function toggleSidebar() { 
-        document.getElementById("sidebar").classList.toggle("active"); 
-        document.getElementById("overlay").classList.toggle("active"); 
-    }
-</script>
 
 <script src="main.js" defer></script>
 
