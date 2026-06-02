@@ -7,7 +7,7 @@ const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
-// STRICT FALLBACK HIERARCHY: Gemini 1 -> Gemini 2 -> Cloudflare -> Groq
+// 🛑 MATH, TRANSLATOR & QA HIERARCHY: Gemini -> Cloudflare -> Groq 🛑
 const VISION_PROVIDERS = [
     { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_1 },
     { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_2 },
@@ -20,6 +20,13 @@ const TEXT_PROVIDERS = [
     { type: 'gemini', key: process.env.GEMINI_API_KEY_TEXT_2 },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
     { type: 'groq', key: process.env.GROQ_API_KEY } 
+].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
+
+// 🛑 DEEP SEARCH HIERARCHY: Groq -> Cloudflare -> Gemini 🛑
+const SEARCH_PROVIDERS = [
+    { type: 'groq', key: process.env.GROQ_API_KEY },
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_TEXT_1 }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const publicDir = __dirname;
@@ -35,14 +42,14 @@ function readRequestBody(req) {
         let body = ""; 
         req.on("data", chunk => { 
             body += chunk; 
-            if (body.length > 50_000_000) { reject(new Error("Too large")); req.destroy(); } 
+            if (body.length > 50_000_000) { reject(new Error("Payload too large")); req.destroy(); } 
         }); 
         req.on("end", () => resolve(body)); 
         req.on("error", reject);
     }); 
 }
 
-// 🛑 ADDED: Returns both the text and the Provider Signature 🛑
+// 🛑 CORE ENGINE: Runs through arrays and returns AI Name tag 🛑
 async function tryProviders(providers, requestFn) {
     let lastError;
     if (providers.length === 0) throw new Error("No operational API keys found inside server config!");
@@ -53,12 +60,15 @@ async function tryProviders(providers, requestFn) {
             return { text: textResult, provider: p.type.toUpperCase() }; 
         } catch (error) { 
             lastError = error; 
-            console.log(`[Engine Fail] ${p.type} failed. Rerouting...`); 
+            console.log(`[Engine Fail] ${p.type.toUpperCase()} failed. Rerouting... Error: ${error.message}`); 
         } 
     }
     throw lastError;
 }
 
+// ==========================================
+// TRANSLATOR & QA ENDPOINTS (Gemini First)
+// ==========================================
 async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -77,15 +87,16 @@ async function handleGeminiText(req, res) {
                 return data.candidates[0].content.parts[0].text;
                 
             } else if (p.type === 'cloudflare') {
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.3-70b-instruct`, {
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, {
                     method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        model: "@cf/meta/llama-3.1-70b-instruct",
                         messages: [ { role: "system", content: sysText || "You are a helpful study assistant." }, { role: "user", content: userText } ]
                     })
                 });
                 const data = await response.json();
-                if (!response.ok || !data.success) throw new Error(data.errors?.[0]?.message || "Cloudflare Text Engine failed");
-                return data.result.response;
+                if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Text Engine failed");
+                return data.choices[0].message.content;
                 
             } else {
                 const messages = [];
@@ -103,6 +114,9 @@ async function handleGeminiText(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// MATH & IMAGE OCR ENDPOINTS (Gemini First)
+// ==========================================
 async function handleGeminiVision(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -166,35 +180,18 @@ async function handleGeminiVision(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// DEEP SEARCH ENDPOINT (Groq First)
+// ==========================================
 async function handleGroqSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Search";
         const sysText = "You are an advanced Internet Search Engine. Search your knowledge base to provide factual, comprehensive, and up-to-date web search results.";
 
-        const resultObj = await tryProviders(TEXT_PROVIDERS, async (p) => {
-            if (p.type === 'gemini') {
-                const payload = { 
-                    systemInstruction: { parts: [{ text: sysText }] },
-                    contents: [{ role: "user", parts: [{ text: userText }] }] 
-                };
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { 
-                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) 
-                });
-                const data = await response.json(); 
-                if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); 
-                return data.candidates[0].content.parts[0].text;
-                
-            } else if (p.type === 'cloudflare') {
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.3-70b-instruct`, {
-                    method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ messages: [{ role: "system", content: sysText }, { role: "user", content: userText }] })
-                });
-                const data = await response.json();
-                if (!response.ok || !data.success) throw new Error("Cloudflare search backend failed");
-                return data.result.response;
-                
-            } else {
+        // Uses SEARCH_PROVIDERS (Groq is #1)
+        const resultObj = await tryProviders(SEARCH_PROVIDERS, async (p) => {
+            if (p.type === 'groq') {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
                     method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
                     body: JSON.stringify({ 
@@ -205,6 +202,30 @@ async function handleGroqSearch(req, res) {
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Groq Search failed"); 
                 return data.choices[0].message.content;
+                
+            } else if (p.type === 'cloudflare') {
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, {
+                    method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        model: "@cf/meta/llama-3.1-70b-instruct",
+                        messages: [{ role: "system", content: sysText }, { role: "user", content: userText }] 
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error("Cloudflare search backend failed");
+                return data.choices[0].message.content;
+                
+            } else if (p.type === 'gemini') {
+                const payload = { 
+                    systemInstruction: { parts: [{ text: sysText }] },
+                    contents: [{ role: "user", parts: [{ text: userText }] }] 
+                };
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { 
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) 
+                });
+                const data = await response.json(); 
+                if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); 
+                return data.candidates[0].content.parts[0].text;
             }
         });
         return sendJson(res, 200, resultObj);
