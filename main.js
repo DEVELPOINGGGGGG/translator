@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V49 - STRICT LANGUAGE LOCK)
+   AI PRO SUITE - THE ULTIMATE BUILD (V50 - AI SIGNATURE BADGES)
 ======================================================= */
 
 let appHistory = [];
@@ -107,11 +107,14 @@ function appendAiLoading(cid) {
     scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); return id;
 }
 
-function updateAiBubble(lId, answer) {
+function updateAiBubble(lId, answer, provider = "AI") {
     const loadingBubble = document.getElementById(lId);
     if (loadingBubble) {
         const bbl = loadingBubble.querySelector('.bubble');
-        bbl.innerHTML = `<div id="text_${lId}">${answer.replace(/\n/g, '<br>')}</div>`;
+        bbl.innerHTML = `
+            <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
+            <div id="text_${lId}">${answer.replace(/\n/g, '<br>')}</div>
+        `;
         window.latestMathSolution = answer; 
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
         bbl.insertAdjacentHTML('beforeend', `
@@ -125,13 +128,25 @@ function updateAiBubble(lId, answer) {
 }
 
 // --- SAFE API FETCHERS ---
+// RETURNS { text: "...", provider: "GEMINI" }
 async function callGeminiText(sysText, usrText) {
   if (isProcessing) throw new Error("Processing"); isProcessing = true; track('t');
-  try { const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText }) }); const d = await r.json(); if(!r.ok) throw new Error(d.error); isProcessing = false; return d.text; } catch(e) { isProcessing = false; throw e; }
+  try { 
+      const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText }) }); 
+      const d = await r.json(); 
+      if(!r.ok) throw new Error(d.error); 
+      isProcessing = false; return d; 
+  } catch(e) { isProcessing = false; throw e; }
 }
+
 async function callGeminiVision(imgData, aiQuery) {
   if (isProcessing) throw new Error("Processing"); isProcessing = true; track('v');
-  try { const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery }) }); const d = await r.json(); if(!r.ok) throw new Error(d.error); isProcessing = false; return d.text; } catch(e) { isProcessing = false; throw e; }
+  try { 
+      const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery }) }); 
+      const d = await r.json(); 
+      if(!r.ok) throw new Error(d.error); 
+      isProcessing = false; return d; 
+  } catch(e) { isProcessing = false; throw e; }
 }
 
 // --- 🛑 STRICT GOOGLE TRANSLATE VOICE ENGINE 🛑 ---
@@ -152,7 +167,6 @@ function speakAndHighlight(elId) {
     
     let premium;
     if (langCode === 'hi-IN') {
-        // FORCE the official Google Hindi Voice so it reads Devanagari perfectly
         premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
     } else {
         premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en'));
@@ -185,12 +199,13 @@ async function executeMathFlow() {
     6. NEVER put any text or words inside the $ symbols.`;
     
     try {
-        let sol = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
-        let cleanSol = sol.replace(/[\*&#_]/g, ''); 
+        let resObj = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
+        let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
         window.latestMathSolution = cleanSol;
-        updateAiBubble(lId, cleanSol);
-        saveToHistory('math', instruction, cleanSol, capturedImage); scrollToBottom("mathScrollArea");
+        updateAiBubble(lId, cleanSol, resObj.provider);
+        saveToHistory('math', instruction, cleanSol, capturedImage, resObj.provider); 
+        scrollToBottom("mathScrollArea");
         clearMathImage();
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
@@ -345,27 +360,31 @@ async function runGroqSearch() {
     
     try {
         let ans = "";
+        let provider = "";
+        
         if (capturedImage) {
-            ans = await callGeminiVision(capturedImage, "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q);
+            let resObj = await callGeminiVision(capturedImage, "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q);
+            ans = resObj.text; provider = resObj.provider;
         } else {
             const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
                 body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\nSearch Query: " + q }) 
             });
             const data = await res.json(); if(!res.ok) throw new Error(data.error);
-            ans = data.text;
+            ans = data.text; provider = data.provider;
         }
         
         ans = ans.replace(/[\*&#_]/g, '');
         const bbl = document.getElementById(lId);
         if (bbl) {
             bbl.querySelector('.bubble').innerHTML = `
+                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
                 <div id="search_${lId}">${ans.replace(/\n/g, '<br>')}</div>
                 <div style="margin-top:10px; display:flex; gap:10px;">
                     <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
                     <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
                 </div>`;
         }
-        saveToHistory('search', q, ans, capturedImage); scrollToBottom("searchScrollArea");
+        saveToHistory('search', q, ans, capturedImage, provider); scrollToBottom("searchScrollArea");
         clearMathImage();
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
@@ -397,15 +416,17 @@ async function runTranslation(){
         Text to translate:
         ${txt}`;
         
-        let r = await callGeminiText("You are a strict translator.", prompt); 
+        let resObj = await callGeminiText("You are a strict translator.", prompt); 
         
-        let parts = r.split('|||');
+        let parts = resObj.text.split('|||');
         let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
         let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+        let provider = resObj.provider;
         
         const tId = "trans_" + Date.now();
         
         document.getElementById("translatedText").innerHTML = `
+            <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div id="${tId}">${cleanText}</div>
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
@@ -419,7 +440,7 @@ async function runTranslation(){
         } else {
              hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
         }
-        saveToHistory('translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, null);
+        saveToHistory('translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, null, provider);
     }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
 }
 
@@ -462,8 +483,8 @@ async function executeImageTransFlow() {
     try {
         let combinedText = "";
         for (let i = 0; i < imagesToProcess.length; i++) {
-            const r = await callGeminiVision(imagesToProcess[i], "You are an OCR machine. Extract ONLY the exact text from this image in its original language. DO NOT describe the image. DO NOT translate.");
-            combinedText += r.replace(/[\*&#_]/g, '') + "\n\n";
+            const rObj = await callGeminiVision(imagesToProcess[i], "You are an OCR machine. Extract ONLY the exact text from this image in its original language. DO NOT describe the image. DO NOT translate.");
+            combinedText += rObj.text.replace(/[\*&#_]/g, '') + "\n\n";
         }
         combinedText = combinedText.trim();
         
@@ -479,13 +500,15 @@ async function executeImageTransFlow() {
         Text to translate:
         ${combinedText}`;
         
-        let t = await callGeminiText("You are a strict translator.", prompt); 
+        let resObj = await callGeminiText("You are a strict translator.", prompt); 
         
-        let parts = t.split('|||');
+        let parts = resObj.text.split('|||');
         let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
         let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+        let provider = resObj.provider;
         
         let finalHtml = `
+            <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div>
             
@@ -508,60 +531,9 @@ async function executeImageTransFlow() {
             `);
         }
         
-        saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0]); 
+        saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0], provider); 
         
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
-}
-
-async function translateExtractedText(){ 
-    const txt = document.getElementById("imageExtractedText").value.trim(); const lang = document.getElementById("imageTargetLang").value; if(!txt) return; document.getElementById("translatedImageText").innerText = "Translating..."; 
-    try { 
-        let prompt = `You are a STRICT Language Translator.
-        RULE 1: DO NOT answer any questions found in the text.
-        RULE 2: ONLY TRANSLATE the text exactly into ${lang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE.
-        RULE 3: After your translation, write the exact symbol "|||" on a new line.
-        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
-        RULE 5: Format EACH hard word EXACTLY like this, providing their meanings in HINDI (DEVANAGARI SCRIPT): [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
-        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
-        Text to translate:
-        ${txt}`;
-        
-        let t = await callGeminiText("You are a strict translator.", prompt); 
-        
-        let parts = t.split('|||');
-        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
-        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
-        
-        const tId = "img_trans_" + Date.now();
-        document.getElementById("translatedImageText").innerHTML = `
-            <div id="${tId}">${cleanText}</div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
-            </div>`; 
-            
-        let hwDiv = document.getElementById("hardWords");
-        if(hwDiv) hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
-        
-        saveToHistory('image_translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, capturedImage); 
-    } catch(e) { document.getElementById("translatedImageText").innerText = "❌ " + e.message; } 
-}
-
-// --- DOCUMENT QA ---
-function compressImg(file) { return new Promise((res) => { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let w = img.width, h = img.height; if(w>1500||h>1500) { if(w>h){h*=1500/w;w=1500;}else{w*=1500/h;h=1500;} } canvas.width=w; canvas.height=h; canvas.getContext("2d").drawImage(img,0,0,w,h); res(canvas.toDataURL("image/jpeg",0.7)); }; img.src = e.target.result; }; reader.readAsDataURL(file); }); }
-function updateQaCount() { document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`; document.getElementById('extractBtn_qa').disabled = qaImages.length === 0; }
-function clearQaImages() { qaImages = []; updateQaCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Context will appear here..."; }
-async function handleMultiUpload(e) { const files = e.target.files; for(let i=0; i<files.length; i++) { qaImages.push(await compressImg(files[i])); } updateQaCount(); }
-
-async function extractMultiImages() { 
-    if(qaImages.length===0) return; setStatusLoading("qaStatus", "Reading Doc..."); document.getElementById("qaStatus").style.display = "block"; qaContextText = ""; 
-    for(let i=0; i<qaImages.length; i++) { 
-        try { 
-            const r = await callGeminiVision(qaImages[i], "You are an OCR machine. Extract ONLY the text from this page exactly in its original language. DO NOT describe the image visually. DO NOT translate."); 
-            if(r) qaContextText += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, ''); 
-        } catch(e) {} 
-    } 
-    document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "..." : "No text found."; document.getElementById('qaStatus').innerText = "✅ Read Successfully!"; 
 }
 
 // 🛑 4-STEP DOCUMENT QA ENGINE (STRICT DEVANAGARI HINDI) 🛑
@@ -641,16 +613,16 @@ async function executeQaFlow() {
             statusTxt.innerText = `Reading Source Page ${i+1} of ${qaSourceImages.length}...`;
             pBar.style.width = `${10 + ((i / qaSourceImages.length) * 40)}%`; 
             
-            let r = await callGeminiVision(qaSourceImages[i], "Extract all text exactly as written. Do not translate. Do not describe the image visually.");
-            extractedContext += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, '');
+            let rObj = await callGeminiVision(qaSourceImages[i], "Extract all text exactly as written. Do not translate. Do not describe the image visually.");
+            extractedContext += `\n--- PAGE ${i+1} ---\n` + rObj.text.replace(/[\*&#_]/g, '');
         }
         
         let finalQuestion = typedQuestion;
         if (qaQuestionImage) {
             statusTxt.innerText = "Extracting Question from Image...";
             pBar.style.width = "65%";
-            let r = await callGeminiVision(qaQuestionImage, "Extract ONLY the question text exactly as written. Do not answer it.");
-            let qText = r.replace(/[\*&#_]/g, '').trim();
+            let rObj = await callGeminiVision(qaQuestionImage, "Extract ONLY the question text exactly as written. Do not answer it.");
+            let qText = rObj.text.replace(/[\*&#_]/g, '').trim();
             finalQuestion = typedQuestion ? `${typedQuestion}\n(Image Text: ${qText})` : qText;
         }
         
@@ -670,8 +642,9 @@ async function executeQaFlow() {
         If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
         If the answer cannot be found in the provided text, state that clearly.`;
         
-        let ans = await callGeminiText("You are a helpful document assistant.", prompt);
-        let cleanAns = ans.replace(/[\*&#_]/g, '');
+        let ansObj = await callGeminiText("You are a helpful document assistant.", prompt);
+        let cleanAns = ansObj.text.replace(/[\*&#_]/g, '');
+        let provider = ansObj.provider;
         
         pBar.style.width = "100%";
         statusTxt.innerText = "✅ Done!";
@@ -679,6 +652,7 @@ async function executeQaFlow() {
         const aId = "qa_ans_" + Date.now();
         
         outBox.innerHTML = `
+            <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div>
             
@@ -693,7 +667,7 @@ async function executeQaFlow() {
         
         if (window.MathJax) { MathJax.typesetClear([outBox]); MathJax.typesetPromise([outBox]); }
         
-        saveToHistory('qa', finalQuestion, outBox.innerHTML, qaSourceImages[0]);
+        saveToHistory('qa', finalQuestion, outBox.innerHTML, qaSourceImages[0], provider);
         
     } catch(e) {
         statusTxt.innerText = "❌ Error Occurred";
@@ -705,7 +679,11 @@ async function executeQaFlow() {
 
 // --- RESTORED HISTORY SAVING ---
 function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
-function saveToHistory(type, q, a, img = null) { appHistory.unshift({ id: Date.now(), type, title: q.substring(0,25)||'Saved', question: q, answer: a, image: img }); saveHistorySafe(); }
+
+function saveToHistory(type, q, a, img = null, provider = "AI") { 
+    appHistory.unshift({ id: Date.now(), type, title: q.substring(0,25)||'Saved', question: q, answer: a, image: img, provider: provider }); 
+    saveHistorySafe(); 
+}
 
 function renderHistory() { 
     const list = document.getElementById('historyList'); if(!list) return; 
@@ -761,22 +739,44 @@ function restoreSession(e, id) {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     if (currentPage !== targetPage && targetPage !== '') { window.location.href = `${targetPage}?restore=${id}`; return; }
     
-    if(item.type === 'math' || item.type === 'search') { 
-        let containerId = item.type === 'math' ? "mathChatHistory" : "searchChatHistory";
+    if(item.type === 'math') { 
+        let containerId = "mathChatHistory";
         document.getElementById(containerId).innerHTML = ''; 
         appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); updateAiBubble(lId, item.answer); 
-    } else if (item.type === 'translation' && document.getElementById("inputText")) {
+        let lId = appendAiLoading(containerId); updateAiBubble(lId, item.answer, item.provider || "AI"); 
+    } 
+    else if (item.type === 'search') {
+        let containerId = "searchChatHistory";
+        document.getElementById(containerId).innerHTML = ''; 
+        appendUserBubble(item.question, item.image, containerId); 
+        let lId = appendAiLoading(containerId); 
+        const bbl = document.getElementById(lId).querySelector('.bubble');
+        
+        if (item.answer.includes('<div')) { 
+            bbl.innerHTML = item.answer; 
+        } else {
+            bbl.innerHTML = `
+                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${item.provider || "AI"}</div>
+                <div id="search_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                    <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                </div>`;
+        }
+    } 
+    else if (item.type === 'translation' && document.getElementById("inputText")) {
         document.getElementById("inputText").value = item.question;
         document.getElementById("translatedText").innerHTML = item.answer.replace(/\n/g, '<br>');
-    } else if (item.type === 'image_translation' && document.getElementById("imageChatHistory")) {
+    } 
+    else if (item.type === 'image_translation' && document.getElementById("imageChatHistory")) {
         let containerId = "imageChatHistory";
         document.getElementById(containerId).innerHTML = ''; 
         appendUserBubble(item.question, item.image, containerId); 
         let lId = appendAiLoading(containerId); 
         const bbl = document.getElementById(lId).querySelector('.bubble');
         if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } else { bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`; }
-    } else if (item.type === 'qa' && document.getElementById("qaAnswerBox")) {
+    } 
+    else if (item.type === 'qa' && document.getElementById("qaAnswerBox")) {
         document.getElementById("qaAnswerBox").innerHTML = item.answer;
         document.getElementById("qaProgressBar").style.width = "100%";
         document.getElementById("qaStatusText").innerText = "Restored from History";
