@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V50 - AI SIGNATURE BADGES)
+   AI PRO SUITE - THE ULTIMATE BUILD (V51 - RETRY MODELS & QA FIX)
 ======================================================= */
 
 let appHistory = [];
@@ -9,6 +9,9 @@ let apiTime = 60, visionReqs = parseInt(localStorage.getItem('visionReqs') || '0
 let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
+
+// 🛑 THE RETRY ENGINE CACHE 🛑
+window.requestCache = {};
 
 // Video Player Variables
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
@@ -30,16 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputs = [{id:"searchInput", fn:runGroqSearch}, {id:"mathInstructionInput", fn:executeMathFlow}];
     inputs.forEach(i => { const el = document.getElementById(i.id); if(el) el.addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); i.fn(); } }); });
     
-    const buttons = [ 
-        {id: "sendMathBtn", fn: executeMathFlow}, 
-        {id: "sendSearchBtn", fn: runGroqSearch}, 
-        {id: "sendQaBtn", fn: askDocument}, 
-        {id: "askQaBtn", fn: askDocument},
-        {id: "sendImageTransBtn", fn: executeImageTransFlow} 
-    ];
+    const buttons = [ {id: "sendMathBtn", fn: executeMathFlow}, {id: "sendSearchBtn", fn: runGroqSearch} ];
     buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
-
-    if(document.getElementById('openImageCameraBtn')) document.getElementById('openImageCameraBtn').onclick = () => openCamera('image_trans');
 
     if (document.getElementById('historyList')) renderHistory();
 
@@ -51,13 +46,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// --- UI FEATURES: TOAST NOTIFICATIONS & LIGHTBOX ---
+// --- UI FEATURES ---
 function showToast(msg) {
-    let t = document.createElement('div');
-    t.innerText = msg;
+    let t = document.createElement('div'); t.innerText = msg;
     t.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #3b82f6, #8b5cf6); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:10000; font-weight:600; font-size: 14px; text-align:center; animation:fadeInOut 3s forwards; letter-spacing: 0.5px;";
     document.body.appendChild(t);
-    
     if(!document.getElementById('toastStyles')) {
         let s = document.createElement('style'); s.id = 'toastStyles';
         s.innerHTML = "@keyframes fadeInOut { 0%{opacity:0; bottom:10px;} 10%{opacity:1; bottom:30px;} 90%{opacity:1; bottom:30px;} 100%{opacity:0; bottom:10px;} }";
@@ -66,26 +59,9 @@ function showToast(msg) {
     setTimeout(() => t.remove(), 3000);
 }
 
-function copyToClipboard(textId) {
-    const text = document.getElementById(textId).innerText;
-    navigator.clipboard.writeText(text).then(() => showToast("✅ Copied to clipboard!"));
-}
-
-function viewPhotoFullscreen(src) {
-    const viewer = document.getElementById('photoViewer');
-    const img = document.getElementById('previewImage');
-    if(viewer && img) { img.src = src; viewer.classList.add('active'); }
-}
-
-// --- CORE HELPERS ---
-function getActiveChatContainer(defaultId) {
-    let container = document.getElementById(defaultId);
-    if (!container) container = document.getElementById("mathsChatHistory");
-    if (!container) container = document.getElementById("chatHistory");
-    if (!container) container = document.querySelector(".chat-scroll-area");
-    return container;
-}
-
+function copyToClipboard(textId) { navigator.clipboard.writeText(document.getElementById(textId).innerText).then(() => showToast("✅ Copied to clipboard!")); }
+function viewPhotoFullscreen(src) { const viewer = document.getElementById('photoViewer'); const img = document.getElementById('previewImage'); if(viewer && img) { img.src = src; viewer.classList.add('active'); } }
+function getActiveChatContainer(defaultId) { let c = document.getElementById(defaultId); if (!c) c = document.getElementById("mathsChatHistory"); if (!c) c = document.getElementById("chatHistory"); if (!c) c = document.querySelector(".chat-scroll-area"); return c; }
 function track(type) { if(type==='v'){ visionReqs++; localStorage.setItem('visionReqs', visionReqs); } else { textReqs++; localStorage.setItem('textReqs', textReqs); } }
 function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
 if(document.getElementById("overlay")) document.getElementById("overlay").onclick = toggleSidebar;
@@ -107,6 +83,17 @@ function appendAiLoading(cid) {
     scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); return id;
 }
 
+// 🛑 UI INJECTION: Returns HTML for Model Retry Buttons 🛑
+function getRetryButtonsHtml(lId) {
+    return `
+    <div style="margin-top:15px; display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+        <span style="font-size:11px; color:var(--muted); align-self:center;">Retry Model:</span>
+        <button style="background:#1e293b; color:#3b82f6; border:1px solid #3b82f6; padding:4px 10px; border-radius:5px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'gemini')">Gemini</button>
+        <button style="background:#1e293b; color:#f59e0b; border:1px solid #f59e0b; padding:4px 10px; border-radius:5px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'cloudflare')">Cloudflare</button>
+        <button style="background:#1e293b; color:#10b981; border:1px solid #10b981; padding:4px 10px; border-radius:5px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'groq')">Groq</button>
+    </div>`;
+}
+
 function updateAiBubble(lId, answer, provider = "AI") {
     const loadingBubble = document.getElementById(lId);
     if (loadingBubble) {
@@ -117,34 +104,31 @@ function updateAiBubble(lId, answer, provider = "AI") {
         `;
         window.latestMathSolution = answer; 
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
-        bbl.insertAdjacentHTML('beforeend', `
-            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+        bbl.insertAdjacentHTML('beforeend', getRetryButtonsHtml(lId) + `
+            <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
                 <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
-                <button class="btn blue" style="padding:10px; flex:1; font-size:13px; background:rgb(220,38,38);" onclick="initVideoGui()">▶️ Video Tutor</button>
+                <button class="btn blue" style="padding:10px; flex:1; font-size:13px; background:rgb(220,38,38);" onclick="initVideoGui()">▶️ Tutor</button>
                 <button class="btn" style="padding:10px; flex:0.5; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
             </div>
         `);
     }
 }
 
-// --- SAFE API FETCHERS ---
-// RETURNS { text: "...", provider: "GEMINI" }
-async function callGeminiText(sysText, usrText) {
+// --- SAFE API FETCHERS WITH OVERRIDE ---
+async function callGeminiText(sysText, usrText, override = null) {
   if (isProcessing) throw new Error("Processing"); isProcessing = true; track('t');
   try { 
-      const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText }) }); 
-      const d = await r.json(); 
-      if(!r.ok) throw new Error(d.error); 
+      const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText, providerOverride: override }) }); 
+      const d = await r.json(); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; return d; 
   } catch(e) { isProcessing = false; throw e; }
 }
 
-async function callGeminiVision(imgData, aiQuery) {
+async function callGeminiVision(imgData, aiQuery, override = null) {
   if (isProcessing) throw new Error("Processing"); isProcessing = true; track('v');
   try { 
-      const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery }) }); 
-      const d = await r.json(); 
-      if(!r.ok) throw new Error(d.error); 
+      const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery, providerOverride: override }) }); 
+      const d = await r.json(); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; return d; 
   } catch(e) { isProcessing = false; throw e; }
 }
@@ -154,23 +138,17 @@ function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
     window.speechSynthesis.cancel();
     if(!el.innerHTML.includes('class="word"')) {
-        const words = el.innerText.split(/(\s+)/);
-        el.innerHTML = words.map(w => w.trim() ? `<span class="word">${w}</span>` : w).join('');
+        const words = el.innerText.split(/(\s+)/); el.innerHTML = words.map(w => w.trim() ? `<span class="word">${w}</span>` : w).join('');
     }
     const spans = el.querySelectorAll('.word');
     const u = new SpeechSynthesisUtterance(Array.from(spans).map(s => s.innerText).join(' '));
-    
     const isEnglish = /^[a-zA-Z0-9\s.,!?]+$/.test(el.innerText.substring(0, 50));
     const langCode = isEnglish ? 'en-US' : 'hi-IN';
 
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-    
     let premium;
-    if (langCode === 'hi-IN') {
-        premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
-    } else {
-        premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en'));
-    }
+    if (langCode === 'hi-IN') { premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi'))); } 
+    else { premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en')); }
     
     let fallback = availableVoices.find(v => v.lang.includes(langCode.split('-')[0]));
     if (premium) u.voice = premium; else if (fallback) u.voice = fallback;
@@ -179,6 +157,99 @@ function speakAndHighlight(elId) {
     u.onboundary = (e) => { if (e.name === 'word') { spans.forEach(s => s.classList.remove('highlighted-word')); if (spans[wIdx]) { spans[wIdx].classList.add('highlighted-word'); wIdx++; } } };
     u.onend = () => { spans.forEach(s => s.classList.remove('highlighted-word')); };
     window.speechSynthesis.speak(u);
+}
+
+// --- 🛑 THE MASTER RETRY ROUTER 🛑 ---
+async function retryRequest(lId, targetProvider) {
+    const req = window.requestCache[lId];
+    if(!req) return showToast("Request data expired.");
+    
+    let container;
+    if (req.type === 'qa') {
+         container = document.getElementById("qaAnswerBox");
+         document.getElementById("qaStatusText").innerText = `Retrying with ${targetProvider.toUpperCase()}...`;
+         document.getElementById("qaProgressBar").style.width = "85%";
+    } else {
+         container = document.getElementById(lId)?.querySelector('.bubble');
+    }
+    
+    if(!container) return;
+    container.innerHTML = `<div class="spinner"></div> Retrying with ${targetProvider.toUpperCase()}...`;
+    
+    try {
+        if (req.type === 'math') {
+            let resObj = req.image ? await callGeminiVision(req.image, req.prompt, targetProvider) : await callGeminiText(req.sysPrompt, req.prompt, targetProvider);
+            let cleanSol = resObj.text.replace(/[\*&#_]/g, '');
+            updateAiBubble(lId, cleanSol, resObj.provider);
+        }
+        else if (req.type === 'search') {
+            let resObj;
+            if (req.image) {
+                resObj = await callGeminiVision(req.image, req.prompt, targetProvider);
+            } else {
+                const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
+                resObj = await res.json(); if(!resObj.text) throw new Error(resObj.error || "Search failed");
+            }
+            let ans = resObj.text.replace(/[\*&#_]/g, '');
+            container.innerHTML = `
+                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${resObj.provider}</div>
+                <div id="search_${lId}">${ans.replace(/\n/g, '<br>')}</div>
+                ${getRetryButtonsHtml(lId)}
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                    <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                </div>`;
+        }
+        else if (req.type === 'image_trans') {
+            let resObj = await callGeminiText("You are a strict translator.", req.prompt, targetProvider); 
+            let parts = resObj.text.split('|||');
+            let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
+            let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+            
+            container.innerHTML = `
+                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${resObj.provider}</div>
+                <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
+                <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${req.extractedText.replace(/\n/g, '<br>')}</div>
+                <div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${req.targetLang}:</div>
+                <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
+                <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
+                <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
+                ${getRetryButtonsHtml(lId)}
+                <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+                    <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+                </div>
+            `;
+        }
+        else if (req.type === 'qa') {
+            let ansObj = await callGeminiText("You are a helpful document assistant.", req.prompt, targetProvider);
+            let cleanAns = ansObj.text.replace(/[\*&#_]/g, '');
+            document.getElementById("qaProgressBar").style.width = "100%";
+            document.getElementById("qaStatusText").innerText = "✅ Done!";
+            
+            container.innerHTML = `
+                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${ansObj.provider}</div>
+                <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
+                <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${req.finalQuestion.replace(/\n/g, '<br>')}</div>
+                <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${req.targetLang}):</div>
+                <div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
+                ${getRetryButtonsHtml(lId)}
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+                    <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${lId}')">📋 Copy</button>
+                </div>
+            `;
+            if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); }
+        }
+    } catch(e) { 
+        if(req.type === 'qa') {
+            document.getElementById("qaStatusText").innerText = "❌ Error Occurred";
+            document.getElementById("qaProgressBar").style.background = "var(--red)";
+            container.innerHTML = "Error: " + e.message;
+        } else {
+            container.innerText = "❌ Error: " + e.message; 
+        }
+    }
 }
 
 // --- 🛑 STRICT DEVANAGARI MATH SOLVER 🛑 ---
@@ -198,6 +269,8 @@ async function executeMathFlow() {
     5. Use LaTeX wrapped in $ ONLY for fractions, squares, and square roots.
     6. NEVER put any text or words inside the $ symbols.`;
     
+    window.requestCache[lId] = { type: 'math', sysPrompt, prompt: `Instruction: ${instruction}. ${sysPrompt}`, image: capturedImage };
+
     try {
         let resObj = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
@@ -211,42 +284,24 @@ async function executeMathFlow() {
 }
 
 // --- ULTIMATE MEDIA PLAYER ENGINE ---
-function formatTime(sec) {
-    let m = Math.floor(sec / 60); let s = Math.floor(sec % 60);
-    return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s);
-}
-
+function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 function startVideoTimer(totalChars) {
-    clearInterval(videoTickInterval);
-    videoElapsed = 0;
-    videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
+    clearInterval(videoTickInterval); videoElapsed = 0; videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
     document.getElementById('vTimeDisplay').innerText = `00:00 / ${formatTime(videoTotalEst)}`;
-    
     videoTickInterval = setInterval(() => {
         if(!isVideoPaused && window.speechSynthesis.speaking) {
-            videoElapsed += 1;
-            let displayTotal = videoTotalEst;
-            if(videoElapsed > videoTotalEst) displayTotal = videoElapsed; 
+            videoElapsed += 1; let displayTotal = videoTotalEst; if(videoElapsed > videoTotalEst) displayTotal = videoElapsed; 
             document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(displayTotal)}`;
         }
     }, 1000);
 }
-
 function resetVideoActivity() {
     const top = document.getElementById('vTopBar'); const bot = document.getElementById('vControlsContainer'); const ov = document.getElementById('videoGuiOverlay');
     if(top) top.style.opacity = '1'; if(bot) bot.style.opacity = '1'; if(ov) ov.style.cursor = 'default';
-    
     clearTimeout(hideControlsTimer);
-    hideControlsTimer = setTimeout(() => {
-        if(!isVideoPaused) { if(top) top.style.opacity = '0'; if(bot) bot.style.opacity = '0'; if(ov) ov.style.cursor = 'none'; }
-    }, 3000);
+    hideControlsTimer = setTimeout(() => { if(!isVideoPaused) { if(top) top.style.opacity = '0'; if(bot) bot.style.opacity = '0'; if(ov) ov.style.cursor = 'none'; } }, 3000);
 }
-
-function toggleVideoFullscreen() {
-    const ov = document.getElementById('videoGuiOverlay');
-    if (!document.fullscreenElement) { ov.requestFullscreen().catch(err => { console.log("Fullscreen blocked."); }); } else { document.exitFullscreen(); }
-}
-
+function toggleVideoFullscreen() { const ov = document.getElementById('videoGuiOverlay'); if (!document.fullscreenElement) { ov.requestFullscreen().catch(err => { console.log("Fullscreen blocked."); }); } else { document.exitFullscreen(); } }
 function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); resetVideoActivity(); }
 
 function initVideoGui() {
@@ -322,14 +377,10 @@ async function playFractionVideo() {
         let targetLang = isEnglish ? 'en' : 'hi';
         let premium;
         
-        if (targetLang === 'hi') {
-            premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
-        } else {
-            premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en'));
-        }
+        if (targetLang === 'hi') { premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi'))); } 
+        else { premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en')); }
         
         if (premium) u.voice = premium;
-        
         u.lang = isEnglish ? 'en-US' : 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume; 
         window.speechSynthesis.speak(u);
         
@@ -344,7 +395,6 @@ async function playFractionVideo() {
         
         if(pBar) pBar.style.width = (((i + 1) / lines.length) * 100) + '%';
     }
-    
     clearInterval(videoTickInterval);
     const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄"; 
     resetVideoActivity(); 
@@ -358,12 +408,13 @@ async function runGroqSearch() {
     appendUserBubble(q || "Analyze this image.", capturedImage, "searchChatHistory"); 
     inp.value = ""; let lId = appendAiLoading("searchChatHistory");
     
+    window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q, image: capturedImage };
+
     try {
-        let ans = "";
-        let provider = "";
+        let ans = ""; let provider = "";
         
         if (capturedImage) {
-            let resObj = await callGeminiVision(capturedImage, "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q);
+            let resObj = await callGeminiVision(capturedImage, window.requestCache[lId].prompt);
             ans = resObj.text; provider = resObj.provider;
         } else {
             const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
@@ -379,6 +430,7 @@ async function runGroqSearch() {
             bbl.querySelector('.bubble').innerHTML = `
                 <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
                 <div id="search_${lId}">${ans.replace(/\n/g, '<br>')}</div>
+                ${getRetryButtonsHtml(lId)}
                 <div style="margin-top:10px; display:flex; gap:10px;">
                     <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
                     <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
@@ -389,7 +441,7 @@ async function runGroqSearch() {
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- TRANSLATOR ENGINE (TEXT) ---
+// --- TEXT TRANSLATOR ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
 let recognition; let isRecording = false;
@@ -402,49 +454,7 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 function toggleRecording() { if (!recognition) return alert("Not supported."); if (isRecording) recognition.stop(); else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); } }
 function stopRecording() { isRecording = false; const mic = document.getElementById("micBtn"); if(mic) mic.classList.remove("recording"); }
 
-async function runTranslation(){ 
-    const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value; if(!txt) return; 
-    setStatusLoading("translatedTextStatus", "Translating..."); document.getElementById("translatedTextStatus").style.display = "block";
-    try{ 
-        let prompt = `You are a STRICT Language Translator.
-        RULE 1: DO NOT answer any questions found in the text. DO NOT summarize.
-        RULE 2: ONLY TRANSLATE the text exactly into ${lang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE.
-        RULE 3: After your translation, write the exact symbol "|||" on a new line.
-        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
-        RULE 5: Format EACH hard word EXACTLY like this, providing their meanings in HINDI (DEVANAGARI SCRIPT): [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
-        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
-        Text to translate:
-        ${txt}`;
-        
-        let resObj = await callGeminiText("You are a strict translator.", prompt); 
-        
-        let parts = resObj.text.split('|||');
-        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
-        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
-        let provider = resObj.provider;
-        
-        const tId = "trans_" + Date.now();
-        
-        document.getElementById("translatedText").innerHTML = `
-            <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
-            <div id="${tId}">${cleanText}</div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
-            </div>`; 
-        document.getElementById("translatedTextStatus").style.display = "none"; 
-        
-        let hwDiv = document.getElementById("hardWords");
-        if(!hwDiv) {
-             document.getElementById("translatedText").insertAdjacentHTML('afterend', `<div class="cardTitle" style="margin-top: 20px;">Hard Words Meaning</div><div class="outputBox" id="hardWords">${hardWordsText.replace(/\n/g, '<br>')}</div>`);
-        } else {
-             hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
-        }
-        saveToHistory('translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, null, provider);
-    }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
-}
-
-// 🛑 MULTI-IMAGE CHAT TRANSLATOR ENGINE (IMAGE) 🛑
+// --- MULTI-IMAGE CHAT TRANSLATOR ENGINE ---
 function renderTransImagePreviews() {
     const container = document.getElementById("imagePreviewContainer");
     if (!container) return;
@@ -458,11 +468,7 @@ function renderTransImagePreviews() {
     `).join('');
 }
 
-function removeTransImage(index, event) {
-    if(event) event.stopPropagation();
-    transImages.splice(index, 1);
-    renderTransImagePreviews();
-}
+function removeTransImage(index, event) { if(event) event.stopPropagation(); transImages.splice(index, 1); renderTransImagePreviews(); }
 
 async function executeImageTransFlow() {
     if (transImages.length === 0) return showToast("Please click ➕ to attach at least 1 image!");
@@ -475,10 +481,8 @@ async function executeImageTransFlow() {
     scrollToBottom("imageScrollArea");
     
     let lId = appendAiLoading("imageChatHistory");
-    
     let imagesToProcess = [...transImages];
-    transImages = [];
-    renderTransImagePreviews();
+    transImages = []; renderTransImagePreviews();
     
     try {
         let combinedText = "";
@@ -487,7 +491,6 @@ async function executeImageTransFlow() {
             combinedText += rObj.text.replace(/[\*&#_]/g, '') + "\n\n";
         }
         combinedText = combinedText.trim();
-        
         if (!combinedText || combinedText.toLowerCase().includes("no text found")) throw new Error("Could not detect any text in the images.");
 
         let prompt = `You are a STRICT Language Translator.
@@ -496,12 +499,12 @@ async function executeImageTransFlow() {
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
         RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
         RULE 5: Format EACH hard word EXACTLY like this, providing their meanings in HINDI (DEVANAGARI SCRIPT): [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
-        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
         Text to translate:
         ${combinedText}`;
         
+        window.requestCache[lId] = { type: 'image_trans', prompt: prompt, extractedText: combinedText, targetLang: targetLang };
+
         let resObj = await callGeminiText("You are a strict translator.", prompt); 
-        
         let parts = resObj.text.split('|||');
         let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
         let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
@@ -511,89 +514,59 @@ async function executeImageTransFlow() {
             <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div>
-            
             <div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${targetLang}:</div>
             <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
-            
             <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
             <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
+            ${getRetryButtonsHtml(lId)}
+            <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+                <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+            </div>
         `;
         
         const loadingBubble = document.getElementById(lId);
-        if (loadingBubble) {
-            const bbl = loadingBubble.querySelector('.bubble');
-            bbl.innerHTML = finalHtml;
-            bbl.insertAdjacentHTML('beforeend', `
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                    <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
-                </div>
-            `);
-        }
-        
+        if (loadingBubble) { loadingBubble.querySelector('.bubble').innerHTML = finalHtml; }
         saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0], provider); 
         
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// 🛑 4-STEP DOCUMENT QA ENGINE (STRICT DEVANAGARI HINDI) 🛑
+// 🛑 4-STEP DOCUMENT QA ENGINE (STRICT TARGETED QUESTION FIX) 🛑
 let qaSourceImages = [];
 let qaQuestionImage = null;
 
 function renderQaSourcePreviews() {
-    const count = document.getElementById("qaSourceCount"); 
-    if(count) count.innerText = qaSourceImages.length;
-    
-    const container = document.getElementById("qaSourcePreviews"); 
-    if(!container) return;
-    
+    const count = document.getElementById("qaSourceCount"); if(count) count.innerText = qaSourceImages.length;
+    const container = document.getElementById("qaSourcePreviews"); if(!container) return;
     container.innerHTML = qaSourceImages.map((img, i) => `
         <div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;">
             <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaSource(${i}, event)">✕</div>
         </div>
     `).join('');
 }
-
-function removeQaSource(index, event) {
-    if(event) event.stopPropagation(); 
-    qaSourceImages.splice(index, 1); 
-    renderQaSourcePreviews();
-}
+function removeQaSource(index, event) { if(event) event.stopPropagation(); qaSourceImages.splice(index, 1); renderQaSourcePreviews(); }
 
 function renderQaQuestionPreview() {
-    const container = document.getElementById("qaQuestionPreview"); 
-    if(!container) return;
-    
+    const container = document.getElementById("qaQuestionPreview"); if(!container) return;
     if(!qaQuestionImage) { container.innerHTML = ""; return; }
-    
     container.innerHTML = `
         <div class="image-preview-chip" style="display:block; position:relative; width:80px; height:80px; background-image:url(${qaQuestionImage}); background-size:cover; border-radius:8px; flex-shrink:0;">
             <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaQuestion(event)">✕</div>
         </div>
     `;
 }
-
-function removeQaQuestion(event) {
-    if(event) event.stopPropagation(); 
-    qaQuestionImage = null; 
-    renderQaQuestionPreview();
-}
+function removeQaQuestion(event) { if(event) event.stopPropagation(); qaQuestionImage = null; renderQaQuestionPreview(); }
 
 function clearQaSession() {
-    qaSourceImages = [];
-    qaQuestionImage = null;
-    document.getElementById("qaQuestionInput").value = "";
+    qaSourceImages = []; qaQuestionImage = null; document.getElementById("qaQuestionInput").value = "";
     document.getElementById("qaAnswerBox").innerHTML = "Solution will appear here...";
-    document.getElementById("qaProgressBar").style.width = "0%";
-    document.getElementById("qaStatusText").innerText = "Ready to start.";
-    renderQaSourcePreviews();
-    renderQaQuestionPreview();
-    showToast("🔄 Session Reset");
+    document.getElementById("qaProgressBar").style.width = "0%"; document.getElementById("qaStatusText").innerText = "Ready to start.";
+    renderQaSourcePreviews(); renderQaQuestionPreview(); showToast("🔄 Session Reset");
 }
 
 async function executeQaFlow() {
     if (qaSourceImages.length === 0) return showToast("⚠️ Please add at least 1 source document image.");
-    
     let typedQuestion = document.getElementById("qaQuestionInput").value.trim();
     if (!typedQuestion && !qaQuestionImage) return showToast("⚠️ Please type a question or take a photo of it.");
     
@@ -602,84 +575,72 @@ async function executeQaFlow() {
     const pBar = document.getElementById("qaProgressBar");
     const outBox = document.getElementById("qaAnswerBox");
     
-    outBox.innerHTML = "";
-    pBar.style.width = "5%";
-    pBar.style.background = "#3b82f6";
+    outBox.innerHTML = ""; pBar.style.width = "5%"; pBar.style.background = "#3b82f6";
     
     try {
         let extractedContext = "";
-        
         for(let i=0; i<qaSourceImages.length; i++) {
-            statusTxt.innerText = `Reading Source Page ${i+1} of ${qaSourceImages.length}...`;
-            pBar.style.width = `${10 + ((i / qaSourceImages.length) * 40)}%`; 
-            
+            statusTxt.innerText = `Reading Source Page ${i+1} of ${qaSourceImages.length}...`; pBar.style.width = `${10 + ((i / qaSourceImages.length) * 40)}%`; 
             let rObj = await callGeminiVision(qaSourceImages[i], "Extract all text exactly as written. Do not translate. Do not describe the image visually.");
             extractedContext += `\n--- PAGE ${i+1} ---\n` + rObj.text.replace(/[\*&#_]/g, '');
         }
         
         let finalQuestion = typedQuestion;
         if (qaQuestionImage) {
-            statusTxt.innerText = "Extracting Question from Image...";
-            pBar.style.width = "65%";
+            statusTxt.innerText = "Extracting Question from Image..."; pBar.style.width = "65%";
             let rObj = await callGeminiVision(qaQuestionImage, "Extract ONLY the question text exactly as written. Do not answer it.");
             let qText = rObj.text.replace(/[\*&#_]/g, '').trim();
             finalQuestion = typedQuestion ? `${typedQuestion}\n(Image Text: ${qText})` : qText;
         }
         
-        statusTxt.innerText = `Solving... Generating answer in ${targetLang}`;
-        pBar.style.width = "85%";
+        statusTxt.innerText = `Solving... Generating answer in ${targetLang}`; pBar.style.width = "85%";
         
+        // 🛑 THE FIX: Bulletproof Q&A Prompt to force it to solve the RIGHT question 🛑
         let prompt = `You are an expert Document Assistant.
         
         DOCUMENT TEXT:
         ${extractedContext}
         
-        QUESTION:
+        TARGET QUESTION TO SOLVE:
         ${finalQuestion}
         
-        INSTRUCTION: Answer the question based ONLY on the Document Text. 
-        You MUST write your entire answer strictly in ${targetLang}. 
-        If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
-        If the answer cannot be found in the provided text, state that clearly.`;
+        CRITICAL INSTRUCTIONS (FAILURE IS NOT AN OPTION):
+        1. The document text may contain MULTIPLE different questions.
+        2. YOU MUST IGNORE ALL OTHER QUESTIONS and ONLY SOLVE THE EXACT QUESTION STATED UNDER "TARGET QUESTION TO SOLVE".
+        3. Answer based ONLY on the Document Text provided. 
+        4. You MUST write your entire answer strictly in ${targetLang}. 
+        5. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
+        6. If the answer cannot be found in the provided text, state that clearly.`;
         
+        const qaId = "qa_ans_" + Date.now();
+        window.requestCache[qaId] = { type: 'qa', prompt: prompt, targetLang: targetLang, finalQuestion: finalQuestion };
+
         let ansObj = await callGeminiText("You are a helpful document assistant.", prompt);
-        let cleanAns = ansObj.text.replace(/[\*&#_]/g, '');
-        let provider = ansObj.provider;
+        let cleanAns = ansObj.text.replace(/[\*&#_]/g, ''); let provider = ansObj.provider;
         
-        pBar.style.width = "100%";
-        statusTxt.innerText = "✅ Done!";
-        
-        const aId = "qa_ans_" + Date.now();
+        pBar.style.width = "100%"; statusTxt.innerText = "✅ Done!";
         
         outBox.innerHTML = `
             <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div>
-            
             <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div>
-            <div id="${aId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
-            
+            <div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
+            ${getRetryButtonsHtml(qaId)}
             <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${aId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${aId}')">📋 Copy</button>
+                <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${qaId}')">📋 Copy</button>
             </div>
         `;
         
         if (window.MathJax) { MathJax.typesetClear([outBox]); MathJax.typesetPromise([outBox]); }
-        
         saveToHistory('qa', finalQuestion, outBox.innerHTML, qaSourceImages[0], provider);
         
-    } catch(e) {
-        statusTxt.innerText = "❌ Error Occurred";
-        pBar.style.background = "var(--red)";
-        outBox.innerHTML = "Error: " + e.message;
-    }
+    } catch(e) { statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; }
 }
-
 
 // --- RESTORED HISTORY SAVING ---
 function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
-
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
     appHistory.unshift({ id: Date.now(), type, title: q.substring(0,25)||'Saved', question: q, answer: a, image: img, provider: provider }); 
     saveHistorySafe(); 
@@ -702,26 +663,12 @@ function renderHistory() {
         </div>
     `).join(''); 
 }
-
-function clearAllHistory() {
-    if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) { appHistory = []; saveHistorySafe(); renderHistory(); showToast("🗑️ All history has been cleared!"); }
-}
-
+function clearAllHistory() { if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) { appHistory = []; saveHistorySafe(); renderHistory(); showToast("🗑️ All history has been cleared!"); } }
 function deleteHistoryItem(e, id) { e.stopPropagation(); appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); showToast("Deleted successfully."); }
-
-function cleanLatexForDownload(text) {
-    return text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)')
-               .replace(/\\times/g, 'x')
-               .replace(/\\%/g, '%')
-               .replace(/[\$\\]/g, '')
-               .replace(/&nbsp;/g, ' ')
-               .replace(/<br>/g, '\n');
-}
-
+function cleanLatexForDownload(text) { return text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)').replace(/\\times/g, 'x').replace(/\\%/g, '%').replace(/[\$\\]/g, '').replace(/&nbsp;/g, ' ').replace(/<br>/g, '\n'); }
 function quickDownload(e, id) { e.stopPropagation(); const item = appHistory.find(i => i.id === id); if(item) triggerFileDownload(item); }
 function triggerFileDownload(item) { 
-    let q = item.question.replace(/<[^>]*>?/gm, ''); 
-    let a = cleanLatexForDownload(item.answer.replace(/<[^>]*>?/gm, '')); 
+    let q = item.question.replace(/<[^>]*>?/gm, ''); let a = cleanLatexForDownload(item.answer.replace(/<[^>]*>?/gm, '')); 
     const b = new Blob([`Title: ${item.title}\n\n--- INPUT ---\n${q}\n\n--- OUTPUT ---\n${a}`], { type: "text/plain;charset=utf-8" }); 
     const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `AI_${item.title}.txt`; l.click(); 
     showToast("📥 Download started!");
@@ -730,56 +677,33 @@ function triggerFileDownload(item) {
 function restoreSession(e, id) { 
     if(e) e.stopPropagation(); const item = appHistory.find(i => i.id == id); if(!item) return; 
     let targetPage = ''; 
-    if(item.type === 'math') targetPage = 'maths.html'; 
-    else if(item.type === 'search') targetPage = 'search.html'; 
-    else if(item.type === 'translation') targetPage = 'translator.html'; 
-    else if(item.type === 'image_translation') targetPage = 'image.html'; 
-    else if(item.type === 'qa') targetPage = 'qa.html';
+    if(item.type === 'math') targetPage = 'maths.html'; else if(item.type === 'search') targetPage = 'search.html'; else if(item.type === 'translation') targetPage = 'translator.html'; else if(item.type === 'image_translation') targetPage = 'image.html'; else if(item.type === 'qa') targetPage = 'qa.html';
     
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     if (currentPage !== targetPage && targetPage !== '') { window.location.href = `${targetPage}?restore=${id}`; return; }
     
     if(item.type === 'math') { 
-        let containerId = "mathChatHistory";
-        document.getElementById(containerId).innerHTML = ''; 
-        appendUserBubble(item.question, item.image, containerId); 
+        let containerId = "mathChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
         let lId = appendAiLoading(containerId); updateAiBubble(lId, item.answer, item.provider || "AI"); 
     } 
     else if (item.type === 'search') {
-        let containerId = "searchChatHistory";
-        document.getElementById(containerId).innerHTML = ''; 
-        appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); 
-        const bbl = document.getElementById(lId).querySelector('.bubble');
-        
-        if (item.answer.includes('<div')) { 
-            bbl.innerHTML = item.answer; 
-        } else {
+        let containerId = "searchChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
+        let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
+        if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } 
+        else {
             bbl.innerHTML = `
                 <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${item.provider || "AI"}</div>
                 <div id="search_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>
-                <div style="margin-top:10px; display:flex; gap:10px;">
-                    <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
-                </div>`;
+                <div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
         }
     } 
-    else if (item.type === 'translation' && document.getElementById("inputText")) {
-        document.getElementById("inputText").value = item.question;
-        document.getElementById("translatedText").innerHTML = item.answer.replace(/\n/g, '<br>');
-    } 
     else if (item.type === 'image_translation' && document.getElementById("imageChatHistory")) {
-        let containerId = "imageChatHistory";
-        document.getElementById(containerId).innerHTML = ''; 
-        appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); 
-        const bbl = document.getElementById(lId).querySelector('.bubble');
+        let containerId = "imageChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
+        let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
         if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } else { bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`; }
     } 
     else if (item.type === 'qa' && document.getElementById("qaAnswerBox")) {
-        document.getElementById("qaAnswerBox").innerHTML = item.answer;
-        document.getElementById("qaProgressBar").style.width = "100%";
-        document.getElementById("qaStatusText").innerText = "Restored from History";
+        document.getElementById("qaAnswerBox").innerHTML = item.answer; document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "Restored from History";
     }
     showToast("🔄 Session Restored");
 }
@@ -807,21 +731,16 @@ function capturePhoto(){
     c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, w, h); capturedImage = c.toDataURL("image/jpeg", 0.7); 
     
     if (currentMode === 'math' || currentMode === 'search') { 
-        const chip = document.getElementById("mathPreviewChip"); 
-        if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
+        const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
     }
     else if (currentMode === 'image_trans') {
-        if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } 
-        else { transImages.push(capturedImage); renderTransImagePreviews(); }
+        if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } else { transImages.push(capturedImage); renderTransImagePreviews(); }
     }
     else if (currentMode === 'qa_source') {
-        if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); }
-        else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
+        if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
     }
-    else if (currentMode === 'qa_question') {
-        qaQuestionImage = capturedImage; renderQaQuestionPreview();
-    }
+    else if (currentMode === 'qa_question') { qaQuestionImage = capturedImage; renderQaQuestionPreview(); }
     closeCamera(); 
 }
 
-window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow;
+window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest;
