@@ -8,7 +8,6 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,69 +19,52 @@
   <div class="appTitle">AI Pro Suite</div>
 </div>
 <div class="apiTracker">
-    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
-</div>
-
-<div id="ttsPlayer">
-  <div class="ttsIndicator">🔊 Reading</div>
-  <button class="ttsBtn" id="ttsPlayBtn">⏸️</button>
-  <button class="ttsBtn" id="ttsStopBtn">⏹️</button>
-  <button class="ttsBtn" id="ttsCloseBtn">✖️</button>
+    <div>⏱️ <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🖼️ Image Translator</button>
+  <button onclick="window.location.href='image.html'" style="border-left: 4px solid #a855f7; color: #d8b4fe; background: #111827;">🖼️ Image Translator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
 </div>
 
-<div class="page active" id="imagePage">
-  <div class="card" style="background:linear-gradient(135deg,#ec4899,#10b981); border:none; text-align:center;">
-    <h1 style="font-size: 24px;">🖼️ Image Translator</h1>
-    <p style="font-size: 14px; opacity: 0.9;">Extract text from images and translate instantly.</p>
-  </div>
-
-  <div class="card">
-    <div class="cardTitle">Step 1: Capture Text</div>
-    <div class="btn-group">
-      <button class="btn green" onclick="openCamera('translate')">📷 Take Photo</button>
-      <button class="btn blue" id="viewBtn_trans" onclick="viewPhoto('translate')" disabled>🖼 View</button>
+<div class="page active chat-page-layout" id="imagePage">
+  <div class="chat-scroll-area" id="imageScrollArea">
+    <div class="card" style="background:linear-gradient(135deg,#a855f7,#7e22ce); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
+        <h1 style="font-size: 24px;">🖼️ Image Translator</h1>
+        <p style="font-size: 14px; opacity: 0.9;">Translate up to 3 pages at once.</p>
     </div>
-    <button class="btn purple" id="extractBtn_trans" onclick="processImageText('translate')" disabled>🔍 Extract Text</button>
-    <div class="status" id="imageStatus" style="margin-top:10px; padding:10px; display:none;">No Photo Selected</div>
-  </div>
-
-  <div class="card">
-    <div class="cardTitle">Step 2: Edit & Translate</div>
-    <textarea class="standard" id="imageExtractedText" placeholder="Extracted text..."></textarea>
-    <select id="imageTargetLang">
-      <option>Hindi</option>
-      <option>English</option>
-      <option>French</option>
-      <option>Spanish</option>
-      <option>German</option>
-    </select>
-    <button class="btn yellow" onclick="translateExtractedText()">🌍 Translate Text</button>
     
-    <div class="cardTitle" style="margin-top: 15px; font-size: 16px;">Translation Output:</div>
-    <div class="outputBox" id="translatedImageText">Waiting for translation...</div>
-    
-    <div class="btn-group">
-      <button class="btn green" id="speakImgTransBtn" style="display:none;" onclick="speakText('translatedImageText')">🔊 Speak</button>
-      <button class="btn blue" id="downloadBtn" onclick="downloadImage()" style="display:none;">💾 Download</button>
+    <div id="imageChatHistory">
+        <div class="chat-msg chat-ai">
+            <div class="bubble">Please click the <b>➕</b> icon to share a photo of translation text. Click the <b>➕</b> icon again to share more photos at once (Max: 3).</div>
+        </div>
     </div>
-    <canvas id="canvas" style="display:none; width: 100%; border-radius: 18px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.2);"></canvas>
   </div>
 
-  <div class="card">
-    <div class="cardTitle">Hard Words Meaning</div>
-    <div class="wordList" id="hardWords">No data yet.</div>
+  <div class="chat-input-area" style="flex-direction: column;">
+    <div id="imagePreviewContainer" style="display: none; gap: 10px; margin-bottom: 10px; overflow-x: auto; width: 100%; padding-bottom: 5px;"></div>
+    
+    <div class="chat-input-wrapper" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 5px;">
+        <button class="chat-action-btn" id="openImageCameraBtn" title="Take Photo" style="flex-shrink: 0;">➕</button>
+        
+        <select id="chatTargetLang" style="flex: 1; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); outline: none; font-family: 'Poppins', sans-serif;">
+            <option value="Hindi">Target: Hindi</option>
+            <option value="English">Target: English</option>
+            <option value="French">Target: French</option>
+            <option value="Spanish">Target: Spanish</option>
+            <option value="German">Target: German</option>
+            <option value="Japanese">Target: Japanese</option>
+        </select>
+        
+        <button class="btn blue" id="sendImageTransBtn" style="margin:0; padding: 12px 20px; border-radius: 12px; white-space: nowrap; flex-shrink: 0;">Convert</button>
+    </div>
   </div>
 </div>
 
@@ -100,12 +82,10 @@
   <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
       <button class="closeBtn" id="closePreviewBtn">✕</button>
   </div>
-  <img id="previewImage">
+  <img id="previewImage" src="" alt="Preview">
 </div>
 
 <canvas id="captureCanvas" style="display:none;"></canvas>
-
 <script src="main.js" defer></script>
-
 </body>
 </html>
