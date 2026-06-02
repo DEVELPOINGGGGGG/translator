@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V43 - STRICT PROMPTS & MATH FIX)
+   AI PRO SUITE - THE ULTIMATE BUILD (V44 - STRICT OCR FIX)
 ======================================================= */
 
 let appHistory = [];
@@ -159,7 +159,7 @@ function speakAndHighlight(elId) {
     window.speechSynthesis.speak(u);
 }
 
-// --- 🛑 STRICT MATH SOLVER FIX 🛑 ---
+// --- SMART BILINGUAL MATH SOLVER ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -168,20 +168,16 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // Strictly bounds the AI so it doesn't hallucinate or use bad symbols
-    const sysPrompt = `You are an Expert Math Tutor. 
-    1. EXAMINE THE IMAGE CAREFULLY. ONLY solve the exact problem shown in the image. Do not invent a different problem.
-    2. EXPLAIN STRICTLY IN HINDI ONLY. 
-    3. DO NOT use bold markdown (**). 
-    4. Use standard math operators (+, -, =, x). 
-    5. Use LaTeX wrapped in $ ONLY for fractions (\\frac{}{}), squares, and square roots.
-    6. NEVER put Hindi words inside the $ symbols.`;
+    const sysPrompt = `You are a Math Tutor. 
+    1. EXPLAIN IN HINDI BY DEFAULT. HOWEVER, if the user asks their question explicitly in English, you MUST answer in English. Match their language.
+    2. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. 
+    3. Use ONLY plain words, math numbers, and basic math symbols.
+    4. Use LaTeX wrapped in $ ONLY for fractions, squares, and square roots.
+    5. NEVER put any text or words inside the $ symbols.`;
     
     try {
         let sol = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
-        
-        // FIX: Remove bolding (**) and headers (#) but LEAVE standard asterisks (*) alone so math doesn't break!
-        let cleanSol = sol.replace(/\*\*/g, '').replace(/[#_]/g, ''); 
+        let cleanSol = sol.replace(/[\*&#_]/g, ''); 
         
         window.latestMathSolution = cleanSol;
         updateAiBubble(lId, cleanSol);
@@ -419,7 +415,7 @@ async function runGroqSearch() {
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- 🛑 STRICT TRANSLATOR (NO STORY ANSWERING & FIXED HARD WORDS) 🛑 ---
+// --- TRANSLATOR ENGINE ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
 let recognition; let isRecording = false;
@@ -446,7 +442,6 @@ async function runTranslation(){
         
         let r = await callGeminiText("You are a strict translator.", prompt); 
         
-        // Safely parse the ||| split
         let parts = r.split('|||');
         let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
         let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
@@ -461,7 +456,6 @@ async function runTranslation(){
             </div>`; 
         document.getElementById("translatedTextStatus").style.display = "none"; 
         
-        // Push Hard Words to UI
         let hwDiv = document.getElementById("hardWords");
         if(!hwDiv) {
              document.getElementById("translatedText").insertAdjacentHTML('afterend', `<div class="cardTitle" style="margin-top: 20px;">Hard Words Meaning</div><div class="outputBox" id="hardWords">${hardWordsText.replace(/\n/g, '<br>')}</div>`);
@@ -472,14 +466,26 @@ async function runTranslation(){
     }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
 }
 
+// 🛑 STRICT OCR ENGINE FIX: PREVENTS IMAGE DESCRIPTIONS 🛑
 async function processImageText(){ 
-    if(!capturedImage) return; setStatusLoading("imageStatus", "Extracting..."); document.getElementById("imageStatus").style.display = "block"; 
+    if(!capturedImage) return; 
+    setStatusLoading("imageStatus", "Extracting..."); 
+    document.getElementById("imageStatus").style.display = "block"; 
+    
     try { 
-        // Read the image exactly as it is without answering it
-        const r = await callGeminiVision(capturedImage, "Extract all text from this image exactly as written in the original language. Do not translate or answer it."); 
-        document.getElementById("imageExtractedText").value = r.replace(/[\*&#_]/g, ''); 
+        const ocrPrompt = `You are a pure OCR (Optical Character Recognition) machine. 
+        Your ONLY job is to extract the exact text written in the image. 
+        1. DO NOT describe the image visually (e.g., NEVER say "A person is holding a book").
+        2. Extract and output the text EXACTLY in the original language it is written in. DO NOT translate it.
+        3. DO NOT answer questions in the text. Just return the raw text.
+        4. If there is no text visible, reply with "No text found."`;
+        
+        const r = await callGeminiVision(capturedImage, ocrPrompt); 
+        document.getElementById("imageExtractedText").value = r.replace(/[\*&#_]/g, '').trim(); 
         document.getElementById("imageStatus").innerHTML = "✅ Extraction Complete."; 
-    } catch(e) { document.getElementById("imageStatus").innerHTML = "❌ " + e.message; } 
+    } catch(e) { 
+        document.getElementById("imageStatus").innerHTML = "❌ " + e.message; 
+    } 
 }
 
 async function translateExtractedText(){ 
@@ -514,7 +520,7 @@ async function translateExtractedText(){
     } catch(e) { document.getElementById("translatedImageText").innerText = "❌ " + e.message; } 
 }
 
-// --- DOCUMENT QA (STRICTLY HINDI ANSWERS) ---
+// --- DOCUMENT QA (STRICT OCR & HINDI ANSWERS) ---
 function compressImg(file) { return new Promise((res) => { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let w = img.width, h = img.height; if(w>1500||h>1500) { if(w>h){h*=1500/w;w=1500;}else{w*=1500/h;h=1500;} } canvas.width=w; canvas.height=h; canvas.getContext("2d").drawImage(img,0,0,w,h); res(canvas.toDataURL("image/jpeg",0.7)); }; img.src = e.target.result; }; reader.readAsDataURL(file); }); }
 function updateQaCount() { document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`; document.getElementById('extractBtn_qa').disabled = qaImages.length === 0; }
 function clearQaImages() { qaImages = []; updateQaCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Context will appear here..."; }
@@ -522,7 +528,13 @@ async function handleMultiUpload(e) { const files = e.target.files; for(let i=0;
 
 async function extractMultiImages() { 
     if(qaImages.length===0) return; setStatusLoading("qaStatus", "Reading Doc..."); document.getElementById("qaStatus").style.display = "block"; qaContextText = ""; 
-    for(let i=0; i<qaImages.length; i++) { try { const r = await callGeminiVision(qaImages[i], "Read and extract all text exactly as written. Do not translate."); if(r) qaContextText += `\n--- PAGE ${i+1} ---\n` + r; } catch(e) {} } 
+    for(let i=0; i<qaImages.length; i++) { 
+        try { 
+            const ocrPrompt = `You are an OCR machine. Extract ONLY the text from this page exactly in its original language. DO NOT describe the image visually. DO NOT translate.`;
+            const r = await callGeminiVision(qaImages[i], ocrPrompt); 
+            if(r) qaContextText += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, ''); 
+        } catch(e) {} 
+    } 
     document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "..." : "No text found."; document.getElementById('qaStatus').innerText = "✅ Read Successfully!"; 
 }
 
