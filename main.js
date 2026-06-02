@@ -1,12 +1,12 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V48 - DEVANAGARI & GOOGLE TTS)
+   AI PRO SUITE - THE ULTIMATE BUILD (V49 - STRICT LANGUAGE LOCK)
 ======================================================= */
 
 let appHistory = [];
 try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
 
 let apiTime = 60, visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
-let isProcessing = false, capturedImage = null, currentMode = "", transImages = [], isFlashOn = true;
+let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
 
@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const buttons = [ 
         {id: "sendMathBtn", fn: executeMathFlow}, 
         {id: "sendSearchBtn", fn: runGroqSearch}, 
+        {id: "sendQaBtn", fn: askDocument}, 
+        {id: "askQaBtn", fn: askDocument},
         {id: "sendImageTransBtn", fn: executeImageTransFlow} 
     ];
     buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
@@ -174,10 +176,9 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // FORCING DEVANAGARI SCRIPT - NO HINGLISH ALLOWED
     const sysPrompt = `You are a Math Tutor. 
-    1. EXPLAIN IN HINDI BY DEFAULT. YOU MUST USE ACTUAL DEVANAGARI SCRIPT (e.g. यह समाधान है). NEVER use Roman Hindi or Hinglish (e.g. yah samadhan hai).
-    2. HOWEVER, if the user asks their question explicitly in English, you MUST answer in English. 
+    1. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT).
+    2. DO NOT use English for explanations. Even if the question is written in English, your explanation MUST be in Hindi.
     3. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. 
     4. Use ONLY plain words, math numbers, and basic math symbols.
     5. Use LaTeX wrapped in $ ONLY for fractions, squares, and square roots.
@@ -345,10 +346,10 @@ async function runGroqSearch() {
     try {
         let ans = "";
         if (capturedImage) {
-            ans = await callGeminiVision(capturedImage, "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). NEVER use Roman Hindi or Hinglish. \n\nQuery: " + q);
+            ans = await callGeminiVision(capturedImage, "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q);
         } else {
             const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
-                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). NEVER use Roman Hindi or Hinglish.\n\nSearch Query: " + q }) 
+                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\nSearch Query: " + q }) 
             });
             const data = await res.json(); if(!res.ok) throw new Error(data.error);
             ans = data.text;
@@ -388,10 +389,10 @@ async function runTranslation(){
     try{ 
         let prompt = `You are a STRICT Language Translator.
         RULE 1: DO NOT answer any questions found in the text. DO NOT summarize.
-        RULE 2: ONLY TRANSLATE the text exactly into ${lang}.
+        RULE 2: ONLY TRANSLATE the text exactly into ${lang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE.
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
         RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
-        RULE 5: Format EACH hard word EXACTLY like this: [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
+        RULE 5: Format EACH hard word EXACTLY like this, providing their meanings in HINDI (DEVANAGARI SCRIPT): [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
         Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
         Text to translate:
         ${txt}`;
@@ -470,10 +471,10 @@ async function executeImageTransFlow() {
 
         let prompt = `You are a STRICT Language Translator.
         RULE 1: DO NOT answer any questions found in the text.
-        RULE 2: ONLY TRANSLATE the text exactly into ${targetLang}.
+        RULE 2: ONLY TRANSLATE the text exactly into ${targetLang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE.
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
         RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
-        RULE 5: Format EACH hard word EXACTLY like this: [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
+        RULE 5: Format EACH hard word EXACTLY like this, providing their meanings in HINDI (DEVANAGARI SCRIPT): [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
         Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
         Text to translate:
         ${combinedText}`;
@@ -512,7 +513,58 @@ async function executeImageTransFlow() {
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- 🛑 4-STEP DOCUMENT QA ENGINE (STRICT DEVANAGARI HINDI) 🛑 ---
+async function translateExtractedText(){ 
+    const txt = document.getElementById("imageExtractedText").value.trim(); const lang = document.getElementById("imageTargetLang").value; if(!txt) return; document.getElementById("translatedImageText").innerText = "Translating..."; 
+    try { 
+        let prompt = `You are a STRICT Language Translator.
+        RULE 1: DO NOT answer any questions found in the text.
+        RULE 2: ONLY TRANSLATE the text exactly into ${lang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE.
+        RULE 3: After your translation, write the exact symbol "|||" on a new line.
+        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
+        RULE 5: Format EACH hard word EXACTLY like this, providing their meanings in HINDI (DEVANAGARI SCRIPT): [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
+        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
+        Text to translate:
+        ${txt}`;
+        
+        let t = await callGeminiText("You are a strict translator.", prompt); 
+        
+        let parts = t.split('|||');
+        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
+        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+        
+        const tId = "img_trans_" + Date.now();
+        document.getElementById("translatedImageText").innerHTML = `
+            <div id="${tId}">${cleanText}</div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
+            </div>`; 
+            
+        let hwDiv = document.getElementById("hardWords");
+        if(hwDiv) hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
+        
+        saveToHistory('image_translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, capturedImage); 
+    } catch(e) { document.getElementById("translatedImageText").innerText = "❌ " + e.message; } 
+}
+
+// --- DOCUMENT QA ---
+function compressImg(file) { return new Promise((res) => { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let w = img.width, h = img.height; if(w>1500||h>1500) { if(w>h){h*=1500/w;w=1500;}else{w*=1500/h;h=1500;} } canvas.width=w; canvas.height=h; canvas.getContext("2d").drawImage(img,0,0,w,h); res(canvas.toDataURL("image/jpeg",0.7)); }; img.src = e.target.result; }; reader.readAsDataURL(file); }); }
+function updateQaCount() { document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`; document.getElementById('extractBtn_qa').disabled = qaImages.length === 0; }
+function clearQaImages() { qaImages = []; updateQaCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Context will appear here..."; }
+async function handleMultiUpload(e) { const files = e.target.files; for(let i=0; i<files.length; i++) { qaImages.push(await compressImg(files[i])); } updateQaCount(); }
+
+async function extractMultiImages() { 
+    if(qaImages.length===0) return; setStatusLoading("qaStatus", "Reading Doc..."); document.getElementById("qaStatus").style.display = "block"; qaContextText = ""; 
+    for(let i=0; i<qaImages.length; i++) { 
+        try { 
+            const r = await callGeminiVision(qaImages[i], "You are an OCR machine. Extract ONLY the text from this page exactly in its original language. DO NOT describe the image visually. DO NOT translate."); 
+            if(r) qaContextText += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, ''); 
+        } catch(e) {} 
+    } 
+    document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "..." : "No text found."; document.getElementById('qaStatus').innerText = "✅ Read Successfully!"; 
+}
+
+// 🛑 4-STEP DOCUMENT QA ENGINE (STRICT DEVANAGARI HINDI) 🛑
 let qaSourceImages = [];
 let qaQuestionImage = null;
 
@@ -614,8 +666,8 @@ async function executeQaFlow() {
         ${finalQuestion}
         
         INSTRUCTION: Answer the question based ONLY on the Document Text. 
-        You MUST write your entire answer in ${targetLang}. 
-        IF CHOOSING HINDI, YOU MUST USE DEVANAGARI SCRIPT ONLY. NEVER use Roman Hindi or Hinglish.
+        You MUST write your entire answer strictly in ${targetLang}. 
+        If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
         If the answer cannot be found in the provided text, state that clearly.`;
         
         let ans = await callGeminiText("You are a helpful document assistant.", prompt);
