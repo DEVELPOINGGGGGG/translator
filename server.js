@@ -7,17 +7,23 @@ const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
-// 🛑 THE MASTER WATERFALL HIERARCHY 🛑
+// 🛑 THE MASTER WATERFALL HIERARCHY (GATLING GUN) 🛑
 const VISION_PROVIDERS = [
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_1 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_2 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_1 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_2 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_3 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_4 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_5 },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
     { type: 'groq', key: process.env.GROQ_API_KEY } 
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_TEXT_1 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_TEXT_2 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_1 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_2 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_3 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_4 },
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_5 },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
     { type: 'groq', key: process.env.GROQ_API_KEY } 
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
@@ -25,7 +31,7 @@ const TEXT_PROVIDERS = [
 const SEARCH_PROVIDERS = [
     { type: 'groq', key: process.env.GROQ_API_KEY },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_TEXT_1 }
+    { type: 'gemini', key: process.env.GEMINI_API_KEY_1 }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const publicDir = __dirname;
@@ -78,8 +84,8 @@ async function handleGeminiText(req, res) {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
                 
-                // 🛑 FIXED: HARDCODED TO 1.5-FLASH-002 TO FORCE THE 1,500 LIMIT 🛑
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // 🛑 TARGET: Gemini 2.5 Flash 🛑
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); return data.candidates[0].content.parts[0].text;
             
             } else if (p.type === 'cloudflare') {
@@ -113,8 +119,8 @@ async function handleGeminiVision(req, res) {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ parts: [{ text: userText }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 
-                // 🛑 FIXED: HARDCODED TO 1.5-FLASH-002 TO FORCE THE 1,500 LIMIT 🛑
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // 🛑 TARGET: Gemini 2.5 Flash 🛑
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); return data.candidates[0].content.parts[0].text;
             
             } else if (p.type === 'cloudflare') {
@@ -154,8 +160,8 @@ async function handleGroqSearch(req, res) {
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
                 
-                // 🛑 FIXED: HARDCODED TO 1.5-FLASH-002 TO FORCE THE 1,500 LIMIT 🛑
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // 🛑 TARGET: Gemini 2.5 Flash 🛑
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); return data.candidates[0].content.parts[0].text;
             }
         }, override);
