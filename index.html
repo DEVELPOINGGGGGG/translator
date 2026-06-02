@@ -6,344 +6,62 @@
     <title>AI Pro Suite - Dashboard</title>
     
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0a0a0a">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <style>
-        /* =========================================
-           MODERN PREMIUM AI UI - NO SCI-FI GIMMICKS
-           ========================================= */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: #0a0a0a;
-            color: #ffffff;
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Fluid Animated Background Orbs */
-        .ambient-bg {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: -1;
-            overflow: hidden;
-            background: #0a0a0a;
-        }
-
-        .blob-1, .blob-2, .blob-3 {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.5;
-            animation: float 20s infinite ease-in-out alternate;
-        }
-
-        .blob-1 {
-            width: 400px; height: 400px;
-            background: #4f46e5; /* Indigo */
-            top: -10%; left: -10%;
-            animation-delay: 0s;
-        }
-
-        .blob-2 {
-            width: 500px; height: 500px;
-            background: #9333ea; /* Purple */
-            bottom: -20%; right: -10%;
-            animation-delay: -5s;
-        }
-
-        .blob-3 {
-            width: 300px; height: 300px;
-            background: #2563eb; /* Blue */
-            top: 40%; left: 40%;
-            animation-delay: -10s;
-        }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(50px, 50px) scale(1.2); }
-        }
-
-        /* Top Navigation */
-        .top-nav {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            padding: 0 30px;
-            background: rgba(10, 10, 10, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 100;
-        }
-
-        .menu-toggle {
-            font-size: 24px;
-            color: #fff;
-            cursor: pointer;
-            width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 12px;
-            transition: 0.2s;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .menu-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 700;
-            margin-left: 20px;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Sidebar Overlay */
-        .sidebar-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 998;
-            opacity: 0; pointer-events: none;
-            transition: 0.3s;
-        }
-        .sidebar-overlay.active {
-            opacity: 1; pointer-events: auto;
-        }
-
-        /* Elegant Sidebar */
-        .sidebar {
-            position: fixed;
-            top: 0; left: -320px;
-            width: 300px; height: 100%;
-            background: rgba(15, 15, 15, 0.95);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            z-index: 999;
-            padding: 90px 20px 20px 20px;
-            transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .sidebar.active { left: 0; }
-
-        .nav-item {
-            width: 100%;
-            background: transparent;
-            border: 1px solid transparent;
-            color: #a1a1aa;
-            padding: 14px 18px;
-            font-size: 15px;
-            font-weight: 500;
-            text-align: left;
-            cursor: pointer;
-            border-radius: 12px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all 0.2s;
-        }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
-        }
-
-        .nav-item.active-link {
-            background: rgba(168, 85, 247, 0.1);
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            color: #fff;
-        }
-
-        /* Main Layout */
-        .main-container {
-            padding: 120px 30px 60px 30px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        /* Hero Header */
-        .header-section {
-            margin-bottom: 50px;
-            text-align: center;
-        }
-
-        .header-title {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -1px;
-            margin-bottom: 10px;
-            line-height: 1.2;
-        }
-
-        .header-title span {
-            background: linear-gradient(90deg, #3b82f6, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header-subtitle {
-            font-size: 16px;
-            color: #a1a1aa;
-            max-width: 600px;
-            margin: 0 auto;
-            font-weight: 400;
-        }
-
-        /* Module Grid */
-        .grid-layout {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-        }
-
-        /* Elegant Decorated Cards */
-        .module-card {
-            background: rgba(20, 20, 20, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 25px;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 15px;
-        }
-
-        .module-card:hover {
-            transform: translateY(-5px);
-            background: rgba(30, 30, 30, 0.7);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        }
-
-        .card-icon-wrapper {
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 40px;
-        }
-
-        .card-content h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #f4f4f5;
-        }
-
-        /* Subtle Card Accents */
-        .module-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-            opacity: 0;
-            transition: 0.3s;
-        }
-
-        .module-card:hover::before {
-            opacity: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Ambient Animated Background -->
-<div class="ambient-bg">
-    <div class="blob-1"></div>
-    <div class="blob-2"></div>
-    <div class="blob-3"></div>
+<div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
 </div>
 
-<!-- Top Navigation -->
-<div class="top-nav">
-    <div class="menu-toggle" onclick="toggleSidebar()">☰</div>
-    <div class="logo">AI Pro Suite</div>
-</div>
-
-<!-- Sidebar Overlay -->
-<div class="sidebar-overlay" id="overlay"></div>
-
-<!-- Sidebar -->
 <div class="sidebar" id="sidebar">
-    <button class="nav-item active-link" onclick="window.location.href='index.html'">🏠 Dashboard</button>
-    <button class="nav-item" onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-    <button class="nav-item" onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
-    <button class="nav-item" onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-    <button class="nav-item" onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-    <button class="nav-item" onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-    <button class="nav-item" onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
 </div>
 
-<!-- Main Content -->
-<div class="main-container" id="homePage">
-    
-    <div class="header-section">
-        <h1 class="header-title"><span>Welcome to AI Pro Suite</span></h1>
-        <p class="header-subtitle">Select a tool below to get started</p>
+<div class="page active" id="homePage" style="top: 70px;">
+  <div style="text-align: center; margin-bottom: 30px; margin-top: 20px;">
+    <h1 style="font-size: 28px; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome to AI Pro Suite</h1>
+    <p style="color: var(--muted); margin-top: 10px;">Select a tool below to get started</p>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="dash-card" onclick="window.location.href='maths.html'">
+      <div class="dash-icon">🧮</div>
+      <div class="dash-title">Math Solver</div>
     </div>
-
-    <div class="grid-layout">
-        
-        <div class="module-card" onclick="window.location.href='maths.html'">
-            <div class="card-icon-wrapper">🧮</div>
-            <div class="card-content">
-                <h3>Math Solver</h3>
-            </div>
-        </div>
-
-        <div class="module-card" onclick="window.location.href='search.html'">
-            <div class="card-icon-wrapper">🔎</div>
-            <div class="card-content">
-                <h3>Deep Search</h3>
-            </div>
-        </div>
-
-        <div class="module-card" onclick="window.location.href='translator.html'">
-            <div class="card-icon-wrapper">🎙️</div>
-            <div class="card-content">
-                <h3>Text & Voice</h3>
-            </div>
-        </div>
-
-        <div class="module-card" onclick="window.location.href='image.html'">
-            <div class="card-icon-wrapper">🖼️</div>
-            <div class="card-content">
-                <h3>Image Translate</h3>
-            </div>
-        </div>
-
-        <div class="module-card" onclick="window.location.href='qa.html'">
-            <div class="card-icon-wrapper">📚</div>
-            <div class="card-content">
-                <h3>Document Q&A</h3>
-            </div>
-        </div>
-
-        <div class="module-card" onclick="window.location.href='history.html'">
-            <div class="card-icon-wrapper">🕒</div>
-            <div class="card-content">
-                <h3>History</h3>
-            </div>
-        </div>
-
+    <div class="dash-card" onclick="window.location.href='search.html'">
+      <div class="dash-icon">🔎</div>
+      <div class="dash-title">Deep Search</div>
     </div>
+    <div class="dash-card" onclick="window.location.href='translator.html'">
+      <div class="dash-icon">🎙️</div>
+      <div class="dash-title">Text & Voice</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='image.html'">
+      <div class="dash-icon">🖼️</div>
+      <div class="dash-title">Image Translate</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='qa.html'">
+      <div class="dash-icon">📚</div>
+      <div class="dash-title">Document Q&A</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='history.html'">
+      <div class="dash-icon">🕒</div>
+      <div class="dash-title">History</div>
+    </div>
+  </div>
 </div>
 
 <script>
