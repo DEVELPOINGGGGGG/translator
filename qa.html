@@ -31,13 +31,6 @@
     <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
-<div id="ttsPlayer">
-  <div class="ttsIndicator">🔊 Reading</div>
-  <button class="ttsBtn" id="ttsPlayBtn">⏸️</button>
-  <button class="ttsBtn" id="ttsStopBtn">⏹️</button>
-  <button class="ttsBtn" id="ttsCloseBtn">✖️</button>
-</div>
-
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
   <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
@@ -51,38 +44,52 @@
 <div class="page active" id="qaPage">
   <div class="card" style="background:linear-gradient(135deg,#f59e0b,#ef4444); border:none;">
     <h1 style="font-size: 24px; text-align: center;">📚 Document Q&A</h1>
-    <p style="font-size: 14px; text-align: center; opacity: 0.9;">Snap multiple pages of a chapter and ask questions.</p>
+    <p style="font-size: 14px; text-align: center; opacity: 0.9;">Snap pages, ask questions, get answers.</p>
   </div>
 
   <div class="card">
-    <div class="cardTitle">Step 1: Add Pages</div>
-    <div class="btn-group" style="margin-bottom: 15px;">
-        <button class="btn green" onclick="openCamera('qa')">📷 Take Photo</button>
-        <button class="btn blue" onclick="document.getElementById('multiImageUpload').click()">📁 Upload</button>
-    </div>
-    
-    <input type="file" id="multiImageUpload" accept="image/*" multiple onchange="handleMultiUpload(event)" style="display:none;">
-    
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="fileList" id="fileListDisplay" style="font-weight: 600; color: #93c5fd;">0 pages ready</div>
-        <button class="btn red" style="width: auto; padding: 6px 16px; margin-top:0; font-size:13px;" onclick="clearQaImages()">🗑️ Clear</button>
+        <div class="cardTitle" style="margin:0;">Step 1: Source Document</div>
+        <button class="actionBtnSmall red" onclick="clearQaSession()" title="Reset All">🔄</button>
     </div>
+    <div style="color: var(--muted); font-size: 13px; margin-top: 5px; margin-bottom: 15px;">Total photos: <span id="qaSourceCount" style="color: #60a5fa; font-weight: bold;">0</span>/10</div>
     
-    <button class="btn purple" id="extractBtn_qa" onclick="extractMultiImages()" style="margin-top: 15px;" disabled>📄 Read All Pages</button>
-    <div class="status" id="qaStatus" style="display:none; margin-top:10px; padding:10px;">Ready</div>
+    <button class="btn green" onclick="openCamera('qa_source')">📷 Take Photo of Source Page</button>
+    <div id="qaSourcePreviews" style="display:flex; gap:10px; margin-top:15px; overflow-x:auto; padding-bottom:5px;"></div>
   </div>
 
   <div class="card">
-    <div class="cardTitle">Step 2: Ask Anything</div>
-    <div class="outputBox" id="qaContextBox" style="max-height: 150px; font-size: 12px; color: var(--muted);">Context will appear here...</div>
+    <div class="cardTitle">Step 2: Ask Question</div>
+    <div style="color: var(--muted); font-size: 13px; margin-bottom: 15px;">Snap a photo of the question OR type it below.</div>
     
-    <textarea class="standard" id="qaQuestionInput" placeholder="Ask a question based on the scanned pages..." style="margin-top: 15px; min-height: 80px;"></textarea>
-    <button class="btn blue" onclick="askDocument()">🧠 Answer Question</button>
+    <button class="btn orange" onclick="openCamera('qa_question')" style="margin-bottom:15px;">📷 Take Photo of Question</button>
+    <div id="qaQuestionPreview" style="display:flex; gap:10px; margin-bottom:15px;"></div>
     
-    <div class="cardTitle" style="margin-top: 20px;">AI Answer:</div>
-    <div class="outputBox" id="qaAnswerBox">Answer will appear here...</div>
+    <textarea class="standard" id="qaQuestionInput" placeholder="Type your specific question here..."></textarea>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Step 3: Solve Options</div>
+    <select id="qaTargetLang" style="width:100%; padding:15px; background:rgba(15,23,42,.9); color:white; border-radius:18px; border:2px solid rgba(255,255,255,.08); outline:none; font-family:'Poppins',sans-serif; margin-top:10px; margin-bottom:15px;">
+        <option value="Hindi">Solve in: Hindi</option>
+        <option value="English">Solve in: English</option>
+        <option value="French">Solve in: French</option>
+        <option value="Spanish">Solve in: Spanish</option>
+        <option value="German">Solve in: German</option>
+        <option value="Japanese">Solve in: Japanese</option>
+    </select>
+    <button class="btn blue" onclick="executeQaFlow()">🧠 Solve Question</button>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Step 4: Output Tracker</div>
     
-    <button class="btn green" id="speakQaBtn" style="display:none; margin-top: 15px;" onclick="speakText('qaAnswerBox')">🔊 Speak Answer</button>
+    <div style="margin-bottom: 10px; margin-top: 10px; font-size: 14px; color: #93c5fd; font-weight:600;" id="qaStatusText">Ready to start.</div>
+    <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; margin-bottom:20px; overflow:hidden;">
+        <div id="qaProgressBar" style="width:0%; height:100%; background:#3b82f6; transition:width 0.4s ease;"></div>
+    </div>
+    
+    <div class="outputBox" id="qaAnswerBox" style="min-height: 120px;">Solution will appear here...</div>
   </div>
 </div>
 
@@ -96,9 +103,14 @@
   </div>
 </div>
 
+<div class="photoViewer" id="photoViewer">
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
+      <button class="closeBtn" id="closePreviewBtn">✕</button>
+  </div>
+  <img id="previewImage">
+</div>
+
 <canvas id="captureCanvas" style="display:none;"></canvas>
-
 <script src="main.js" defer></script>
-
 </body>
 </html>
