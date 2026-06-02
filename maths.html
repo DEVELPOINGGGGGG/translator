@@ -31,13 +31,6 @@
     <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
-<div id="ttsPlayer">
-  <div class="ttsIndicator">🔊 Reading</div>
-  <button class="ttsBtn" id="ttsPlayBtn">⏸️</button>
-  <button class="ttsBtn" id="ttsStopBtn">⏹️</button>
-  <button class="ttsBtn" id="ttsCloseBtn">✖️</button>
-</div>
-
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
   <button onclick="window.location.href='maths.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🧮 Math Solver (Gemini)</button>
@@ -48,10 +41,10 @@
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
 </div>
 
-<div class="page active chat-page-layout" id="dashboardPage">
+<div class="page active chat-page-layout" id="mathsPage">
   <div class="chat-scroll-area" id="mathScrollArea">
-    <div class="card" style="background:linear-gradient(135deg,#0ea5e9,#3b82f6,#8b5cf6); text-align: center; border: none; margin-bottom: 20px; flex-shrink: 0;">
-        <h1 style="font-size: 24px;">🧮 Smart Math Solver</h1>
+    <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
+        <h1 style="font-size: 24px;">🧮 Math Solver</h1>
         <p style="font-size: 14px; opacity: 0.9;">Powered by Gemini Vision.</p>
     </div>
     
@@ -65,7 +58,8 @@
     <div class="chat-input-wrapper">
         <button class="chat-action-btn" id="openMathCameraBtn" title="Take Photo">➕</button>
         <textarea id="mathInstructionInput" placeholder="Ask math question or attach image... (Press Enter)"></textarea>
-        <button class="chat-action-btn send" id="sendMathBtn">↑</button>
+        
+        <button class="chat-action-btn send" id="sendMathBtn" onclick="executeMathFlow()">↑</button>
     </div>
   </div>
 </div>
@@ -84,13 +78,10 @@
   <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
       <button class="closeBtn" id="closePreviewBtn">✕</button>
   </div>
-  <img id="previewImage">
-  <div class="photoViewerControls" id="photoViewerControls"></div>
+  <img id="previewImage" src="" alt="Preview">
 </div>
 
 <canvas id="captureCanvas" style="display:none;"></canvas>
-
 <script src="main.js" defer></script>
-
 </body>
 </html>
