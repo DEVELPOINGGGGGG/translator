@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V51 - RETRY MODELS & QA FIX)
+   AI PRO SUITE - THE ULTIMATE BUILD (V52 - STRICT OCR & PRO VISION)
 ======================================================= */
 
 let appHistory = [];
@@ -12,6 +12,16 @@ let availableVoices = [];
 
 // 🛑 THE RETRY ENGINE CACHE 🛑
 window.requestCache = {};
+
+// 🛑 THE MILITARY-GRADE OCR PROMPT 🛑
+const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
+CRITICAL INSTRUCTIONS:
+1. Extract ALL text from the image EXACTLY as it is written in its original language.
+2. DO NOT describe the image visually (e.g., NEVER say "A picture of a book" or "A person holding...").
+3. DO NOT translate the text. Keep it strictly in the original language.
+4. DO NOT fix spelling or grammar mistakes.
+5. DO NOT add conversational filler (e.g., NEVER say "Here is the text:").
+6. Output ONLY the raw transcribed text. If no text is visible, output exactly "NO_TEXT_FOUND".`;
 
 // Video Player Variables
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
@@ -83,7 +93,6 @@ function appendAiLoading(cid) {
     scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); return id;
 }
 
-// 🛑 UI INJECTION: Returns HTML for Model Retry Buttons 🛑
 function getRetryButtonsHtml(lId) {
     return `
     <div style="margin-top:15px; display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
@@ -133,7 +142,7 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
   } catch(e) { isProcessing = false; throw e; }
 }
 
-// --- 🛑 STRICT GOOGLE TRANSLATE VOICE ENGINE 🛑 ---
+// --- STRICT GOOGLE TRANSLATE VOICE ENGINE ---
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
     window.speechSynthesis.cancel();
@@ -159,7 +168,7 @@ function speakAndHighlight(elId) {
     window.speechSynthesis.speak(u);
 }
 
-// --- 🛑 THE MASTER RETRY ROUTER 🛑 ---
+// --- THE MASTER RETRY ROUTER ---
 async function retryRequest(lId, targetProvider) {
     const req = window.requestCache[lId];
     if(!req) return showToast("Request data expired.");
@@ -184,9 +193,8 @@ async function retryRequest(lId, targetProvider) {
         }
         else if (req.type === 'search') {
             let resObj;
-            if (req.image) {
-                resObj = await callGeminiVision(req.image, req.prompt, targetProvider);
-            } else {
+            if (req.image) { resObj = await callGeminiVision(req.image, req.prompt, targetProvider); } 
+            else {
                 const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
                 resObj = await res.json(); if(!resObj.text) throw new Error(resObj.error || "Search failed");
             }
@@ -246,13 +254,11 @@ async function retryRequest(lId, targetProvider) {
             document.getElementById("qaStatusText").innerText = "❌ Error Occurred";
             document.getElementById("qaProgressBar").style.background = "var(--red)";
             container.innerHTML = "Error: " + e.message;
-        } else {
-            container.innerText = "❌ Error: " + e.message; 
-        }
+        } else { container.innerText = "❌ Error: " + e.message; }
     }
 }
 
-// --- 🛑 STRICT DEVANAGARI MATH SOLVER 🛑 ---
+// --- STRICT MATH SOLVER ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -283,7 +289,7 @@ async function executeMathFlow() {
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- ULTIMATE MEDIA PLAYER ENGINE ---
+// --- MEDIA PLAYER ENGINE ---
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 function startVideoTimer(totalChars) {
     clearInterval(videoTickInterval); videoElapsed = 0; videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
@@ -400,7 +406,7 @@ async function playFractionVideo() {
     resetVideoActivity(); 
 }
 
-// --- 🛑 DEEP SEARCH (STRICT DEVANAGARI HINDI) 🛑 ---
+// --- DEEP SEARCH (STRICT DEVANAGARI HINDI) ---
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); if(!q && !capturedImage) return;
@@ -454,7 +460,48 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 function toggleRecording() { if (!recognition) return alert("Not supported."); if (isRecording) recognition.stop(); else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); } }
 function stopRecording() { isRecording = false; const mic = document.getElementById("micBtn"); if(mic) mic.classList.remove("recording"); }
 
-// --- MULTI-IMAGE CHAT TRANSLATOR ENGINE ---
+async function runTranslation(){ 
+    const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value; if(!txt) return; 
+    setStatusLoading("translatedTextStatus", "Translating..."); document.getElementById("translatedTextStatus").style.display = "block";
+    try{ 
+        let prompt = `You are a STRICT Language Translator.
+        RULE 1: DO NOT answer any questions found in the text. DO NOT summarize.
+        RULE 2: ONLY TRANSLATE the text exactly into ${lang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE.
+        RULE 3: After your translation, write the exact symbol "|||" on a new line.
+        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
+        RULE 5: Format EACH hard word EXACTLY like this: [Original Word from text] - [Meaning in ${lang}] (Part of Speech) other meaning- [Alternative meanings].
+        Text to translate:
+        ${txt}`;
+        
+        let resObj = await callGeminiText("You are a strict translator.", prompt); 
+        
+        let parts = resObj.text.split('|||');
+        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
+        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+        let provider = resObj.provider;
+        
+        const tId = "trans_" + Date.now();
+        
+        document.getElementById("translatedText").innerHTML = `
+            <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
+            <div id="${tId}">${cleanText}</div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
+            </div>`; 
+        document.getElementById("translatedTextStatus").style.display = "none"; 
+        
+        let hwDiv = document.getElementById("hardWords");
+        if(!hwDiv) {
+             document.getElementById("translatedText").insertAdjacentHTML('afterend', `<div class="cardTitle" style="margin-top: 20px;">Hard Words Meaning</div><div class="outputBox" id="hardWords">${hardWordsText.replace(/\n/g, '<br>')}</div>`);
+        } else {
+             hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
+        }
+        saveToHistory('translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, null, provider);
+    }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
+}
+
+// 🛑 MULTI-IMAGE CHAT TRANSLATOR ENGINE 🛑
 function renderTransImagePreviews() {
     const container = document.getElementById("imagePreviewContainer");
     if (!container) return;
@@ -468,7 +515,9 @@ function renderTransImagePreviews() {
     `).join('');
 }
 
-function removeTransImage(index, event) { if(event) event.stopPropagation(); transImages.splice(index, 1); renderTransImagePreviews(); }
+function removeTransImage(index, event) {
+    if(event) event.stopPropagation(); transImages.splice(index, 1); renderTransImagePreviews();
+}
 
 async function executeImageTransFlow() {
     if (transImages.length === 0) return showToast("Please click ➕ to attach at least 1 image!");
@@ -487,18 +536,18 @@ async function executeImageTransFlow() {
     try {
         let combinedText = "";
         for (let i = 0; i < imagesToProcess.length; i++) {
-            const rObj = await callGeminiVision(imagesToProcess[i], "You are an OCR machine. Extract ONLY the exact text from this image in its original language. DO NOT describe the image. DO NOT translate.");
+            const rObj = await callGeminiVision(imagesToProcess[i], MASTER_OCR_PROMPT);
             combinedText += rObj.text.replace(/[\*&#_]/g, '') + "\n\n";
         }
         combinedText = combinedText.trim();
-        if (!combinedText || combinedText.toLowerCase().includes("no text found")) throw new Error("Could not detect any text in the images.");
+        if (!combinedText || combinedText.toLowerCase().includes("no text found") || combinedText === "NO_TEXT_FOUND") throw new Error("Could not detect any text in the images.");
 
         let prompt = `You are a STRICT Language Translator.
         RULE 1: DO NOT answer any questions found in the text.
         RULE 2: ONLY TRANSLATE the text exactly into ${targetLang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE.
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
         RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
-        RULE 5: Format EACH hard word EXACTLY like this, providing their meanings in HINDI (DEVANAGARI SCRIPT): [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
+        RULE 5: Format EACH hard word EXACTLY like this: [Original Word from text] - [Meaning in ${targetLang}] (Part of Speech) other meaning- [Alternative meanings].
         Text to translate:
         ${combinedText}`;
         
@@ -581,7 +630,7 @@ async function executeQaFlow() {
         let extractedContext = "";
         for(let i=0; i<qaSourceImages.length; i++) {
             statusTxt.innerText = `Reading Source Page ${i+1} of ${qaSourceImages.length}...`; pBar.style.width = `${10 + ((i / qaSourceImages.length) * 40)}%`; 
-            let rObj = await callGeminiVision(qaSourceImages[i], "Extract all text exactly as written. Do not translate. Do not describe the image visually.");
+            let rObj = await callGeminiVision(qaSourceImages[i], MASTER_OCR_PROMPT);
             extractedContext += `\n--- PAGE ${i+1} ---\n` + rObj.text.replace(/[\*&#_]/g, '');
         }
         
@@ -694,6 +743,7 @@ function restoreSession(e, id) {
             bbl.innerHTML = `
                 <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${item.provider || "AI"}</div>
                 <div id="search_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>
+                ${getRetryButtonsHtml(lId)}
                 <div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
         }
     } 
