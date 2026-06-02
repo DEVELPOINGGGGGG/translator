@@ -8,22 +8,23 @@ const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
 // 🛑 THE MASTER WATERFALL HIERARCHY (GATLING GUN) 🛑
+// Added id property to track API numbers
 const VISION_PROVIDERS = [
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_1 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_2 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_3 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_4 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_5 },
+    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
+    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
+    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
+    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
+    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
     { type: 'groq', key: process.env.GROQ_API_KEY } 
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_1 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_2 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_3 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_4 },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_5 },
+    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
+    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
+    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
+    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
+    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
     { type: 'groq', key: process.env.GROQ_API_KEY } 
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
@@ -31,7 +32,7 @@ const TEXT_PROVIDERS = [
 const SEARCH_PROVIDERS = [
     { type: 'groq', key: process.env.GROQ_API_KEY },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
-    { type: 'gemini', key: process.env.GEMINI_API_KEY_1 }
+    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const publicDir = __dirname;
@@ -46,12 +47,12 @@ function readRequestBody(req) {
     }); 
 }
 
-// Add a global counter outside the function to track requests for Load Balancing
+// Global counter outside the function to track requests for Load Balancing
 let globalRequestCounter = 0;
 
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
-    let targetProviders = [...providers]; // Copy the array so we don't modify the original
+    let targetProviders = [...providers]; // Copy the array
     
     if (override) {
         targetProviders = targetProviders.filter(p => p.type.toLowerCase() === override.toLowerCase());
@@ -60,17 +61,12 @@ async function tryProviders(providers, requestFn, override = null) {
         if (targetProviders.length === 0) throw new Error("No operational API keys found inside server config!");
 
         // --- ROUND ROBIN GEMINI LOAD BALANCING ---
-        // 1. Find all the Gemini providers in the current list
         const geminis = targetProviders.filter(p => p.type === 'gemini');
         
-        // 2. If we have multiple Gemini keys, rotate them based on the request count
         if (geminis.length > 1) {
             const rotations = globalRequestCounter % geminis.length;
-            
-            // Shift the array so it starts from a new key each time
             const rotatedGeminis = [...geminis.slice(rotations), ...geminis.slice(0, rotations)];
 
-            // 3. Put the rotated keys back into the target array, keeping CF and Groq at the bottom
             let gIdx = 0;
             targetProviders = targetProviders.map(p => {
                 if (p.type === 'gemini') {
@@ -79,8 +75,6 @@ async function tryProviders(providers, requestFn, override = null) {
                 return p;
             });
         }
-        
-        // 4. Increment the counter so the next request uses the next API key
         globalRequestCounter++;
     }
 
@@ -88,10 +82,11 @@ async function tryProviders(providers, requestFn, override = null) {
     for (const p of targetProviders) { 
         try { 
             const textResult = await requestFn(p);
-            return { text: textResult, provider: p.type.toUpperCase() }; 
+            // Append the API number to the provider name if it exists (e.g., "GEMINI (API 2)")
+            const providerName = p.type.toUpperCase() + (p.id ? ` (${p.id})` : "");
+            return { text: textResult, provider: providerName }; 
         } catch (error) { 
             lastError = error; 
-            // Logs which specific API failed so you can track it in your terminal
             console.log(`[Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
         } 
     }
