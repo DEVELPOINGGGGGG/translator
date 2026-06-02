@@ -4,31 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Pro Suite - Deep Search</title>
+    
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };</script>
+    
+    <script>
+      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="overlay" id="overlay"></div>
+
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
 </div>
 <div class="apiTracker">
-    <div>⏱️ <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 <span id="apiText" class="api-val text">0</span>/20</div>
+    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-  <button onclick="window.location.href='search.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🔎 Deep Search</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'" style="border-left: 4px solid #10b981; color: #6ee7b7; background: #111827;">🔎 Deep Search (Groq)</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
@@ -39,9 +45,11 @@
   <div class="chat-scroll-area" id="searchScrollArea">
     <div class="card" style="background:linear-gradient(135deg,#10b981,#059669); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
         <h1 style="font-size: 24px;">🔎 Deep Search AI</h1>
-        <p style="font-size: 14px; opacity: 0.9;">Analyze images, solve chemistry equations, or ask anything.</p>
+        <p style="font-size: 14px; opacity: 0.9;">Powered by Groq. Lightning fast, zero limits.</p>
     </div>
+    
     <div id="searchChatHistory"></div>
+
   </div>
   <div class="chat-input-area">
     <div class="image-preview-chip" id="mathPreviewChip">
@@ -50,7 +58,8 @@
     <div class="chat-input-wrapper">
         <button class="chat-action-btn" id="openMathCameraBtn" title="Attach Image">📷</button>
         <textarea id="searchInput" placeholder="Ask anything or attach an image... (Press Enter)"></textarea>
-        <button class="chat-action-btn send" id="sendSearchBtn">↑</button>
+        
+        <button class="chat-action-btn send" id="sendSearchBtn" onclick="runGroqSearch()">↑</button>
     </div>
   </div>
 </div>
@@ -64,6 +73,14 @@
     <button class="switchBtn" id="switchCameraBtn">🔄</button>
   </div>
 </div>
+
+<div class="photoViewer" id="photoViewer">
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
+      <button class="closeBtn" id="closePreviewBtn">✕</button>
+  </div>
+  <img id="previewImage" src="" alt="Preview">
+</div>
+
 <canvas id="captureCanvas" style="display:none;"></canvas>
 <script src="main.js" defer></script>
 </body>
