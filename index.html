@@ -36,12 +36,20 @@
     <p style="color: var(--muted); margin-top: 10px;">Select a tool below to get started</p>
   </div>
 
+  <!-- 🛑 LIVE API USAGE DASHBOARD WITH TIMER 🛑 -->
   <div class="card" style="margin-bottom: 25px; border-top: 3px solid #3b82f6;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <div class="cardTitle" style="margin: 0;">📊 Live API Usage</div>
+        <div>
+            <div class="cardTitle" style="margin: 0;">📊 Live API Usage</div>
+            <!-- Timer Display -->
+            <div id="apiResetTimer" style="font-size: 13px; color: #f59e0b; font-weight: 600; margin-top: 4px; letter-spacing: 0.5px;">
+                ⏳ Quota Reset: Calculating...
+            </div>
+        </div>
         <button class="actionBtnSmall blue" onclick="fetchApiUsage()" title="Refresh Stats">🔄</button>
     </div>
     
+    <!-- This is where the stats will be injected -->
     <div id="apiUsageContainer" style="display: flex; flex-wrap: wrap; gap: 10px;">
         <div style="color: var(--muted); font-size: 14px;">Loading server stats...</div>
     </div>
@@ -82,13 +90,46 @@
         document.getElementById("overlay").classList.toggle("active"); 
     }
     
-    // Clicking the dark background closes the menu
     document.getElementById("overlay").onclick = () => { 
         document.getElementById("sidebar").classList.remove("active"); 
         document.getElementById("overlay").classList.remove("active"); 
     };
 
-    // 🛑 NEW: Fetch and render API usage 🛑
+    // --- 🛑 TIMER LOGIC FOR GOOGLE API RESET 🛑 ---
+    function updateResetTimer() {
+        // Get the current time in Los Angeles (Google's timezone)
+        const now = new Date();
+        const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+        const laTime = new Date(laTimeStr);
+        
+        // Create a date object for the NEXT midnight in Los Angeles
+        const nextMidnight = new Date(laTime);
+        nextMidnight.setHours(24, 0, 0, 0); // Sets to 12:00 AM next day
+        
+        // Calculate the difference in milliseconds
+        const diffMs = nextMidnight - laTime;
+        
+        // Convert milliseconds to hours, minutes, and seconds
+        const h = Math.floor(diffMs / (1000 * 60 * 60));
+        const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+        
+        // Format to always show two digits (e.g., 09h 05m)
+        const pad = (num) => num.toString().padStart(2, '0');
+        
+        // Update the UI
+        const timerElement = document.getElementById("apiResetTimer");
+        if (timerElement) {
+            timerElement.innerText = `⏳ Quota resets in: ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+        }
+    }
+    
+    // Run the timer right away, then update every 1 second
+    updateResetTimer();
+    setInterval(updateResetTimer, 1000);
+    // ----------------------------------------------
+
+    // Fetch and render API usage
     async function fetchApiUsage() {
         const container = document.getElementById("apiUsageContainer");
         if (!container) return;
@@ -99,13 +140,11 @@
             const res = await fetch('/api/usage');
             const data = await res.json();
             
-            // If no requests have been made yet since the server started
             if (Object.keys(data).length === 0) {
                 container.innerHTML = '<div style="color: var(--muted); font-size: 14px; width: 100%; text-align: center; padding: 10px;">No API requests made yet since last server restart.</div>';
                 return;
             }
 
-            // Generate a styled box for every API currently in the server memory
             container.innerHTML = Object.entries(data).map(([apiName, count]) => `
                 <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 16px; flex: 1; min-width: 110px; text-align: center; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);">
                     <div style="font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">${apiName}</div>
@@ -118,7 +157,6 @@
         }
     }
     
-    // Auto-fetch the stats as soon as the Dashboard loads
     document.addEventListener("DOMContentLoaded", fetchApiUsage);
 </script>
 
