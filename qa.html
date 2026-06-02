@@ -6,8 +6,8 @@
     <title>AI Pro Suite - Document Q&A</title>
     
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0a0a0a">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
@@ -15,182 +15,11 @@
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <style>
-        /* =========================================================
-           AI PRO SUITE - PREMIUM UNIVERSAL UI (UNLAGGED)
-           Style: Silicon Valley Dark Mode / Document Q&A Edition
-        ========================================================= */
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            background-color: #0a0a0a; color: #ffffff; min-height: 100vh; overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15), transparent 40%),
-                radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.15), transparent 40%),
-                radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15), transparent 40%);
-            background-attachment: fixed;
-            animation: breatheBg 12s infinite alternate ease-in-out;
-        }
-
-        @keyframes breatheBg {
-            0% { background-size: 100% 100%; background-position: 0% 0%; filter: hue-rotate(0deg); }
-            100% { background-size: 120% 120%; background-position: 100% 100%; filter: hue-rotate(15deg); }
-        }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-
-        /* --- TOP NAV & TRACKER --- */
-        .topbar {
-            position: fixed; top: 0; left: 0; right: 0; height: 70px; display: flex; align-items: center; padding: 0 25px;
-            background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 100;
-        }
-        .menuBtn {
-            font-size: 24px; color: #fff; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; transition: 0.2s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1);
-        }
-        .menuBtn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
-        .appTitle { font-size: 20px; font-weight: 700; margin-left: 20px; letter-spacing: -0.5px; }
-
-        .apiTracker {
-            position: fixed; top: 70px; left: 0; right: 0; height: 35px;
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px); z-index: 99; display: flex; justify-content: space-evenly; align-items: center;
-            font-size: 12px; font-weight: 500; color: #a1a1aa; border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .api-val { font-weight: 700; font-size: 13px; }
-        .api-val.timer { color: #3b82f6; } .api-val.vision { color: #a855f7; } .api-val.text { color: #34d399; }
-
-        /* --- SIDEBAR --- */
-        .sidebar {
-            position: fixed; top: 0; left: -320px; width: 300px; height: 100%;
-            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.08); z-index: 999;
-            padding: 90px 20px 20px 20px; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .sidebar.active { left: 0; }
-        .sidebar button {
-            width: 100%; background: transparent; border: 1px solid transparent; color: #a1a1aa; padding: 14px 18px; font-size: 15px; font-weight: 500;
-            text-align: left; cursor: pointer; border-radius: 12px; margin-bottom: 8px; transition: all 0.2s;
-        }
-        .sidebar button:hover { background: rgba(255, 255, 255, 0.03); color: #fff; transform: translateX(5px); }
-        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 998; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .overlay.active { opacity: 1; pointer-events: auto; }
-
-        /* --- PAGE LAYOUT --- */
-        .page {
-            display: none; position: absolute; top: 105px; left: 50%; transform: translateX(-50%);
-            width: 100%; max-width: 800px; bottom: 0; overflow-y: auto; padding: 20px; padding-bottom: 50px;
-        }
-        .page.active { display: block; animation: slideUpFade .5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUpFade { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
-
-        /* --- PREMIUM GLASS CARDS --- */
-        .card {
-            background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 30px;
-            backdrop-filter: blur(15px); color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 25px;
-            transition: 0.3s;
-        }
-        .card:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
-
-        .cardTitle { font-size: 20px; font-weight: 600; margin-bottom: 5px; color: #f4f4f5; letter-spacing: -0.3px; }
-
-        /* --- INPUTS & SELECTS --- */
-        textarea.standard, #qaQuestionInput {
-            width: 100%; padding: 18px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); outline: none; 
-            background: rgba(10,10,10,0.8); color: white; border-radius: 16px; transition: 0.3s; font-size: 15px; font-family: 'Inter', sans-serif;
-            min-height: 120px; resize: vertical; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
-        }
-        textarea.standard:focus, #qaQuestionInput:focus { border-color: #a855f7; box-shadow: 0 0 20px rgba(168, 85, 247, 0.2), inset 0 2px 10px rgba(0,0,0,0.3); }
-
-        select#qaTargetLang {
-            width: 100%; padding: 16px 20px; background: rgba(10, 10, 10, 0.8) !important; color: white; border-radius: 16px; 
-            border: 1px solid rgba(255,255,255,0.1); outline: none; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 15px;
-            margin-top: 10px; margin-bottom: 15px; cursor: pointer; transition: 0.3s; appearance: none;
-        }
-        select#qaTargetLang:focus { border-color: #a855f7; box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); }
-        select#qaTargetLang option { background: #1a1a1a; color: white; }
-
-        /* --- VIBRANT BEAUTIFUL BUTTONS --- */
-        .btn {
-            width: 100%; padding: 16px; border: none; border-radius: 16px; font-weight: 600; font-size: 16px; 
-            cursor: pointer; margin-top: 10px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; 
-            justify-content: center; align-items: center; gap: 8px; font-family: 'Inter', sans-serif;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .btn:active { transform: scale(0.98); }
-        .btn:hover { transform: translateY(-3px); }
-
-        .btn.green { background: linear-gradient(135deg, #10b981, #059669); color: white; border: 1px solid rgba(16, 185, 129, 0.5); }
-        .btn.green:hover { box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
-
-        .btn.orange { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: 1px solid rgba(245, 158, 11, 0.5); }
-        .btn.orange:hover { box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4); }
-
-        .btn.blue { 
-            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); background-size: 200% 200%;
-            animation: smoothColorBtn 4s ease infinite; color: white; border: none;
-        }
-        .btn.blue:hover { box-shadow: 0 10px 30px rgba(168, 85, 247, 0.5); transform: translateY(-4px) scale(1.02); }
-        
-        @keyframes smoothColorBtn { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-        .actionBtnSmall { border-radius: 12px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; font-size: 16px; transition: 0.2s; }
-        .actionBtnSmall.red { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: white; }
-        .actionBtnSmall.red:hover { background: rgba(239, 68, 68, 0.9); transform: rotate(180deg); }
-
-        /* --- IMAGE PREVIEW CHIPS --- */
-        .image-preview-chip { border: 2px solid rgba(255,255,255,0.2) !important; border-radius: 12px; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .image-preview-chip:hover { transform: scale(1.05); border-color: #a855f7 !important; }
-        .image-preview-close { background: #ef4444 !important; color: white !important; font-size: 12px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.5); transition: 0.3s; }
-        .image-preview-close:hover { transform: scale(1.2); }
-
-        /* --- PROGRESS BAR & OUTPUT --- */
-        #qaProgressBar { background: linear-gradient(90deg, #3b82f6, #a855f7) !important; box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); border-radius: 4px; }
-        .outputBox { 
-            margin-top: 15px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 16px; padding: 25px; min-height: 100px; font-size: 15px; line-height: 1.7; color: #f4f4f5; 
-            box-shadow: inset 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        /* --- CAMERA & MODALS --- */
-        .cameraModal, .photoViewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 5000; flex-direction: column; backdrop-filter: blur(15px); }
-        .cameraModal.active, .photoViewer.active { display: flex; animation: fadeIn 0.3s forwards; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .cameraHeader { height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 25px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); position: absolute; top: 0; width: 100%; z-index: 2; }
-        .cameraHeader button { background: none; border: none; color: white; font-size: 26px; cursor: pointer; transition: 0.2s; }
-        .cameraHeader button:hover { transform: scale(1.1); color: #ef4444; }
-        .cameraVideo { width: 100%; height: 100%; object-fit: cover; }
-        .cameraControls { min-height: 130px; display: flex; justify-content: center; align-items: center; gap: 40px; position: absolute; bottom: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding-bottom: 30px; z-index: 2; }
-        
-        .cameraCircle { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; background: rgba(255,255,255,0.2); box-shadow: 0 0 20px rgba(255,255,255,0.3); cursor: pointer; transition: 0.2s; }
-        .cameraCircle:hover { background: rgba(255,255,255,0.4); transform: scale(1.05); }
-        .cameraCircle:active { transform: scale(0.9); background: white; box-shadow: 0 0 40px white; }
-        .switchBtn, .flashBtn { width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px); transition: 0.2s; }
-        .switchBtn:hover, .flashBtn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
-        .closeBtn { width: 45px; height: 45px; border: none; border-radius: 50%; background: rgba(255,255,255,0.1); color: white; font-size: 20px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.2); }
-        .closeBtn:hover { background: #ef4444; transform: scale(1.1); }
-
-        #shutterFlashOverlay { position: fixed; inset: 0; background: white; z-index: 9999; opacity: 0; pointer-events: none; }
-        .trigger-flash { animation: flashAnim 0.6s ease-out forwards; }
-        @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-        /* --- NOTIFICATION TOAST --- */
-        #toastContainer { position: fixed; top: 85px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
-        .ui-toast {
-            background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(168, 85, 247, 0.4); color: white;
-            padding: 12px 24px; border-radius: 50px; font-size: 14px; font-weight: 500;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(168, 85, 247, 0.15);
-            animation: toastSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards, toastFadeOut 0.4s ease 2.6s forwards;
-        }
-        @keyframes toastSlideDown { from { opacity: 0; transform: translateY(-20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes toastFadeOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-10px) scale(0.9); } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-<div id="shutterFlashOverlay"></div>
-<div id="toastContainer"></div>
+<div class="overlay" id="overlay"></div>
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
@@ -208,15 +37,14 @@
   <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-  <button onclick="window.location.href='qa.html'" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #fff;">📚 Document Q&A</button>
+  <button onclick="window.location.href='qa.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
 </div>
 
 <div class="page active" id="qaPage">
-  <!-- Header Card -->
-  <div class="card" style="background:linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1)); border-color: rgba(245, 158, 11, 0.3);">
-    <h1 style="font-size: 26px; text-align: center; color: #f59e0b; text-shadow: 0 0 15px rgba(245, 158, 11, 0.4);">📚 Document Q&A</h1>
-    <p style="font-size: 15px; text-align: center; color: #a1a1aa; margin-top: 5px;">Snap pages, ask questions, get answers.</p>
+  <div class="card" style="background:linear-gradient(135deg,#f59e0b,#ef4444); border:none;">
+    <h1 style="font-size: 24px; text-align: center;">📚 Document Q&A</h1>
+    <p style="font-size: 14px; text-align: center; opacity: 0.9;">Snap pages, ask questions, get answers.</p>
   </div>
 
   <div class="card">
@@ -224,25 +52,25 @@
         <div class="cardTitle" style="margin:0;">Step 1: Source Document</div>
         <button class="actionBtnSmall red" onclick="clearQaSession()" title="Reset All">🔄</button>
     </div>
-    <div style="color: #94a3b8; font-size: 14px; margin-top: 5px; margin-bottom: 15px;">Total photos: <span id="qaSourceCount" style="color: #3b82f6; font-weight: bold;">0</span>/10</div>
+    <div style="color: var(--muted); font-size: 13px; margin-top: 5px; margin-bottom: 15px;">Total photos: <span id="qaSourceCount" style="color: #60a5fa; font-weight: bold;">0</span>/10</div>
     
     <button class="btn green" onclick="openCamera('qa_source')">📷 Take Photo of Source Page</button>
-    <div id="qaSourcePreviews" style="display:flex; gap:12px; margin-top:15px; overflow-x:auto; padding-bottom:5px;"></div>
+    <div id="qaSourcePreviews" style="display:flex; gap:10px; margin-top:15px; overflow-x:auto; padding-bottom:5px;"></div>
   </div>
 
   <div class="card">
     <div class="cardTitle">Step 2: Ask Question</div>
-    <div style="color: #94a3b8; font-size: 14px; margin-bottom: 15px;">Snap a photo of the question OR type it below.</div>
+    <div style="color: var(--muted); font-size: 13px; margin-bottom: 15px;">Snap a photo of the question OR type it below.</div>
     
     <button class="btn orange" onclick="openCamera('qa_question')" style="margin-bottom:15px;">📷 Take Photo of Question</button>
-    <div id="qaQuestionPreview" style="display:flex; gap:12px; margin-bottom:15px;"></div>
+    <div id="qaQuestionPreview" style="display:flex; gap:10px; margin-bottom:15px;"></div>
     
     <textarea class="standard" id="qaQuestionInput" placeholder="Type your specific question here..."></textarea>
   </div>
 
   <div class="card">
     <div class="cardTitle">Step 3: Solve Options</div>
-    <select id="qaTargetLang">
+    <select id="qaTargetLang" style="width:100%; padding:15px; background:rgba(15,23,42,.9); color:white; border-radius:18px; border:2px solid rgba(255,255,255,.08); outline:none; font-family:'Poppins',sans-serif; margin-top:10px; margin-bottom:15px;">
         <option value="Hindi">Solve in: Hindi</option>
         <option value="English">Solve in: English</option>
         <option value="French">Solve in: French</option>
@@ -250,28 +78,28 @@
         <option value="German">Solve in: German</option>
         <option value="Japanese">Solve in: Japanese</option>
     </select>
-    <button class="btn blue" id="solveQaBtn" onclick="executeQaFlow()">🧠 Solve Question</button>
+    <button class="btn blue" onclick="executeQaFlow()">🧠 Solve Question</button>
   </div>
 
   <div class="card">
     <div class="cardTitle">Step 4: Output Tracker</div>
     
-    <div style="margin-bottom: 10px; margin-top: 10px; font-size: 14px; color: #a855f7; font-weight:600; letter-spacing: 0.5px;" id="qaStatusText">Ready to start.</div>
-    <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:4px; margin-bottom:20px; overflow:hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
+    <div style="margin-bottom: 10px; margin-top: 10px; font-size: 14px; color: #93c5fd; font-weight:600;" id="qaStatusText">Ready to start.</div>
+    <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; margin-bottom:20px; overflow:hidden;">
         <div id="qaProgressBar" style="width:0%; height:100%; background:#3b82f6; transition:width 0.4s ease;"></div>
     </div>
     
-    <div class="outputBox" id="qaAnswerBox">Solution will appear here...</div>
+    <div class="outputBox" id="qaAnswerBox" style="min-height: 120px;">Solution will appear here...</div>
   </div>
 </div>
 
 <div class="cameraModal" id="cameraModal">
-  <div class="cameraHeader"><button id="closeCameraBtn" onclick="closeCamera()">✕</button><div>Camera</div><div></div></div>
+  <div class="cameraHeader"><button id="closeCameraBtn">✕</button><div>Camera</div><div></div></div>
   <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
   <div class="cameraControls">
-    <button class="flashBtn" id="toggleFlashBtn" onclick="toggleFlash()">🔦</button>
-    <button class="cameraCircle" id="capturePhotoBtn" onclick="capturePhotoAndFlash()"></button>
-    <button class="switchBtn" id="switchCameraBtn" onclick="switchCamera()">🔄</button>
+    <button class="flashBtn" id="toggleFlashBtn">🔦</button>
+    <button class="cameraCircle" id="capturePhotoBtn"></button>
+    <button class="switchBtn" id="switchCameraBtn">🔄</button>
   </div>
 </div>
 
@@ -283,40 +111,6 @@
 </div>
 
 <canvas id="captureCanvas" style="display:none;"></canvas>
-
-<!-- Visual Augmentation & Notification Script -->
-<script>
-    function showSysNotification(message) {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = 'ui-toast';
-        toast.innerText = message;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500);
-    }
-
-    function toggleSidebar() { 
-        document.getElementById("sidebar").classList.toggle("active"); 
-        document.getElementById("overlay").classList.toggle("active"); 
-    }
-
-    // Attach notification to Solve Button
-    document.getElementById('solveQaBtn').addEventListener('click', function() {
-        // Basic check if they typed anything or attached an image (handled by your main.js, this is just visual)
-        showSysNotification('Analyzing Document Context...');
-    });
-
-    // Handle Camera Shutter Animation
-    function capturePhotoAndFlash() {
-        const overlay = document.getElementById('shutterFlashOverlay');
-        overlay.classList.remove('trigger-flash');
-        void overlay.offsetWidth;
-        overlay.classList.add('trigger-flash');
-        showSysNotification('Image loaded into memory.');
-        if(typeof capturePhoto === 'function') capturePhoto();
-    }
-</script>
-
 <script src="main.js" defer></script>
 </body>
 </html>
