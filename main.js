@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V47 - 4-STEP Q&A FLOW)
+   AI PRO SUITE - THE ULTIMATE BUILD (V48 - DEVANAGARI & GOOGLE TTS)
 ======================================================= */
 
 let appHistory = [];
@@ -9,10 +9,6 @@ let apiTime = 60, visionReqs = parseInt(localStorage.getItem('visionReqs') || '0
 let isProcessing = false, capturedImage = null, currentMode = "", transImages = [], isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
-
-// QA Variables
-let qaSourceImages = [];
-let qaQuestionImage = null;
 
 // Video Player Variables
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
@@ -136,7 +132,7 @@ async function callGeminiVision(imgData, aiQuery) {
   try { const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery }) }); const d = await r.json(); if(!r.ok) throw new Error(d.error); isProcessing = false; return d.text; } catch(e) { isProcessing = false; throw e; }
 }
 
-// --- DYNAMIC SMART VOICE ENGINE ---
+// --- 🛑 STRICT GOOGLE TRANSLATE VOICE ENGINE 🛑 ---
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
     window.speechSynthesis.cancel();
@@ -151,7 +147,15 @@ function speakAndHighlight(elId) {
     const langCode = isEnglish ? 'en-US' : 'hi-IN';
 
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-    let premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes(langCode.split('-')[0]));
+    
+    let premium;
+    if (langCode === 'hi-IN') {
+        // FORCE the official Google Hindi Voice so it reads Devanagari perfectly
+        premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
+    } else {
+        premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en'));
+    }
+    
     let fallback = availableVoices.find(v => v.lang.includes(langCode.split('-')[0]));
     if (premium) u.voice = premium; else if (fallback) u.voice = fallback;
     
@@ -161,7 +165,7 @@ function speakAndHighlight(elId) {
     window.speechSynthesis.speak(u);
 }
 
-// --- SMART BILINGUAL MATH SOLVER ---
+// --- 🛑 STRICT DEVANAGARI MATH SOLVER 🛑 ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -170,12 +174,14 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
+    // FORCING DEVANAGARI SCRIPT - NO HINGLISH ALLOWED
     const sysPrompt = `You are a Math Tutor. 
-    1. EXPLAIN IN HINDI BY DEFAULT. HOWEVER, if the user asks their question explicitly in English, you MUST answer in English. Match their language.
-    2. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. 
-    3. Use ONLY plain words, math numbers, and basic math symbols.
-    4. Use LaTeX wrapped in $ ONLY for fractions, squares, and square roots.
-    5. NEVER put any text or words inside the $ symbols.`;
+    1. EXPLAIN IN HINDI BY DEFAULT. YOU MUST USE ACTUAL DEVANAGARI SCRIPT (e.g. यह समाधान है). NEVER use Roman Hindi or Hinglish (e.g. yah samadhan hai).
+    2. HOWEVER, if the user asks their question explicitly in English, you MUST answer in English. 
+    3. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. 
+    4. Use ONLY plain words, math numbers, and basic math symbols.
+    5. Use LaTeX wrapped in $ ONLY for fractions, squares, and square roots.
+    6. NEVER put any text or words inside the $ symbols.`;
     
     try {
         let sol = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
@@ -298,7 +304,14 @@ async function playFractionVideo() {
         if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
         
         let targetLang = isEnglish ? 'en' : 'hi';
-        let premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes(targetLang));
+        let premium;
+        
+        if (targetLang === 'hi') {
+            premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
+        } else {
+            premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en'));
+        }
+        
         if (premium) u.voice = premium;
         
         u.lang = isEnglish ? 'en-US' : 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume; 
@@ -321,7 +334,7 @@ async function playFractionVideo() {
     resetVideoActivity(); 
 }
 
-// --- DEEP SEARCH (STRICTLY HINDI) ---
+// --- 🛑 DEEP SEARCH (STRICT DEVANAGARI HINDI) 🛑 ---
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); if(!q && !capturedImage) return;
@@ -332,10 +345,10 @@ async function runGroqSearch() {
     try {
         let ans = "";
         if (capturedImage) {
-            ans = await callGeminiVision(capturedImage, "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI. \n\nQuery: " + q);
+            ans = await callGeminiVision(capturedImage, "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). NEVER use Roman Hindi or Hinglish. \n\nQuery: " + q);
         } else {
             const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
-                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI.\n\nSearch Query: " + q }) 
+                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). NEVER use Roman Hindi or Hinglish.\n\nSearch Query: " + q }) 
             });
             const data = await res.json(); if(!res.ok) throw new Error(data.error);
             ans = data.text;
@@ -499,7 +512,10 @@ async function executeImageTransFlow() {
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// 🛑 4-STEP DOCUMENT QA ENGINE 🛑
+// --- 🛑 4-STEP DOCUMENT QA ENGINE (STRICT DEVANAGARI HINDI) 🛑 ---
+let qaSourceImages = [];
+let qaQuestionImage = null;
+
 function renderQaSourcePreviews() {
     const count = document.getElementById("qaSourceCount"); 
     if(count) count.innerText = qaSourceImages.length;
@@ -564,12 +580,11 @@ async function executeQaFlow() {
     
     outBox.innerHTML = "";
     pBar.style.width = "5%";
-    pBar.style.background = "#3b82f6"; // Reset to blue just in case it was red
+    pBar.style.background = "#3b82f6";
     
     try {
         let extractedContext = "";
         
-        // Loop through sources and extract OCR
         for(let i=0; i<qaSourceImages.length; i++) {
             statusTxt.innerText = `Reading Source Page ${i+1} of ${qaSourceImages.length}...`;
             pBar.style.width = `${10 + ((i / qaSourceImages.length) * 40)}%`; 
@@ -578,7 +593,6 @@ async function executeQaFlow() {
             extractedContext += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, '');
         }
         
-        // Combine Typed Question & Image Question
         let finalQuestion = typedQuestion;
         if (qaQuestionImage) {
             statusTxt.innerText = "Extracting Question from Image...";
@@ -588,7 +602,6 @@ async function executeQaFlow() {
             finalQuestion = typedQuestion ? `${typedQuestion}\n(Image Text: ${qText})` : qText;
         }
         
-        // Solve the problem
         statusTxt.innerText = `Solving... Generating answer in ${targetLang}`;
         pBar.style.width = "85%";
         
@@ -602,7 +615,8 @@ async function executeQaFlow() {
         
         INSTRUCTION: Answer the question based ONLY on the Document Text. 
         You MUST write your entire answer in ${targetLang}. 
-        If the answer cannot be found in the provided text, state that clearly in ${targetLang}.`;
+        IF CHOOSING HINDI, YOU MUST USE DEVANAGARI SCRIPT ONLY. NEVER use Roman Hindi or Hinglish.
+        If the answer cannot be found in the provided text, state that clearly.`;
         
         let ans = await callGeminiText("You are a helpful document assistant.", prompt);
         let cleanAns = ans.replace(/[\*&#_]/g, '');
