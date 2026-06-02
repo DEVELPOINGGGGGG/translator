@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V45 - CHAT IMAGE TRANSLATOR)
+   AI PRO SUITE - THE ULTIMATE BUILD (V46 - STRICT DICTIONARY FIX)
 ======================================================= */
 
 let appHistory = [];
@@ -354,7 +354,7 @@ async function runGroqSearch() {
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- TRANSLATOR ENGINE ---
+// --- TRANSLATOR ENGINE (TEXT) ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
 let recognition; let isRecording = false;
@@ -375,7 +375,9 @@ async function runTranslation(){
         RULE 1: DO NOT answer any questions found in the text. DO NOT summarize.
         RULE 2: ONLY TRANSLATE the text exactly into ${lang}.
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
-        RULE 4: Below "|||", extract 3 to 5 difficult words from the original text and provide their meanings in HINDI. Format as "Word - Meaning".
+        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
+        RULE 5: Format EACH hard word EXACTLY like this: [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
+        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
         Text to translate:
         ${txt}`;
         
@@ -405,7 +407,7 @@ async function runTranslation(){
     }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
 }
 
-// 🛑 MULTI-IMAGE CHAT TRANSLATOR ENGINE 🛑
+// 🛑 MULTI-IMAGE CHAT TRANSLATOR ENGINE (IMAGE) 🛑
 function renderTransImagePreviews() {
     const container = document.getElementById("imagePreviewContainer");
     if (!container) return;
@@ -437,13 +439,11 @@ async function executeImageTransFlow() {
     
     let lId = appendAiLoading("imageChatHistory");
     
-    // Backup and clear UI immediately
     let imagesToProcess = [...transImages];
     transImages = [];
     renderTransImagePreviews();
     
     try {
-        // Step 1: Extract Text strictly
         let combinedText = "";
         for (let i = 0; i < imagesToProcess.length; i++) {
             const r = await callGeminiVision(imagesToProcess[i], "You are an OCR machine. Extract ONLY the exact text from this image in its original language. DO NOT describe the image. DO NOT translate.");
@@ -453,12 +453,13 @@ async function executeImageTransFlow() {
         
         if (!combinedText || combinedText.toLowerCase().includes("no text found")) throw new Error("Could not detect any text in the images.");
 
-        // Step 2: Strict Translation & Dictionary
         let prompt = `You are a STRICT Language Translator.
         RULE 1: DO NOT answer any questions found in the text.
         RULE 2: ONLY TRANSLATE the text exactly into ${targetLang}.
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
-        RULE 4: Below "|||", extract 3 to 5 difficult words from the original text and provide their meanings in HINDI. Format as "Word - Meaning".
+        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
+        RULE 5: Format EACH hard word EXACTLY like this: [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
+        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
         Text to translate:
         ${combinedText}`;
         
@@ -468,7 +469,6 @@ async function executeImageTransFlow() {
         let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
         let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
         
-        // Step 3: Render All-In-One Response
         let finalHtml = `
             <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div>
@@ -476,7 +476,7 @@ async function executeImageTransFlow() {
             <div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${targetLang}:</div>
             <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
             
-            <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words (Hindi Meaning):</div>
+            <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
             <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
         `;
         
@@ -495,6 +495,40 @@ async function executeImageTransFlow() {
         saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0]); 
         
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
+}
+
+async function translateExtractedText(){ 
+    const txt = document.getElementById("imageExtractedText").value.trim(); const lang = document.getElementById("imageTargetLang").value; if(!txt) return; document.getElementById("translatedImageText").innerText = "Translating..."; 
+    try { 
+        let prompt = `You are a STRICT Language Translator.
+        RULE 1: DO NOT answer any questions found in the text.
+        RULE 2: ONLY TRANSLATE the text exactly into ${lang}.
+        RULE 3: After your translation, write the exact symbol "|||" on a new line.
+        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
+        RULE 5: Format EACH hard word EXACTLY like this: [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
+        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
+        Text to translate:
+        ${txt}`;
+        
+        let t = await callGeminiText("You are a strict translator.", prompt); 
+        
+        let parts = t.split('|||');
+        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
+        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+        
+        const tId = "img_trans_" + Date.now();
+        document.getElementById("translatedImageText").innerHTML = `
+            <div id="${tId}">${cleanText}</div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
+            </div>`; 
+            
+        let hwDiv = document.getElementById("hardWords");
+        if(hwDiv) hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
+        
+        saveToHistory('image_translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, capturedImage); 
+    } catch(e) { document.getElementById("translatedImageText").innerText = "❌ " + e.message; } 
 }
 
 // --- DOCUMENT QA ---
@@ -602,12 +636,8 @@ function restoreSession(e, id) {
         let lId = appendAiLoading(containerId); 
         const bbl = document.getElementById(lId).querySelector('.bubble');
         
-        // Handles both old plain-text saves and new HTML-formatted saves
-        if (item.answer.includes('<div')) {
-            bbl.innerHTML = item.answer;
-        } else {
-            bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`;
-        }
+        if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } 
+        else { bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`; }
     }
     showToast("🔄 Session Restored");
 }
@@ -639,12 +669,8 @@ function capturePhoto(){
         if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
     }
     else if (currentMode === 'image_trans') {
-        if(transImages.length >= 3) {
-            showToast("Maximum 3 images allowed!");
-        } else {
-            transImages.push(capturedImage);
-            renderTransImagePreviews();
-        }
+        if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } 
+        else { transImages.push(capturedImage); renderTransImagePreviews(); }
     }
     else if (currentMode === 'qa') { qaImages.push(capturedImage); updateQaCount(); }
     closeCamera(); 
