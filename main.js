@@ -1,22 +1,18 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V44 - STRICT OCR FIX)
+   AI PRO SUITE - THE ULTIMATE BUILD (V45 - CHAT IMAGE TRANSLATOR)
 ======================================================= */
 
 let appHistory = [];
 try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
 
 let apiTime = 60, visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
-let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], qaContextText = "", isFlashOn = true;
+let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
 
 // Video Player Variables
-let videoSpeed = 0.75, isVideoPaused = false; 
-let currentVideoVolume = 1.0;
-let videoElapsed = 0;
-let videoTotalEst = 0;
-let videoTickInterval;
-let hideControlsTimer;
+let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
+let videoElapsed = 0, videoTotalEst = 0, videoTickInterval, hideControlsTimer;
 
 function loadVoices() { availableVoices = window.speechSynthesis.getVoices(); }
 window.speechSynthesis.onvoiceschanged = loadVoices;
@@ -34,8 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputs = [{id:"searchInput", fn:runGroqSearch}, {id:"mathInstructionInput", fn:executeMathFlow}];
     inputs.forEach(i => { const el = document.getElementById(i.id); if(el) el.addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); i.fn(); } }); });
     
-    const buttons = [ {id: "sendMathBtn", fn: executeMathFlow}, {id: "sendSearchBtn", fn: runGroqSearch}, {id: "sendQaBtn", fn: askDocument}, {id: "askQaBtn", fn: askDocument} ];
+    const buttons = [ 
+        {id: "sendMathBtn", fn: executeMathFlow}, 
+        {id: "sendSearchBtn", fn: runGroqSearch}, 
+        {id: "sendQaBtn", fn: askDocument}, 
+        {id: "askQaBtn", fn: askDocument},
+        {id: "sendImageTransBtn", fn: executeImageTransFlow} 
+    ];
     buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
+
+    if(document.getElementById('openImageCameraBtn')) document.getElementById('openImageCameraBtn').onclick = () => openCamera('image_trans');
 
     if (document.getElementById('historyList')) renderHistory();
 
@@ -55,8 +59,7 @@ function showToast(msg) {
     document.body.appendChild(t);
     
     if(!document.getElementById('toastStyles')) {
-        let s = document.createElement('style');
-        s.id = 'toastStyles';
+        let s = document.createElement('style'); s.id = 'toastStyles';
         s.innerHTML = "@keyframes fadeInOut { 0%{opacity:0; bottom:10px;} 10%{opacity:1; bottom:30px;} 90%{opacity:1; bottom:30px;} 100%{opacity:0; bottom:10px;} }";
         document.head.appendChild(s);
     }
@@ -71,10 +74,7 @@ function copyToClipboard(textId) {
 function viewPhotoFullscreen(src) {
     const viewer = document.getElementById('photoViewer');
     const img = document.getElementById('previewImage');
-    if(viewer && img) {
-        img.src = src;
-        viewer.classList.add('active');
-    }
+    if(viewer && img) { img.src = src; viewer.classList.add('active'); }
 }
 
 // --- CORE HELPERS ---
@@ -196,7 +196,6 @@ function startVideoTimer(totalChars) {
     clearInterval(videoTickInterval);
     videoElapsed = 0;
     videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
-    
     document.getElementById('vTimeDisplay').innerText = `00:00 / ${formatTime(videoTotalEst)}`;
     
     videoTickInterval = setInterval(() => {
@@ -210,31 +209,18 @@ function startVideoTimer(totalChars) {
 }
 
 function resetVideoActivity() {
-    const top = document.getElementById('vTopBar');
-    const bot = document.getElementById('vControlsContainer');
-    const ov = document.getElementById('videoGuiOverlay');
-    
-    if(top) top.style.opacity = '1';
-    if(bot) bot.style.opacity = '1';
-    if(ov) ov.style.cursor = 'default';
+    const top = document.getElementById('vTopBar'); const bot = document.getElementById('vControlsContainer'); const ov = document.getElementById('videoGuiOverlay');
+    if(top) top.style.opacity = '1'; if(bot) bot.style.opacity = '1'; if(ov) ov.style.cursor = 'default';
     
     clearTimeout(hideControlsTimer);
     hideControlsTimer = setTimeout(() => {
-        if(!isVideoPaused) {
-            if(top) top.style.opacity = '0';
-            if(bot) bot.style.opacity = '0';
-            if(ov) ov.style.cursor = 'none';
-        }
+        if(!isVideoPaused) { if(top) top.style.opacity = '0'; if(bot) bot.style.opacity = '0'; if(ov) ov.style.cursor = 'none'; }
     }, 3000);
 }
 
 function toggleVideoFullscreen() {
     const ov = document.getElementById('videoGuiOverlay');
-    if (!document.fullscreenElement) {
-        ov.requestFullscreen().catch(err => { console.log("Fullscreen blocked."); });
-    } else {
-        document.exitFullscreen();
-    }
+    if (!document.fullscreenElement) { ov.requestFullscreen().catch(err => { console.log("Fullscreen blocked."); }); } else { document.exitFullscreen(); }
 }
 
 function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); resetVideoActivity(); }
@@ -243,108 +229,66 @@ function initVideoGui() {
     if(!window.latestMathSolution) return;
     if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
     
-    const ov = document.createElement('div'); 
-    ov.id = 'videoGuiOverlay';
+    const ov = document.createElement('div'); ov.id = 'videoGuiOverlay';
     ov.style.cssText = "position:fixed; inset:0; background:radial-gradient(circle, #1e293b 0%, #000000 100%); z-index:9999; display:flex; flex-direction:column; font-family:'Poppins', sans-serif;";
-    
     ov.innerHTML = `
         <div id="vTopBar" style="position:absolute; top:0; left:0; right:0; padding:20px; background:linear-gradient(rgba(0,0,0,0.9), transparent); display:flex; justify-content:space-between; transition: opacity 0.3s; z-index:100;">
             <div style="color:white; font-weight:bold; font-size:18px;">🔴 AI TUTOR LIVE</div>
             <button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
         </div>
-        
         <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px;">
             <div id="videoContent" style="font-size: 24px; color: #fff; line-height:2.0; max-width:800px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:30px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
         </div>
-        
         <div id="vControlsContainer" style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); transition: opacity 0.3s; z-index:100;">
-           <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; margin-bottom:15px;" id="vProgressBarBg">
-              <div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.4s ease;" id="vProgressBar"></div>
-           </div>
-           
+           <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; margin-bottom:15px;" id="vProgressBarBg"><div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.4s ease;" id="vProgressBar"></div></div>
            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
                <div style="display:flex; align-items:center; gap:20px;">
                    <button id="vPlayBtn" onclick="toggleVideoPause()" style="background:none; border:none; color:white; font-size:26px; cursor:pointer;">⏸️</button>
                    <span id="vTimeDisplay" style="color:#cbd5e1; font-size:14px; font-weight:500; font-family:monospace;">00:00 / 00:00</span>
                </div>
-               
                <div style="display:flex; align-items:center; gap:20px;">
-                   <div style="display:flex; align-items:center; gap:5px;">
-                       <span style="color:white; font-size:16px;">🔊</span>
-                       <input type="range" id="vVolumeSlider" min="0" max="1" step="0.1" value="${currentVideoVolume}" onchange="updateVideoVolume(this.value)" style="width:70px; accent-color:#3b82f6; cursor:pointer;">
-                   </div>
+                   <div style="display:flex; align-items:center; gap:5px;"><span style="color:white; font-size:16px;">🔊</span><input type="range" id="vVolumeSlider" min="0" max="1" step="0.1" value="${currentVideoVolume}" onchange="updateVideoVolume(this.value)" style="width:70px; accent-color:#3b82f6; cursor:pointer;"></div>
                    <button onclick="cycleVideoSpeed()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:14px; font-weight:bold; cursor:pointer; border-radius:10px; padding:5px 12px;" id="vSpeedTxt">${videoSpeed}x</button>
                    <button onclick="toggleVideoFullscreen()" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;" title="Fullscreen">🔲</button>
                </div>
            </div>
         </div>
     `;
-    
     document.body.appendChild(ov); 
-    ov.addEventListener('mousemove', resetVideoActivity);
-    ov.addEventListener('touchstart', resetVideoActivity);
-    ov.addEventListener('click', resetVideoActivity);
-    
-    resetVideoActivity(); 
-    playFractionVideo();
+    ov.addEventListener('mousemove', resetVideoActivity); ov.addEventListener('touchstart', resetVideoActivity); ov.addEventListener('click', resetVideoActivity);
+    resetVideoActivity(); playFractionVideo();
 }
 
 function exitVideoGui() { 
-    window.speechSynthesis.cancel(); 
-    clearInterval(videoTickInterval);
-    clearTimeout(hideControlsTimer);
-    
+    window.speechSynthesis.cancel(); clearInterval(videoTickInterval); clearTimeout(hideControlsTimer);
     const ov = document.getElementById('videoGuiOverlay'); 
-    if(ov) {
-        if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-        ov.remove(); 
-    }
+    if(ov) { if (document.fullscreenElement) document.exitFullscreen().catch(()=>{}); ov.remove(); }
     if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); 
 }
 
 function cycleVideoSpeed() { 
     videoSpeed = videoSpeed === 0.75 ? 1.0 : (videoSpeed === 1.0 ? 1.5 : (videoSpeed === 1.5 ? 2.0 : 0.75)); 
     document.getElementById('vSpeedTxt').innerText = videoSpeed + 'x'; 
-    window.speechSynthesis.cancel(); 
-    resetVideoActivity();
-    replayVideo(); 
+    window.speechSynthesis.cancel(); resetVideoActivity(); replayVideo(); 
 }
 
 function toggleVideoPause() { 
     const btn = document.getElementById('vPlayBtn'); 
-    if(window.speechSynthesis.paused) { 
-        window.speechSynthesis.resume(); 
-        isVideoPaused = false; 
-        btn.innerHTML = "⏸️"; 
-    } else if (window.speechSynthesis.speaking) { 
-        window.speechSynthesis.pause(); 
-        isVideoPaused = true; 
-        btn.innerHTML = "▶️"; 
-    } 
+    if(window.speechSynthesis.paused) { window.speechSynthesis.resume(); isVideoPaused = false; btn.innerHTML = "⏸️"; } else if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); isVideoPaused = true; btn.innerHTML = "▶️"; } 
     resetVideoActivity();
 }
 
-function replayVideo() { 
-    window.speechSynthesis.cancel(); 
-    isVideoPaused = false; 
-    document.getElementById('vPlayBtn').innerHTML = "⏸️"; 
-    playFractionVideo(); 
-}
+function replayVideo() { window.speechSynthesis.cancel(); isVideoPaused = false; document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(); }
 
 async function playFractionVideo() {
     const content = document.getElementById("videoContent"); content.innerHTML = ""; 
     const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
-    
-    let totalChars = window.latestMathSolution.length;
-    startVideoTimer(totalChars);
-    
-    const pBar = document.getElementById('vProgressBar');
-    if(pBar) pBar.style.width = '0%';
+    startVideoTimer(window.latestMathSolution.length);
+    const pBar = document.getElementById('vProgressBar'); if(pBar) pBar.style.width = '0%';
     
     for(let i=0; i<lines.length; i++) {
         if(!document.getElementById('videoGuiOverlay')) return; 
         const lineText = lines[i];
-        
         const cleanSpeech = lineText.replace(/[\$\\]/g, ' ').replace(/frac/g, ' divided by ');
         const isEnglish = /^[a-zA-Z0-9\s.,!?]+$/.test(cleanSpeech.substring(0, 30));
         
@@ -355,16 +299,12 @@ async function playFractionVideo() {
         let premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes(targetLang));
         if (premium) u.voice = premium;
         
-        u.lang = isEnglish ? 'en-US' : 'hi-IN'; 
-        u.rate = videoSpeed; 
-        u.volume = currentVideoVolume; 
+        u.lang = isEnglish ? 'en-US' : 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume; 
         window.speechSynthesis.speak(u);
         
         const lineDiv = document.createElement("div"); 
-        lineDiv.style.opacity = 0; lineDiv.style.transform = "translateY(10px)";
-        lineDiv.style.transition = "all 0.4s ease-out"; 
-        lineDiv.innerHTML = lineText; 
-        content.appendChild(lineDiv);
+        lineDiv.style.opacity = 0; lineDiv.style.transform = "translateY(10px)"; lineDiv.style.transition = "all 0.4s ease-out"; 
+        lineDiv.innerHTML = lineText; content.appendChild(lineDiv);
         
         if (window.MathJax) { MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); }
         
@@ -375,8 +315,7 @@ async function playFractionVideo() {
     }
     
     clearInterval(videoTickInterval);
-    const playBtn = document.getElementById('vPlayBtn');
-    if(playBtn) playBtn.innerHTML = "🔄"; 
+    const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄"; 
     resetVideoActivity(); 
 }
 
@@ -436,7 +375,7 @@ async function runTranslation(){
         RULE 1: DO NOT answer any questions found in the text. DO NOT summarize.
         RULE 2: ONLY TRANSLATE the text exactly into ${lang}.
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
-        RULE 4: Below "|||", extract 3 to 5 difficult words from the original text and provide their meanings in HINDI.
+        RULE 4: Below "|||", extract 3 to 5 difficult words from the original text and provide their meanings in HINDI. Format as "Word - Meaning".
         Text to translate:
         ${txt}`;
         
@@ -466,38 +405,62 @@ async function runTranslation(){
     }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
 }
 
-// 🛑 STRICT OCR ENGINE FIX: PREVENTS IMAGE DESCRIPTIONS 🛑
-async function processImageText(){ 
-    if(!capturedImage) return; 
-    setStatusLoading("imageStatus", "Extracting..."); 
-    document.getElementById("imageStatus").style.display = "block"; 
+// 🛑 MULTI-IMAGE CHAT TRANSLATOR ENGINE 🛑
+function renderTransImagePreviews() {
+    const container = document.getElementById("imagePreviewContainer");
+    if (!container) return;
+    if (transImages.length === 0) { container.style.display = "none"; return; }
     
-    try { 
-        const ocrPrompt = `You are a pure OCR (Optical Character Recognition) machine. 
-        Your ONLY job is to extract the exact text written in the image. 
-        1. DO NOT describe the image visually (e.g., NEVER say "A person is holding a book").
-        2. Extract and output the text EXACTLY in the original language it is written in. DO NOT translate it.
-        3. DO NOT answer questions in the text. Just return the raw text.
-        4. If there is no text visible, reply with "No text found."`;
-        
-        const r = await callGeminiVision(capturedImage, ocrPrompt); 
-        document.getElementById("imageExtractedText").value = r.replace(/[\*&#_]/g, '').trim(); 
-        document.getElementById("imageStatus").innerHTML = "✅ Extraction Complete."; 
-    } catch(e) { 
-        document.getElementById("imageStatus").innerHTML = "❌ " + e.message; 
-    } 
+    container.style.display = "flex";
+    container.innerHTML = transImages.map((img, index) => `
+        <div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;">
+            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeTransImage(${index}, event)">✕</div>
+        </div>
+    `).join('');
 }
 
-async function translateExtractedText(){ 
-    const txt = document.getElementById("imageExtractedText").value.trim(); const lang = document.getElementById("imageTargetLang").value; if(!txt) return; document.getElementById("translatedImageText").innerText = "Translating..."; 
-    try { 
+function removeTransImage(index, event) {
+    if(event) event.stopPropagation();
+    transImages.splice(index, 1);
+    renderTransImagePreviews();
+}
+
+async function executeImageTransFlow() {
+    if (transImages.length === 0) return showToast("Please click ➕ to attach at least 1 image!");
+    const targetLang = document.getElementById("chatTargetLang").value;
+    
+    const c = getActiveChatContainer("imageChatHistory");
+    let imgsHtml = transImages.map(img => `<img src="${img}" class="bubble-img" onclick="viewPhotoFullscreen(this.src)" style="width:70px; height:70px; object-fit:cover; display:inline-block; margin-right:5px; border-radius:8px;">`).join('');
+    
+    c.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${imgsHtml}<div style="margin-top:8px;">Translate to <b>${targetLang}</b></div></div></div>`);
+    scrollToBottom("imageScrollArea");
+    
+    let lId = appendAiLoading("imageChatHistory");
+    
+    // Backup and clear UI immediately
+    let imagesToProcess = [...transImages];
+    transImages = [];
+    renderTransImagePreviews();
+    
+    try {
+        // Step 1: Extract Text strictly
+        let combinedText = "";
+        for (let i = 0; i < imagesToProcess.length; i++) {
+            const r = await callGeminiVision(imagesToProcess[i], "You are an OCR machine. Extract ONLY the exact text from this image in its original language. DO NOT describe the image. DO NOT translate.");
+            combinedText += r.replace(/[\*&#_]/g, '') + "\n\n";
+        }
+        combinedText = combinedText.trim();
+        
+        if (!combinedText || combinedText.toLowerCase().includes("no text found")) throw new Error("Could not detect any text in the images.");
+
+        // Step 2: Strict Translation & Dictionary
         let prompt = `You are a STRICT Language Translator.
-        RULE 1: DO NOT answer any questions found in the text. DO NOT summarize.
-        RULE 2: ONLY TRANSLATE the text exactly into ${lang}.
+        RULE 1: DO NOT answer any questions found in the text.
+        RULE 2: ONLY TRANSLATE the text exactly into ${targetLang}.
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
-        RULE 4: Below "|||", extract 3 to 5 difficult words from the original text and provide their meanings in HINDI.
+        RULE 4: Below "|||", extract 3 to 5 difficult words from the original text and provide their meanings in HINDI. Format as "Word - Meaning".
         Text to translate:
-        ${txt}`;
+        ${combinedText}`;
         
         let t = await callGeminiText("You are a strict translator.", prompt); 
         
@@ -505,22 +468,36 @@ async function translateExtractedText(){
         let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
         let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
         
-        const tId = "img_trans_" + Date.now();
-        document.getElementById("translatedImageText").innerHTML = `
-            <div id="${tId}">${cleanText}</div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
-            </div>`; 
+        // Step 3: Render All-In-One Response
+        let finalHtml = `
+            <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
+            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div>
             
-        let hwDiv = document.getElementById("hardWords");
-        if(hwDiv) hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
+            <div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${targetLang}:</div>
+            <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
+            
+            <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words (Hindi Meaning):</div>
+            <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
+        `;
         
-        saveToHistory('image_translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, capturedImage); 
-    } catch(e) { document.getElementById("translatedImageText").innerText = "❌ " + e.message; } 
+        const loadingBubble = document.getElementById(lId);
+        if (loadingBubble) {
+            const bbl = loadingBubble.querySelector('.bubble');
+            bbl.innerHTML = finalHtml;
+            bbl.insertAdjacentHTML('beforeend', `
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+                    <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+                </div>
+            `);
+        }
+        
+        saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0]); 
+        
+    } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- DOCUMENT QA (STRICT OCR & HINDI ANSWERS) ---
+// --- DOCUMENT QA ---
 function compressImg(file) { return new Promise((res) => { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let w = img.width, h = img.height; if(w>1500||h>1500) { if(w>h){h*=1500/w;w=1500;}else{w*=1500/h;h=1500;} } canvas.width=w; canvas.height=h; canvas.getContext("2d").drawImage(img,0,0,w,h); res(canvas.toDataURL("image/jpeg",0.7)); }; img.src = e.target.result; }; reader.readAsDataURL(file); }); }
 function updateQaCount() { document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`; document.getElementById('extractBtn_qa').disabled = qaImages.length === 0; }
 function clearQaImages() { qaImages = []; updateQaCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Context will appear here..."; }
@@ -530,8 +507,7 @@ async function extractMultiImages() {
     if(qaImages.length===0) return; setStatusLoading("qaStatus", "Reading Doc..."); document.getElementById("qaStatus").style.display = "block"; qaContextText = ""; 
     for(let i=0; i<qaImages.length; i++) { 
         try { 
-            const ocrPrompt = `You are an OCR machine. Extract ONLY the text from this page exactly in its original language. DO NOT describe the image visually. DO NOT translate.`;
-            const r = await callGeminiVision(qaImages[i], ocrPrompt); 
+            const r = await callGeminiVision(qaImages[i], "You are an OCR machine. Extract ONLY the text from this page exactly in its original language. DO NOT describe the image visually. DO NOT translate."); 
             if(r) qaContextText += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, ''); 
         } catch(e) {} 
     } 
@@ -553,7 +529,7 @@ async function askDocument() {
     } catch(e) { document.getElementById('qaAnswerBox').innerText = "❌ " + e.message; } 
 }
 
-// --- RESTORED HISTORY SAVING & CLEAR ALL FIX ---
+// --- RESTORED HISTORY SAVING ---
 function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
 function saveToHistory(type, q, a, img = null) { appHistory.unshift({ id: Date.now(), type, title: q.substring(0,25)||'Saved', question: q, answer: a, image: img }); saveHistorySafe(); }
 
@@ -576,12 +552,7 @@ function renderHistory() {
 }
 
 function clearAllHistory() {
-    if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) {
-        appHistory = [];
-        saveHistorySafe();
-        renderHistory();
-        showToast("🗑️ All history has been cleared!");
-    }
+    if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) { appHistory = []; saveHistorySafe(); renderHistory(); showToast("🗑️ All history has been cleared!"); }
 }
 
 function deleteHistoryItem(e, id) { e.stopPropagation(); appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); showToast("Deleted successfully."); }
@@ -620,18 +591,22 @@ function restoreSession(e, id) {
         let containerId = item.type === 'math' ? "mathChatHistory" : "searchChatHistory";
         document.getElementById(containerId).innerHTML = ''; 
         appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); 
-        updateAiBubble(lId, item.answer); 
+        let lId = appendAiLoading(containerId); updateAiBubble(lId, item.answer); 
     } else if (item.type === 'translation' && document.getElementById("inputText")) {
         document.getElementById("inputText").value = item.question;
         document.getElementById("translatedText").innerHTML = item.answer.replace(/\n/g, '<br>');
-    } else if (item.type === 'image_translation' && document.getElementById("imageExtractedText")) {
-        document.getElementById("imageExtractedText").value = item.question;
-        document.getElementById("translatedImageText").innerHTML = item.answer.replace(/\n/g, '<br>');
-        if(item.image) {
-             capturedImage = item.image;
-             document.getElementById("imageStatus").style.display="block"; 
-             document.getElementById("imageStatus").innerText="📸 Restored Photo";
+    } else if (item.type === 'image_translation' && document.getElementById("imageChatHistory")) {
+        let containerId = "imageChatHistory";
+        document.getElementById(containerId).innerHTML = ''; 
+        appendUserBubble(item.question, item.image, containerId); 
+        let lId = appendAiLoading(containerId); 
+        const bbl = document.getElementById(lId).querySelector('.bubble');
+        
+        // Handles both old plain-text saves and new HTML-formatted saves
+        if (item.answer.includes('<div')) {
+            bbl.innerHTML = item.answer;
+        } else {
+            bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`;
         }
     }
     showToast("🔄 Session Restored");
@@ -663,9 +638,16 @@ function capturePhoto(){
         const chip = document.getElementById("mathPreviewChip"); 
         if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
     }
+    else if (currentMode === 'image_trans') {
+        if(transImages.length >= 3) {
+            showToast("Maximum 3 images allowed!");
+        } else {
+            transImages.push(capturedImage);
+            renderTransImagePreviews();
+        }
+    }
     else if (currentMode === 'qa') { qaImages.push(capturedImage); updateQaCount(); }
-    else if (currentMode === 'translate') { document.getElementById("imageStatus").style.display="block"; document.getElementById("imageStatus").innerText="📸 Captured!"; document.getElementById("extractBtn_trans").disabled=false; }
     closeCamera(); 
 }
 
-window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.processImageText = processImageText; window.translateExtractedText = translateExtractedText; window.handleMultiUpload = handleMultiUpload; window.clearQaImages = clearQaImages; window.extractMultiImages = extractMultiImages; window.askDocument = askDocument; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen;
+window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.askDocument = askDocument; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow;
