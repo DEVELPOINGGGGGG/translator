@@ -7,6 +7,7 @@ const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
+// 🛑 THE MASTER WATERFALL HIERARCHY 🛑
 const VISION_PROVIDERS = [
     { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_1 },
     { type: 'gemini', key: process.env.GEMINI_API_KEY_VISION_2 },
@@ -62,6 +63,9 @@ async function tryProviders(providers, requestFn, override = null) {
     throw lastError;
 }
 
+// ==========================================
+// TEXT ENDPOINT
+// ==========================================
 async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -73,11 +77,15 @@ async function handleGeminiText(req, res) {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                
+                // 🛑 HARDCODED TO 1.5-FLASH FOR 1,500 DAILY LIMIT 🛑
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); return data.candidates[0].content.parts[0].text;
+            
             } else if (p.type === 'cloudflare') {
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.1-70b-instruct", messages: [ { role: "system", content: sysText || "You are a helpful study assistant." }, { role: "user", content: userText } ] }) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Text Engine failed"); return data.choices[0].message.content;
+            
             } else {
                 const messages = []; if (sysText) messages.push({ role: "system", content: sysText }); messages.push({ role: "user", content: userText });
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages }) });
@@ -88,6 +96,9 @@ async function handleGeminiText(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// VISION ENDPOINT (Perfect OCR)
+// ==========================================
 async function handleGeminiVision(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -102,12 +113,14 @@ async function handleGeminiVision(req, res) {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ parts: [{ text: userText }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 
-                // 🛑 UPGRADED TO GEMINI-1.5-PRO FOR FLAWLESS OCR 🛑
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // 🛑 HARDCODED TO 1.5-FLASH FOR 1,500 DAILY LIMIT 🛑
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); return data.candidates[0].content.parts[0].text;
+            
             } else if (p.type === 'cloudflare') {
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.2-11b-vision-instruct", messages: [{ role: "user", content: [{ type: "text", text: userText }, { type: "image_url", image_url: { url: formattedBase64 } }] }] }) });
                 const data = await response.json(); if (!response.ok) throw new Error("Cloudflare Vision failed"); return data.choices[0].message.content;
+            
             } else {
                 let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
                 let data = await response.json(); 
@@ -119,6 +132,9 @@ async function handleGeminiVision(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// SEARCH ENDPOINT
+// ==========================================
 async function handleGroqSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -130,12 +146,16 @@ async function handleGroqSearch(req, res) {
             if (p.type === 'groq') {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "system", content: sysText }, { role: "user", content: userText }] }) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Groq Search failed"); return data.choices[0].message.content;
+            
             } else if (p.type === 'cloudflare') {
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.1-70b-instruct", messages: [{ role: "system", content: sysText }, { role: "user", content: userText }] }) });
                 const data = await response.json(); if (!response.ok) throw new Error("Cloudflare search backend failed"); return data.choices[0].message.content;
+            
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                
+                // 🛑 HARDCODED TO 1.5-FLASH FOR 1,500 DAILY LIMIT 🛑
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); return data.candidates[0].content.parts[0].text;
             }
         }, override);
