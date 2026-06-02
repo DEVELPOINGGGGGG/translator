@@ -1,14 +1,18 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V46 - STRICT DICTIONARY FIX)
+   AI PRO SUITE - THE ULTIMATE BUILD (V47 - 4-STEP Q&A FLOW)
 ======================================================= */
 
 let appHistory = [];
 try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
 
 let apiTime = 60, visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
-let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
+let isProcessing = false, capturedImage = null, currentMode = "", transImages = [], isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
+
+// QA Variables
+let qaSourceImages = [];
+let qaQuestionImage = null;
 
 // Video Player Variables
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
@@ -33,8 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const buttons = [ 
         {id: "sendMathBtn", fn: executeMathFlow}, 
         {id: "sendSearchBtn", fn: runGroqSearch}, 
-        {id: "sendQaBtn", fn: askDocument}, 
-        {id: "askQaBtn", fn: askDocument},
         {id: "sendImageTransBtn", fn: executeImageTransFlow} 
     ];
     buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
@@ -497,71 +499,143 @@ async function executeImageTransFlow() {
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-async function translateExtractedText(){ 
-    const txt = document.getElementById("imageExtractedText").value.trim(); const lang = document.getElementById("imageTargetLang").value; if(!txt) return; document.getElementById("translatedImageText").innerText = "Translating..."; 
-    try { 
-        let prompt = `You are a STRICT Language Translator.
-        RULE 1: DO NOT answer any questions found in the text.
-        RULE 2: ONLY TRANSLATE the text exactly into ${lang}.
-        RULE 3: After your translation, write the exact symbol "|||" on a new line.
-        RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
-        RULE 5: Format EACH hard word EXACTLY like this: [Original Word] - [Hindi Meaning] (Part of Speech) other meaning- [Alternative meanings in Hindi].
-        Example: cat - बिल्ली (noun) other meaning- मार्जार, बिलाव
-        Text to translate:
-        ${txt}`;
+// 🛑 4-STEP DOCUMENT QA ENGINE 🛑
+function renderQaSourcePreviews() {
+    const count = document.getElementById("qaSourceCount"); 
+    if(count) count.innerText = qaSourceImages.length;
+    
+    const container = document.getElementById("qaSourcePreviews"); 
+    if(!container) return;
+    
+    container.innerHTML = qaSourceImages.map((img, i) => `
+        <div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;">
+            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaSource(${i}, event)">✕</div>
+        </div>
+    `).join('');
+}
+
+function removeQaSource(index, event) {
+    if(event) event.stopPropagation(); 
+    qaSourceImages.splice(index, 1); 
+    renderQaSourcePreviews();
+}
+
+function renderQaQuestionPreview() {
+    const container = document.getElementById("qaQuestionPreview"); 
+    if(!container) return;
+    
+    if(!qaQuestionImage) { container.innerHTML = ""; return; }
+    
+    container.innerHTML = `
+        <div class="image-preview-chip" style="display:block; position:relative; width:80px; height:80px; background-image:url(${qaQuestionImage}); background-size:cover; border-radius:8px; flex-shrink:0;">
+            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaQuestion(event)">✕</div>
+        </div>
+    `;
+}
+
+function removeQaQuestion(event) {
+    if(event) event.stopPropagation(); 
+    qaQuestionImage = null; 
+    renderQaQuestionPreview();
+}
+
+function clearQaSession() {
+    qaSourceImages = [];
+    qaQuestionImage = null;
+    document.getElementById("qaQuestionInput").value = "";
+    document.getElementById("qaAnswerBox").innerHTML = "Solution will appear here...";
+    document.getElementById("qaProgressBar").style.width = "0%";
+    document.getElementById("qaStatusText").innerText = "Ready to start.";
+    renderQaSourcePreviews();
+    renderQaQuestionPreview();
+    showToast("🔄 Session Reset");
+}
+
+async function executeQaFlow() {
+    if (qaSourceImages.length === 0) return showToast("⚠️ Please add at least 1 source document image.");
+    
+    let typedQuestion = document.getElementById("qaQuestionInput").value.trim();
+    if (!typedQuestion && !qaQuestionImage) return showToast("⚠️ Please type a question or take a photo of it.");
+    
+    const targetLang = document.getElementById("qaTargetLang").value;
+    const statusTxt = document.getElementById("qaStatusText");
+    const pBar = document.getElementById("qaProgressBar");
+    const outBox = document.getElementById("qaAnswerBox");
+    
+    outBox.innerHTML = "";
+    pBar.style.width = "5%";
+    pBar.style.background = "#3b82f6"; // Reset to blue just in case it was red
+    
+    try {
+        let extractedContext = "";
         
-        let t = await callGeminiText("You are a strict translator.", prompt); 
-        
-        let parts = t.split('|||');
-        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
-        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
-        
-        const tId = "img_trans_" + Date.now();
-        document.getElementById("translatedImageText").innerHTML = `
-            <div id="${tId}">${cleanText}</div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
-            </div>`; 
+        // Loop through sources and extract OCR
+        for(let i=0; i<qaSourceImages.length; i++) {
+            statusTxt.innerText = `Reading Source Page ${i+1} of ${qaSourceImages.length}...`;
+            pBar.style.width = `${10 + ((i / qaSourceImages.length) * 40)}%`; 
             
-        let hwDiv = document.getElementById("hardWords");
-        if(hwDiv) hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
+            let r = await callGeminiVision(qaSourceImages[i], "Extract all text exactly as written. Do not translate. Do not describe the image visually.");
+            extractedContext += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, '');
+        }
         
-        saveToHistory('image_translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, capturedImage); 
-    } catch(e) { document.getElementById("translatedImageText").innerText = "❌ " + e.message; } 
+        // Combine Typed Question & Image Question
+        let finalQuestion = typedQuestion;
+        if (qaQuestionImage) {
+            statusTxt.innerText = "Extracting Question from Image...";
+            pBar.style.width = "65%";
+            let r = await callGeminiVision(qaQuestionImage, "Extract ONLY the question text exactly as written. Do not answer it.");
+            let qText = r.replace(/[\*&#_]/g, '').trim();
+            finalQuestion = typedQuestion ? `${typedQuestion}\n(Image Text: ${qText})` : qText;
+        }
+        
+        // Solve the problem
+        statusTxt.innerText = `Solving... Generating answer in ${targetLang}`;
+        pBar.style.width = "85%";
+        
+        let prompt = `You are an expert Document Assistant.
+        
+        DOCUMENT TEXT:
+        ${extractedContext}
+        
+        QUESTION:
+        ${finalQuestion}
+        
+        INSTRUCTION: Answer the question based ONLY on the Document Text. 
+        You MUST write your entire answer in ${targetLang}. 
+        If the answer cannot be found in the provided text, state that clearly in ${targetLang}.`;
+        
+        let ans = await callGeminiText("You are a helpful document assistant.", prompt);
+        let cleanAns = ans.replace(/[\*&#_]/g, '');
+        
+        pBar.style.width = "100%";
+        statusTxt.innerText = "✅ Done!";
+        
+        const aId = "qa_ans_" + Date.now();
+        
+        outBox.innerHTML = `
+            <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
+            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div>
+            
+            <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div>
+            <div id="${aId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
+            
+            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+                <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${aId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${aId}')">📋 Copy</button>
+            </div>
+        `;
+        
+        if (window.MathJax) { MathJax.typesetClear([outBox]); MathJax.typesetPromise([outBox]); }
+        
+        saveToHistory('qa', finalQuestion, outBox.innerHTML, qaSourceImages[0]);
+        
+    } catch(e) {
+        statusTxt.innerText = "❌ Error Occurred";
+        pBar.style.background = "var(--red)";
+        outBox.innerHTML = "Error: " + e.message;
+    }
 }
 
-// --- DOCUMENT QA ---
-function compressImg(file) { return new Promise((res) => { const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let w = img.width, h = img.height; if(w>1500||h>1500) { if(w>h){h*=1500/w;w=1500;}else{w*=1500/h;h=1500;} } canvas.width=w; canvas.height=h; canvas.getContext("2d").drawImage(img,0,0,w,h); res(canvas.toDataURL("image/jpeg",0.7)); }; img.src = e.target.result; }; reader.readAsDataURL(file); }); }
-function updateQaCount() { document.getElementById('fileListDisplay').innerText = `${qaImages.length} pages ready`; document.getElementById('extractBtn_qa').disabled = qaImages.length === 0; }
-function clearQaImages() { qaImages = []; updateQaCount(); document.getElementById('qaStatus').innerText = "Ready"; qaContextText = ""; document.getElementById('qaContextBox').innerText = "Context will appear here..."; }
-async function handleMultiUpload(e) { const files = e.target.files; for(let i=0; i<files.length; i++) { qaImages.push(await compressImg(files[i])); } updateQaCount(); }
-
-async function extractMultiImages() { 
-    if(qaImages.length===0) return; setStatusLoading("qaStatus", "Reading Doc..."); document.getElementById("qaStatus").style.display = "block"; qaContextText = ""; 
-    for(let i=0; i<qaImages.length; i++) { 
-        try { 
-            const r = await callGeminiVision(qaImages[i], "You are an OCR machine. Extract ONLY the text from this page exactly in its original language. DO NOT describe the image visually. DO NOT translate."); 
-            if(r) qaContextText += `\n--- PAGE ${i+1} ---\n` + r.replace(/[\*&#_]/g, ''); 
-        } catch(e) {} 
-    } 
-    document.getElementById('qaContextBox').innerText = qaContextText ? qaContextText.substring(0, 300) + "..." : "No text found."; document.getElementById('qaStatus').innerText = "✅ Read Successfully!"; 
-}
-
-async function askDocument() { 
-    const q = document.getElementById('qaQuestionInput').value; if(!q || !qaContextText) return; document.getElementById("qaAnswerBox").innerHTML = '<div class="spinner"></div> Analyzing...'; 
-    try { 
-        let a = await callGeminiText("You are a helpful document assistant.", `Document Text:\n${qaContextText}\n\nQuestion: ${q}\n\nINSTRUCTION: Answer the question based ONLY on the document text. YOU MUST WRITE YOUR ENTIRE ANSWER IN HINDI.`); 
-        const clean = a.replace(/[\*&#_]/g,''); const aId = "qa_ans_"+Date.now(); 
-        document.getElementById('qaAnswerBox').innerHTML = `
-            <div id="${aId}">${clean}</div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${aId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${aId}')">📋 Copy</button>
-            </div>`; 
-        saveToHistory('qa', q, clean, null); 
-    } catch(e) { document.getElementById('qaAnswerBox').innerText = "❌ " + e.message; } 
-}
 
 // --- RESTORED HISTORY SAVING ---
 function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
@@ -635,9 +709,11 @@ function restoreSession(e, id) {
         appendUserBubble(item.question, item.image, containerId); 
         let lId = appendAiLoading(containerId); 
         const bbl = document.getElementById(lId).querySelector('.bubble');
-        
-        if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } 
-        else { bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`; }
+        if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } else { bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`; }
+    } else if (item.type === 'qa' && document.getElementById("qaAnswerBox")) {
+        document.getElementById("qaAnswerBox").innerHTML = item.answer;
+        document.getElementById("qaProgressBar").style.width = "100%";
+        document.getElementById("qaStatusText").innerText = "Restored from History";
     }
     showToast("🔄 Session Restored");
 }
@@ -672,8 +748,14 @@ function capturePhoto(){
         if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } 
         else { transImages.push(capturedImage); renderTransImagePreviews(); }
     }
-    else if (currentMode === 'qa') { qaImages.push(capturedImage); updateQaCount(); }
+    else if (currentMode === 'qa_source') {
+        if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); }
+        else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
+    }
+    else if (currentMode === 'qa_question') {
+        qaQuestionImage = capturedImage; renderQaQuestionPreview();
+    }
     closeCamera(); 
 }
 
-window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.askDocument = askDocument; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow;
+window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow;
