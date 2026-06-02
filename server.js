@@ -46,24 +46,53 @@ function readRequestBody(req) {
     }); 
 }
 
+// Add a global counter outside the function to track requests for Load Balancing
+let globalRequestCounter = 0;
+
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
-    let targetProviders = providers;
+    let targetProviders = [...providers]; // Copy the array so we don't modify the original
     
     if (override) {
-        targetProviders = providers.filter(p => p.type.toLowerCase() === override.toLowerCase());
+        targetProviders = targetProviders.filter(p => p.type.toLowerCase() === override.toLowerCase());
         if(targetProviders.length === 0) throw new Error(`Model ${override} is not configured on the server.`);
     } else {
-        if (providers.length === 0) throw new Error("No operational API keys found inside server config!");
+        if (targetProviders.length === 0) throw new Error("No operational API keys found inside server config!");
+
+        // --- ROUND ROBIN GEMINI LOAD BALANCING ---
+        // 1. Find all the Gemini providers in the current list
+        const geminis = targetProviders.filter(p => p.type === 'gemini');
+        
+        // 2. If we have multiple Gemini keys, rotate them based on the request count
+        if (geminis.length > 1) {
+            const rotations = globalRequestCounter % geminis.length;
+            
+            // Shift the array so it starts from a new key each time
+            const rotatedGeminis = [...geminis.slice(rotations), ...geminis.slice(0, rotations)];
+
+            // 3. Put the rotated keys back into the target array, keeping CF and Groq at the bottom
+            let gIdx = 0;
+            targetProviders = targetProviders.map(p => {
+                if (p.type === 'gemini') {
+                    return rotatedGeminis[gIdx++];
+                }
+                return p;
+            });
+        }
+        
+        // 4. Increment the counter so the next request uses the next API key
+        globalRequestCounter++;
     }
-    
+
+    // --- EXECUTE WATERFALL ---
     for (const p of targetProviders) { 
         try { 
             const textResult = await requestFn(p);
             return { text: textResult, provider: p.type.toUpperCase() }; 
         } catch (error) { 
             lastError = error; 
-            console.log(`[Engine Fail] ${p.type.toUpperCase()} failed. Error: ${error.message}`); 
+            // Logs which specific API failed so you can track it in your terminal
+            console.log(`[Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
         } 
     }
     throw lastError;
