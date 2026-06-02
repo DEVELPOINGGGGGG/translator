@@ -6,252 +6,39 @@
     <title>AI Pro Suite - Image Translator</title>
     
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0a0a0a">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* =========================================================
-           AI PRO SUITE - PREMIUM UNIVERSAL UI
-           (Exact Match to Maths.html - Dark Mode + Colored Orbs)
-        ========================================================= */
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            background-color: #0a0a0a; color: #ffffff; min-height: 100vh; overflow: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15), transparent 40%),
-                radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.15), transparent 40%),
-                radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15), transparent 40%);
-            background-attachment: fixed;
-            animation: breatheBg 12s infinite alternate ease-in-out;
-        }
-
-        @keyframes breatheBg {
-            0% { background-size: 100% 100%; background-position: 0% 0%; filter: hue-rotate(0deg); }
-            100% { background-size: 120% 120%; background-position: 100% 100%; filter: hue-rotate(15deg); }
-        }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-
-        /* --- TOP NAV & TRACKER --- */
-        .topbar {
-            position: fixed; top: 0; left: 0; right: 0; height: 70px; display: flex; align-items: center; padding: 0 25px;
-            background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 100;
-        }
-        .menuBtn {
-            font-size: 24px; color: #fff; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; transition: 0.2s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1);
-        }
-        .menuBtn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
-        .appTitle { font-size: 20px; font-weight: 700; margin-left: 20px; letter-spacing: -0.5px; }
-
-        .apiTracker {
-            position: fixed; top: 70px; left: 0; right: 0; height: 35px;
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px); z-index: 99; display: flex; justify-content: space-evenly; align-items: center;
-            font-size: 12px; font-weight: 500; color: #a1a1aa; border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .api-val { font-weight: 700; font-size: 13px; }
-        .api-val.timer { color: #3b82f6; } .api-val.vision { color: #a855f7; } .api-val.text { color: #34d399; }
-
-        /* --- SIDEBAR --- */
-        .sidebar {
-            position: fixed; top: 0; left: -320px; width: 300px; height: 100%;
-            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.08); z-index: 999;
-            padding: 90px 20px 20px 20px; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .sidebar.active { left: 0; }
-        .sidebar button {
-            width: 100%; background: transparent; border: 1px solid transparent; color: #a1a1aa; padding: 14px 18px; font-size: 15px; font-weight: 500;
-            text-align: left; cursor: pointer; border-radius: 12px; margin-bottom: 8px; transition: all 0.2s;
-        }
-        .sidebar button:hover { background: rgba(255, 255, 255, 0.03); color: #fff; transform: translateX(5px); }
-        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 998; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .overlay.active { opacity: 1; pointer-events: auto; }
-
-        /* --- STRICT CHAT LAYOUT FIX --- */
-        .chat-page-layout {
-            display: flex !important;
-            flex-direction: column !important;
-            position: absolute;
-            top: 105px; 
-            bottom: 0; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 800px;
-            padding: 0 !important;
-            overflow: hidden;
-            animation: slideUpFade .5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        
-        @keyframes slideUpFade { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-
-        .chat-scroll-area { 
-            flex: 1 1 auto; 
-            overflow-y: auto; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column;
-            width: 100%;
-        }
-        
-        .card {
-            background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 25px;
-            backdrop-filter: blur(10px); color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            width: 100%;
-        }
-
-        /* --- INPUT & BUTTONS --- */
-        .chat-input-area {
-            flex: 0 0 auto;
-            width: 100%;
-            padding: 20px; background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 50;
-        }
-        .chat-input-wrapper {
-            display: flex; align-items: center; background: rgba(255,255,255,0.03); border-radius: 24px;
-            padding: 8px 12px; gap: 12px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s box-shadow;
-            width: 100%;
-        }
-        .chat-input-wrapper:focus-within { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.5); }
-        
-        /* Select Dropdown styling to match the theme */
-        select#chatTargetLang {
-            background: rgba(10, 10, 10, 0.8) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: white !important;
-            border-radius: 14px !important; padding: 12px 15px !important; outline: none !important; font-family: 'Inter', sans-serif !important;
-            font-weight: 500 !important; cursor: pointer; transition: 0.3s !important;
-        }
-        select#chatTargetLang:focus { border-color: rgba(99, 102, 241, 0.5) !important; }
-        select#chatTargetLang option { background: #1a1a1a !important; color: white !important; }
-
-        .chat-action-btn {
-            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-            border: 1px solid rgba(255,255,255,0.1); color: white;
-            min-width: 44px; width: 44px; height: 44px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); font-size: 18px; margin-bottom: 0px;
-            flex-shrink: 0;
-        }
-        .chat-action-btn:hover { transform: scale(1.1) rotate(5deg); background: rgba(255,255,255,0.1); }
-        .chat-action-btn:active { transform: scale(0.9); }
-
-        .btn.blue#sendImageTransBtn {
-            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
-            background-size: 200% 200%;
-            animation: smoothColorBtn 3s ease infinite;
-            border: none; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
-            margin: 0; border-radius: 16px; font-family: 'Inter', sans-serif; font-weight: 600;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn.blue#sendImageTransBtn:hover { box-shadow: 0 8px 25px rgba(168, 85, 247, 0.6); transform: translateY(-2px) scale(1.05); }
-        
-        @keyframes smoothColorBtn {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .btn-spinner {
-            width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white;
-            border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
-        }
-        .btn.blue#sendImageTransBtn.is-sending .btn-spinner { display: block; }
-        .btn.blue#sendImageTransBtn.is-sending span { display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* --- CHAT BUBBLES --- */
-        .chat-msg { margin-bottom: 20px; display: flex; flex-direction: column; width: 100%; clear: both; animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
-        @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
-        .chat-user { align-items: flex-end; } .chat-ai { align-items: flex-start; }
-        .bubble { max-width: 85%; padding: 14px 18px; border-radius: 20px; line-height: 1.6; font-size: 15px; position: relative; overflow-x: auto; backdrop-filter: blur(10px); }
-        .chat-user .bubble { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .chat-ai .bubble { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; color: #f4f4f5; }
-        .bubble-img { max-width: 100%; max-height: 200px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
-        .bubble-img:hover { transform: scale(1.02); }
-
-        .image-preview-chip { display: none; position: absolute; top: -70px; left: 20px; width: 60px; height: 60px; border-radius: 12px; border: 2px solid #a855f7; background-size: cover; background-position: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 10; cursor: pointer; animation: popIn 0.3s ease forwards; }
-        .image-preview-close { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-
-        /* --- CAMERA & MODALS --- */
-        .cameraModal, .photoViewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 5000; flex-direction: column; backdrop-filter: blur(15px); }
-        .cameraModal.active, .photoViewer.active { display: flex; animation: fadeIn 0.3s forwards; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .cameraHeader { height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 25px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); position: absolute; top: 0; width: 100%; z-index: 2; }
-        .cameraHeader button { background: none; border: none; color: white; font-size: 26px; cursor: pointer; }
-        .cameraVideo { width: 100%; height: 100%; object-fit: cover; }
-        .cameraControls { min-height: 120px; display: flex; justify-content: center; align-items: center; gap: 40px; position: absolute; bottom: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding-bottom: 30px; z-index: 2; }
-        
-        .cameraCircle {
-            width: 80px; height: 80px; border-radius: 50%; border: 4px solid white;
-            background: rgba(255,255,255,0.2); box-shadow: 0 0 20px rgba(255,255,255,0.3);
-            cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .cameraCircle:hover { background: rgba(255,255,255,0.4); transform: scale(1.05); }
-        .cameraCircle:active { transform: scale(0.9); background: white; box-shadow: 0 0 40px white; }
-        .switchBtn, .flashBtn { width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px); transition: 0.2s; }
-        .switchBtn:hover, .flashBtn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
-        .closeBtn { width: 45px; height: 45px; border: none; border-radius: 50%; background: rgba(255,255,255,0.1); color: white; font-size: 20px; cursor: pointer; transition: 0.2s; }
-
-        #shutterFlashOverlay {
-            position: fixed; inset: 0; background: white; z-index: 9999;
-            opacity: 0; pointer-events: none;
-        }
-        .trigger-flash { animation: flashAnim 0.6s ease-out forwards; }
-        @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-        /* --- NOTIFICATION TOAST --- */
-        #toastContainer {
-            position: fixed; top: 85px; left: 50%; transform: translateX(-50%);
-            z-index: 10000; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none;
-        }
-        .ui-toast {
-            background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(15px);
-            border: 1px solid rgba(168, 85, 247, 0.4); color: white;
-            padding: 12px 24px; border-radius: 50px; font-size: 14px; font-weight: 500;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(168, 85, 247, 0.15);
-            animation: toastSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards, toastFadeOut 0.4s ease 2.6s forwards;
-        }
-        @keyframes toastSlideDown { from { opacity: 0; transform: translateY(-20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes toastFadeOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-10px) scale(0.9); } }
-    </style>
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-<!-- Flash Overlay for Camera -->
-<div id="shutterFlashOverlay"></div>
-
-<!-- Notification Container -->
-<div id="toastContainer"></div>
+<div class="overlay" id="overlay"></div>
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
 </div>
 <div class="apiTracker">
-    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
+    <div>⏱️ <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: #fff;">🖼️ Image Translator</button>
+  <button onclick="window.location.href='image.html'" style="border-left: 4px solid #a855f7; color: #d8b4fe; background: #111827;">🖼️ Image Translator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
 </div>
 
-<div class="chat-page-layout" id="imagePage">
+<div class="page active chat-page-layout" id="imagePage">
   <div class="chat-scroll-area" id="imageScrollArea">
-    <div class="card" style="background:linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(126, 34, 206, 0.1)); border: 1px solid rgba(168, 85, 247, 0.3); text-align:center; margin-bottom: 20px; flex-shrink: 0;">
+    <div class="card" style="background:linear-gradient(135deg,#a855f7,#7e22ce); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
         <h1 style="font-size: 24px;">🖼️ Image Translator</h1>
-        <p style="font-size: 14px; color: #a1a1aa; margin-top: 5px;">Translate up to 3 pages at once.</p>
+        <p style="font-size: 14px; opacity: 0.9;">Translate up to 3 pages at once.</p>
     </div>
     
     <div id="imageChatHistory">
@@ -267,7 +54,7 @@
     <div class="chat-input-wrapper" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 5px;">
         <button class="chat-action-btn" id="openImageCameraBtn" title="Take Photo" onclick="openCamera('image_trans')" style="flex-shrink: 0;">➕</button>
         
-        <select id="chatTargetLang" style="flex: 1;">
+        <select id="chatTargetLang" style="flex: 1; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); outline: none; font-family: 'Poppins', sans-serif;">
             <option value="Hindi">Target: Hindi</option>
             <option value="English">Target: English</option>
             <option value="French">Target: French</option>
@@ -276,21 +63,18 @@
             <option value="Japanese">Target: Japanese</option>
         </select>
         
-        <button class="btn blue" id="sendImageTransBtn" onclick="executeImageTransFlow()" style="margin:0; padding: 12px 20px; flex-shrink: 0;">
-            <span>Convert</span>
-            <div class="btn-spinner"></div>
-        </button>
+        <button class="btn blue" id="sendImageTransBtn" onclick="executeImageTransFlow()" style="margin:0; padding: 12px 20px; border-radius: 12px; white-space: nowrap; flex-shrink: 0;">Convert</button>
     </div>
   </div>
 </div>
 
 <div class="cameraModal" id="cameraModal">
-  <div class="cameraHeader"><button id="closeCameraBtn" onclick="closeCamera()">✕</button><div>Camera</div><div></div></div>
+  <div class="cameraHeader"><button id="closeCameraBtn">✕</button><div>Camera</div><div></div></div>
   <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
   <div class="cameraControls">
-    <button class="flashBtn" id="toggleFlashBtn" onclick="toggleFlash()">🔦</button>
-    <button class="cameraCircle" id="capturePhotoBtn" onclick="capturePhotoAndFlash()"></button>
-    <button class="switchBtn" id="switchCameraBtn" onclick="switchCamera()">🔄</button>
+    <button class="flashBtn" id="toggleFlashBtn">🔦</button>
+    <button class="cameraCircle" id="capturePhotoBtn"></button>
+    <button class="switchBtn" id="switchCameraBtn">🔄</button>
   </div>
 </div>
 
@@ -302,52 +86,6 @@
 </div>
 
 <canvas id="captureCanvas" style="display:none;"></canvas>
-
-<!-- Visual Augmentation & Notification Script -->
-<script>
-    function showSysNotification(message) {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = 'ui-toast';
-        toast.innerText = message;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500); 
-    }
-
-    function toggleSidebar() { 
-        document.getElementById("sidebar").classList.toggle("active"); 
-        document.getElementById("overlay").classList.toggle("active"); 
-    }
-
-    // Attach animation to the convert button
-    document.getElementById('sendImageTransBtn').addEventListener('click', function() {
-        const previewContainer = document.getElementById('imagePreviewContainer');
-        // Only run animation if there are images attached (based on preview display)
-        if (previewContainer.style.display !== 'none' && previewContainer.innerHTML.trim() !== '') {
-            const btn = this;
-            btn.classList.add('is-sending');
-            showSysNotification('Extracting & Translating visual data...');
-            
-            // Revert animation after 3 seconds for visual effect
-            setTimeout(() => {
-                btn.classList.remove('is-sending');
-            }, 3000);
-        } else {
-            showSysNotification('⚠️ Please attach an image first.');
-        }
-    });
-
-    // Handle Camera Shutter Animation
-    function capturePhotoAndFlash() {
-        const overlay = document.getElementById('shutterFlashOverlay');
-        overlay.classList.remove('trigger-flash');
-        void overlay.offsetWidth;
-        overlay.classList.add('trigger-flash');
-        showSysNotification('Image loaded into memory.');
-        if(typeof capturePhoto === 'function') capturePhoto();
-    }
-</script>
-
 <script src="main.js" defer></script>
 </body>
 </html>
