@@ -8,7 +8,7 @@ const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
 // 🛑 THE MASTER WATERFALL HIERARCHY (GATLING GUN) 🛑
-// Added id property to track API numbers
+// Includes id property to track API numbers
 const VISION_PROVIDERS = [
     { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
     { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
@@ -47,8 +47,9 @@ function readRequestBody(req) {
     }); 
 }
 
-// Global counter outside the function to track requests for Load Balancing
+// Global counters for Load Balancing and Usage Tracking
 let globalRequestCounter = 0;
+const apiUsageStats = {}; // This stores the exact count for each API
 
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
@@ -82,12 +83,20 @@ async function tryProviders(providers, requestFn, override = null) {
     for (const p of targetProviders) { 
         try { 
             const textResult = await requestFn(p);
-            // Append the API number to the provider name if it exists (e.g., "GEMINI (API 2)")
+            
+            // Append the API number to the provider name (e.g., "GEMINI (API 2)")
             const providerName = p.type.toUpperCase() + (p.id ? ` (${p.id})` : "");
+            
+            // --- TRACK USAGE ---
+            apiUsageStats[providerName] = (apiUsageStats[providerName] || 0) + 1;
+            console.log(`✅ [SUCCESS] Handled by ${providerName}`);
+            console.log(`📊 [CURRENT USAGE]`, apiUsageStats);
+            // -------------------
+
             return { text: textResult, provider: providerName }; 
         } catch (error) { 
             lastError = error; 
-            console.log(`[Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
+            console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
         } 
     }
     throw lastError;
@@ -209,6 +218,12 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
         if (req.url === "/api/groq-search") return handleGroqSearch(req, res);
     }
+    
+    // 🛑 ENDPOINT FOR LIVE UI TRACKING 🛑
+    if (req.method === "GET" && req.url === "/api/usage") {
+        return sendJson(res, 200, apiUsageStats);
+    }
+
     if (req.method === "GET" || req.method === "HEAD") return serveStatic(req, res);
 });
 
