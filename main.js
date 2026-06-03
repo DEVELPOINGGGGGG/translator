@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V52 - STRICT OCR & PRO VISION)
+   AI PRO SUITE - THE ULTIMATE BUILD (V53 - STRICT HINDI & PT TIMER)
 ======================================================= */
 
 let appHistory = [];
@@ -27,60 +27,11 @@ CRITICAL INSTRUCTIONS:
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
 let videoElapsed = 0, videoTotalEst = 0, videoTickInterval, hideControlsTimer;
 
-// --- TTS & HINDI MATH VOICE CONFIGURATION ---
-let availableVoices = [];
+function loadVoices() { availableVoices = window.speechSynthesis.getVoices(); }
+window.speechSynthesis.onvoiceschanged = loadVoices;
 
-function loadVoices() {
-    availableVoices = window.speechSynthesis.getVoices();
-}
-if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = loadVoices;
-}
-
-function speakText(text) {
-    if (!('speechSynthesis' in window)) {
-        alert("Your browser does not support text-to-speech!");
-        return;
-    }
-    
-    window.speechSynthesis.cancel(); 
-
-    // 🛑 PRE-PROCESS THE TEXT FOR HINDI MATH PRONUNCIATION 🛑
-    let spokenText = text;
-
-    // 1. Convert LaTeX fractions: \frac{110}{44} becomes "110 batta 44"
-    spokenText = spokenText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
-
-    // 2. Convert standard slash fractions/division: 110/44 becomes "110 batta 44"
-    spokenText = spokenText.replace(/\//g, " batta ");
-
-    // 3. Convert all brackets to "kosthak"
-    spokenText = spokenText.replace(/[\(\[\{]/g, " kosthak ");
-    spokenText = spokenText.replace(/[\)\]\}]/g, " kosthak ");
-
-    // 4. Strip out leftover LaTeX formatting (like the $ symbols) so it doesn't read them aloud
-    spokenText = spokenText.replace(/[\$]/g, "");
-
-    const utterance = new SpeechSynthesisUtterance(spokenText);
-    
-    // Force the language to Hindi
-    utterance.lang = 'hi-IN';
-    
-    // Hunt for the Google Hindi voice specifically
-    const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) 
-                     || availableVoices.find(v => v.lang.includes('hi')) 
-                     || availableVoices[0]; // Fallback
-
-    if (hindiVoice) {
-        utterance.voice = hindiVoice;
-    }
-
-    // Slightly slower rate so the math is easy to understand
-    utterance.pitch = 1.0; 
-    utterance.rate = 0.9;  
-
-    window.speechSynthesis.speak(utterance);
-}
+document.addEventListener("DOMContentLoaded", () => {
+    loadVoices();
     
     // 🛑 DYNAMICALLY OVERRIDE THE TRACKER UI FOR ALL HTML PAGES 🛑
     const tracker = document.querySelector('.apiTracker');
@@ -88,17 +39,17 @@ function speakText(text) {
         tracker.innerHTML = `
             <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
             <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+            <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+            <div>📝 <span id="apiText" class="api-val text">0</span></div>
         `;
     }
 
     // 🛑 PACIFIC TIME RESET & TOTAL TRACKING ENGINE 🛑
     setInterval(() => {
-        // Calculate Pacific Time (Los Angeles)
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
         const laTime = new Date(laTimeStr);
         
-        // Find next midnight PT
         const nextMidnight = new Date(laTime);
         nextMidnight.setHours(24, 0, 0, 0);
         
@@ -108,27 +59,23 @@ function speakText(text) {
         const s = Math.floor((diffMs % (1000 * 60)) / 1000);
         const pad = (num) => num.toString().padStart(2, '0');
         
-        // Reset quotas at exactly midnight PT
         if (h === 0 && m === 0 && s === 0) { 
             visionReqs = 0; textReqs = 0; 
             localStorage.setItem('visionReqs', '0'); 
             localStorage.setItem('textReqs', '0'); 
         }
         
-        // Update Timers and Counters dynamically
-        const t = document.getElementById('apiTimer'); 
-        if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+        const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
         
         const total = visionReqs + textReqs;
         const elTotal = document.getElementById('apiTotal'); if(elTotal) elTotal.innerText = total;
         const elVis = document.getElementById('apiVision'); if(elVis) elVis.innerText = visionReqs;
         const elTxt = document.getElementById('apiText'); if(elTxt) elTxt.innerText = textReqs;
         
-        // Update char counts
         const txtInput = document.getElementById('inputText');
         if(txtInput && document.getElementById('charCount')) document.getElementById('charCount').innerText = txtInput.value.length + " chars";
     }, 1000);
- 
+    
     const inputs = [{id:"searchInput", fn:runGroqSearch}, {id:"mathInstructionInput", fn:executeMathFlow}];
     inputs.forEach(i => { const el = document.getElementById(i.id); if(el) el.addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); i.fn(); } }); });
     
@@ -231,31 +178,58 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
   } catch(e) { isProcessing = false; throw e; }
 }
 
-// --- STRICT GOOGLE TRANSLATE VOICE ENGINE ---
+
+// 🛑 STRICT HINDI TTS & MATH PRONUNCIATION ENGINE 🛑
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
-    window.speechSynthesis.cancel();
-    if(!el.innerHTML.includes('class="word"')) {
-        const words = el.innerText.split(/(\s+)/); el.innerHTML = words.map(w => w.trim() ? `<span class="word">${w}</span>` : w).join('');
+    
+    if (!('speechSynthesis' in window)) {
+        alert("Your browser does not support text-to-speech!");
+        return;
     }
-    const spans = el.querySelectorAll('.word');
-    const u = new SpeechSynthesisUtterance(Array.from(spans).map(s => s.innerText).join(' '));
-    const isEnglish = /^[a-zA-Z0-9\s.,!?]+$/.test(el.innerText.substring(0, 50));
-    const langCode = isEnglish ? 'en-US' : 'hi-IN';
+    window.speechSynthesis.cancel(); 
 
+    // PRE-PROCESS THE TEXT FOR HINDI MATH PRONUNCIATION
+    let spokenText = el.innerText;
+
+    // 1. Convert LaTeX fractions: \frac{110}{44} becomes "110 batta 44"
+    spokenText = spokenText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
+
+    // 2. Convert standard slash fractions/division
+    spokenText = spokenText.replace(/\//g, " batta ");
+
+    // 3. Convert all brackets to "kosthak"
+    spokenText = spokenText.replace(/[\(\[\{]/g, " kosthak ");
+    spokenText = spokenText.replace(/[\)\]\}]/g, " kosthak ");
+
+    // 4. Strip out leftover LaTeX formatting (like the $ symbols)
+    spokenText = spokenText.replace(/[\$]/g, "");
+    spokenText = spokenText.replace(/\\times/gi, " guna ");
+
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    
+    // Force the language strictly to Hindi
+    utterance.lang = 'hi-IN';
+    
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-    let premium;
-    if (langCode === 'hi-IN') { premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi'))); } 
-    else { premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en')); }
     
-    let fallback = availableVoices.find(v => v.lang.includes(langCode.split('-')[0]));
-    if (premium) u.voice = premium; else if (fallback) u.voice = fallback;
-    
-    u.lang = langCode; u.rate = 1.0; let wIdx = 0;
-    u.onboundary = (e) => { if (e.name === 'word') { spans.forEach(s => s.classList.remove('highlighted-word')); if (spans[wIdx]) { spans[wIdx].classList.add('highlighted-word'); wIdx++; } } };
-    u.onend = () => { spans.forEach(s => s.classList.remove('highlighted-word')); };
-    window.speechSynthesis.speak(u);
+    // Hunt for the Google Hindi voice specifically
+    const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) 
+                     || availableVoices.find(v => v.name.includes('हिन्दी'))
+                     || availableVoices.find(v => v.lang.includes('hi')) 
+                     || availableVoices[0];
+
+    if (hindiVoice) {
+        utterance.voice = hindiVoice;
+    }
+
+    // Adjust rate for clear mathematical explanation
+    utterance.pitch = 1.0; 
+    utterance.rate = 0.9;  
+
+    window.speechSynthesis.speak(utterance);
 }
+
 
 // --- THE MASTER RETRY ROUTER ---
 async function retryRequest(lId, targetProvider) {
@@ -328,7 +302,7 @@ async function retryRequest(lId, targetProvider) {
                 <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${ansObj.provider}</div>
                 <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
                 <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${req.finalQuestion.replace(/\n/g, '<br>')}</div>
-                <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${req.targetLang}):</div>
+                <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
                 <div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
                 ${getRetryButtonsHtml(lId)}
                 <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
@@ -347,8 +321,7 @@ async function retryRequest(lId, targetProvider) {
     }
 }
 
-// --- STRICT MATH SOLVER ---
-// --- STRICT MATH SOLVER ---
+// --- 🛑 STRICT MATH SOLVER ENGINE 🛑 ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -357,7 +330,7 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // 🔥 UPDATED PROMPT: Enforces strict LaTeX fractions and 'X' for multiplication
+    // 🔥 STRICT MATH PROMPT
     const sysPrompt = `You are a Math Tutor. 
     1. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT).
     2. DO NOT use English for explanations. Even if the question is written in English, your explanation MUST be in Hindi.
@@ -380,6 +353,7 @@ async function executeMathFlow() {
         clearMathImage();
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
+
 // --- MEDIA PLAYER ENGINE ---
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 function startVideoTimer(totalChars) {
@@ -465,20 +439,18 @@ async function playFractionVideo() {
     for(let i=0; i<lines.length; i++) {
         if(!document.getElementById('videoGuiOverlay')) return; 
         const lineText = lines[i];
-        const cleanSpeech = lineText.replace(/[\$\\]/g, ' ').replace(/frac/g, ' divided by ');
-        const isEnglish = /^[a-zA-Z0-9\s.,!?]+$/.test(cleanSpeech.substring(0, 30));
+        
+        // Clean for video reader
+        let cleanSpeech = lineText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
+        cleanSpeech = cleanSpeech.replace(/[\$\\]/g, ' ').replace(/frac/g, ' batta ');
         
         const u = new SpeechSynthesisUtterance(cleanSpeech);
         if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
         
-        let targetLang = isEnglish ? 'en' : 'hi';
-        let premium;
-        
-        if (targetLang === 'hi') { premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi'))); } 
-        else { premium = availableVoices.find(v => (v.name.includes('Google') || v.name.includes('Premium')) && v.lang.includes('en')); }
+        let premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi'))); 
         
         if (premium) u.voice = premium;
-        u.lang = isEnglish ? 'en-US' : 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume; 
+        u.lang = 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume; 
         window.speechSynthesis.speak(u);
         
         const lineDiv = document.createElement("div"); 
@@ -735,8 +707,8 @@ async function executeQaFlow() {
         
         statusTxt.innerText = `Solving... Generating answer in ${targetLang}`; pBar.style.width = "85%";
         
-        // 🛑 THE FIX: Bulletproof Q&A Prompt to force it to solve the RIGHT question 🛑
-        let prompt = `You are an expert Document Assistant.
+        // 🔥 STRICT Q&A PROMPT TO ACTUALLY ANSWER THE QUESTION
+        let prompt = `You are an expert Document QA Assistant.
         
         DOCUMENT TEXT:
         ${extractedContext}
@@ -744,13 +716,14 @@ async function executeQaFlow() {
         TARGET QUESTION TO SOLVE:
         ${finalQuestion}
         
-        CRITICAL INSTRUCTIONS (FAILURE IS NOT AN OPTION):
-        1. The document text may contain MULTIPLE different questions.
-        2. YOU MUST IGNORE ALL OTHER QUESTIONS and ONLY SOLVE THE EXACT QUESTION STATED UNDER "TARGET QUESTION TO SOLVE".
-        3. Answer based ONLY on the Document Text provided. 
-        4. You MUST write your entire answer strictly in ${targetLang}. 
-        5. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
-        6. If the answer cannot be found in the provided text, state that clearly.`;
+        CRITICAL INSTRUCTIONS:
+        1. YOU MUST ACTUALLY SOLVE AND ANSWER THE TARGET QUESTION based ONLY on the Document Text. 
+        2. DO NOT just extract, repeat, or print the question. PROVIDE THE FINAL ANSWER/SOLUTION.
+        3. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT).
+        4. Use ONLY plain words, math numbers, and basic math symbols. No markdown like bolding or asterisks.
+        5. ALWAYS format fractions as proper LaTeX fractions (e.g., $\\frac{110}{44}$) wrapped in $. Do not write them inline.
+        6. ALWAYS use the uppercase letter "X" for multiplication instead of "*" or "\\times".
+        7. If the answer cannot be found in the provided text, state that clearly in Hindi.`;
         
         const qaId = "qa_ans_" + Date.now();
         window.requestCache[qaId] = { type: 'qa', prompt: prompt, targetLang: targetLang, finalQuestion: finalQuestion };
@@ -764,7 +737,7 @@ async function executeQaFlow() {
             <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div>
-            <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div>
+            <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
             <div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
             ${getRetryButtonsHtml(qaId)}
             <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
