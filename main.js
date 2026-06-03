@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V53 - STRICT HINDI & PT TIMER)
+   AI PRO SUITE - THE ULTIMATE BUILD (V54 - 10 SEC TYPEWRITER)
 ======================================================= */
 
 let appHistory = [];
@@ -17,10 +17,10 @@ window.requestCache = {};
 const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
 CRITICAL INSTRUCTIONS:
 1. Extract ALL text from the image EXACTLY as it is written in its original language.
-2. DO NOT describe the image visually (e.g., NEVER say "A picture of a book" or "A person holding...").
+2. DO NOT describe the image visually.
 3. DO NOT translate the text. Keep it strictly in the original language.
 4. DO NOT fix spelling or grammar mistakes.
-5. DO NOT add conversational filler (e.g., NEVER say "Here is the text:").
+5. DO NOT add conversational filler.
 6. Output ONLY the raw transcribed text. If no text is visible, output exactly "NO_TEXT_FOUND".`;
 
 // Video Player Variables
@@ -33,7 +33,6 @@ window.speechSynthesis.onvoiceschanged = loadVoices;
 document.addEventListener("DOMContentLoaded", () => {
     loadVoices();
     
-    // 🛑 DYNAMICALLY OVERRIDE THE TRACKER UI FOR ALL HTML PAGES 🛑
     const tracker = document.querySelector('.apiTracker');
     if (tracker) {
         tracker.innerHTML = `
@@ -44,7 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     }
 
-    // 🛑 PACIFIC TIME RESET & TOTAL TRACKING ENGINE 🛑
     setInterval(() => {
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
@@ -139,23 +137,60 @@ function getRetryButtonsHtml(lId) {
     </div>`;
 }
 
-function updateAiBubble(lId, answer, provider = "AI") {
+// 🛑 THE 10-SECOND HUMAN TYPEWRITER ENGINE 🛑
+function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
+    containerEl.innerHTML = `<div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div><div id="${contentId}"></div>`;
+    const txtEl = document.getElementById(contentId);
+    
+    const totalDuration = 10000; // Force exactly 10 seconds
+    const chars = rawText.length || 1;
+    let tickRate = Math.floor(totalDuration / chars);
+    let charsPerTick = 1;
+    
+    if (tickRate < 20) {
+        tickRate = 20;
+        charsPerTick = Math.ceil(chars / (totalDuration / 20));
+    }
+    
+    let i = 0;
+    const timer = setInterval(() => {
+        if (i < rawText.length) {
+            let chunk = rawText.substr(i, charsPerTick);
+            for(let c of chunk) {
+                if (c === '\n') txtEl.appendChild(document.createElement('br'));
+                else txtEl.appendChild(document.createTextNode(c));
+            }
+            i += charsPerTick;
+            const s = containerEl.closest('.chat-scroll-area'); if(s) s.scrollTop = s.scrollHeight;
+        } else {
+            clearInterval(timer);
+            if (isMath && window.MathJax) { MathJax.typesetClear([containerEl]); MathJax.typesetPromise([containerEl]); }
+            containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
+            const s = containerEl.closest('.chat-scroll-area'); if(s) s.scrollTop = s.scrollHeight;
+            if (onComplete) onComplete();
+        }
+    }, tickRate);
+}
+
+function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     const loadingBubble = document.getElementById(lId);
-    if (loadingBubble) {
-        const bbl = loadingBubble.querySelector('.bubble');
-        bbl.innerHTML = `
-            <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
-            <div id="text_${lId}">${answer.replace(/\n/g, '<br>')}</div>
-        `;
-        window.latestMathSolution = answer; 
+    if (!loadingBubble) return;
+    const bbl = loadingBubble.querySelector('.bubble');
+    window.latestMathSolution = answer; 
+    
+    const buttons = getRetryButtonsHtml(lId) + `
+        <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
+            <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
+            <button class="btn blue" style="padding:10px; flex:1; font-size:13px; background:rgb(220,38,38);" onclick="initVideoGui()">▶️ Tutor</button>
+            <button class="btn" style="padding:10px; flex:0.5; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
+        </div>
+    `;
+    
+    if (useTyping) {
+        typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true);
+    } else {
+        bbl.innerHTML = `<div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div><div id="text_${lId}">${answer.replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
-        bbl.insertAdjacentHTML('beforeend', getRetryButtonsHtml(lId) + `
-            <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
-                <button class="btn blue" style="padding:10px; flex:1; font-size:13px; background:rgb(220,38,38);" onclick="initVideoGui()">▶️ Tutor</button>
-                <button class="btn" style="padding:10px; flex:0.5; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
-            </div>
-        `);
     }
 }
 
@@ -189,41 +224,25 @@ function speakAndHighlight(elId) {
     }
     window.speechSynthesis.cancel(); 
 
-    // PRE-PROCESS THE TEXT FOR HINDI MATH PRONUNCIATION
     let spokenText = el.innerText;
-
-    // 1. Convert LaTeX fractions: \frac{110}{44} becomes "110 batta 44"
     spokenText = spokenText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
-
-    // 2. Convert standard slash fractions/division
     spokenText = spokenText.replace(/\//g, " batta ");
-
-    // 3. Convert all brackets to "kosthak"
     spokenText = spokenText.replace(/[\(\[\{]/g, " kosthak ");
     spokenText = spokenText.replace(/[\)\]\}]/g, " kosthak ");
-
-    // 4. Strip out leftover LaTeX formatting (like the $ symbols)
     spokenText = spokenText.replace(/[\$]/g, "");
     spokenText = spokenText.replace(/\\times/gi, " guna ");
 
     const utterance = new SpeechSynthesisUtterance(spokenText);
-    
-    // Force the language strictly to Hindi
     utterance.lang = 'hi-IN';
     
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
     
-    // Hunt for the Google Hindi voice specifically
     const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) 
                      || availableVoices.find(v => v.name.includes('हिन्दी'))
                      || availableVoices.find(v => v.lang.includes('hi')) 
                      || availableVoices[0];
 
-    if (hindiVoice) {
-        utterance.voice = hindiVoice;
-    }
-
-    // Adjust rate for clear mathematical explanation
+    if (hindiVoice) { utterance.voice = hindiVoice; }
     utterance.pitch = 1.0; 
     utterance.rate = 0.9;  
 
@@ -252,7 +271,7 @@ async function retryRequest(lId, targetProvider) {
         if (req.type === 'math') {
             let resObj = req.image ? await callGeminiVision(req.image, req.prompt, targetProvider) : await callGeminiText(req.sysPrompt, req.prompt, targetProvider);
             let cleanSol = resObj.text.replace(/[\*&#_]/g, '');
-            updateAiBubble(lId, cleanSol, resObj.provider);
+            updateAiBubble(lId, cleanSol, resObj.provider, true);
         }
         else if (req.type === 'search') {
             let resObj;
@@ -262,14 +281,12 @@ async function retryRequest(lId, targetProvider) {
                 resObj = await res.json(); if(!resObj.text) throw new Error(resObj.error || "Search failed");
             }
             let ans = resObj.text.replace(/[\*&#_]/g, '');
-            container.innerHTML = `
-                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${resObj.provider}</div>
-                <div id="search_${lId}">${ans.replace(/\n/g, '<br>')}</div>
-                ${getRetryButtonsHtml(lId)}
+            const buttons = getRetryButtonsHtml(lId) + `
                 <div style="margin-top:10px; display:flex; gap:10px;">
                     <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
                     <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
                 </div>`;
+            typeWriteResponse(container, ans, resObj.provider, `search_${lId}`, buttons, false);
         }
         else if (req.type === 'image_trans') {
             let resObj = await callGeminiText("You are a strict translator.", req.prompt, targetProvider); 
@@ -330,7 +347,6 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // 🔥 STRICT MATH PROMPT
     const sysPrompt = `You are a Math Tutor. 
     1. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT).
     2. DO NOT use English for explanations. Even if the question is written in English, your explanation MUST be in Hindi.
@@ -346,12 +362,51 @@ async function executeMathFlow() {
         let resObj = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
-        window.latestMathSolution = cleanSol;
-        updateAiBubble(lId, cleanSol, resObj.provider);
         saveToHistory('math', instruction, cleanSol, capturedImage, resObj.provider); 
-        scrollToBottom("mathScrollArea");
+        updateAiBubble(lId, cleanSol, resObj.provider, true);
         clearMathImage();
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
+}
+
+// --- DEEP SEARCH (STRICT DEVANAGARI HINDI) ---
+async function runGroqSearch() {
+    const inp = document.getElementById("searchInput"); if(!inp) return;
+    const q = inp.value.trim(); if(!q && !capturedImage) return;
+    
+    appendUserBubble(q || "Analyze this image.", capturedImage, "searchChatHistory"); 
+    inp.value = ""; let lId = appendAiLoading("searchChatHistory");
+    
+    window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q, image: capturedImage };
+
+    try {
+        let ans = ""; let provider = "";
+        
+        if (capturedImage) {
+            let resObj = await callGeminiVision(capturedImage, window.requestCache[lId].prompt);
+            ans = resObj.text; provider = resObj.provider;
+        } else {
+            const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
+                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\nSearch Query: " + q }) 
+            });
+            const data = await res.json(); if(!res.ok) throw new Error(data.error);
+            ans = data.text; provider = data.provider;
+        }
+        
+        ans = ans.replace(/[\*&#_]/g, '');
+        saveToHistory('search', q, ans, capturedImage, provider); 
+        
+        const bbl = document.getElementById(lId);
+        if (bbl) {
+            const bubbleEl = bbl.querySelector('.bubble');
+            const buttons = getRetryButtonsHtml(lId) + `
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                    <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                </div>`;
+            typeWriteResponse(bubbleEl, ans, provider, `search_${lId}`, buttons, false);
+        }
+        clearMathImage();
+    } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
 // --- MEDIA PLAYER ENGINE ---
@@ -469,46 +524,6 @@ async function playFractionVideo() {
     resetVideoActivity(); 
 }
 
-// --- DEEP SEARCH (STRICT DEVANAGARI HINDI) ---
-async function runGroqSearch() {
-    const inp = document.getElementById("searchInput"); if(!inp) return;
-    const q = inp.value.trim(); if(!q && !capturedImage) return;
-    
-    appendUserBubble(q || "Analyze this image.", capturedImage, "searchChatHistory"); 
-    inp.value = ""; let lId = appendAiLoading("searchChatHistory");
-    
-    window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q, image: capturedImage };
-
-    try {
-        let ans = ""; let provider = "";
-        
-        if (capturedImage) {
-            let resObj = await callGeminiVision(capturedImage, window.requestCache[lId].prompt);
-            ans = resObj.text; provider = resObj.provider;
-        } else {
-            const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
-                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\nSearch Query: " + q }) 
-            });
-            const data = await res.json(); if(!res.ok) throw new Error(data.error);
-            ans = data.text; provider = data.provider;
-        }
-        
-        ans = ans.replace(/[\*&#_]/g, '');
-        const bbl = document.getElementById(lId);
-        if (bbl) {
-            bbl.querySelector('.bubble').innerHTML = `
-                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
-                <div id="search_${lId}">${ans.replace(/\n/g, '<br>')}</div>
-                ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:10px; display:flex; gap:10px;">
-                    <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
-                </div>`;
-        }
-        saveToHistory('search', q, ans, capturedImage, provider); scrollToBottom("searchScrollArea");
-        clearMathImage();
-    } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
-}
 
 // --- TEXT TRANSLATOR ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
@@ -707,7 +722,6 @@ async function executeQaFlow() {
         
         statusTxt.innerText = `Solving... Generating answer in ${targetLang}`; pBar.style.width = "85%";
         
-        // 🔥 STRICT Q&A PROMPT TO ACTUALLY ANSWER THE QUESTION
         let prompt = `You are an expert Document QA Assistant.
         
         DOCUMENT TEXT:
@@ -797,7 +811,7 @@ function restoreSession(e, id) {
     
     if(item.type === 'math') { 
         let containerId = "mathChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); updateAiBubble(lId, item.answer, item.provider || "AI"); 
+        let lId = appendAiLoading(containerId); updateAiBubble(lId, item.answer, item.provider || "AI", false); 
     } 
     else if (item.type === 'search') {
         let containerId = "searchChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
