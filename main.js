@@ -27,11 +27,60 @@ CRITICAL INSTRUCTIONS:
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
 let videoElapsed = 0, videoTotalEst = 0, videoTickInterval, hideControlsTimer;
 
-function loadVoices() { availableVoices = window.speechSynthesis.getVoices(); }
-window.speechSynthesis.onvoiceschanged = loadVoices;
+// --- TTS & HINDI MATH VOICE CONFIGURATION ---
+let availableVoices = [];
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadVoices();
+function loadVoices() {
+    availableVoices = window.speechSynthesis.getVoices();
+}
+if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speakText(text) {
+    if (!('speechSynthesis' in window)) {
+        alert("Your browser does not support text-to-speech!");
+        return;
+    }
+    
+    window.speechSynthesis.cancel(); 
+
+    // 🛑 PRE-PROCESS THE TEXT FOR HINDI MATH PRONUNCIATION 🛑
+    let spokenText = text;
+
+    // 1. Convert LaTeX fractions: \frac{110}{44} becomes "110 batta 44"
+    spokenText = spokenText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
+
+    // 2. Convert standard slash fractions/division: 110/44 becomes "110 batta 44"
+    spokenText = spokenText.replace(/\//g, " batta ");
+
+    // 3. Convert all brackets to "kosthak"
+    spokenText = spokenText.replace(/[\(\[\{]/g, " kosthak ");
+    spokenText = spokenText.replace(/[\)\]\}]/g, " kosthak ");
+
+    // 4. Strip out leftover LaTeX formatting (like the $ symbols) so it doesn't read them aloud
+    spokenText = spokenText.replace(/[\$]/g, "");
+
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    
+    // Force the language to Hindi
+    utterance.lang = 'hi-IN';
+    
+    // Hunt for the Google Hindi voice specifically
+    const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) 
+                     || availableVoices.find(v => v.lang.includes('hi')) 
+                     || availableVoices[0]; // Fallback
+
+    if (hindiVoice) {
+        utterance.voice = hindiVoice;
+    }
+
+    // Slightly slower rate so the math is easy to understand
+    utterance.pitch = 1.0; 
+    utterance.rate = 0.9;  
+
+    window.speechSynthesis.speak(utterance);
+}
     
     // 🛑 DYNAMICALLY OVERRIDE THE TRACKER UI FOR ALL HTML PAGES 🛑
     const tracker = document.querySelector('.apiTracker');
@@ -39,8 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
         tracker.innerHTML = `
             <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
             <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
-            <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
-            <div>📝 <span id="apiText" class="api-val text">0</span></div>
         `;
     }
 
