@@ -156,9 +156,32 @@ async function handleGeminiVision(req, res) {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); return data.candidates[0].content.parts[0].text;
             
-            } else if (p.type === 'cloudflare') {
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.2-11b-vision-instruct", messages: [{ role: "user", content: [{ type: "text", text: userText }, { type: "image_url", image_url: { url: formattedBase64 } }] }] }) });
-                const data = await response.json(); if (!response.ok) throw new Error("Cloudflare Vision failed"); return data.choices[0].message.content;
+          } else if (p.type === 'cloudflare') {
+                // 🔥 UPDATED ENDPOINT: Cloudflare's native /run/ endpoint handles the 3.2 vision model significantly better
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, { 
+                    method: "POST", 
+                    headers: { 
+                        Authorization: `Bearer ${p.key}`, 
+                        "Content-Type": "application/json" 
+                    }, 
+                    body: JSON.stringify({ 
+                        messages: [{ 
+                            role: "user", 
+                            content: [
+                                { type: "text", text: userText }, 
+                                { type: "image_url", image_url: { url: formattedBase64 } }
+                            ] 
+                        }] 
+                    }) 
+                });
+                
+                const data = await response.json(); 
+                if (!response.ok) {
+                    throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed"); 
+                }
+                
+                // The native run endpoint returns 'result.response' instead of standard choices structure
+                return data.result?.response || data.choices?.[0]?.message?.content || "No text detected.";
             
             } else {
                 let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
