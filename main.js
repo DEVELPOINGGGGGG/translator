@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V56 - DYNAMIC TYPING SPEED)
+   AI PRO SUITE - THE ULTIMATE BUILD (V57 - GROQ AUTO-TITLE & CHAT SESSIONS)
 ======================================================= */
 
 let appHistory = [];
@@ -14,8 +14,9 @@ window.hasResetToday = false;
 // 🛑 YOUR GOOGLE SHEETS WEBHOOK 🛑
 const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
 
-// 🛑 THE RETRY ENGINE CACHE 🛑
+// 🛑 SESSION CACHE & RETRY ENGINE 🛑
 window.requestCache = {};
+let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
 
 // 🛑 THE MILITARY-GRADE OCR PROMPT 🛑
 const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
@@ -69,17 +70,13 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.setItem('textReqs', '0'); 
             window.hasResetToday = true;
             
-            // Send wipe command to Google Sheets
             fetch(GOOGLE_SHEETS_WEBHOOK, {
-                method: "POST",
-                mode: "no-cors",
+                method: "POST", mode: "no-cors",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify({ action: "reset" })
             }).catch(e => console.log("Failed to wipe DB", e));
             
-        } else if (h !== 0) {
-            window.hasResetToday = false; 
-        }
+        } else if (h !== 0) { window.hasResetToday = false; }
         
         const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
         
@@ -161,29 +158,17 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     const txtEl = document.getElementById(contentId);
     
     const chars = rawText.length || 1;
-    
-    // Base Calculation: Try to fit in 10 seconds (10,000ms)
     let tickRate = Math.floor(10000 / chars);
     let charsPerTick = 1;
     
-    // SMART SPEED ADJUSTMENT:
-    if (tickRate > 35) {
-        // If text is short, don't drag it out. Cap at a nice, steady "Medium" speed.
-        tickRate = 35; 
-    } else if (tickRate < 20) {
-        // If text is huge, ensure we finish in 10 seconds by typing multiple chars per tick.
-        tickRate = 20;
-        charsPerTick = Math.ceil(chars / (10000 / 20));
-    }
+    if (tickRate > 35) { tickRate = 35; } 
+    else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
     let i = 0;
     const timer = setInterval(() => {
         if (i < rawText.length) {
             let chunk = rawText.substr(i, charsPerTick);
-            for(let c of chunk) {
-                if (c === '\n') txtEl.appendChild(document.createElement('br'));
-                else txtEl.appendChild(document.createTextNode(c));
-            }
+            for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
             i += charsPerTick;
             const s = containerEl.closest('.chat-scroll-area'); if(s) s.scrollTop = s.scrollHeight;
         } else {
@@ -210,9 +195,8 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
         </div>
     `;
     
-    if (useTyping) {
-        typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true);
-    } else {
+    if (useTyping) { typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true); } 
+    else {
         bbl.innerHTML = `<div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div><div id="text_${lId}">${answer.replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
     }
@@ -242,10 +226,7 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
     
-    if (!('speechSynthesis' in window)) {
-        alert("Your browser does not support text-to-speech!");
-        return;
-    }
+    if (!('speechSynthesis' in window)) { alert("Your browser does not support text-to-speech!"); return; }
     window.speechSynthesis.cancel(); 
 
     let spokenText = el.innerText;
@@ -261,15 +242,10 @@ function speakAndHighlight(elId) {
     
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
     
-    const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) 
-                     || availableVoices.find(v => v.name.includes('हिन्दी'))
-                     || availableVoices.find(v => v.lang.includes('hi')) 
-                     || availableVoices[0];
+    const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || availableVoices.find(v => v.name.includes('हिन्दी')) || availableVoices.find(v => v.lang.includes('hi')) || availableVoices[0];
 
     if (hindiVoice) { utterance.voice = hindiVoice; }
-    utterance.pitch = 1.0; 
-    utterance.rate = 0.9;  
-
+    utterance.pitch = 1.0; utterance.rate = 0.9;  
     window.speechSynthesis.speak(utterance);
 }
 
@@ -284,9 +260,7 @@ async function retryRequest(lId, targetProvider) {
          container = document.getElementById("qaAnswerBox");
          document.getElementById("qaStatusText").innerText = `Retrying with ${targetProvider.toUpperCase()}...`;
          document.getElementById("qaProgressBar").style.width = "85%";
-    } else {
-         container = document.getElementById(lId)?.querySelector('.bubble');
-    }
+    } else { container = document.getElementById(lId)?.querySelector('.bubble'); }
     
     if(!container) return;
     container.innerHTML = `<div class="spinner"></div> Retrying with ${targetProvider.toUpperCase()}...`;
@@ -295,29 +269,24 @@ async function retryRequest(lId, targetProvider) {
         if (req.type === 'math') {
             let resObj = req.image ? await callGeminiVision(req.image, req.prompt, targetProvider) : await callGeminiText(req.sysPrompt, req.prompt, targetProvider);
             let cleanSol = resObj.text.replace(/[\*&#_]/g, '');
+            saveToHistory('math', req.prompt.substring(0, 100) + " (Retry)", cleanSol, req.image, resObj.provider);
             updateAiBubble(lId, cleanSol, resObj.provider, true);
         }
         else if (req.type === 'search') {
             let resObj;
             if (req.image) { resObj = await callGeminiVision(req.image, req.prompt, targetProvider); } 
-            else {
-                const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
+            else { track('t'); const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
                 resObj = await res.json(); if(!resObj.text) throw new Error(resObj.error || "Search failed");
             }
             let ans = resObj.text.replace(/[\*&#_]/g, '');
-            const buttons = getRetryButtonsHtml(lId) + `
-                <div style="margin-top:10px; display:flex; gap:10px;">
-                    <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
-                </div>`;
+            saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider);
+            const buttons = getRetryButtonsHtml(lId) + `<div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
             typeWriteResponse(container, ans, resObj.provider, `search_${lId}`, buttons, false);
         }
         else if (req.type === 'image_trans') {
             let resObj = await callGeminiText("You are a strict translator.", req.prompt, targetProvider); 
-            let parts = resObj.text.split('|||');
-            let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
-            let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
-            
+            let parts = resObj.text.split('|||'); let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed."; let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+            saveToHistory('image_translation', `Translate to ${req.targetLang} (Retry)`, cleanText + "\n\nHard Words:\n" + hardWordsText, null, resObj.provider);
             container.innerHTML = `
                 <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${resObj.provider}</div>
                 <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
@@ -327,18 +296,13 @@ async function retryRequest(lId, targetProvider) {
                 <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
                 <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
                 ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                    <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
-                </div>
+                <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>
             `;
         }
         else if (req.type === 'qa') {
             let ansObj = await callGeminiText("You are a helpful document assistant.", req.prompt, targetProvider);
-            let cleanAns = ansObj.text.replace(/[\*&#_]/g, '');
-            document.getElementById("qaProgressBar").style.width = "100%";
-            document.getElementById("qaStatusText").innerText = "✅ Done!";
-            
+            let cleanAns = ansObj.text.replace(/[\*&#_]/g, ''); document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "✅ Done!";
+            saveToHistory('qa', req.finalQuestion + " (Retry)", cleanAns, null, ansObj.provider);
             container.innerHTML = `
                 <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${ansObj.provider}</div>
                 <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
@@ -346,19 +310,13 @@ async function retryRequest(lId, targetProvider) {
                 <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
                 <div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
                 ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                    <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${lId}')">📋 Copy</button>
-                </div>
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${lId}')">📋 Copy</button></div>
             `;
             if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); }
         }
     } catch(e) { 
-        if(req.type === 'qa') {
-            document.getElementById("qaStatusText").innerText = "❌ Error Occurred";
-            document.getElementById("qaProgressBar").style.background = "var(--red)";
-            container.innerHTML = "Error: " + e.message;
-        } else { container.innerText = "❌ Error: " + e.message; }
+        if(req.type === 'qa') { document.getElementById("qaStatusText").innerText = "❌ Error Occurred"; document.getElementById("qaProgressBar").style.background = "var(--red)"; container.innerHTML = "Error: " + e.message; } 
+        else { container.innerText = "❌ Error: " + e.message; }
     }
 }
 
@@ -788,61 +746,140 @@ async function executeQaFlow() {
     } catch(e) { statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; }
 }
 
+// 🛑 GROQ BACKGROUND TITLE GENERATOR 🛑
+async function generateTitleWithGroq(sessionId) {
+    const item = appHistory.find(i => i.id === sessionId);
+    if (!item || !item.interactions) return;
+    
+    const allQuestions = item.interactions.map(inter => inter.question).join(" | ");
+    
+    try {
+        const res = await fetch("/api/groq-search", {
+            method: "POST", headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+                prompt: "Create a highly concise, 2 to 4 word title summarizing the following user queries. Do not use quotes, punctuation, or any prefixes. Just give me the title text. Queries: " + allQuestions,
+                providerOverride: "groq"
+            })
+        });
+        const data = await res.json();
+        if (data.text) {
+            item.title = data.text.replace(/["'*]/g, '').trim();
+            saveHistorySafe();
+            if(document.getElementById('historyList')) renderHistory();
+        }
+    } catch(e) { console.log("Groq title generation failed"); }
+}
 
-// 🛑 RESTORED HISTORY SAVING + GOOGLE SHEETS DATABASE SYNC 🛑
+// 🛑 ADVANCED SESSION HISTORY ENGINE 🛑
 function saveHistorySafe() { 
     try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } 
     catch(e) { appHistory.pop(); saveHistorySafe(); } 
 }
 
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
-    // 1. Save locally for your UI
-    appHistory.unshift({ id: Date.now(), type, title: q.substring(0,25)||'Saved', question: q, answer: a, image: img, provider: provider }); 
-    saveHistorySafe(); 
-    
-    // 2. Silently blast the data to your Google Sheet with NO-CORS mode!
+    // Always blast the background Google Sheets sync
     fetch(GOOGLE_SHEETS_WEBHOOK, {
-        method: "POST",
-        mode: "no-cors", // Bypass browser blocks
+        method: "POST", mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         body: JSON.stringify({
-            action: "log",
-            type: type,
-            question: q,
-            answer: a.replace(/<[^>]*>?/gm, ''), // Strips HTML tags so the sheet looks clean
-            provider: provider || "Gemini 1" 
+            action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" 
         })
-    }).catch(e => console.log("Google Sheets sync failed, but app is fine."));
+    }).catch(e => console.log("Google Sheets sync failed."));
+
+    let sessionId = sessionCache[type];
+    let histItem = appHistory.find(i => i.id === sessionId);
+
+    if (!histItem) {
+        sessionId = Date.now();
+        sessionCache[type] = sessionId; // Set active session
+        histItem = {
+            id: sessionId, type: type, title: q.substring(0,25) + '...',
+            interactions: [{ question: q, answer: a, image: img, provider: provider }],
+            provider: provider,
+            question: q, answer: a // Fallbacks
+        };
+        appHistory.unshift(histItem);
+    } else {
+        histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
+        histItem.question = q; histItem.answer = a; // Fallback update
+    }
+    
+    saveHistorySafe();
+    generateTitleWithGroq(sessionId); // Ask Groq to dynamically name the chat!
 }
+
+// 🛑 MULTI-CHAT HISTORY VIEWER 🛑
+window.viewHistory = function(id) {
+    const item = appHistory.find(i => i.id === id);
+    if(!item) return;
+    document.getElementById('histTitle').innerText = item.title;
+    const qBox = document.getElementById('histQuestion');
+    const aBox = document.getElementById('histAnswer');
+
+    if (item.interactions) {
+        qBox.innerHTML = item.interactions.map((interaction, i) => `<div style="margin-bottom:10px;"><b>[Q${i+1}]</b> ${interaction.question}</div>`).join('');
+        aBox.innerHTML = item.interactions.map((interaction, i) => `<div style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;"><b>[A${i+1}]</b> ${interaction.answer}</div>`).join('');
+    } else {
+        qBox.innerHTML = item.question;
+        aBox.innerHTML = item.answer;
+    }
+    
+    const modal = document.getElementById('historyModal');
+    if (modal) modal.classList.add('active');
+    if(window.MathJax) { MathJax.typesetClear(); MathJax.typesetPromise(); }
+};
+
+window.closeHistory = function() {
+    const modal = document.getElementById('historyModal');
+    if (modal) modal.classList.remove('active');
+};
 
 function renderHistory() { 
     const list = document.getElementById('historyList'); if(!list) return; 
     if(appHistory.length === 0) return list.innerHTML = "<div style='color:var(--muted);text-align:center;'>No history saved yet.</div>"; 
-    list.innerHTML = appHistory.map(item => `
+    list.innerHTML = appHistory.map(item => {
+        const count = item.interactions ? item.interactions.length : 1;
+        const msgText = count > 1 ? `${count} messages` : `1 message`;
+        return `
         <div class="wordItem" style="display:flex; justify-content:space-between; align-items:center;">
             <div onclick="viewHistory(${item.id})" style="flex:1;">
                 <div class="wordTitle">${item.title}</div>
-                <div class="wordMeaning">${item.type.toUpperCase()}</div>
+                <div class="wordMeaning">${item.type.toUpperCase()} • <span style="color:#60a5fa">${msgText}</span></div>
             </div>
             <div style="display:flex; gap:8px;">
                 <button class="actionBtnSmall green" onclick="restoreSession(event, ${item.id})" title="Restore">🔄</button>
                 <button class="actionBtnSmall blue" onclick="quickDownload(event, ${item.id})" title="Download TXT">📥</button>
                 <button class="actionBtnSmall red" onclick="deleteHistoryItem(event, ${item.id})" title="Delete">🗑️</button>
             </div>
-        </div>
-    `).join(''); 
+        </div>`;
+    }).join(''); 
 }
+
 function clearAllHistory() { if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) { appHistory = []; saveHistorySafe(); renderHistory(); showToast("🗑️ All history has been cleared!"); } }
 function deleteHistoryItem(e, id) { e.stopPropagation(); appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); showToast("Deleted successfully."); }
 function cleanLatexForDownload(text) { return text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)').replace(/\\times/g, 'x').replace(/\\%/g, '%').replace(/[\$\\]/g, '').replace(/&nbsp;/g, ' ').replace(/<br>/g, '\n'); }
+
 function quickDownload(e, id) { e.stopPropagation(); const item = appHistory.find(i => i.id === id); if(item) triggerFileDownload(item); }
 function triggerFileDownload(item) { 
-    let q = item.question.replace(/<[^>]*>?/gm, ''); let a = cleanLatexForDownload(item.answer.replace(/<[^>]*>?/gm, '')); 
-    const b = new Blob([`Title: ${item.title}\n\n--- INPUT ---\n${q}\n\n--- OUTPUT ---\n${a}`], { type: "text/plain;charset=utf-8" }); 
-    const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `AI_${item.title}.txt`; l.click(); 
+    let content = `Chat Title: ${item.title}\n\n`;
+    
+    if (item.interactions) {
+        item.interactions.forEach((inter, idx) => {
+            let q = inter.question.replace(/<[^>]*>?/gm, '');
+            let a = cleanLatexForDownload(inter.answer.replace(/<[^>]*>?/gm, ''));
+            content += `--- QUESTION ${idx+1} ---\n${q}\n\n--- ANSWER ${idx+1} ---\n${a}\n\n`;
+        });
+    } else {
+        let q = item.question.replace(/<[^>]*>?/gm, ''); let a = cleanLatexForDownload(item.answer.replace(/<[^>]*>?/gm, '')); 
+        content += `--- QUESTION ---\n${q}\n\n--- ANSWER ---\n${a}`;
+    }
+    
+    const b = new Blob([content], { type: "text/plain;charset=utf-8" }); 
+    const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `AI_Chat_${item.title}.txt`; l.click(); 
     showToast("📥 Download started!");
 }
 
+// 🛑 MULTI-RESTORATION ENGINE 🛑
 function restoreSession(e, id) { 
     if(e) e.stopPropagation(); const item = appHistory.find(i => i.id == id); if(!item) return; 
     let targetPage = ''; 
@@ -851,29 +888,45 @@ function restoreSession(e, id) {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     if (currentPage !== targetPage && targetPage !== '') { window.location.href = `${targetPage}?restore=${id}`; return; }
     
+    // Resume the session internally so new questions attach to it!
+    sessionCache[item.type] = item.id;
+    
+    const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
+
     if(item.type === 'math') { 
-        let containerId = "mathChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); updateAiBubble(lId, item.answer, item.provider || "AI", false); 
+        let containerId = "mathChatHistory"; document.getElementById(containerId).innerHTML = ''; 
+        interactionsToRestore.forEach(inter => {
+            appendUserBubble(inter.question, inter.image, containerId); 
+            let lId = appendAiLoading(containerId); updateAiBubble(lId, inter.answer, inter.provider || "AI", false);
+        });
     } 
     else if (item.type === 'search') {
-        let containerId = "searchChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
-        if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } 
-        else {
-            bbl.innerHTML = `
-                <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${item.provider || "AI"}</div>
-                <div id="search_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>
-                ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
-        }
+        let containerId = "searchChatHistory"; document.getElementById(containerId).innerHTML = ''; 
+        interactionsToRestore.forEach(inter => {
+            appendUserBubble(inter.question, inter.image, containerId); 
+            let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
+            if (inter.answer.includes('<div')) { bbl.innerHTML = inter.answer; } 
+            else {
+                bbl.innerHTML = `
+                    <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${inter.provider || "AI"}</div>
+                    <div id="search_${lId}">${inter.answer.replace(/\n/g, '<br>')}</div>
+                    ${getRetryButtonsHtml(lId)}
+                    <div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
+            }
+        });
     } 
     else if (item.type === 'image_translation' && document.getElementById("imageChatHistory")) {
-        let containerId = "imageChatHistory"; document.getElementById(containerId).innerHTML = ''; appendUserBubble(item.question, item.image, containerId); 
-        let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
-        if (item.answer.includes('<div')) { bbl.innerHTML = item.answer; } else { bbl.innerHTML = `<div id="trans_${lId}">${item.answer.replace(/\n/g, '<br>')}</div>`; }
+        let containerId = "imageChatHistory"; document.getElementById(containerId).innerHTML = ''; 
+        interactionsToRestore.forEach(inter => {
+            appendUserBubble(inter.question, inter.image, containerId); 
+            let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
+            if (inter.answer.includes('<div')) { bbl.innerHTML = inter.answer; } else { bbl.innerHTML = `<div id="trans_${lId}">${inter.answer.replace(/\n/g, '<br>')}</div>`; }
+        });
     } 
     else if (item.type === 'qa' && document.getElementById("qaAnswerBox")) {
-        document.getElementById("qaAnswerBox").innerHTML = item.answer; document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "Restored from History";
+        // QA typically overwrites the box, so we just restore the last interaction
+        const lastInter = interactionsToRestore[interactionsToRestore.length - 1];
+        document.getElementById("qaAnswerBox").innerHTML = lastInter.answer; document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "Restored from History";
     }
     showToast("🔄 Session Restored");
 }
