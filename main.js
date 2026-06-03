@@ -259,6 +259,7 @@ async function retryRequest(lId, targetProvider) {
 }
 
 // --- STRICT MATH SOLVER ---
+// --- STRICT MATH SOLVER ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -267,13 +268,15 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
+    // 🔥 UPDATED PROMPT: Enforces strict LaTeX fractions and 'X' for multiplication
     const sysPrompt = `You are a Math Tutor. 
     1. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT).
     2. DO NOT use English for explanations. Even if the question is written in English, your explanation MUST be in Hindi.
     3. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. 
     4. Use ONLY plain words, math numbers, and basic math symbols.
-    5. Use LaTeX wrapped in $ ONLY for fractions, squares, and square roots.
-    6. NEVER put any text or words inside the $ symbols.`;
+    5. ALWAYS format fractions as proper LaTeX fractions (e.g., $\\frac{110}{44}$) wrapped in $. Do not write them inline like 110/44.
+    6. ALWAYS use the uppercase letter "X" for multiplication instead of "x", "*", or "\\times".
+    7. NEVER put any text or words inside the $ symbols.`;
     
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: `Instruction: ${instruction}. ${sysPrompt}`, image: capturedImage };
 
@@ -288,7 +291,6 @@ async function executeMathFlow() {
         clearMathImage();
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
-
 // --- MEDIA PLAYER ENGINE ---
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 function startVideoTimer(totalChars) {
