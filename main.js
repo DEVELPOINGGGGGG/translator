@@ -153,6 +153,7 @@ function getRetryButtonsHtml(lId) {
 }
 
 // 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE 🛑
+// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE (NO SCREEN SHAKE FIX) 🛑
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div><div id="${contentId}"></div>`;
     const txtEl = document.getElementById(contentId);
@@ -164,18 +165,38 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     if (tickRate > 35) { tickRate = 35; } 
     else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
+    // 🛑 ANTI-SHAKE FIX: Temporarily disable CSS smooth scrolling while typing
+    const scrollArea = containerEl.closest('.chat-scroll-area');
+    if (scrollArea) scrollArea.style.scrollBehavior = 'auto';
+    
     let i = 0;
+    let lastScroll = 0;
+
     const timer = setInterval(() => {
         if (i < rawText.length) {
             let chunk = rawText.substr(i, charsPerTick);
-            for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
+            for(let c of chunk) { 
+                if (c === '\n') txtEl.appendChild(document.createElement('br')); 
+                else txtEl.appendChild(document.createTextNode(c)); 
+            }
             i += charsPerTick;
-            const s = containerEl.closest('.chat-scroll-area'); if(s) s.scrollTop = s.scrollHeight;
+            
+            // 🛑 ANTI-SHAKE FIX: Only pull the screen down every 150ms so the browser doesn't lag
+            if (Date.now() - lastScroll > 150) {
+                if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+                lastScroll = Date.now();
+            }
+            
         } else {
             clearInterval(timer);
             if (isMath && window.MathJax) { MathJax.typesetClear([containerEl]); MathJax.typesetPromise([containerEl]); }
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
-            const s = containerEl.closest('.chat-scroll-area'); if(s) s.scrollTop = s.scrollHeight;
+            
+            if (scrollArea) {
+                scrollArea.scrollTop = scrollArea.scrollHeight;
+                // 🛑 ANTI-SHAKE FIX: Turn smooth scrolling back on when finished!
+                scrollArea.style.scrollBehavior = 'smooth'; 
+            }
             if (onComplete) onComplete();
         }
     }, tickRate);
