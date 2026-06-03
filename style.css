@@ -55,16 +55,17 @@
 /* ==========================================================================
    2. BASE STYLES & ANIMATIONS
    ========================================================================== */
-body { 
-    background: linear-gradient(-45deg, #020617, #0f172a, #172033, #081124); 
-    background-size: 400% 400%; 
-    animation: gradientBG 15s ease infinite; 
-    background-attachment: fixed; /* FIXED BACKGROUND ISSUE */
-    color: var(--text); 
-    height: 100vh; 
-    height: 100dvh; 
-    overflow: hidden; 
-}
+body {
+            background-color: #0a0a0a; color: #ffffff; 
+            height: 100vh; height: 100dvh; /* 🛑 FIX 1: Dynamic Viewport Height */
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15), transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.15), transparent 40%),
+                radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15), transparent 40%);
+            background-attachment: fixed;
+            animation: breatheBg 12s infinite alternate ease-in-out;
+        }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 4px; } 
@@ -234,14 +235,12 @@ body {
 }
 
 /* Chat Input */
-.chat-input-area { 
-    padding: 15px 20px; 
-    background: rgba(15, 23, 42, 0.95); 
-    backdrop-filter: blur(10px); 
-    border-top: 1px solid rgba(255, 255, 255, 0.05); 
-    position: relative; 
-    padding-bottom: max(15px, env(safe-area-inset-bottom)); 
-}
+.chat-input-area {
+            flex: 0 0 auto; width: 100%; padding: 20px; 
+            padding-bottom: calc(20px + env(safe-area-inset-bottom)); /* 🛑 FIX 2: iPhone/Android Safe Area Buffer */
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 50;
+        }
 .chat-input-wrapper { 
     display: flex; 
     align-items: flex-end; 
