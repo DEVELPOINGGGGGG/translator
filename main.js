@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V55 - GAS DATABASE SYNC)
+   AI PRO SUITE - THE ULTIMATE BUILD (V56 - DYNAMIC TYPING SPEED)
 ======================================================= */
 
 let appHistory = [];
@@ -72,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Send wipe command to Google Sheets
             fetch(GOOGLE_SHEETS_WEBHOOK, {
                 method: "POST",
+                mode: "no-cors",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify({ action: "reset" })
             }).catch(e => console.log("Failed to wipe DB", e));
@@ -154,19 +155,25 @@ function getRetryButtonsHtml(lId) {
     </div>`;
 }
 
-// 🛑 THE 10-SECOND HUMAN TYPEWRITER ENGINE 🛑
+// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE 🛑
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div><div id="${contentId}"></div>`;
     const txtEl = document.getElementById(contentId);
     
-    const totalDuration = 10000; 
     const chars = rawText.length || 1;
-    let tickRate = Math.floor(totalDuration / chars);
+    
+    // Base Calculation: Try to fit in 10 seconds (10,000ms)
+    let tickRate = Math.floor(10000 / chars);
     let charsPerTick = 1;
     
-    if (tickRate < 20) {
+    // SMART SPEED ADJUSTMENT:
+    if (tickRate > 35) {
+        // If text is short, don't drag it out. Cap at a nice, steady "Medium" speed.
+        tickRate = 35; 
+    } else if (tickRate < 20) {
+        // If text is huge, ensure we finish in 10 seconds by typing multiple chars per tick.
         tickRate = 20;
-        charsPerTick = Math.ceil(chars / (totalDuration / 20));
+        charsPerTick = Math.ceil(chars / (10000 / 20));
     }
     
     let i = 0;
@@ -738,7 +745,7 @@ async function executeQaFlow() {
         
         statusTxt.innerText = `Solving... Generating answer in ${targetLang}`; pBar.style.width = "85%";
         
-        let prompt = `You are an expert Document QA Assistant.
+        let prompt = `You are an expert Document Assistant.
         
         DOCUMENT TEXT:
         ${extractedContext}
@@ -746,14 +753,13 @@ async function executeQaFlow() {
         TARGET QUESTION TO SOLVE:
         ${finalQuestion}
         
-        CRITICAL INSTRUCTIONS:
-        1. YOU MUST ACTUALLY SOLVE AND ANSWER THE TARGET QUESTION based ONLY on the Document Text. 
-        2. DO NOT just extract, repeat, or print the question. PROVIDE THE FINAL ANSWER/SOLUTION.
-        3. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT).
-        4. Use ONLY plain words, math numbers, and basic math symbols. No markdown like bolding or asterisks.
-        5. ALWAYS format fractions as proper LaTeX fractions (e.g., $\\frac{110}{44}$) wrapped in $. Do not write them inline.
-        6. ALWAYS use the uppercase letter "X" for multiplication instead of "*" or "\\times".
-        7. If the answer cannot be found in the provided text, state that clearly in Hindi.`;
+        CRITICAL INSTRUCTIONS (FAILURE IS NOT AN OPTION):
+        1. The document text may contain MULTIPLE different questions.
+        2. YOU MUST IGNORE ALL OTHER QUESTIONS and ONLY SOLVE THE EXACT QUESTION STATED UNDER "TARGET QUESTION TO SOLVE".
+        3. Answer based ONLY on the Document Text provided. 
+        4. You MUST write your entire answer strictly in ${targetLang}. 
+        5. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
+        6. If the answer cannot be found in the provided text, state that clearly.`;
         
         const qaId = "qa_ans_" + Date.now();
         window.requestCache[qaId] = { type: 'qa', prompt: prompt, targetLang: targetLang, finalQuestion: finalQuestion };
@@ -767,7 +773,7 @@ async function executeQaFlow() {
             <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div>
-            <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
+            <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div>
             <div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
             ${getRetryButtonsHtml(qaId)}
             <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
@@ -794,16 +800,17 @@ function saveToHistory(type, q, a, img = null, provider = "AI") {
     appHistory.unshift({ id: Date.now(), type, title: q.substring(0,25)||'Saved', question: q, answer: a, image: img, provider: provider }); 
     saveHistorySafe(); 
     
-    // 2. Silently blast the data to your Google Sheet in the background!
+    // 2. Silently blast the data to your Google Sheet with NO-CORS mode!
     fetch(GOOGLE_SHEETS_WEBHOOK, {
         method: "POST",
+        mode: "no-cors", // Bypass browser blocks
         headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         body: JSON.stringify({
             action: "log",
             type: type,
             question: q,
             answer: a.replace(/<[^>]*>?/gm, ''), // Strips HTML tags so the sheet looks clean
-            provider: provider // This automatically captures "Gemini", "Groq", etc. from the backend
+            provider: provider || "Gemini 1" 
         })
     }).catch(e => console.log("Google Sheets sync failed, but app is fine."));
 }
