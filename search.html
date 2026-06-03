@@ -3,85 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Pro Suite - Deep Search</title>
+    <title>Deep Search - AI Pro Suite</title>
     
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0f172a">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script>
-      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
-    </script>
-    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
+    <!-- Premium Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="overlay" id="overlay"></div>
-
 <div class="topbar">
-  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">AI Pro Suite</div>
-</div>
-<div class="apiTracker">
-    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
+  <div class="menuBtn" onclick="window.location.href='index.html'">🔙</div>
+  <div class="appTitle">Deep Search</div>
 </div>
 
-<div class="sidebar" id="sidebar">
-  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'" style="border-left: 4px solid #10b981; color: #6ee7b7; background: #111827;">🔎 Deep Search (Groq)</button>
-  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-</div>
-
-<div class="page active chat-page-layout" id="searchPage">
-  <div class="chat-scroll-area" id="searchScrollArea">
-    <div class="card" style="background:linear-gradient(135deg,#10b981,#059669); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
-        <h1 style="font-size: 24px;">🔎 Deep Search AI</h1>
-        <p style="font-size: 14px; opacity: 0.9;">Powered by Groq. Lightning fast, zero limits.</p>
-    </div>
-    
-    <div id="searchChatHistory"></div>
-
+<div class="page active" style="top: 70px; max-width: 800px; margin: 0 auto;">
+  
+  <!-- Timer and Usage Tracker -->
+  <div class="card" style="margin-bottom: 20px; text-align: center; background: var(--bg-card);">
+      <div id="ptTimer" style="color: #f59e0b; font-weight: 600; font-size: 14px; margin-bottom: 8px;">⏳ PT Reset: Calculating...</div>
+      <div id="geminiCount" style="color: #60a5fa; font-size: 14px; font-weight: 500;">Total Gemini Requests: Loading...</div>
   </div>
-  <div class="chat-input-area">
-    <div class="image-preview-chip" id="mathPreviewChip">
-        <div class="image-preview-close" id="clearMathImgBtn">✕</div>
+
+  <div class="chat-container" id="chatContainer">
+      <div class="message ai">
+          <strong>🔎 Deep Research Engine Ready</strong><br>
+          What would you like to research today? Type your query and choose your AI model.
+      </div>
+  </div>
+
+  <div class="input-area">
+      <textarea id="searchPrompt" placeholder="Ask a deep research question..." rows="1" style="flex: 1; padding-top: 12px;"></textarea>
+      <button class="actionBtnSmall blue" onclick="openModelChooser()" style="padding: 0 20px;">🔍 Search</button>
+  </div>
+</div>
+
+<!-- 🛑 AI Model Chooser Modal 🛑 -->
+<div class="modal-overlay" id="modelModal">
+    <div class="modal-box">
+        <h3 style="margin-top: 0; color: white;">Choose AI Engine</h3>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Which model should perform this search?</p>
+        <button class="modal-btn gemini" onclick="triggerSearch('gemini')">✨ Gemini (Google)</button>
+        <button class="modal-btn groq" onclick="triggerSearch('groq')">⚡ Groq (Llama 3)</button>
+        <button class="modal-btn cloudflare" onclick="triggerSearch('cloudflare')">☁️ Cloudflare</button>
+        <button style="background: none; border: none; color: var(--muted); margin-top: 15px; cursor: pointer; font-weight: 600;" onclick="document.getElementById('modelModal').style.display = 'none'">Cancel</button>
     </div>
-    <div class="chat-input-wrapper">
-        <button class="chat-action-btn" id="openMathCameraBtn" title="Attach Image">📷</button>
-        <textarea id="searchInput" placeholder="Ask anything or attach an image... (Press Enter)"></textarea>
+</div>
+
+<!-- LINK TO YOUR MAIN.JS WHERE THE REAL MAGIC HAPPENS -->
+<script src="main.js"></script>
+
+<script>
+    // --- 1. Timer Logic for Pacific Time Midnight Reset ---
+    setInterval(() => {
+        const now = new Date();
+        const laTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+        const nextMidnight = new Date(laTime); 
+        nextMidnight.setHours(24, 0, 0, 0);
         
-        <button class="chat-action-btn send" id="sendSearchBtn" onclick="runGroqSearch()">↑</button>
-    </div>
-  </div>
-</div>
+        const diff = nextMidnight - laTime;
+        const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+        
+        document.getElementById('ptTimer').innerText = `⏳ Quota Resets in: ${h}h ${m}m ${s}s (PT)`;
+    }, 1000);
 
-<div class="cameraModal" id="cameraModal">
-  <div class="cameraHeader"><button id="closeCameraBtn">✕</button><div>Camera</div><div></div></div>
-  <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
-  <div class="cameraControls">
-    <button class="flashBtn" id="toggleFlashBtn">🔦</button>
-    <button class="cameraCircle" id="capturePhotoBtn"></button>
-    <button class="switchBtn" id="switchCameraBtn">🔄</button>
-  </div>
-</div>
+    // --- 2. Fetch Live Gemini Request Count ---
+    async function updateUsage() {
+        try {
+            const res = await fetch('/api/usage'); 
+            const data = await res.json();
+            let geminiTotal = 0;
+            for (const [key, value] of Object.entries(data)) { 
+                if (key.includes("GEMINI")) geminiTotal += value; 
+            }
+            document.getElementById('geminiCount').innerText = `Total Gemini Requests: ${geminiTotal}`;
+        } catch (e) {
+            document.getElementById('geminiCount').innerText = `Total Gemini Requests: Offline`;
+        }
+    }
+    // Run immediately, then check every 10 seconds
+    updateUsage(); 
+    setInterval(updateUsage, 10000); 
 
-<div class="photoViewer" id="photoViewer">
-  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
-      <button class="closeBtn" id="closePreviewBtn">✕</button>
-  </div>
-  <img id="previewImage" src="" alt="Preview">
-</div>
+    // --- 3. Handle Modal and Search Execution ---
+    let currentPrompt = "";
+    
+    function openModelChooser() {
+        const text = document.getElementById('searchPrompt').value.trim();
+        if (!text) {
+            alert("Bro, you need to type a question first!");
+            return;
+        }
+        currentPrompt = text;
+        document.getElementById('modelModal').style.display = 'flex';
+    }
 
-<canvas id="captureCanvas" style="display:none;"></canvas>
-<script src="main.js" defer></script>
+    function triggerSearch(provider) {
+        // Close the modal
+        document.getElementById('modelModal').style.display = 'none';
+        
+        // Clear the input box
+        document.getElementById('searchPrompt').value = '';
+        
+        // Trigger the master function inside main.js
+        handleDeepSearch(currentPrompt, provider);
+        
+        // Wait a few seconds for the API to respond, then update the usage stats
+        setTimeout(updateUsage, 3000);
+    }
+</script>
+
 </body>
 </html>
