@@ -5,7 +5,7 @@
 let appHistory = [];
 try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
 
-let apiTime = 60, visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
+let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
 let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
@@ -32,14 +32,56 @@ window.speechSynthesis.onvoiceschanged = loadVoices;
 
 document.addEventListener("DOMContentLoaded", () => {
     loadVoices();
+    
+    // 🛑 DYNAMICALLY OVERRIDE THE TRACKER UI FOR ALL HTML PAGES 🛑
+    const tracker = document.querySelector('.apiTracker');
+    if (tracker) {
+        tracker.innerHTML = `
+            <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
+            <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+            <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+            <div>📝 <span id="apiText" class="api-val text">0</span></div>
+        `;
+    }
+
+    // 🛑 PACIFIC TIME RESET & TOTAL TRACKING ENGINE 🛑
     setInterval(() => {
-        apiTime--; if(apiTime <= 0) { apiTime = 60; visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); }
-        const t = document.getElementById('apiTimer'); if(t) t.innerText = apiTime + 's'; 
+        // Calculate Pacific Time (Los Angeles)
+        const now = new Date();
+        const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+        const laTime = new Date(laTimeStr);
         
+        // Find next midnight PT
+        const nextMidnight = new Date(laTime);
+        nextMidnight.setHours(24, 0, 0, 0);
+        
+        const diffMs = nextMidnight - laTime;
+        const h = Math.floor(diffMs / (1000 * 60 * 60));
+        const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+        const pad = (num) => num.toString().padStart(2, '0');
+        
+        // Reset quotas at exactly midnight PT
+        if (h === 0 && m === 0 && s === 0) { 
+            visionReqs = 0; textReqs = 0; 
+            localStorage.setItem('visionReqs', '0'); 
+            localStorage.setItem('textReqs', '0'); 
+        }
+        
+        // Update Timers and Counters dynamically
+        const t = document.getElementById('apiTimer'); 
+        if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+        
+        const total = visionReqs + textReqs;
+        const elTotal = document.getElementById('apiTotal'); if(elTotal) elTotal.innerText = total;
+        const elVis = document.getElementById('apiVision'); if(elVis) elVis.innerText = visionReqs;
+        const elTxt = document.getElementById('apiText'); if(elTxt) elTxt.innerText = textReqs;
+        
+        // Update char counts
         const txtInput = document.getElementById('inputText');
         if(txtInput && document.getElementById('charCount')) document.getElementById('charCount').innerText = txtInput.value.length + " chars";
     }, 1000);
-    
+ 
     const inputs = [{id:"searchInput", fn:runGroqSearch}, {id:"mathInstructionInput", fn:executeMathFlow}];
     inputs.forEach(i => { const el = document.getElementById(i.id); if(el) el.addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); i.fn(); } }); });
     
