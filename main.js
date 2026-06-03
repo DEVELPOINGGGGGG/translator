@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V54 - 10 SEC TYPEWRITER)
+   AI PRO SUITE - THE ULTIMATE BUILD (V55 - GAS DATABASE SYNC)
 ======================================================= */
 
 let appHistory = [];
@@ -9,6 +9,10 @@ let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs =
 let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
+window.hasResetToday = false;
+
+// 🛑 YOUR GOOGLE SHEETS WEBHOOK 🛑
+const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
 
 // 🛑 THE RETRY ENGINE CACHE 🛑
 window.requestCache = {};
@@ -43,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     }
 
+    // PACIFIC TIME & GOOGLE SHEETS RESET ENGINE
     setInterval(() => {
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
@@ -57,10 +62,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const s = Math.floor((diffMs % (1000 * 60)) / 1000);
         const pad = (num) => num.toString().padStart(2, '0');
         
-        if (h === 0 && m === 0 && s === 0) { 
+        // AUTO-ERASE EXACTLY AT PACIFIC MIDNIGHT
+        if (h === 0 && m === 0 && s === 0 && !window.hasResetToday) { 
             visionReqs = 0; textReqs = 0; 
             localStorage.setItem('visionReqs', '0'); 
             localStorage.setItem('textReqs', '0'); 
+            window.hasResetToday = true;
+            
+            // Send wipe command to Google Sheets
+            fetch(GOOGLE_SHEETS_WEBHOOK, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action: "reset" })
+            }).catch(e => console.log("Failed to wipe DB", e));
+            
+        } else if (h !== 0) {
+            window.hasResetToday = false; 
         }
         
         const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
@@ -142,7 +159,7 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     containerEl.innerHTML = `<div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div><div id="${contentId}"></div>`;
     const txtEl = document.getElementById(contentId);
     
-    const totalDuration = 10000; // Force exactly 10 seconds
+    const totalDuration = 10000; 
     const chars = rawText.length || 1;
     let tickRate = Math.floor(totalDuration / chars);
     let charsPerTick = 1;
@@ -495,7 +512,6 @@ async function playFractionVideo() {
         if(!document.getElementById('videoGuiOverlay')) return; 
         const lineText = lines[i];
         
-        // Clean for video reader
         let cleanSpeech = lineText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
         cleanSpeech = cleanSpeech.replace(/[\$\\]/g, ' ').replace(/frac/g, ' batta ');
         
@@ -659,7 +675,7 @@ async function executeImageTransFlow() {
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// 🛑 4-STEP DOCUMENT QA ENGINE (STRICT TARGETED QUESTION FIX) 🛑
+// 🛑 4-STEP DOCUMENT QA ENGINE 🛑
 let qaSourceImages = [];
 let qaQuestionImage = null;
 
@@ -766,11 +782,30 @@ async function executeQaFlow() {
     } catch(e) { statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; }
 }
 
-// --- RESTORED HISTORY SAVING ---
-function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
+
+// 🛑 RESTORED HISTORY SAVING + GOOGLE SHEETS DATABASE SYNC 🛑
+function saveHistorySafe() { 
+    try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } 
+    catch(e) { appHistory.pop(); saveHistorySafe(); } 
+}
+
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
+    // 1. Save locally for your UI
     appHistory.unshift({ id: Date.now(), type, title: q.substring(0,25)||'Saved', question: q, answer: a, image: img, provider: provider }); 
     saveHistorySafe(); 
+    
+    // 2. Silently blast the data to your Google Sheet in the background!
+    fetch(GOOGLE_SHEETS_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+        body: JSON.stringify({
+            action: "log",
+            type: type,
+            question: q,
+            answer: a.replace(/<[^>]*>?/gm, ''), // Strips HTML tags so the sheet looks clean
+            provider: provider // This automatically captures "Gemini", "Groq", etc. from the backend
+        })
+    }).catch(e => console.log("Google Sheets sync failed, but app is fine."));
 }
 
 function renderHistory() { 
