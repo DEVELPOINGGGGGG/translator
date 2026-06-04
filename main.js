@@ -1,5 +1,5 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V57 - GROQ AUTO-TITLE & CHAT SESSIONS)
+   AI PRO SUITE - THE ULTIMATE BUILD (V60 - MEMORY ENGINE)
 ======================================================= */
 
 let appHistory = [];
@@ -17,6 +17,35 @@ const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2
 // 🛑 SESSION CACHE & RETRY ENGINE 🛑
 window.requestCache = {};
 let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
+
+// 🛑 NEW: CONTINUOUS CONTEXT MEMORY ENGINE 🛑
+function getLastContextImage(type) {
+    let sessionId = sessionCache[type];
+    if (!sessionId) return null;
+    let session = appHistory.find(i => i.id === sessionId);
+    if (!session || !session.interactions) return null;
+    // Look backwards through the current session to find the last uploaded image
+    for (let i = session.interactions.length - 1; i >= 0; i--) {
+        if (session.interactions[i].image) return session.interactions[i].image;
+    }
+    return null;
+}
+
+function getSessionContext(type) {
+    let sessionId = sessionCache[type];
+    if (!sessionId) return "";
+    let session = appHistory.find(i => i.id === sessionId);
+    if (!session || !session.interactions) return "";
+    
+    let ctx = "\n--- PREVIOUS CHAT HISTORY FOR CONTEXT ---\n";
+    // Grab the last 3 interactions to give the AI memory without overloading it
+    let recent = session.interactions.slice(-3); 
+    recent.forEach(inter => {
+        let cleanAns = inter.answer.replace(/<[^>]*>?/gm, ''); // Strip HTML tags
+        ctx += `User asked: ${inter.question}\nYou answered: ${cleanAns}\n\n`;
+    });
+    return ctx + "--- CURRENT NEW QUESTION ---\n";
+}
 
 // 🛑 THE MILITARY-GRADE OCR PROMPT 🛑
 const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
@@ -57,14 +86,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const nextMidnight = new Date(laTime);
         nextMidnight.setHours(24, 0, 0, 0);
         
-        const diffMs = nextMidnight - laTime;
-        const h = Math.floor(diffMs / (1000 * 60 * 60));
-        const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+        let diffMs = nextMidnight - laTime;
+        let h = Math.floor(diffMs / (1000 * 60 * 60));
+        let m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        let s = Math.floor((diffMs % (1000 * 60)) / 1000);
+        
+        if (h === 24) { h = 0; m = 0; s = 0; }
         const pad = (num) => num.toString().padStart(2, '0');
         
-        // AUTO-ERASE EXACTLY AT PACIFIC MIDNIGHT
-        if (h === 0 && m === 0 && s === 0 && !window.hasResetToday) { 
+        if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !window.hasResetToday) { 
             visionReqs = 0; textReqs = 0; 
             localStorage.setItem('visionReqs', '0'); 
             localStorage.setItem('textReqs', '0'); 
@@ -76,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ action: "reset" })
             }).catch(e => console.log("Failed to wipe DB", e));
             
-        } else if (h !== 0) { window.hasResetToday = false; }
+        } else if (laTime.getHours() !== 0) { window.hasResetToday = false; }
         
         const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
         
@@ -144,16 +174,15 @@ function appendAiLoading(cid) {
 
 function getRetryButtonsHtml(lId) {
     return `
-    <div style="margin-top:15px; display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+    <div style="margin-top:15px; display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:8px; border-radius:15px; border:1px solid rgba(255,255,255,0.05);">
         <span style="font-size:11px; color:var(--muted); align-self:center;">Retry Model:</span>
-        <button style="background:#1e293b; color:#3b82f6; border:1px solid #3b82f6; padding:4px 10px; border-radius:5px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'gemini')">Gemini</button>
-        <button style="background:#1e293b; color:#f59e0b; border:1px solid #f59e0b; padding:4px 10px; border-radius:5px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'cloudflare')">Cloudflare</button>
-        <button style="background:#1e293b; color:#10b981; border:1px solid #10b981; padding:4px 10px; border-radius:5px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'groq')">Groq</button>
+        <button style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid #3b82f6; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'gemini')">Gemini</button>
+        <button style="background:rgba(245,158,11,0.1); color:#f59e0b; border:1px solid #f59e0b; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'cloudflare')">Cloudflare</button>
+        <button style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid #10b981; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'groq')">Groq</button>
     </div>`;
 }
 
-// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE 🛑
-// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE (NO SCREEN SHAKE FIX) 🛑
+// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE (WITH ANTI-SHAKE FIX) 🛑
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div><div id="${contentId}"></div>`;
     const txtEl = document.getElementById(contentId);
@@ -165,28 +194,20 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     if (tickRate > 35) { tickRate = 35; } 
     else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
-    // 🛑 ANTI-SHAKE FIX: Temporarily disable CSS smooth scrolling while typing
     const scrollArea = containerEl.closest('.chat-scroll-area');
     if (scrollArea) scrollArea.style.scrollBehavior = 'auto';
     
-    let i = 0;
-    let lastScroll = 0;
-
+    let i = 0; let lastScroll = 0;
     const timer = setInterval(() => {
         if (i < rawText.length) {
             let chunk = rawText.substr(i, charsPerTick);
-            for(let c of chunk) { 
-                if (c === '\n') txtEl.appendChild(document.createElement('br')); 
-                else txtEl.appendChild(document.createTextNode(c)); 
-            }
+            for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
             i += charsPerTick;
             
-            // 🛑 ANTI-SHAKE FIX: Only pull the screen down every 150ms so the browser doesn't lag
             if (Date.now() - lastScroll > 150) {
                 if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
                 lastScroll = Date.now();
             }
-            
         } else {
             clearInterval(timer);
             if (isMath && window.MathJax) { MathJax.typesetClear([containerEl]); MathJax.typesetPromise([containerEl]); }
@@ -194,7 +215,6 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             
             if (scrollArea) {
                 scrollArea.scrollTop = scrollArea.scrollHeight;
-                // 🛑 ANTI-SHAKE FIX: Turn smooth scrolling back on when finished!
                 scrollArea.style.scrollBehavior = 'smooth'; 
             }
             if (onComplete) onComplete();
@@ -210,9 +230,9 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     
     const buttons = getRetryButtonsHtml(lId) + `
         <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-            <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
-            <button class="btn blue" style="padding:10px; flex:1; font-size:13px; background:rgb(220,38,38);" onclick="initVideoGui()">▶️ Tutor</button>
-            <button class="btn" style="padding:10px; flex:0.5; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
+            <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
+            <button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button>
+            <button class="btn" style="padding:10px; flex:0.5; font-size:13px; border-radius:20px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
         </div>
     `;
     
@@ -223,21 +243,29 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     }
 }
 
-// --- SAFE API FETCHERS WITH OVERRIDE ---
+// --- 🛑 SAFE API FETCHERS WITH RENDER CRASH DETECTION 🛑 ---
+async function checkHtmlError(r) {
+    const contentType = r.headers.get("content-type");
+    if (contentType && contentType.includes("text/html")) {
+        throw new Error("⚠️ Server Connection Error: Your backend server is either asleep or restarting. Please wait 30 seconds for it to wake up, then try again!");
+    }
+    return await r.json();
+}
+
 async function callGeminiText(sysText, usrText, override = null) {
-  if (isProcessing) throw new Error("Processing"); isProcessing = true; track('t');
+  if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('t');
   try { 
       const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText, providerOverride: override }) }); 
-      const d = await r.json(); if(!r.ok) throw new Error(d.error); 
+      const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; return d; 
   } catch(e) { isProcessing = false; throw e; }
 }
 
 async function callGeminiVision(imgData, aiQuery, override = null) {
-  if (isProcessing) throw new Error("Processing"); isProcessing = true; track('v');
+  if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('v');
   try { 
       const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery, providerOverride: override }) }); 
-      const d = await r.json(); if(!r.ok) throw new Error(d.error); 
+      const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; return d; 
   } catch(e) { isProcessing = false; throw e; }
 }
@@ -246,7 +274,6 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
 // 🛑 STRICT HINDI TTS & MATH PRONUNCIATION ENGINE 🛑
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
-    
     if (!('speechSynthesis' in window)) { alert("Your browser does not support text-to-speech!"); return; }
     window.speechSynthesis.cancel(); 
 
@@ -260,9 +287,7 @@ function speakAndHighlight(elId) {
 
     const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = 'hi-IN';
-    
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-    
     const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || availableVoices.find(v => v.name.includes('हिन्दी')) || availableVoices.find(v => v.lang.includes('hi')) || availableVoices[0];
 
     if (hindiVoice) { utterance.voice = hindiVoice; }
@@ -297,11 +322,11 @@ async function retryRequest(lId, targetProvider) {
             let resObj;
             if (req.image) { resObj = await callGeminiVision(req.image, req.prompt, targetProvider); } 
             else { track('t'); const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
-                resObj = await res.json(); if(!resObj.text) throw new Error(resObj.error || "Search failed");
+                resObj = await checkHtmlError(res); if(!resObj.text) throw new Error(resObj.error || "Search failed");
             }
             let ans = resObj.text.replace(/[\*&#_]/g, '');
             saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider);
-            const buttons = getRetryButtonsHtml(lId) + `<div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
+            const buttons = getRetryButtonsHtml(lId) + `<div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
             typeWriteResponse(container, ans, resObj.provider, `search_${lId}`, buttons, false);
         }
         else if (req.type === 'image_trans') {
@@ -317,7 +342,7 @@ async function retryRequest(lId, targetProvider) {
                 <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
                 <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
                 ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>
+                <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>
             `;
         }
         else if (req.type === 'qa') {
@@ -331,7 +356,7 @@ async function retryRequest(lId, targetProvider) {
                 <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
                 <div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
                 ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${lId}')">📋 Copy</button></div>
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${lId}')">📋 Copy</button></div>
             `;
             if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); }
         }
@@ -341,14 +366,20 @@ async function retryRequest(lId, targetProvider) {
     }
 }
 
-// --- 🛑 STRICT MATH SOLVER ENGINE 🛑 ---
+// --- 🛑 STRICT MATH SOLVER ENGINE (WITH CONTEXT MEMORY) 🛑 ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
     
-    appendUserBubble(instruction || "Solve this", capturedImage, "mathChatHistory");
+    // Save UI image before clearing it
+    let uiImage = capturedImage;
+    appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
+
+    // 🛑 THE MEMORY PULL: If no new image, grab the last one from this chat!
+    let activeImage = uiImage || getLastContextImage('math');
+    let memoryContext = getSessionContext('math');
 
     const sysPrompt = `You are a Math Tutor. 
     1. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT).
@@ -359,52 +390,64 @@ async function executeMathFlow() {
     6. ALWAYS use the uppercase letter "X" for multiplication instead of "x", "*", or "\\times".
     7. NEVER put any text or words inside the $ symbols.`;
     
-    window.requestCache[lId] = { type: 'math', sysPrompt, prompt: `Instruction: ${instruction}. ${sysPrompt}`, image: capturedImage };
+    // Bundle the memory with the new question
+    let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
+    
+    window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
     try {
-        let resObj = capturedImage ? await callGeminiVision(capturedImage, `Instruction: ${instruction}. ${sysPrompt}`) : await callGeminiText(sysPrompt, instruction);
+        let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
-        saveToHistory('math', instruction, cleanSol, capturedImage, resObj.provider); 
+        saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
         updateAiBubble(lId, cleanSol, resObj.provider, true);
         clearMathImage();
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- DEEP SEARCH (STRICT DEVANAGARI HINDI) ---
+// --- DEEP SEARCH (WITH CONTEXT MEMORY) ---
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); if(!q && !capturedImage) return;
     
-    appendUserBubble(q || "Analyze this image.", capturedImage, "searchChatHistory"); 
+    let uiImage = capturedImage;
+    appendUserBubble(q || "Analyze this image.", uiImage, "searchChatHistory"); 
     inp.value = ""; let lId = appendAiLoading("searchChatHistory");
     
-    window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: "Analyze this image carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH. \n\nQuery: " + q, image: capturedImage };
+    // 🛑 THE MEMORY PULL
+    let activeImage = uiImage || getLastContextImage('search');
+    let memoryContext = getSessionContext('search');
+    
+    let basePrompt = "Analyze this carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\n";
+    let finalPrompt = `${basePrompt}${memoryContext}User: ${q}`;
+    
+    window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: finalPrompt, image: activeImage };
 
     try {
         let ans = ""; let provider = "";
         
-        if (capturedImage) {
-            let resObj = await callGeminiVision(capturedImage, window.requestCache[lId].prompt);
+        if (activeImage) {
+            let resObj = await callGeminiVision(activeImage, finalPrompt);
             ans = resObj.text; provider = resObj.provider;
         } else {
+            track('t');
             const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
-                body: JSON.stringify({ prompt: "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\nSearch Query: " + q }) 
+                body: JSON.stringify({ prompt: `Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\n${memoryContext}User: ${q}` }) 
             });
-            const data = await res.json(); if(!res.ok) throw new Error(data.error);
+            const data = await checkHtmlError(res); if(!res.ok) throw new Error(data.error);
             ans = data.text; provider = data.provider;
         }
         
         ans = ans.replace(/[\*&#_]/g, '');
-        saveToHistory('search', q, ans, capturedImage, provider); 
+        saveToHistory('search', q, ans, uiImage, provider); 
         
         const bbl = document.getElementById(lId);
         if (bbl) {
             const bubbleEl = bbl.querySelector('.bubble');
             const buttons = getRetryButtonsHtml(lId) + `
                 <div style="margin-top:10px; display:flex; gap:10px;">
-                    <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                    <button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
                 </div>`;
             typeWriteResponse(bubbleEl, ans, provider, `search_${lId}`, buttons, false);
         }
@@ -566,8 +609,8 @@ async function runTranslation(){
             <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${provider}</div>
             <div id="${tId}">${cleanText}</div>
             <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn green" style="padding:10px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
+                <button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
             </div>`; 
         document.getElementById("translatedTextStatus").style.display = "none"; 
         
@@ -649,8 +692,8 @@ async function executeImageTransFlow() {
             <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
             ${getRetryButtonsHtml(lId)}
             <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+                <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
             </div>
         `;
         
@@ -756,8 +799,8 @@ async function executeQaFlow() {
             <div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
             ${getRetryButtonsHtml(qaId)}
             <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                <button class="btn green" style="padding:10px; flex:1; font-size:13px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white;" onclick="copyToClipboard('${qaId}')">📋 Copy</button>
+                <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${qaId}')">📋 Copy</button>
             </div>
         `;
         
@@ -782,7 +825,7 @@ async function generateTitleWithGroq(sessionId) {
                 providerOverride: "groq"
             })
         });
-        const data = await res.json();
+        const data = await checkHtmlError(res);
         if (data.text) {
             item.title = data.text.replace(/["'*]/g, '').trim();
             saveHistorySafe();
@@ -798,7 +841,6 @@ function saveHistorySafe() {
 }
 
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
-    // Always blast the background Google Sheets sync
     fetch(GOOGLE_SHEETS_WEBHOOK, {
         method: "POST", mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" }, 
@@ -812,21 +854,21 @@ function saveToHistory(type, q, a, img = null, provider = "AI") {
 
     if (!histItem) {
         sessionId = Date.now();
-        sessionCache[type] = sessionId; // Set active session
+        sessionCache[type] = sessionId; 
         histItem = {
             id: sessionId, type: type, title: q.substring(0,25) + '...',
             interactions: [{ question: q, answer: a, image: img, provider: provider }],
             provider: provider,
-            question: q, answer: a // Fallbacks
+            question: q, answer: a 
         };
         appHistory.unshift(histItem);
     } else {
         histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
-        histItem.question = q; histItem.answer = a; // Fallback update
+        histItem.question = q; histItem.answer = a; 
     }
     
     saveHistorySafe();
-    generateTitleWithGroq(sessionId); // Ask Groq to dynamically name the chat!
+    generateTitleWithGroq(sessionId); 
 }
 
 // 🛑 MULTI-CHAT HISTORY VIEWER 🛑
@@ -909,7 +951,6 @@ function restoreSession(e, id) {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     if (currentPage !== targetPage && targetPage !== '') { window.location.href = `${targetPage}?restore=${id}`; return; }
     
-    // Resume the session internally so new questions attach to it!
     sessionCache[item.type] = item.id;
     
     const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
@@ -932,7 +973,7 @@ function restoreSession(e, id) {
                     <div style="font-size:10px; color:var(--muted); text-align:right; margin-bottom:5px; font-weight:bold; letter-spacing:0.5px;">✨ BY ${inter.provider || "AI"}</div>
                     <div id="search_${lId}">${inter.answer.replace(/\n/g, '<br>')}</div>
                     ${getRetryButtonsHtml(lId)}
-                    <div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
+                    <div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
             }
         });
     } 
@@ -945,7 +986,6 @@ function restoreSession(e, id) {
         });
     } 
     else if (item.type === 'qa' && document.getElementById("qaAnswerBox")) {
-        // QA typically overwrites the box, so we just restore the last interaction
         const lastInter = interactionsToRestore[interactionsToRestore.length - 1];
         document.getElementById("qaAnswerBox").innerHTML = lastInter.answer; document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "Restored from History";
     }
