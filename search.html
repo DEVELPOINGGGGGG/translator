@@ -126,7 +126,6 @@
             </div>
             
             <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
-            
             <textarea id="searchInput" placeholder="Search web, ask a question..." rows="1"></textarea>
             
             <button class="chat-action-btn btn-relative" id="micBtn" onclick="createRipple(event); openMicModal();" title="Voice Input" style="font-size: 20px; transition: 0.3s;">🎙️</button>
@@ -150,10 +149,9 @@
         // --- 1. STATE VARIABLES, WEBHOOK & HISTORY ---
         const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
         
-        // Load App History from LocalStorage
         let appHistory = [];
         try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
-        let sessionCache = { search: null }; // Keeps track of current chat session for history grouping
+        let sessionCache = { search: null }; 
 
         let standaloneCapturedImage = null;
         let persistentPdfMemory = "";
@@ -164,37 +162,25 @@
         let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
         let hasResetToday = false;
 
-        // --- 2. LOCALSTORAGE DB LOGIC ---
-        function saveHistorySafe() { 
-            try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } 
-            catch(e) { appHistory.pop(); saveHistorySafe(); } 
-        }
-
+        // --- 2. LOCALSTORAGE DB LOGIC & COPY FUNCTION ---
+        function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
         function saveToHistory(type, q, a, img = null, provider = "AI") {
             let sessionId = sessionCache[type];
             let histItem = appHistory.find(i => i.id === sessionId);
-
             if (!histItem) {
-                // Create brand new history session
-                sessionId = Date.now(); 
-                sessionCache[type] = sessionId; 
-                histItem = { 
-                    id: sessionId, 
-                    type: type, 
-                    title: (q || "Image/PDF Search").substring(0, 25) + '...', 
-                    interactions: [{ question: q, answer: a, image: img, provider: provider }], 
-                    provider: provider, 
-                    question: q, 
-                    answer: a 
-                };
+                sessionId = Date.now(); sessionCache[type] = sessionId; 
+                histItem = { id: sessionId, type: type, title: (q || "Image/PDF Search").substring(0, 25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
                 appHistory.unshift(histItem);
             } else {
-                // Add to existing chat session in history
                 histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
-                histItem.question = q; 
-                histItem.answer = a; 
+                histItem.question = q; histItem.answer = a; 
             }
             saveHistorySafe();
+        }
+
+        // 📋 THE MISSING COPY TO CLIPBOARD FUNCTION RESTORED!
+        function copyToClipboard(textId) { 
+            navigator.clipboard.writeText(document.getElementById(textId).innerText).then(() => showStandaloneToast("✅ Copied to clipboard!")); 
         }
 
 
@@ -239,22 +225,15 @@
         }
 
         function typeWriterEffect(element, text) {
-            element.innerHTML = "";
-            let i = 0;
-            const maxDurationMs = 10000; 
-            let tickRate = 20; 
-            let totalTicksAllowed = maxDurationMs / tickRate;
-            let charsPerTick = 1;
-            
-            if (text.length > totalTicksAllowed) { charsPerTick = Math.ceil(text.length / totalTicksAllowed); } 
-            else if (text.length < 150) { tickRate = 35; }
-            
+            element.innerHTML = ""; let i = 0;
+            const maxDurationMs = 10000; let tickRate = 20; 
+            let totalTicksAllowed = maxDurationMs / tickRate; let charsPerTick = 1;
+            if (text.length > totalTicksAllowed) { charsPerTick = Math.ceil(text.length / totalTicksAllowed); } else if (text.length < 150) { tickRate = 35; }
             let timer = setInterval(() => {
                 if (i < text.length) {
                     let chunk = text.substr(i, charsPerTick);
                     for(let c of chunk) {
-                        if(c === '\n') { element.appendChild(document.createElement('br')); }
-                        else { element.appendChild(document.createTextNode(c)); }
+                        if(c === '\n') { element.appendChild(document.createElement('br')); } else { element.appendChild(document.createTextNode(c)); }
                     }
                     i += charsPerTick;
                 } else { clearInterval(timer); }
@@ -262,111 +241,101 @@
         }
 
         // --- 4. SPEECH RECOGNITION (MIC) ENGINE ---
-        let speechRecog = null;
-        let isRecording = false;
+        let speechRecog = null; let isRecording = false;
 
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            speechRecog = new SpeechRecognition();
-            speechRecog.continuous = false;
-            speechRecog.interimResults = true;
-
-            speechRecog.onstart = () => {
-                isRecording = true;
-                const mic = document.getElementById("micBtn");
-                if (mic) mic.classList.add("recording-mic");
-            };
-
+            speechRecog = new SpeechRecognition(); speechRecog.continuous = false; speechRecog.interimResults = true;
+            speechRecog.onstart = () => { isRecording = true; const mic = document.getElementById("micBtn"); if (mic) mic.classList.add("recording-mic"); };
             speechRecog.onresult = (e) => {
-                let transcript = "";
-                for (let i = 0; i < e.results.length; i++) { transcript += e.results[i][0].transcript; }
-                const inp = document.getElementById("searchInput");
-                if (inp) inp.value = transcript;
+                let transcript = ""; for (let i = 0; i < e.results.length; i++) { transcript += e.results[i][0].transcript; }
+                const inp = document.getElementById("searchInput"); if (inp) inp.value = transcript;
             };
-
             speechRecog.onerror = (e) => { stopVoiceRecognition(); };
             speechRecog.onend = () => { stopVoiceRecognition(); };
         }
 
         window.openMicModal = function() {
-            if (!speechRecog) return showStandaloneToast("⚠️ Voice recognition not supported on this browser.");
-            if (isRecording) { stopVoiceRecognition(); } 
-            else { document.getElementById("micLangModal").style.display = "flex"; }
+            if (!speechRecog) return showStandaloneToast("⚠️ Voice recognition not supported.");
+            if (isRecording) { stopVoiceRecognition(); } else { document.getElementById("micLangModal").style.display = "flex"; }
         }
-
         window.closeMicModal = function() { document.getElementById("micLangModal").style.display = "none"; }
-
         window.startVoiceRecognition = function(lang) {
             closeMicModal();
             if (speechRecog) {
-                speechRecog.lang = lang;
-                const inp = document.getElementById("searchInput");
-                if(inp && !inp.value) inp.value = "Listening..."; 
-                speechRecog.start();
+                speechRecog.lang = lang; const inp = document.getElementById("searchInput");
+                if(inp && !inp.value) inp.value = "Listening..."; speechRecog.start();
             }
         }
-
         window.stopVoiceRecognition = function() {
-            isRecording = false;
-            if (speechRecog) speechRecog.stop();
-            const mic = document.getElementById("micBtn");
-            if (mic) mic.classList.remove("recording-mic");
-            const inp = document.getElementById("searchInput");
-            if (inp && inp.value === "Listening...") inp.value = "";
+            isRecording = false; if (speechRecog) speechRecog.stop();
+            const mic = document.getElementById("micBtn"); if (mic) mic.classList.remove("recording-mic");
+            const inp = document.getElementById("searchInput"); if (inp && inp.value === "Listening...") inp.value = "";
         }
 
 
-        // --- 5. TTS PLAYER ENGINE (Bracket Logic Included) ---
-        let currentTtsText = "";
+        // --- 5. SMART TTS PLAYER ENGINE (SENTENCE CHUNKING) ---
+        let ttsSentences = [];
+        let currentSentenceIndex = 0;
         let isBracketReadingEnabled = true;
-        let ttsUtterance = null;
+        let isCancelingForToggle = false;
+
         window.speechSynthesis.onvoiceschanged = () => {};
 
         window.startTts = function(elementId) {
             const el = document.getElementById(elementId);
             if (!el) return;
-            currentTtsText = el.innerText || el.textContent;
+            let fullText = el.innerText || el.textContent;
+            
+            ttsSentences = fullText.match(/[^.!?।\n]+[.!?।\n]*/g) || [fullText];
+            currentSentenceIndex = 0;
             
             document.getElementById("ttsPlayer").style.display = "flex";
             document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
-            playProcessedTts();
+            
+            window.speechSynthesis.cancel(); 
+            setTimeout(playNextSentence, 50);
         };
 
-        function playProcessedTts() {
-            window.speechSynthesis.cancel();
-            let processedText = currentTtsText;
-            
+        function playNextSentence() {
+            if (currentSentenceIndex >= ttsSentences.length) {
+                document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
+                return;
+            }
+            let originalSentence = ttsSentences[currentSentenceIndex];
+            if (!originalSentence || !originalSentence.trim()) {
+                currentSentenceIndex++; playNextSentence(); return;
+            }
+
+            let processedText = originalSentence;
             if (isBracketReadingEnabled) {
                 processedText = processedText.replace(/[\(\[\{]/g, " kosthak ").replace(/[\)\]\}]/g, " kosthak ");
             } else {
                 processedText = processedText.replace(/\([^)]*\)/g, " ").replace(/\[[^\]]*\]/g, " ").replace(/\{[^}]*\}/g, " ");
             }
-            processedText = processedText.replace(/\*/g, "").replace(/#/g, "");
-            
-            ttsUtterance = new SpeechSynthesisUtterance(processedText);
-            ttsUtterance.lang = 'hi-IN';
-            ttsUtterance.rate = 0.9;
+            processedText = processedText.replace(/[\*#]/g, "");
+
+            let ttsUtterance = new SpeechSynthesisUtterance(processedText);
+            ttsUtterance.lang = 'hi-IN'; ttsUtterance.rate = 0.9;
             
             let voices = window.speechSynthesis.getVoices();
             let hindiVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || voices.find(v => v.lang.includes('hi')) || voices[0];
             if (hindiVoice) ttsUtterance.voice = hindiVoice;
-            
-            ttsUtterance.onend = () => { document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; };
-            ttsUtterance.onerror = () => { document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; };
-            
+
+            ttsUtterance.onend = () => { if (isCancelingForToggle) return; currentSentenceIndex++; playNextSentence(); };
+            ttsUtterance.onerror = (e) => { if (isCancelingForToggle) return; if(e.error !== 'canceled') document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; };
+
             window.speechSynthesis.speak(ttsUtterance);
             document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
         }
 
         window.toggleTts = function() {
             if (window.speechSynthesis.paused) {
-                window.speechSynthesis.resume();
-                document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
+                window.speechSynthesis.resume(); document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
             } else if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.pause();
-                document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
+                window.speechSynthesis.pause(); document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
             } else {
-                playProcessedTts();
+                if(currentSentenceIndex >= ttsSentences.length) currentSentenceIndex = 0; playNextSentence();
             }
         };
 
@@ -374,32 +343,25 @@
             isBracketReadingEnabled = !isBracketReadingEnabled;
             const btn = document.getElementById("ttsBracketBtn");
             if (isBracketReadingEnabled) {
-                btn.innerText = "[x] Read Brackets";
-                btn.style.background = "rgba(56,189,248,0.2)";
-                btn.style.borderColor = "#38bdf8";
+                btn.innerText = "[x] Read Brackets"; btn.style.background = "rgba(56,189,248,0.2)"; btn.style.borderColor = "#38bdf8";
             } else {
-                btn.innerText = "[ ] Skip Brackets";
-                btn.style.background = "rgba(255,255,255,0.1)";
-                btn.style.borderColor = "rgba(255,255,255,0.2)";
+                btn.innerText = "[ ] Skip Brackets"; btn.style.background = "rgba(255,255,255,0.1)"; btn.style.borderColor = "rgba(255,255,255,0.2)";
             }
-            if (window.speechSynthesis.speaking || window.speechSynthesis.paused) { playProcessedTts(); }
+            if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
+                isCancelingForToggle = true; window.speechSynthesis.cancel();
+                setTimeout(() => { isCancelingForToggle = false; playNextSentence(); }, 100);
+            }
         };
 
         window.closeTts = function() {
-            window.speechSynthesis.cancel();
-            document.getElementById("ttsPlayer").style.display = "none";
+            window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none";
+            ttsSentences = []; currentSentenceIndex = 0;
         };
 
 
         // --- 6. BACKGROUND WEBHOOK LOGGING ---
         function syncToSheets(question, answer, provider) {
-            fetch(GOOGLE_SHEETS_WEBHOOK, {
-                method: "POST", mode: "no-cors",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify({ 
-                    action: "log", type: "search", question: question, answer: answer.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini" 
-                })
-            }).catch(e => console.log("Google Sheets sync failed."));
+            fetch(GOOGLE_SHEETS_WEBHOOK, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "log", type: "search", question: question, answer: answer.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini" }) }).catch(e => console.log("Google Sheets sync failed."));
         }
 
         // --- 7. INITIALIZATION ---
@@ -429,11 +391,7 @@
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat and memory?")) {
                 document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat and memory cleared. How can I help you next?</div></div>`;
-                clearSearchImage(); clearPdfFile(); 
-                persistentPdfMemory = ""; 
-                sessionMessages = []; 
-                sessionCache['search'] = null; // Forces History DB to create a new session next search
-                closeTts();
+                clearSearchImage(); clearPdfFile(); persistentPdfMemory = ""; sessionMessages = []; sessionCache['search'] = null; closeTts();
             }
         }
 
@@ -443,158 +401,79 @@
             document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
         }
 
-        function updateTrackerDisplay() {
-            document.getElementById('apiTotal').innerText = visionReqs + textReqs;
-            document.getElementById('apiVision').innerText = visionReqs;
-            document.getElementById('apiText').innerText = textReqs;
-        }
-
-        function trackAPI(type) {
-            if(type === 'v') { visionReqs++; localStorage.setItem('visionReqs', visionReqs); }
-            else { textReqs++; localStorage.setItem('textReqs', textReqs); }
-            updateTrackerDisplay();
-        }
+        function updateTrackerDisplay() { document.getElementById('apiTotal').innerText = visionReqs + textReqs; document.getElementById('apiVision').innerText = visionReqs; document.getElementById('apiText').innerText = textReqs; }
+        function trackAPI(type) { if(type === 'v') { visionReqs++; localStorage.setItem('visionReqs', visionReqs); } else { textReqs++; localStorage.setItem('textReqs', textReqs); } updateTrackerDisplay(); }
 
         function startApiTracker() {
             updateTrackerDisplay();
             setInterval(() => {
-                const now = new Date();
-                const laTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
-                const nextMidnight = new Date(laTime); nextMidnight.setHours(24, 0, 0, 0);
-                let diffMs = nextMidnight - laTime;
-                let h = Math.floor(diffMs / (1000 * 60 * 60)), m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((diffMs % (1000 * 60)) / 1000);
-                if (h === 24) { h = 0; m = 0; s = 0; }
-                const pad = (num) => num.toString().padStart(2, '0');
-                if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { 
-                    visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); hasResetToday = true; updateTrackerDisplay();
-                } else if (laTime.getHours() !== 0) { hasResetToday = false; }
+                const now = new Date(); const laTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })); const nextMidnight = new Date(laTime); nextMidnight.setHours(24, 0, 0, 0);
+                let diffMs = nextMidnight - laTime; let h = Math.floor(diffMs / (1000 * 60 * 60)), m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((diffMs % (1000 * 60)) / 1000);
+                if (h === 24) { h = 0; m = 0; s = 0; } const pad = (num) => num.toString().padStart(2, '0');
+                if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); hasResetToday = true; updateTrackerDisplay(); } else if (laTime.getHours() !== 0) { hasResetToday = false; }
                 const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
             }, 1000);
         }
 
         // --- 8. PERSISTENT PDF MEMORY ---
         async function handlePdfUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const file = event.target.files[0]; if (!file) return;
             if (file.type !== "application/pdf") return showStandaloneToast("⚠️ Only PDF files are supported!");
-            
-            showStandaloneToast("📄 Reading PDF...");
-            const fileReader = new FileReader();
-            
+            showStandaloneToast("📄 Reading PDF..."); const fileReader = new FileReader();
             fileReader.onload = async function() {
                 const typedarray = new Uint8Array(this.result);
                 try {
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    let fullText = `DOCUMENT NAME: ${file.name}\n`;
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        fullText += `\n--- Page ${i} ---\n` + textContent.items.map(item => item.str).join(' ');
-                    }
-                    persistentPdfMemory = fullText;
-                    
-                    const chip = document.getElementById("pdfPreviewChip");
-                    chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name;
-                    showStandaloneToast(`✅ PDF Attached!`);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = `DOCUMENT NAME: ${file.name}\n`;
+                    for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += `\n--- Page ${i} ---\n` + textContent.items.map(item => item.str).join(' '); }
+                    persistentPdfMemory = fullText; const chip = document.getElementById("pdfPreviewChip");
+                    chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name; showStandaloneToast(`✅ PDF Attached!`);
                 } catch(e) { showStandaloneToast("❌ Error reading PDF."); }
-            };
-            fileReader.readAsArrayBuffer(file);
+            }; fileReader.readAsArrayBuffer(file);
         }
-
-        function clearPdfFile(e) {
-            if(e) e.stopPropagation(); persistentPdfMemory = "";
-            document.getElementById("pdfUploadInput").value = "";
-            document.getElementById("pdfPreviewChip").style.display = "none";
-        }
+        function clearPdfFile(e) { if(e) e.stopPropagation(); persistentPdfMemory = ""; document.getElementById("pdfUploadInput").value = ""; document.getElementById("pdfPreviewChip").style.display = "none"; }
 
         // --- 9. PRO CAMERA ENGINE ---
         let standaloneStream = null; let standaloneFacingMode = "environment"; let isStandaloneFlashOn = false;
-
         async function startCameraTrack() {
             if (standaloneStream) { standaloneStream.getTracks().forEach(t => t.stop()); }
             try {
                 standaloneStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: standaloneFacingMode, width: {ideal: 1920}, height: {ideal: 1080} } });
                 document.getElementById("standaloneVideo").srcObject = standaloneStream;
-                setTimeout(async () => {
-                    if (standaloneFacingMode === "environment") {
-                        const track = standaloneStream.getVideoTracks()[0];
-                        try { const cap = track.getCapabilities(); if (cap.torch) { isStandaloneFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } } catch(err) {}
-                    }
-                }, 500);
+                setTimeout(async () => { if (standaloneFacingMode === "environment") { const track = standaloneStream.getVideoTracks()[0]; try { const cap = track.getCapabilities(); if (cap.torch) { isStandaloneFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } } catch(err) {} } }, 500);
             } catch(e) { showStandaloneToast("⚠️ Camera Error."); }
         }
-
         async function openStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.add("active"); await startCameraTrack(); }
-        function closeStandaloneCamera() {
-            document.getElementById("standaloneCameraModal").classList.remove("active");
-            if (standaloneStream) { const track = standaloneStream.getVideoTracks()[0]; try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; }
-            isStandaloneFlashOn = false; updateFlashUI();
-        }
-
+        function closeStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.remove("active"); if (standaloneStream) { const track = standaloneStream.getVideoTracks()[0]; try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; } isStandaloneFlashOn = false; updateFlashUI(); }
         async function switchStandaloneCamera() { standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment"; await startCameraTrack(); }
-        async function toggleStandaloneFlash() {
-            if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0];
-            try { if (track.getCapabilities().torch) { isStandaloneFlashOn = !isStandaloneFlashOn; await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] }); updateFlashUI(); } } catch(err){}
-        }
-
-        function updateFlashUI() {
-            const btn = document.getElementById("standaloneFlashBtn");
-            if (btn) { btn.innerText = isStandaloneFlashOn ? "💡" : "🔦"; btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)"; }
-        }
-
+        async function toggleStandaloneFlash() { if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isStandaloneFlashOn = !isStandaloneFlashOn; await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] }); updateFlashUI(); } } catch(err){} }
+        function updateFlashUI() { const btn = document.getElementById("standaloneFlashBtn"); if (btn) { btn.innerText = isStandaloneFlashOn ? "💡" : "🔦"; btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)"; } }
         function captureStandalonePhoto() {
             const v = document.getElementById("standaloneVideo"); const c = document.getElementById("standaloneCanvas");
-            let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; }
-            c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-            standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7);
-            const chip = document.getElementById("mathPreviewChip"); chip.style.display = "block"; chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
-            closeStandaloneCamera();
+            let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+            standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7); const chip = document.getElementById("mathPreviewChip"); chip.style.display = "block"; chip.style.backgroundImage = `url(${standaloneCapturedImage})`; closeStandaloneCamera();
         }
-
         function clearSearchImage(e) { if(e) e.stopPropagation(); standaloneCapturedImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
         // --- 10. CORE SEARCH LOGIC & API CALLS ---
         async function runStandaloneSearch() {
-            const inp = document.getElementById("searchInput");
-            const q = inp.value.trim(); 
-            
-            if(!q && !standaloneCapturedImage && !persistentPdfMemory) return;
-            if(isProcessing) return; isProcessing = true;
+            const inp = document.getElementById("searchInput"); const q = inp.value.trim(); 
+            if(!q && !standaloneCapturedImage && !persistentPdfMemory) return; if(isProcessing) return; isProcessing = true;
 
             const chatContainer = document.getElementById("searchChatHistory");
             const selectedModel = document.getElementById("modelSelector").value;
             
-            let displayQ = q || "Analyze this document.";
-            let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
-            chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-user">
-                    <div class="bubble">
-                        ${imgHtml}
-                        <div>${displayQ.replace(/\n/g, '<br>')}</div>
-                    </div>
-                </div>
-            `);
-            
+            let displayQ = q || "Analyze this document."; let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${imgHtml}<div>${displayQ.replace(/\n/g, '<br>')}</div></div></div>`);
             inp.value = ""; scrollToBottom(); 
 
             const loadId = "load_" + Date.now();
-            chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" id="${loadId}">
-                    <div class="bubble" style="display:flex; align-items:center; gap:12px;">
-                        <div class="typing-indicator">
-                            <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
-                        </div>
-                        <span style="color:var(--muted); font-size:14px; font-weight:600;">AI is thinking...</span>
-                    </div>
-                </div>
-            `);
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">AI is thinking...</span></div></div>`);
             scrollToBottom();
 
             let memoryContextString = "";
             if (sessionMessages.length > 0) {
                 memoryContextString = "--- PREVIOUS CHAT HISTORY ---\n";
-                let recent = sessionMessages.slice(-6);
-                recent.forEach(msg => { memoryContextString += `User: ${msg.q}\nAI: ${msg.a}\n\n`; });
+                let recent = sessionMessages.slice(-6); recent.forEach(msg => { memoryContextString += `User: ${msg.q}\nAI: ${msg.a}\n\n`; });
                 memoryContextString += "--- CURRENT QUESTION ---\n";
             }
 
@@ -610,49 +489,36 @@
 
             try {
                 let endpoint = standaloneCapturedImage ? "/api/gemini-vision" : "/api/gemini-text";
-                let bodyData = standaloneCapturedImage ? 
-                    { imageBase64: standaloneCapturedImage, userPrompt: `${sysPrompt}\n\n${finalPrompt}`, providerOverride: selectedModel } : 
-                    { systemPrompt: sysPrompt, userPrompt: finalPrompt, providerOverride: selectedModel };
+                let bodyData = standaloneCapturedImage ? { imageBase64: standaloneCapturedImage, userPrompt: `${sysPrompt}\n\n${finalPrompt}`, providerOverride: selectedModel } : { systemPrompt: sysPrompt, userPrompt: finalPrompt, providerOverride: selectedModel };
 
-                const response = await fetch(endpoint, {
-                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData)
-                });
-
+                const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData) });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || "Server Error");
 
-                let cleanAns = data.text.replace(/[\*&#_]/g, '');
-                let apiProvider = data.provider || selectedModel.toUpperCase(); 
+                let cleanAns = data.text.replace(/[\*&#_]/g, ''); let apiProvider = data.provider || selectedModel.toUpperCase(); 
                 
                 trackAPI(standaloneCapturedImage ? 'v' : 't');
                 syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider);
-                
-                // SAVE CONTEXT TO CHAT MEMORY
                 sessionMessages.push({ q: q || "[Image/PDF Upload]", a: cleanAns });
-                
-                // SAVE TO LOCALSTORAGE DB (For history.html)
                 saveToHistory('search', q || "[Document/Image Analysis]", cleanAns, standaloneCapturedImage, apiProvider);
                 
                 clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
                 
                 const finalBubble = document.getElementById(loadId).querySelector('.bubble');
                 
+                // 📋 THE COPY BUTTON IS BACK IN ACTION!
                 finalBubble.innerHTML = `
                     <div class="api-badge">✨ BY ${apiProvider}</div>
                     <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
-                    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; display:flex;">
-                        <button class="btn-relative" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; width:100%;" onclick="createRipple(event); startTts('text_${loadId}')">🔊 Listen</button>
+                    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; display:flex; gap: 10px;">
+                        <button class="btn-relative" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); startTts('text_${loadId}')">🔊 Listen</button>
+                        <button class="btn-relative" style="background:rgba(255,255,255,0.05); color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); copyToClipboard('text_${loadId}')">📋 Copy</button>
                     </div>
                 `;
                 
-                fireParticles(finalBubble);
-                typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns);
+                fireParticles(finalBubble); typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns);
 
-            } catch (error) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`;
-            } finally {
-                isProcessing = false;
-            }
+            } catch (error) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; } finally { isProcessing = false; }
         }
     </script>
 </body>
