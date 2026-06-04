@@ -286,3 +286,30 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .tts-mini-player.paused .tts-bar { animation-play-state: paused; height: 6px !important; }
 
 @keyframes soundWave { 0% { height: 6px; } 100% { height: 20px; } }
+/* ==========================================================================
+   8. MODERN AI THINKING ANIMATION
+   ========================================================================== */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 0;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    background: #c084fc; /* Glowing Purple */
+    border-radius: 50%;
+    animation: typingDot 1.4s infinite ease-in-out both;
+}
+
+/* Delays to make them jump one after the other */
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes typingDot {
+    0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
+    40% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px #c084fc; }
+}
