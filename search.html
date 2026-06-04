@@ -2,302 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Pro Suite - Deep Search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Deep Search AI - Pro Suite</title>
     
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0a0a0a">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <script>
-      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
-    </script>
-    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-    <style>
-        /* =========================================================
-           AI PRO SUITE - PREMIUM UNIVERSAL UI (UNLAGGED)
-           Style: Silicon Valley Dark Mode / Deep Search Edition
-        ========================================================= */
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            background-color: #0a0a0a; color: #ffffff; min-height: 100vh; overflow: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(79, 70, 229, 0.15), transparent 40%),
-                radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.15), transparent 40%),
-                radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.15), transparent 40%);
-            background-attachment: fixed;
-            animation: breatheBg 12s infinite alternate ease-in-out;
-        }
-
-        @keyframes breatheBg {
-            0% { background-size: 100% 100%; background-position: 0% 0%; filter: hue-rotate(0deg); }
-            100% { background-size: 120% 120%; background-position: 100% 100%; filter: hue-rotate(15deg); }
-        }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-
-        /* --- TOP NAV & TRACKER --- */
-        .topbar {
-            position: fixed; top: 0; left: 0; right: 0; height: 70px; display: flex; align-items: center; padding: 0 25px;
-            background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 100;
-        }
-        .menuBtn {
-            font-size: 24px; color: #fff; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; transition: 0.2s; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1);
-        }
-        .menuBtn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
-        .appTitle { font-size: 20px; font-weight: 700; margin-left: 20px; letter-spacing: -0.5px; }
-
-        .apiTracker {
-            position: fixed; top: 70px; left: 0; right: 0; height: 35px;
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px); z-index: 99; display: flex; justify-content: space-evenly; align-items: center;
-            font-size: 12px; font-weight: 500; color: #a1a1aa; border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .api-val { font-weight: 700; font-size: 13px; }
-        .api-val.timer { color: #3b82f6; } .api-val.vision { color: #a855f7; } .api-val.text { color: #34d399; }
-
-        /* --- SIDEBAR --- */
-        .sidebar {
-            position: fixed; top: 0; left: -320px; width: 300px; height: 100%;
-            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.08); z-index: 999;
-            padding: 90px 20px 20px 20px; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .sidebar.active { left: 0; }
-        .sidebar button {
-            width: 100%; background: transparent; border: 1px solid transparent; color: #a1a1aa; padding: 14px 18px; font-size: 15px; font-weight: 500;
-            text-align: left; cursor: pointer; border-radius: 12px; margin-bottom: 8px; transition: all 0.2s;
-        }
-        .sidebar button:hover { background: rgba(255, 255, 255, 0.03); color: #fff; transform: translateX(5px); }
-        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 998; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .overlay.active { opacity: 1; pointer-events: auto; }
-
-        /* --- STRICT CHAT LAYOUT FIX --- */
-        .chat-page-layout {
-            display: flex !important;
-            flex-direction: column !important;
-            position: absolute; top: 105px; bottom: 0; left: 50%;
-            transform: translateX(-50%); width: 100%; max-width: 800px;
-            padding: 0 !important; overflow: hidden;
-            animation: slideUpFade .5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        
-        @keyframes slideUpFade { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-
-        .chat-scroll-area { flex: 1 1 auto; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; width: 100%; }
-        
-        .card {
-            background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 25px;
-            backdrop-filter: blur(10px); color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 100%;
-        }
-
-        /* --- INPUT & BUTTONS --- */
-        .chat-input-area {
-            flex: 0 0 auto; width: 100%; padding: 20px; background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 50;
-        }
-        .chat-input-wrapper {
-            display: flex; align-items: flex-end; background: rgba(255,255,255,0.03); border-radius: 24px;
-            padding: 8px 12px; gap: 12px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s box-shadow; width: 100%;
-        }
-        .chat-input-wrapper:focus-within { box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); }
-        .chat-input-wrapper textarea {
-            margin: 0; min-height: 44px; max-height: 120px; height: 44px; border: none; background: transparent;
-            padding: 12px 5px; flex: 1; resize: none; color: white; outline: none; font-size: 15px; font-family: 'Inter', sans-serif;
-            width: 100%;
-        }
-
-        .chat-action-btn {
-            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-            border: 1px solid rgba(255,255,255,0.1); color: white;
-            min-width: 44px; width: 44px; height: 44px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); font-size: 18px; margin-bottom: 2px; flex-shrink: 0;
-        }
-        .chat-action-btn:hover { transform: scale(1.1) rotate(5deg); background: rgba(255,255,255,0.1); }
-        .chat-action-btn:active { transform: scale(0.9); }
-
-        .chat-action-btn.send {
-            background: linear-gradient(135deg, #10b981, #059669, #3b82f6);
-            background-size: 200% 200%; animation: smoothColorBtn 3s ease infinite;
-            border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-        .chat-action-btn.send:hover { box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6); transform: translateY(-2px) scale(1.1); }
-        
-        @keyframes smoothColorBtn { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-        .btn-spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
-        .chat-action-btn.is-sending .btn-spinner { display: block; }
-        .chat-action-btn.is-sending span { display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* --- CHAT BUBBLES --- */
-        .chat-msg { margin-bottom: 20px; display: flex; flex-direction: column; width: 100%; clear: both; animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
-        @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
-        .chat-user { align-items: flex-end; } .chat-ai { align-items: flex-start; }
-        .bubble { max-width: 85%; padding: 14px 18px; border-radius: 20px; line-height: 1.6; font-size: 15px; position: relative; overflow-x: auto; backdrop-filter: blur(10px); }
-        .chat-user .bubble { background: linear-gradient(135deg, #10b981, #059669); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .chat-ai .bubble { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px; color: #f4f4f5; }
-        .bubble-img { max-width: 100%; max-height: 200px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
-        .bubble-img:hover { transform: scale(1.02); }
-
-        .image-preview-chip { display: none; position: absolute; top: -70px; left: 20px; width: 60px; height: 60px; border-radius: 12px; border: 2px solid #10b981; background-size: cover; background-position: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 10; cursor: pointer; animation: popIn 0.3s ease forwards; }
-        .image-preview-close { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-
-        /* --- CAMERA & MODALS --- */
-        .cameraModal, .photoViewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 5000; flex-direction: column; backdrop-filter: blur(15px); }
-        .cameraModal.active, .photoViewer.active { display: flex; animation: fadeIn 0.3s forwards; }
-        .cameraHeader { height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 25px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); position: absolute; top: 0; width: 100%; z-index: 2; }
-        .cameraHeader button { background: none; border: none; color: white; font-size: 26px; cursor: pointer; }
-        .cameraVideo { width: 100%; height: 100%; object-fit: cover; }
-        .cameraControls { min-height: 120px; display: flex; justify-content: center; align-items: center; gap: 40px; position: absolute; bottom: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); padding-bottom: 30px; z-index: 2; }
-        
-        .cameraCircle { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; background: rgba(255,255,255,0.2); box-shadow: 0 0 20px rgba(255,255,255,0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        .cameraCircle:hover { background: rgba(255,255,255,0.4); transform: scale(1.05); }
-        .cameraCircle:active { transform: scale(0.9); background: white; box-shadow: 0 0 40px white; }
-        .switchBtn, .flashBtn { width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px); transition: 0.2s; }
-        .switchBtn:hover, .flashBtn:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
-        .closeBtn { width: 45px; height: 45px; border: none; border-radius: 50%; background: rgba(255,255,255,0.1); color: white; font-size: 20px; cursor: pointer; transition: 0.2s; }
-
-        #shutterFlashOverlay { position: fixed; inset: 0; background: white; z-index: 9999; opacity: 0; pointer-events: none; }
-        .trigger-flash { animation: flashAnim 0.6s ease-out forwards; }
-        @keyframes flashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-        /* --- NOTIFICATION TOAST --- */
-        #toastContainer { position: fixed; top: 85px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
-        .ui-toast {
-            background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(16, 185, 129, 0.4); color: white;
-            padding: 12px 24px; border-radius: 50px; font-size: 14px; font-weight: 500;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(16, 185, 129, 0.15);
-            animation: toastSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards, toastFadeOut 0.4s ease 2.6s forwards;
-        }
-        @keyframes toastSlideDown { from { opacity: 0; transform: translateY(-20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes toastFadeOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-10px) scale(0.9); } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="chat-page-layout">
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-<div id="shutterFlashOverlay"></div>
-<div id="toastContainer"></div>
-
-<div class="topbar">
-  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">AI Pro Suite</div>
-</div>
-<div class="apiTracker">
-    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
-</div>
-
-<div class="sidebar" id="sidebar">
-  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #fff;">🔎 Deep Search (Groq)</button>
-  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-</div>
-
-<div class="page active chat-page-layout" id="searchPage">
-  <div class="chat-scroll-area" id="searchScrollArea">
-    <div class="card" style="background:linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1)); border: 1px solid rgba(16, 185, 129, 0.3); text-align:center; margin-bottom: 20px; flex-shrink: 0;">
-        <h1 style="font-size: 24px;">🔎 Deep Search AI</h1>
-        <p style="font-size: 14px; color: #a1a1aa; margin-top: 5px;">Powered by Groq. Lightning fast, zero limits.</p>
+    <div class="overlay" id="overlay"></div>
+    <div class="sidebar" id="sidebar">
+        <h2 style="padding: 0 30px 20px; font-weight: 800; background: linear-gradient(90deg, #38bdf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI Menu</h2>
+        <button onclick="window.location.href='index.html'">🏠 Home Dashboard</button>
+        <button onclick="window.location.href='maths.html'">📐 Math Solver</button>
+        <button onclick="window.location.href='search.html'" style="border-left: 5px solid #c084fc; background: rgba(255,255,255,0.08); color: #e9d5ff;">🔎 Deep Search AI</button>
+        <button onclick="window.location.href='translator.html'">🌍 Universal Translator</button>
+        <button onclick="window.location.href='image.html'">📸 Image Translator</button>
+        <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
     </div>
-    
-    <div id="searchChatHistory"></div>
 
-  </div>
-  <div class="chat-input-area">
-    <div class="image-preview-chip" id="mathPreviewChip">
-        <div class="image-preview-close" id="clearMathImgBtn">✕</div>
+    <div class="topbar">
+        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+        <div class="appTitle">Deep Search AI</div>
+        <div class="menuBtn" onclick="window.location.href='index.html'" style="font-size: 22px;">🏠</div>
     </div>
-    <div class="chat-input-wrapper">
-        <button class="chat-action-btn" id="openMathCameraBtn" title="Attach Image" onclick="openCamera('search')">📷</button>
-        <textarea id="searchInput" placeholder="Ask anything or attach an image... (Press Enter)"></textarea>
+
+    <div class="apiTracker">
+        </div>
+
+    <div class="chat-scroll-area" id="searchScrollArea" style="padding-top: 130px;">
         
-        <button class="chat-action-btn send" id="sendSearchBtn" onclick="runGroqSearch()">
-            <span>↑</span>
-            <div class="btn-spinner"></div>
-        </button>
+        <div class="chat-msg chat-ai">
+            <div class="bubble" style="box-shadow: 0 10px 40px rgba(0, 242, 254, 0.25); background: rgba(30, 41, 59, 0.8);">
+                <h3 style="margin-bottom: 10px; color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">⚡</span> Groq Lightning Search
+                </h3>
+                I am connected to the internet and powered by <b>Groq's hyper-fast LPU</b>. Ask me any question, or click the camera to take a photo, and I will analyze it instantly.
+                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-size: 13px; font-weight: 600;">
+                    <i>*All answers are strictly generated in Hindi (Devanagari).*</i>
+                </div>
+            </div>
+        </div>
+
+        <div id="searchChatHistory"></div>
     </div>
-  </div>
-</div>
 
-<div class="cameraModal" id="cameraModal">
-  <div class="cameraHeader"><button id="closeCameraBtn" onclick="closeCamera()">✕</button><div>Camera</div><div></div></div>
-  <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
-  <div class="cameraControls">
-    <button class="flashBtn" id="toggleFlashBtn" onclick="toggleFlash()">🔦</button>
-    <button class="cameraCircle" id="capturePhotoBtn" onclick="capturePhotoAndFlash()"></button>
-    <button class="switchBtn" id="switchCameraBtn" onclick="switchCamera()">🔄</button>
-  </div>
-</div>
-
-<div class="photoViewer" id="photoViewer">
-  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
-      <button class="closeBtn" id="closePreviewBtn">✕</button>
-  </div>
-  <img id="previewImage" src="" alt="Preview">
-</div>
-
-<canvas id="captureCanvas" style="display:none;"></canvas>
-
-<!-- Visual Augmentation & Notification Script -->
-<script>
-    function showSysNotification(message) {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = 'ui-toast';
-        toast.innerText = message;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500);
-    }
-
-    function toggleSidebar() { 
-        document.getElementById("sidebar").classList.toggle("active"); 
-        document.getElementById("overlay").classList.toggle("active"); 
-    }
-
-    document.getElementById('sendSearchBtn').addEventListener('click', function() {
-        const input = document.getElementById('searchInput').value.trim();
-        const preview = document.getElementById('mathPreviewChip').style.display;
+    <div class="chat-input-area">
         
-        if (input || preview === 'block') {
-            const btn = this;
-            btn.classList.add('is-sending');
-            showSysNotification('Querying Global Network...');
+        <div class="image-preview-chip" id="mathPreviewChip" onclick="viewPhotoFullscreen(this.style.backgroundImage.slice(5, -2))">
+            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; box-shadow:0 5px 15px rgba(0,0,0,0.5);" onclick="clearMathImage(event)">✕</div>
+        </div>
+
+        <div class="chat-input-wrapper">
+            <button class="chat-action-btn" onclick="openCamera('search')" title="Take Photo">📸</button>
             
-            setTimeout(() => {
-                btn.classList.remove('is-sending');
-            }, 2000);
-        }
-    });
+            <input type="hidden" id="voiceSourceLang" value="hi-IN">
+            
+            <textarea id="searchInput" placeholder="Search the web or analyze an image..." rows="1"></textarea>
+            
+            <button class="chat-action-btn" id="micBtn" onclick="toggleRecording()" title="Voice Input">🎙️</button>
+            <button class="chat-action-btn send" id="sendSearchBtn" title="Send">🚀</button>
+        </div>
+    </div>
 
-    function capturePhotoAndFlash() {
-        const overlay = document.getElementById('shutterFlashOverlay');
-        overlay.classList.remove('trigger-flash');
-        void overlay.offsetWidth;
-        overlay.classList.add('trigger-flash');
-        showSysNotification('Image captured successfully.');
-        if(typeof capturePhoto === 'function') capturePhoto();
-    }
+    <div class="cameraModal" id="cameraModal">
+        <div class="topbar" style="background: transparent; border: none; justify-content: flex-end; box-shadow: none; padding-top: 20px;">
+            <button id="closeCameraBtn" class="closeBtn" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);">✕</button>
+        </div>
+        
+        <video id="cameraVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+        
+        <div class="cameraControls">
+            <button id="toggleFlashBtn" style="width: 55px; height: 55px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 22px; cursor: pointer; backdrop-filter: blur(15px); box-shadow: 0 5px 15px rgba(0,0,0,0.3);">🔦</button>
+            
+            <button id="capturePhotoBtn" class="cameraCircle"></button>
+            
+            <button id="switchCameraBtn" style="width: 55px; height: 55px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 22px; cursor: pointer; backdrop-filter: blur(15px); box-shadow: 0 5px 15px rgba(0,0,0,0.3);">🔄</button>
+        </div>
+        <canvas id="captureCanvas" style="display: none;"></canvas>
+    </div>
 
-    document.getElementById('searchInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            document.getElementById('sendSearchBtn').click();
-        }
-    });
-</script>
+    <div class="photoViewer" id="photoViewer">
+        <button id="closePreviewBtn" class="closeBtn" style="position: absolute; top: 40px; right: 20px; z-index: 5000;">✕</button>
+        <img id="previewImage" src="">
+    </div>
 
-<script src="main.js" defer></script>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            svg: { fontCache: 'global' },
+            startup: { typeset: false }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <script src="main.js"></script>
 </body>
 </html>
