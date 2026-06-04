@@ -1,5 +1,6 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V60 - MEMORY ENGINE)
+   AI PRO SUITE - THE ULTIMATE BUILD (V61 - MASTER EDITION)
+   Includes TTS Mini-Player, Gemini Deep Search & Context Memory
 ======================================================= */
 
 let appHistory = [];
@@ -18,13 +19,12 @@ const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2
 window.requestCache = {};
 let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
 
-// 🛑 NEW: CONTINUOUS CONTEXT MEMORY ENGINE 🛑
+// 🛑 CONTINUOUS CONTEXT MEMORY ENGINE 🛑
 function getLastContextImage(type) {
     let sessionId = sessionCache[type];
     if (!sessionId) return null;
     let session = appHistory.find(i => i.id === sessionId);
     if (!session || !session.interactions) return null;
-    // Look backwards through the current session to find the last uploaded image
     for (let i = session.interactions.length - 1; i >= 0; i--) {
         if (session.interactions[i].image) return session.interactions[i].image;
     }
@@ -38,10 +38,9 @@ function getSessionContext(type) {
     if (!session || !session.interactions) return "";
     
     let ctx = "\n--- PREVIOUS CHAT HISTORY FOR CONTEXT ---\n";
-    // Grab the last 3 interactions to give the AI memory without overloading it
     let recent = session.interactions.slice(-3); 
     recent.forEach(inter => {
-        let cleanAns = inter.answer.replace(/<[^>]*>?/gm, ''); // Strip HTML tags
+        let cleanAns = inter.answer.replace(/<[^>]*>?/gm, '');
         ctx += `User asked: ${inter.question}\nYou answered: ${cleanAns}\n\n`;
     });
     return ctx + "--- CURRENT NEW QUESTION ---\n";
@@ -67,6 +66,20 @@ window.speechSynthesis.onvoiceschanged = loadVoices;
 document.addEventListener("DOMContentLoaded", () => {
     loadVoices();
     
+    // 🛑 INJECT TTS MINI PLAYER
+    const ttsDiv = document.createElement('div');
+    ttsDiv.id = 'ttsMiniPlayer';
+    ttsDiv.className = 'tts-mini-player';
+    ttsDiv.innerHTML = `
+        <div style="font-size: 18px; filter: drop-shadow(0 0 5px #38bdf8);">🎧</div>
+        <div class="tts-wave" id="ttsWave">
+            <div class="tts-bar"></div><div class="tts-bar"></div><div class="tts-bar"></div><div class="tts-bar"></div>
+        </div>
+        <button class="tts-btn play-pause" id="ttsPlayPauseBtn" onclick="toggleTtsPause()">⏸️</button>
+        <button class="tts-btn stop" onclick="closeTtsPlayer()">⏹️</button>
+    `;
+    document.body.appendChild(ttsDiv);
+
     const tracker = document.querySelector('.apiTracker');
     if (tracker) {
         tracker.innerHTML = `
@@ -270,12 +283,20 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
   } catch(e) { isProcessing = false; throw e; }
 }
 
-
-// 🛑 STRICT HINDI TTS & MATH PRONUNCIATION ENGINE 🛑
+// 🛑 STRICT HINDI TTS & PREMIUM MINI-PLAYER ENGINE 🛑
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
     if (!('speechSynthesis' in window)) { alert("Your browser does not support text-to-speech!"); return; }
+    
     window.speechSynthesis.cancel(); 
+
+    // Slide the Mini-Player onto the screen!
+    const player = document.getElementById('ttsMiniPlayer');
+    if (player) {
+        player.classList.add('active');
+        player.classList.remove('paused');
+        document.getElementById('ttsPlayPauseBtn').innerText = '⏸️';
+    }
 
     let spokenText = el.innerText;
     spokenText = spokenText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
@@ -292,9 +313,33 @@ function speakAndHighlight(elId) {
 
     if (hindiVoice) { utterance.voice = hindiVoice; }
     utterance.pitch = 1.0; utterance.rate = 0.9;  
+    
+    // Auto-close player when finished talking
+    utterance.onend = () => { closeTtsPlayer(); };
+    utterance.onerror = () => { closeTtsPlayer(); };
+
     window.speechSynthesis.speak(utterance);
 }
 
+// Player Play/Pause Control
+window.toggleTtsPause = function() {
+    if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+        document.getElementById('ttsPlayPauseBtn').innerText = '⏸️';
+        document.getElementById('ttsMiniPlayer').classList.remove('paused');
+    } else if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.pause();
+        document.getElementById('ttsPlayPauseBtn').innerText = '▶️';
+        document.getElementById('ttsMiniPlayer').classList.add('paused');
+    }
+};
+
+// Player Close/Stop Control
+window.closeTtsPlayer = function() {
+    window.speechSynthesis.cancel();
+    const player = document.getElementById('ttsMiniPlayer');
+    if (player) player.classList.remove('active');
+};
 
 // --- THE MASTER RETRY ROUTER ---
 async function retryRequest(lId, targetProvider) {
@@ -321,13 +366,19 @@ async function retryRequest(lId, targetProvider) {
         else if (req.type === 'search') {
             let resObj;
             if (req.image) { resObj = await callGeminiVision(req.image, req.prompt, targetProvider); } 
-            else { track('t'); const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
-                resObj = await checkHtmlError(res); if(!resObj.text) throw new Error(resObj.error || "Search failed");
+            else { 
+                track('t'); 
+                if(targetProvider === "gemini") {
+                     resObj = await callGeminiText("Act as an Internet Search Engine.", req.prompt, "gemini");
+                } else {
+                     const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
+                     resObj = await checkHtmlError(res); if(!resObj.text) throw new Error(resObj.error || "Search failed");
+                }
             }
             let ans = resObj.text.replace(/[\*&#_]/g, '');
-            saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider);
+            saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider || targetProvider);
             const buttons = getRetryButtonsHtml(lId) + `<div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
-            typeWriteResponse(container, ans, resObj.provider, `search_${lId}`, buttons, false);
+            typeWriteResponse(container, ans, resObj.provider || targetProvider, `search_${lId}`, buttons, false);
         }
         else if (req.type === 'image_trans') {
             let resObj = await callGeminiText("You are a strict translator.", req.prompt, targetProvider); 
@@ -372,12 +423,11 @@ async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
     
-    // Save UI image before clearing it
     let uiImage = capturedImage;
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // 🛑 THE MEMORY PULL: If no new image, grab the last one from this chat!
+    // THE MEMORY PULL: Grab history if no new image!
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
@@ -390,7 +440,6 @@ async function executeMathFlow() {
     6. ALWAYS use the uppercase letter "X" for multiplication instead of "x", "*", or "\\times".
     7. NEVER put any text or words inside the $ symbols.`;
     
-    // Bundle the memory with the new question
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
@@ -405,7 +454,7 @@ async function executeMathFlow() {
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- DEEP SEARCH (WITH CONTEXT MEMORY) ---
+// --- DEEP SEARCH (GEMINI FIRST, WITH CONTEXT MEMORY) ---
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); if(!q && !capturedImage) return;
@@ -414,12 +463,12 @@ async function runGroqSearch() {
     appendUserBubble(q || "Analyze this image.", uiImage, "searchChatHistory"); 
     inp.value = ""; let lId = appendAiLoading("searchChatHistory");
     
-    // 🛑 THE MEMORY PULL
+    // THE MEMORY PULL
     let activeImage = uiImage || getLastContextImage('search');
     let memoryContext = getSessionContext('search');
     
-    let basePrompt = "Analyze this carefully. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\n";
-    let finalPrompt = `${basePrompt}${memoryContext}User: ${q}`;
+    let sysPrompt = "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.";
+    let finalPrompt = `${memoryContext}User: ${q}`;
     
     window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: finalPrompt, image: activeImage };
 
@@ -427,15 +476,11 @@ async function runGroqSearch() {
         let ans = ""; let provider = "";
         
         if (activeImage) {
-            let resObj = await callGeminiVision(activeImage, finalPrompt);
+            let resObj = await callGeminiVision(activeImage, `${sysPrompt}\n\n${finalPrompt}`);
             ans = resObj.text; provider = resObj.provider;
         } else {
-            track('t');
-            const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, 
-                body: JSON.stringify({ prompt: `Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.\n\n${memoryContext}User: ${q}` }) 
-            });
-            const data = await checkHtmlError(res); if(!res.ok) throw new Error(data.error);
-            ans = data.text; provider = data.provider;
+            let resObj = await callGeminiText(sysPrompt, finalPrompt, "gemini");
+            ans = resObj.text; provider = resObj.provider;
         }
         
         ans = ans.replace(/[\*&#_]/g, '');
@@ -568,7 +613,6 @@ async function playFractionVideo() {
     const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄"; 
     resetVideoActivity(); 
 }
-
 
 // --- TEXT TRANSLATOR ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
