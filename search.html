@@ -2,101 +2,139 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Deep Search AI - Pro Suite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Search</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <!-- Link to your main CSS file -->
     <link rel="stylesheet" href="style.css">
+    
+    <!-- PDF.js Library for reading PDFs in the browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <style>
+        /* Styles for the attachment popup menu */
+        .attachment-menu {
+            display: none; 
+            position: absolute; 
+            bottom: 60px; 
+            left: 10px; 
+            background: #1e293b; 
+            border: 1px solid #334155;
+            border-radius: 12px; 
+            padding: 8px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            flex-direction: column; 
+            gap: 5px; 
+            z-index: 100;
+            min-width: 120px;
+        }
+        .attachment-menu.active {
+            display: flex;
+        }
+        .attachment-menu button {
+            background: transparent; 
+            border: none; 
+            color: #f8fafc; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: left;
+            transition: background 0.2s;
+        }
+        .attachment-menu button:hover {
+            background: #334155;
+        }
+        .relative-container {
+            position: relative;
+        }
+    </style>
 </head>
-<body class="chat-page-layout">
+<body>
 
-    <div class="overlay" id="overlay"></div>
-    <div class="sidebar" id="sidebar">
-        <h2 style="padding: 0 30px 20px; font-weight: 800; background: linear-gradient(90deg, #38bdf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI Menu</h2>
-        <button onclick="window.location.href='index.html'">🏠 Home Dashboard</button>
-        <button onclick="window.location.href='maths.html'">📐 Math Solver</button>
-        <button onclick="window.location.href='search.html'" style="border-left: 5px solid #c084fc; background: rgba(255,255,255,0.08); color: #e9d5ff;">🔎 Deep Search AI</button>
-        <button onclick="window.location.href='translator.html'">🌍 Universal Translator</button>
-        <button onclick="window.location.href='image.html'">📸 Image Translator</button>
-        <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
-    </div>
-
-    <div class="topbar">
-        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-        <div class="appTitle">Deep Search AI</div>
-        <div class="menuBtn" onclick="window.location.href='index.html'" style="font-size: 22px;">🏠</div>
-    </div>
-
-    <div class="apiTracker">
+    <!-- Main Chat Area -->
+    <div class="chat-container">
+        <!-- Chat History -->
+        <div id="searchChatHistory" class="chat-history">
+            <!-- Messages will appear here -->
         </div>
 
-    <div class="chat-scroll-area" id="searchScrollArea" style="padding-top: 130px;">
-        
-        <div class="chat-msg chat-ai">
-            <div class="bubble" style="box-shadow: 0 10px 40px rgba(0, 242, 254, 0.25); background: rgba(30, 41, 59, 0.8);">
-                <h3 style="margin-bottom: 10px; color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 20px;">⚡</span> Deep Research
-                </h3>
-                I can answer questions and powered by <b>Gemini</b>. Ask me any question, or click the camera to take a photo, and I will analyze it instantly.
-                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-size: 13px; font-weight: 600;">
-                    <i>*All answers are strictly generated in Hindi (Devanagari).*</i>
+        <!-- Input Area -->
+        <div class="chat-input-area">
+            
+            <!-- Previews for Images and PDFs -->
+            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                <!-- Image Preview Chip -->
+                <div class="image-preview-chip" id="mathPreviewChip" style="display:none;" onclick="viewPhotoFullscreen(this.style.backgroundImage.slice(5, -2))">
+                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; box-shadow:0 5px 15px rgba(0,0,0,0.5); cursor:pointer;" onclick="clearMathImage(event)">✕</div>
+                </div>
+                
+                <!-- PDF Preview Chip -->
+                <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; background:#1e293b; color:white; align-items:center; justify-content:center; flex-direction:column; font-size:10px; border: 2px solid #38bdf8; width: 60px; height: 60px; border-radius: 8px; position:relative;">
+                    <div style="font-size:24px; margin-bottom: 2px;">📄</div>
+                    <div id="pdfName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; padding:0 5px; text-align:center;">doc.pdf</div>
+                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; box-shadow:0 5px 15px rgba(0,0,0,0.5); cursor:pointer;" onclick="clearPdfFile(event)">✕</div>
                 </div>
             </div>
-        </div>
 
-        <div id="searchChatHistory"></div>
+            <div class="chat-input-wrapper">
+                
+                <!-- The + Button and Popup Menu -->
+                <div class="relative-container">
+                    <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File">➕</button>
+                    
+                    <!-- Popup Menu -->
+                    <div id="attachmentMenu" class="attachment-menu">
+                        <button onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">
+                            📄 PDF Document
+                        </button>
+                        <button onclick="openCamera('search'); toggleAttachmentMenu();">
+                            📸 Camera
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Hidden PDF Input -->
+                <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
+                
+                <input type="hidden" id="voiceSourceLang" value="hi-IN">
+                
+                <!-- Text Input -->
+                <textarea id="searchInput" placeholder="Search web, ask about an image, or upload a PDF..." rows="1" style="flex: 1; resize: none;"></textarea>
+                
+                <!-- Mic & Send Buttons -->
+                <button class="chat-action-btn" id="micBtn" onclick="toggleRecording()" title="Voice Input">🎙️</button>
+                <button class="chat-action-btn send" id="sendSearchBtn" onclick="runGroqSearch()" title="Send">🚀</button>
+            </div>
+        </div>
     </div>
 
-    <div class="chat-input-area">
-        
-        <div class="image-preview-chip" id="mathPreviewChip" onclick="viewPhotoFullscreen(this.style.backgroundImage.slice(5, -2))">
-            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; box-shadow:0 5px 15px rgba(0,0,0,0.5);" onclick="clearMathImage(event)">✕</div>
-        </div>
-
-        <div class="chat-input-wrapper">
-            <button class="chat-action-btn" onclick="openCamera('search')" title="Take Photo">📸</button>
-            
-            <input type="hidden" id="voiceSourceLang" value="hi-IN">
-            
-            <textarea id="searchInput" placeholder="Search the web or analyze an image..." rows="1"></textarea>
-            
-            <button class="chat-action-btn" id="micBtn" onclick="toggleRecording()" title="Voice Input">🎙️</button>
-            <button class="chat-action-btn send" id="sendSearchBtn" title="Send">🚀</button>
-        </div>
-    </div>
-
-    <div class="cameraModal" id="cameraModal">
-        <div class="topbar" style="background: transparent; border: none; justify-content: flex-end; box-shadow: none; padding-top: 20px;">
-            <button id="closeCameraBtn" class="closeBtn" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);">✕</button>
-        </div>
-        
-        <video id="cameraVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-        
-        <div class="cameraControls">
-            <button id="toggleFlashBtn" style="width: 55px; height: 55px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 22px; cursor: pointer; backdrop-filter: blur(15px); box-shadow: 0 5px 15px rgba(0,0,0,0.3);">🔦</button>
-            
-            <button id="capturePhotoBtn" class="cameraCircle"></button>
-            
-            <button id="switchCameraBtn" style="width: 55px; height: 55px; border-radius: 50%; border: none; background: rgba(255,255,255,0.15); color: white; font-size: 22px; cursor: pointer; backdrop-filter: blur(15px); box-shadow: 0 5px 15px rgba(0,0,0,0.3);">🔄</button>
-        </div>
-        <canvas id="captureCanvas" style="display: none;"></canvas>
-    </div>
-
-    <div class="photoViewer" id="photoViewer">
-        <button id="closePreviewBtn" class="closeBtn" style="position: absolute; top: 40px; right: 20px; z-index: 5000;">✕</button>
-        <img id="previewImage" src="">
-    </div>
-
+    <!-- UI Scripts for Menu Toggle -->
     <script>
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
-            svg: { fontCache: 'global' },
-            startup: { typeset: false }
-        };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+        // Toggles the + menu open and closed
+        function toggleAttachmentMenu() {
+            const menu = document.getElementById('attachmentMenu');
+            menu.classList.toggle('active');
+        }
 
+        // Closes the menu if you click anywhere outside of it
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('attachmentMenu');
+            const attachBtn = document.getElementById('attachBtn');
+            if (menu.classList.contains('active') && !menu.contains(event.target) && !attachBtn.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
+
+    <!-- Link to your main logic file (where your runGroqSearch and handlePdfUpload functions live) -->
     <script src="main.js"></script>
+
 </body>
 </html>
