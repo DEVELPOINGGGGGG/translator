@@ -181,8 +181,23 @@ function appendUserBubble(txt, img, cid) {
 function appendAiLoading(cid) {
     const c = getActiveChatContainer(cid); if(!c) return null;
     const id = "loading_" + Date.now();
-    c.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${id}"><div class="bubble"><div class="spinner"></div> Thinking...</div></div>`);
-    scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); return id;
+    
+    // Inject the modern typing dots HTML instead of the spinner
+    c.insertAdjacentHTML('beforeend', `
+        <div class="chat-msg chat-ai" id="${id}">
+            <div class="bubble" style="display:flex; align-items:center; gap:12px;">
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+                <span style="color:var(--muted); font-size:14px; font-weight:600; letter-spacing:0.5px;">AI is thinking...</span>
+            </div>
+        </div>
+    `);
+    
+    scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); 
+    return id;
 }
 
 function getRetryButtonsHtml(lId) {
