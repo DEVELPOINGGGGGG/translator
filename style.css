@@ -146,7 +146,24 @@ body::after {
 .bubble-img { max-width: 100%; max-height: 250px; border-radius: 18px; margin-bottom: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.2s; }
 .bubble-img:hover { transform: scale(1.02); }
 .bubble mjx-container { overflow-x: auto !important; overflow-y: hidden !important; max-width: 100%; -webkit-overflow-scrolling: touch; padding: 5px 0;}
+/* Container for bottom buttons */
+.action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Subtle divider */
+    justify-content: flex-start; /* Aligns buttons to the left */
+    align-items: center;
+    width: 100%;
+}
 
+/* Optional: Make sure the buttons themselves look good inline */
+.action-bar button, 
+.action-bar select {
+    margin: 0; /* Resets any existing margins */
+}
 /* ABSOLUTE FIXED CHAT INPUT AREA */
 .chat-input-area { 
     position: fixed !important; bottom: 0 !important; left: 0; right: 0;
