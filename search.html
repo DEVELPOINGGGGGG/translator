@@ -13,7 +13,7 @@
     </script>
 
     <style>
-        /* JS ANIMATION UTILITIES */
+        /* JS ANIMATION UTILITIES ONLY (No layout styles) */
         .ripple {
             position: absolute; border-radius: 50%; transform: scale(0);
             animation: ripple-anim 0.6s linear; background-color: rgba(255, 255, 255, 0.4); pointer-events: none;
@@ -23,11 +23,6 @@
         }
         .btn-relative { position: relative; overflow: hidden; }
         
-        .typewriter-text {
-            overflow: hidden; animation: typing 0.02s linear forwards;
-        }
-        
-        /* Model Badge Animation */
         .api-badge {
             position: absolute; top: 12px; right: 16px; font-size: 9px; color: #c084fc; 
             font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
@@ -166,19 +161,39 @@
             }
         }
 
-        function typeWriterEffect(element, text, speed = 10) {
+        // SMART TYPEWRITER ENGINE (NO AUTO-SCROLL, 10 SECONDS MAX)
+        function typeWriterEffect(element, text) {
             element.innerHTML = "";
             let i = 0;
-            function type() {
-                if (i < text.length) {
-                    if(text.charAt(i) === '\n') { element.appendChild(document.createElement('br')); }
-                    else { element.appendChild(document.createTextNode(text.charAt(i))); }
-                    i++;
-                    scrollToBottom();
-                    setTimeout(type, speed);
-                }
+            
+            // Calculate Speed: Maximum 10 seconds total time
+            const maxDurationMs = 10000; 
+            let tickRate = 20; // Default fast tick (20ms)
+            let totalTicksAllowed = maxDurationMs / tickRate;
+            
+            let charsPerTick = 1;
+            
+            if (text.length > totalTicksAllowed) {
+                // If it's a huge text, print chunks so it finishes in exactly 10s
+                charsPerTick = Math.ceil(text.length / totalTicksAllowed);
+            } else if (text.length < 150) {
+                // Medium speed for short sentences so it doesn't just flash instantly
+                tickRate = 35; 
             }
-            type();
+            
+            let timer = setInterval(() => {
+                if (i < text.length) {
+                    let chunk = text.substr(i, charsPerTick);
+                    for(let c of chunk) {
+                        if(c === '\n') { element.appendChild(document.createElement('br')); }
+                        else { element.appendChild(document.createTextNode(c)); }
+                    }
+                    i += charsPerTick;
+                    // AUTO-SCROLL HAS BEEN COMPLETELY REMOVED HERE
+                } else {
+                    clearInterval(timer);
+                }
+            }, tickRate);
         }
 
         // --- 3. BACKGROUND WEBHOOK LOGGING ---
@@ -218,7 +233,11 @@
 
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function toggleAttachmentMenu() { const menu = document.getElementById('attachmentMenu'); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; }
-        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
+        
+        function scrollToBottom() { 
+            const c = document.getElementById("searchChatHistory"); 
+            c.scrollTop = c.scrollHeight; 
+        }
         
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat?")) {
@@ -365,7 +384,8 @@
                 </div>
             `);
             
-            inp.value = ""; scrollToBottom();
+            inp.value = ""; 
+            scrollToBottom(); // Scroll once when user sends message
 
             // Loading Bubble
             const loadId = "load_" + Date.now();
@@ -379,7 +399,7 @@
                     </div>
                 </div>
             `);
-            scrollToBottom();
+            scrollToBottom(); // Scroll once when loading appears
 
             let sysPrompt = `You are an expert AI Assistant and Guide. 
             CRITICAL RULES:
@@ -404,23 +424,25 @@
                 if (!response.ok) throw new Error(data.error || "Server Error");
 
                 let cleanAns = data.text.replace(/[\*&#_]/g, '');
-                let apiProvider = data.provider || "Gemini Core API"; // DYNAMIC API DETECTION
+                let apiProvider = data.provider || "Gemini Core API"; 
                 
                 trackAPI(standaloneCapturedImage ? 'v' : 't');
-                syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider); // WEBHOOK SYNC
+                syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider);
                 
-                // AI Response Bubble with Dynamic Provider & Typewriter animation
+                // Clear the UI attachments
+                clearSearchImage(); 
+                document.getElementById("pdfPreviewChip").style.display = "none";
+                
+                // Inject the final bubble structure (without scrolling)
                 const finalBubble = document.getElementById(loadId).querySelector('.bubble');
                 finalBubble.innerHTML = `
                     <div class="api-badge">✨ BY ${apiProvider}</div>
                     <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
                 `;
                 
-                // Fire Particles & Typewriter effect
+                // Fire animations!
                 fireParticles(finalBubble);
-                typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns, 15);
-                
-                clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
+                typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns);
 
             } catch (error) {
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`;
