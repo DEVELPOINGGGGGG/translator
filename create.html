@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pro Suite - Image Creator</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+<div class="apiTracker">
+    <div>🎨 Cloudflare Image Studio</div>
+    <div>📄 PDF + 🖼️ Image context</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='create.html'" style="border-left: 4px solid #ec4899; color: #f9a8d4; background: #111827;">🎨 Image Creator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+</div>
+
+<div class="page active" id="createPage">
+  <div class="creator-hero card">
+    <div class="creator-orb">🎨</div>
+    <div>
+      <h1>Cloudflare Image Creator</h1>
+      <p class="cardSub">Type your idea, upload a reference image, or attach a PDF. The app extracts helpful context and asks Cloudflare AI to generate a polished image.</p>
+    </div>
+  </div>
+
+  <div class="creator-layout">
+    <div class="card creator-panel">
+      <div class="cardTitle">1. Describe your image</div>
+      <textarea class="standard" id="createPrompt" rows="6" placeholder="Example: Create a neon cyberpunk classroom poster explaining fractions in Hindi, bright colors, readable text, 16:9..."></textarea>
+
+      <div class="create-upload-grid">
+        <label class="create-upload-card">
+          <input id="createImageInput" type="file" accept="image/*" hidden>
+          <span>🖼️</span>
+          <strong>Upload image</strong>
+          <small id="createImageName">Reference / inspiration</small>
+        </label>
+        <label class="create-upload-card">
+          <input id="createPdfInput" type="file" accept="application/pdf" hidden>
+          <span>📄</span>
+          <strong>Upload PDF</strong>
+          <small id="createPdfName">Use notes / document text</small>
+        </label>
+      </div>
+
+      <div class="creator-preview-row">
+        <img id="createImagePreview" alt="Uploaded reference preview" style="display:none;">
+        <div id="createPdfPreview" class="create-pdf-chip" style="display:none;">📄 PDF attached</div>
+      </div>
+
+      <button class="btn purple creator-generate-btn" id="createGenerateBtn" onclick="generateCloudflareImage()">✨ Generate Image</button>
+      <button class="btn red" style="display:none;" id="createClearBtn" onclick="clearCreateInputs()">🧹 Clear Creator</button>
+    </div>
+
+    <div class="card creator-result-card">
+      <div class="cardTitle">2. Generated result</div>
+      <div id="createStatus" class="create-status">Ready. Add your prompt and optional files.</div>
+      <div class="creator-result-stage" id="createResultStage">
+        <div class="creator-placeholder">
+          <div>🌈</div>
+          <strong>Your Cloudflare artwork appears here</strong>
+          <span>No image generated yet.</span>
+        </div>
+      </div>
+      <div class="creator-actions" id="createActions" style="display:none;">
+        <a class="btn green" id="downloadCreatedImage" download="cloudflare-created-image.png">💾 Download</a>
+        <button class="btn blue" onclick="copyCreatedPrompt()">📋 Copy Prompt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="ui-controls.js" defer></script>
+<script src="create.js" defer></script>
+</body>
+</html>
