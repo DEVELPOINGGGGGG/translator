@@ -375,3 +375,77 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .chat-ai .bubble > div {
     width: 100% !important;
 }
+/* --- DEEP SEARCH & CAMERA STYLES --- */
+html, body {
+    overflow: auto !important;
+    overflow-x: hidden !important;
+    height: 100%;
+}
+
+.chat-scroll-area {
+    overflow-y: auto !important;
+    scroll-behavior: smooth !important;
+    overscroll-behavior: contain;
+}
+
+/* Attachment Menu */
+.attachment-menu {
+    display: none; 
+    position: absolute; 
+    bottom: 65px; 
+    left: 0; 
+    background: rgba(15, 23, 42, 0.9); 
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px); 
+    border-radius: 20px; 
+    padding: 10px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+    flex-direction: column; 
+    gap: 8px; 
+    z-index: 100; 
+    min-width: 160px;
+}
+.attachment-menu.active { display: flex; }
+.attachment-menu button {
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid transparent; 
+    color: #f8fafc; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    padding: 12px 15px; 
+    border-radius: 12px; 
+    font-size: 15px; 
+    text-align: left; 
+    transition: 0.2s ease; 
+    font-weight: 600;
+}
+.attachment-menu button:hover { 
+    background: rgba(255,255,255,0.1); 
+    border-color: #38bdf8; 
+    transform: translateX(5px); 
+}
+
+/* Camera & Flash Animations */
+@keyframes flashBoom {
+    0% { opacity: 1; background: white; }
+    100% { opacity: 0; background: transparent; }
+}
+.flash-overlay {
+    position: fixed; inset: 0; background: white; z-index: 999999;
+    pointer-events: none; opacity: 0;
+}
+.flash-overlay.active {
+    animation: flashBoom 0.5s ease-out;
+}
+
+.cam-secondary-btn {
+    width: 60px; height: 60px; border-radius: 50%; border: none;
+    background: rgba(255, 255, 255, 0.15); color: white; font-size: 24px;
+    display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(10px); cursor: pointer; transition: 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.cam-secondary-btn:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.1); }
+.cam-secondary-btn:active { transform: scale(0.9); }
