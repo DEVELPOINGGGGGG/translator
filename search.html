@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deep Search</title>
     
-    <!-- STRICT MASTER CSS IMPORT ONLY -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -52,7 +50,6 @@
 </head>
 <body class="chat-page-layout">
 
-    <!-- 🎙️ MIC LANGUAGE SELECTION MODAL -->
     <div id="micLangModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10002; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
         <div style="background:rgba(15,23,42,0.95); border:1px solid #38bdf8; border-radius:20px; padding:20px; width:80%; max-width:300px; box-shadow:0 10px 30px rgba(0,0,0,0.8); text-align:center; animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
             <h3 style="color:white; margin-top:0; margin-bottom:20px; font-size:16px;">Speak In Which Language?</h3>
@@ -62,7 +59,6 @@
         </div>
     </div>
 
-    <!-- 🔊 TOP TTS PLAYER (HIDDEN BY DEFAULT) -->
     <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); border:1px solid #38bdf8; border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px); animation:slideDownPlayer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
         <div style="color:#38bdf8; font-size:22px; filter: drop-shadow(0 0 5px #38bdf8);">🎧</div>
         
@@ -73,7 +69,6 @@
         <button class="btn-relative" onclick="createRipple(event); closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(225,29,72,0.5);">✕</button>
     </div>
 
-    <!-- 📱 SIDEBAR & OVERLAY -->
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
         <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
@@ -85,14 +80,12 @@
         <button onclick="window.location.href='history.html'">🕰️ History</button>
     </div>
 
-    <!-- 🌐 TOP NAVIGATION BAR -->
     <div class="topbar">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
         <div class="appTitle">Deep Search</div>
         <div class="menuBtn btn-relative" style="margin-left: auto; font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
     </div>
 
-    <!-- ⏱️ API TRACKER (TIMERS & COUNTS) -->
     <div class="apiTracker">
         <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
         <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
@@ -100,13 +93,10 @@
         <div>📝 <span id="apiText" class="api-val text">0</span></div>
     </div>
 
-    <!-- 💬 MAIN CHAT AREA -->
     <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 105px; padding-bottom: 120px;"></div>
 
-    <!-- ⌨️ CHAT INPUT AREA -->
     <div class="chat-input-area" style="flex-direction: column;">
         
-        <!-- Previews -->
         <div class="image-preview-chip" id="mathPreviewChip" style="display:none; position:absolute; top:-85px; left:20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px;" onclick="clearSearchImage(event)">✕</div>
         </div>
@@ -117,7 +107,6 @@
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48;" onclick="clearPdfFile(event)">✕</div>
         </div>
 
-        <!-- 🧠 MODEL CHOOSER (MOVED ABOVE INPUT) -->
         <div style="display: flex; justify-content: flex-start; padding-left: 5px; margin-bottom: 8px; width: 100%;">
             <select id="modelSelector" style="background: rgba(15,23,42,0.95); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 15px; padding: 5px 12px; outline: none; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
                 <option value="gemini">✨ Model: Gemini</option>
@@ -126,7 +115,6 @@
             </select>
         </div>
 
-        <!-- Input Wrapper (Full Width Restored) -->
         <div class="chat-input-wrapper" style="width: 100%;">
             <div style="position:relative;">
                 <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
@@ -141,14 +129,11 @@
             
             <textarea id="searchInput" placeholder="Search web, ask a question..." rows="1"></textarea>
             
-            <!-- 🎙️ VOICE MIC BUTTON -->
             <button class="chat-action-btn btn-relative" id="micBtn" onclick="createRipple(event); openMicModal();" title="Voice Input" style="font-size: 20px; transition: 0.3s;">🎙️</button>
-            
             <button class="chat-action-btn send btn-relative" id="sendSearchBtn" onclick="createRipple(event); runStandaloneSearch();" title="Send">🚀</button>
         </div>
     </div>
 
-    <!-- 📸 STANDALONE CAMERA MODAL -->
     <div id="standaloneCameraModal" class="cameraModal">
         <button onclick="closeStandaloneCamera()" class="closeBtn btn-relative" style="position:absolute; top:30px; left:20px; z-index:1000;">✕</button>
         <video id="standaloneVideo" autoplay playsinline style="flex:1; width:100%; height:100%; object-fit:cover;"></video>
@@ -161,13 +146,15 @@
     </div>
 
 
-    <!-- ==========================================
-         STANDALONE SCRIPT
-         ========================================== -->
     <script>
-        // --- 1. STATE VARIABLES & WEBHOOK ---
+        // --- 1. STATE VARIABLES, WEBHOOK & HISTORY ---
         const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
         
+        // Load App History from LocalStorage
+        let appHistory = [];
+        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
+        let sessionCache = { search: null }; // Keeps track of current chat session for history grouping
+
         let standaloneCapturedImage = null;
         let persistentPdfMemory = "";
         let sessionMessages = [];
@@ -177,7 +164,41 @@
         let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
         let hasResetToday = false;
 
-        // --- 2. JS ANIMATION FACTORY ---
+        // --- 2. LOCALSTORAGE DB LOGIC ---
+        function saveHistorySafe() { 
+            try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } 
+            catch(e) { appHistory.pop(); saveHistorySafe(); } 
+        }
+
+        function saveToHistory(type, q, a, img = null, provider = "AI") {
+            let sessionId = sessionCache[type];
+            let histItem = appHistory.find(i => i.id === sessionId);
+
+            if (!histItem) {
+                // Create brand new history session
+                sessionId = Date.now(); 
+                sessionCache[type] = sessionId; 
+                histItem = { 
+                    id: sessionId, 
+                    type: type, 
+                    title: (q || "Image/PDF Search").substring(0, 25) + '...', 
+                    interactions: [{ question: q, answer: a, image: img, provider: provider }], 
+                    provider: provider, 
+                    question: q, 
+                    answer: a 
+                };
+                appHistory.unshift(histItem);
+            } else {
+                // Add to existing chat session in history
+                histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
+                histItem.question = q; 
+                histItem.answer = a; 
+            }
+            saveHistorySafe();
+        }
+
+
+        // --- 3. JS ANIMATION FACTORY ---
         function createRipple(event) {
             const button = event.currentTarget;
             const circle = document.createElement("span");
@@ -240,7 +261,7 @@
             }, tickRate);
         }
 
-        // --- 3. SPEECH RECOGNITION (MIC) ENGINE ---
+        // --- 4. SPEECH RECOGNITION (MIC) ENGINE ---
         let speechRecog = null;
         let isRecording = false;
 
@@ -258,9 +279,7 @@
 
             speechRecog.onresult = (e) => {
                 let transcript = "";
-                for (let i = 0; i < e.results.length; i++) {
-                    transcript += e.results[i][0].transcript;
-                }
+                for (let i = 0; i < e.results.length; i++) { transcript += e.results[i][0].transcript; }
                 const inp = document.getElementById("searchInput");
                 if (inp) inp.value = transcript;
             };
@@ -297,7 +316,7 @@
         }
 
 
-        // --- 4. TTS PLAYER ENGINE (Bracket Logic Included) ---
+        // --- 5. TTS PLAYER ENGINE (Bracket Logic Included) ---
         let currentTtsText = "";
         let isBracketReadingEnabled = true;
         let ttsUtterance = null;
@@ -372,7 +391,7 @@
         };
 
 
-        // --- 5. BACKGROUND WEBHOOK LOGGING ---
+        // --- 6. BACKGROUND WEBHOOK LOGGING ---
         function syncToSheets(question, answer, provider) {
             fetch(GOOGLE_SHEETS_WEBHOOK, {
                 method: "POST", mode: "no-cors",
@@ -383,7 +402,7 @@
             }).catch(e => console.log("Google Sheets sync failed."));
         }
 
-        // --- 6. INITIALIZATION ---
+        // --- 7. INITIALIZATION ---
         document.addEventListener("DOMContentLoaded", () => {
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
@@ -410,7 +429,11 @@
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat and memory?")) {
                 document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat and memory cleared. How can I help you next?</div></div>`;
-                clearSearchImage(); clearPdfFile(); persistentPdfMemory = ""; sessionMessages = []; closeTts();
+                clearSearchImage(); clearPdfFile(); 
+                persistentPdfMemory = ""; 
+                sessionMessages = []; 
+                sessionCache['search'] = null; // Forces History DB to create a new session next search
+                closeTts();
             }
         }
 
@@ -449,7 +472,7 @@
             }, 1000);
         }
 
-        // --- 7. PERSISTENT PDF MEMORY ---
+        // --- 8. PERSISTENT PDF MEMORY ---
         async function handlePdfUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -484,7 +507,7 @@
             document.getElementById("pdfPreviewChip").style.display = "none";
         }
 
-        // --- 8. PRO CAMERA ENGINE ---
+        // --- 9. PRO CAMERA ENGINE ---
         let standaloneStream = null; let standaloneFacingMode = "environment"; let isStandaloneFlashOn = false;
 
         async function startCameraTrack() {
@@ -530,7 +553,7 @@
 
         function clearSearchImage(e) { if(e) e.stopPropagation(); standaloneCapturedImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-        // --- 9. CORE SEARCH LOGIC & API CALLS ---
+        // --- 10. CORE SEARCH LOGIC & API CALLS ---
         async function runStandaloneSearch() {
             const inp = document.getElementById("searchInput");
             const q = inp.value.trim(); 
@@ -604,7 +627,11 @@
                 trackAPI(standaloneCapturedImage ? 'v' : 't');
                 syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider);
                 
+                // SAVE CONTEXT TO CHAT MEMORY
                 sessionMessages.push({ q: q || "[Image/PDF Upload]", a: cleanAns });
+                
+                // SAVE TO LOCALSTORAGE DB (For history.html)
+                saveToHistory('search', q || "[Document/Image Analysis]", cleanAns, standaloneCapturedImage, apiProvider);
                 
                 clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
                 
