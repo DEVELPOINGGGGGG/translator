@@ -1,7 +1,17 @@
 /* ================================================================================
     M A S T E R   C S S  ( GEMINI ULTRA V4 - ZERO LAG EDITION )
 ================================================================================ */
-
+/* FORCED SCROLL FIX */
+html, body {
+    overflow: auto !important;
+    overflow-x: hidden !important;
+    height: 100%;
+}
+.chat-container, .chat-history, .chat-scroll-area {
+    overflow-y: auto !important;
+    scroll-behavior: smooth !important;
+    overscroll-behavior: contain;
+}
 * { 
     margin: 0; padding: 0; box-sizing: border-box; 
     font-family: 'Poppins', sans-serif; 
