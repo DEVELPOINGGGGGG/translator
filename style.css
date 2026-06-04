@@ -110,11 +110,39 @@ body::after {
 
 .chat-msg { margin-bottom: 20px; display: flex; flex-direction: column; width: 100%; clear: both; animation: slideUp 0.3s ease-out; }
 .chat-user { align-items: flex-end; } .chat-ai { align-items: flex-start; }
-.bubble { max-width: 85%; padding: 16px 20px; border-radius: 28px; line-height: 1.6; font-size: 15px; word-wrap: break-word; position: relative; overflow-x: auto; font-weight: 400; }
+.bubble { 
+    width: 100%; /* Add this to force it to expand */
+    max-width: 95%; /* Increased from 85% to give more horizontal room */
+    padding: 16px 20px; 
+    border-radius: 28px; 
+    line-height: 1.6; 
+    font-size: 15px; 
+    word-wrap: break-word; 
+    position: relative; /* This is crucial for the absolute positioning of the 'BY' tag later */
+    overflow-x: auto; 
+    font-weight: 400; 
+}
 
-.chat-user .bubble { background: var(--gemini-user); background-size: 150% 150%; color: white; border-bottom-right-radius: 6px; box-shadow: var(--gemini-glow); animation: gradientShift 6s ease infinite; }
-.chat-ai .bubble { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-bottom-left-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); }
+.chat-user .bubble { 
+    width: auto; /* Keep the user's bubble fit to their text size */
+    background: var(--gemini-user); 
+    background-size: 150% 150%; 
+    color: white; 
+    border-bottom-right-radius: 6px; 
+    box-shadow: var(--gemini-glow); 
+    animation: gradientShift 6s ease infinite; 
+}
 
+.chat-ai .bubble { 
+    background: rgba(30, 41, 59, 0.75); 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px); 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    border-bottom-left-radius: 6px; 
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); 
+    /* Adding padding-top to prevent text from overlapping the top-right tag */
+    padding-top: 30px; 
+}
 .bubble-img { max-width: 100%; max-height: 250px; border-radius: 18px; margin-bottom: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.2s; }
 .bubble-img:hover { transform: scale(1.02); }
 .bubble mjx-container { overflow-x: auto !important; overflow-y: hidden !important; max-width: 100%; -webkit-overflow-scrolling: touch; padding: 5px 0;}
