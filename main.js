@@ -1004,6 +1004,17 @@ function saveHistorySafe() {
     catch(e) { appHistory.pop(); saveHistorySafe(); } 
 }
 
+function persistHistoryOnChatClose(reason = "page-close") {
+    try {
+        saveHistorySafe();
+        localStorage.setItem('aiHistoryLastCloseReason', reason);
+        localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString());
+    } catch(e) { console.log("Close-safe history save failed", e); }
+}
+
+window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'));
+window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeunload'));
+
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
     fetch(GOOGLE_SHEETS_WEBHOOK, {
         method: "POST", mode: "no-cors",

@@ -164,6 +164,15 @@
 
         // --- 2. LOCALSTORAGE DB LOGIC & COPY FUNCTION ---
         function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
+        function persistHistoryOnChatClose(reason = "page-close") {
+            try {
+                saveHistorySafe();
+                localStorage.setItem('aiHistoryLastCloseReason', reason);
+                localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString());
+            } catch(e) { console.log("Close-safe history save failed", e); }
+        }
+        window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'));
+        window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeunload'));
         function saveToHistory(type, q, a, img = null, provider = "AI") {
             let sessionId = sessionCache[type];
             let histItem = appHistory.find(i => i.id === sessionId);
@@ -391,7 +400,7 @@
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat and memory?")) {
                 document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat and memory cleared. How can I help you next?</div></div>`;
-                clearSearchImage(); clearPdfFile(); persistentPdfMemory = ""; sessionMessages = []; sessionCache['search'] = null; closeTts();
+                persistHistoryOnChatClose('manual-clear'); clearSearchImage(); clearPdfFile(); persistentPdfMemory = ""; sessionMessages = []; sessionCache['search'] = null; closeTts();
             }
         }
 
@@ -521,5 +530,6 @@
             } catch (error) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; } finally { isProcessing = false; }
         }
     </script>
+<script src="ui-controls.js" defer></script>
 </body>
 </html>
