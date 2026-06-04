@@ -110,21 +110,22 @@ body::after {
 
 .chat-msg { margin-bottom: 20px; display: flex; flex-direction: column; width: 100%; clear: both; animation: slideUp 0.3s ease-out; }
 .chat-user { align-items: flex-end; } .chat-ai { align-items: flex-start; }
+
 .bubble { 
-    width: 100%; /* Add this to force it to expand */
-    max-width: 95%; /* Increased from 85% to give more horizontal room */
+    width: 100%; 
+    max-width: 95%; 
     padding: 16px 20px; 
     border-radius: 28px; 
     line-height: 1.6; 
     font-size: 15px; 
     word-wrap: break-word; 
-    position: relative; /* This is crucial for the absolute positioning of the 'BY' tag later */
+    position: relative; 
     overflow-x: auto; 
     font-weight: 400; 
 }
 
 .chat-user .bubble { 
-    width: auto; /* Keep the user's bubble fit to their text size */
+    width: auto; 
     background: var(--gemini-user); 
     background-size: 150% 150%; 
     color: white; 
@@ -134,36 +135,19 @@ body::after {
 }
 
 .chat-ai .bubble { 
+    padding-top: 35px; 
     background: rgba(30, 41, 59, 0.75); 
     backdrop-filter: blur(10px); 
     -webkit-backdrop-filter: blur(10px); 
     border: 1px solid rgba(255, 255, 255, 0.1); 
     border-bottom-left-radius: 6px; 
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); 
-    /* Adding padding-top to prevent text from overlapping the top-right tag */
-    padding-top: 30px; 
 }
+
 .bubble-img { max-width: 100%; max-height: 250px; border-radius: 18px; margin-bottom: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.2s; }
 .bubble-img:hover { transform: scale(1.02); }
 .bubble mjx-container { overflow-x: auto !important; overflow-y: hidden !important; max-width: 100%; -webkit-overflow-scrolling: touch; padding: 5px 0;}
-/* Container for bottom buttons */
-.action-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 15px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Subtle divider */
-    justify-content: flex-start; /* Aligns buttons to the left */
-    align-items: center;
-    width: 100%;
-}
 
-/* Optional: Make sure the buttons themselves look good inline */
-.action-bar button, 
-.action-bar select {
-    margin: 0; /* Resets any existing margins */
-}
 /* ABSOLUTE FIXED CHAT INPUT AREA */
 .chat-input-area { 
     position: fixed !important; bottom: 0 !important; left: 0; right: 0;
@@ -232,6 +216,7 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .blue   { background: linear-gradient(135deg, #0ea5e9, #2563eb); color: white; }
 .green  { background: linear-gradient(135deg, #34d399, #059669); color: #020617; }
 .purple { background: var(--gemini-user); color: white; background-size: 200%; animation: gradientShift 5s infinite; }
+.orange { background: linear-gradient(135deg, #f97316, #c2410c); color: white; }
 .red    { background: linear-gradient(135deg, #fb7185, #e11d48); color: white; }
 
 .spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid white; border-radius: 50%; width: 22px; height: 22px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
@@ -331,6 +316,7 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .tts-mini-player.paused .tts-bar { animation-play-state: paused; height: 6px !important; }
 
 @keyframes soundWave { 0% { height: 6px; } 100% { height: 20px; } }
+
 /* ==========================================================================
    8. MODERN AI THINKING ANIMATION
    ========================================================================== */
@@ -357,4 +343,25 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 @keyframes typingDot {
     0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
     40% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px #c084fc; }
+}
+
+/* ==========================================================================
+   9. FORCE AI BUBBLE LAYOUT FIX 
+   ========================================================================== */
+.chat-msg.chat-ai {
+    width: 100% !important; 
+    display: flex !important;
+}
+
+.chat-ai .bubble {
+    display: flex !important;
+    flex-direction: column !important; 
+    width: 100% !important;
+    max-width: 95% !important;
+    box-sizing: border-box !important;
+    padding-top: 35px !important; 
+}
+
+.chat-ai .bubble > div {
+    width: 100% !important;
 }
