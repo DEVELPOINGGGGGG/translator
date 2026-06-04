@@ -254,7 +254,7 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .outputBox, .meaningBox { margin-top: 15px; background: rgba(2, 6, 23, 0.8); border: 1px solid var(--glass-border); border-radius: 25px; padding: 25px; min-height: 80px; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; max-width: 100%; font-size: 15px; line-height: 1.7; }
 
 /* Camera UI */
-.cameraModal { position: fixed; inset: 0; background: black; display: none; z-index: 5000; }
+.cameraModal { position: fixed; inset: 0; background: black; display: none; z-index: 99999 !important; }
 .cameraModal.active { display: flex; flex-direction: column; animation: fadeIn 0.2s; }
 .cameraControls { min-height: 150px; display: flex; justify-content: center; align-items: center; gap: 40px; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 1)); padding-bottom: calc(30px + env(safe-area-inset-bottom)); position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; }
 .cameraCircle { width: 90px; height: 90px; border-radius: 50%; border: 5px solid white; background: rgba(255, 255, 255, 0.2); box-shadow: 0 0 30px rgba(255, 255, 255, 0.4); transition: transform 0.2s; cursor: pointer;}
