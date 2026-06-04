@@ -632,16 +632,71 @@ async function playFractionVideo() {
 // --- TEXT TRANSLATOR ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
+// --- UNIVERSAL VOICE RECOGNITION ENGINE ---
 let recognition; let isRecording = false;
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) { 
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true; 
-    recognition.onstart = () => { isRecording = true; const mic = document.getElementById("micBtn"); if(mic) mic.classList.add("recording"); }; 
-    recognition.onresult = (e) => { let tr = ""; for (let i = 0; i < e.results.length; i++) tr += e.results[i][0].transcript; const inp = document.getElementById("inputText"); if(inp) inp.value = tr; }; 
-    recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording(); 
-}
-function toggleRecording() { if (!recognition) return alert("Not supported."); if (isRecording) recognition.stop(); else { recognition.lang = document.getElementById("voiceSourceLang").value; document.getElementById("inputText").value = ""; recognition.start(); } }
-function stopRecording() { isRecording = false; const mic = document.getElementById("micBtn"); if(mic) mic.classList.remove("recording"); }
 
+// Smart Helper: Finds the active typing box no matter what page you are on!
+function getActiveTextInput() {
+    return document.getElementById("searchInput") || 
+           document.getElementById("inputText") || 
+           document.getElementById("mathInstructionInput") || 
+           document.getElementById("qaQuestionInput");
+}
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) { 
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
+    recognition = new SpeechRec(); 
+    recognition.continuous = false; 
+    recognition.interimResults = true; 
+    
+    recognition.onstart = () => { 
+        isRecording = true; 
+        const mic = document.getElementById("micBtn"); 
+        if(mic) { 
+            mic.classList.add("recording"); 
+            // Gives the mic a glowing red shadow so you know it's listening!
+            mic.style.background = "rgba(239, 68, 68, 0.8)";
+            mic.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.8)";
+        } 
+    }; 
+    
+    recognition.onresult = (e) => { 
+        let tr = ""; 
+        for (let i = 0; i < e.results.length; i++) tr += e.results[i][0].transcript; 
+        // Injects the text into the correct box
+        const inp = getActiveTextInput(); 
+        if(inp) inp.value = tr; 
+    }; 
+    
+    recognition.onerror = () => stopRecording(); 
+    recognition.onend = () => stopRecording(); 
+}
+
+window.toggleRecording = function() { 
+    if (!recognition) return showToast("⚠️ Microphone not supported on this browser."); 
+    if (isRecording) {
+        recognition.stop(); 
+    } else { 
+        const langEl = document.getElementById("voiceSourceLang");
+        recognition.lang = langEl ? langEl.value : "hi-IN"; // Defaults to Hindi if no tag is found
+        const inp = getActiveTextInput();
+        if(inp) inp.value = "Listening..."; 
+        recognition.start(); 
+    } 
+};
+
+window.stopRecording = function() { 
+    isRecording = false; 
+    const mic = document.getElementById("micBtn"); 
+    if(mic) { 
+        mic.classList.remove("recording"); 
+        // Removes the red glow when it stops
+        mic.style.background = "rgba(255, 255, 255, 0.08)"; 
+        mic.style.boxShadow = "none";
+    } 
+    const inp = getActiveTextInput();
+    if(inp && inp.value === "Listening...") inp.value = ""; // Clears it if you didn't say anything
+};
 async function runTranslation(){ 
     const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value; if(!txt) return; 
     setStatusLoading("translatedTextStatus", "Translating..."); document.getElementById("translatedTextStatus").style.display = "block";
