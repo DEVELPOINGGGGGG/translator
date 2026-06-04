@@ -26,6 +26,7 @@
   <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
 </div>
@@ -72,6 +73,10 @@
       <div class="dash-icon">🖼️</div>
       <div class="dash-title">Image Translate</div>
     </div>
+    <div class="dash-card" onclick="window.location.href='create.html'">
+      <div class="dash-icon">🎨</div>
+      <div class="dash-title">Image Creator</div>
+    </div>
     <div class="dash-card" onclick="window.location.href='qa.html'">
       <div class="dash-icon">📚</div>
       <div class="dash-title">Document Q&A</div>
@@ -85,14 +90,19 @@
 
 <script>
     // Simple logic to open and close the side menu
-    function toggleSidebar() { 
-        document.getElementById("sidebar").classList.toggle("active"); 
-        document.getElementById("overlay").classList.toggle("active"); 
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("overlay");
+        const active = !sidebar.classList.contains("active");
+        sidebar.classList.toggle("active", active);
+        overlay.classList.toggle("active", active);
+        document.body.classList.toggle("sidebar-open", active);
     }
     
     document.getElementById("overlay").onclick = () => { 
         document.getElementById("sidebar").classList.remove("active"); 
-        document.getElementById("overlay").classList.remove("active"); 
+        document.getElementById("overlay").classList.remove("active");
+        document.body.classList.remove("sidebar-open");
     };
 
     // --- 🛑 TIMER LOGIC FOR GOOGLE API RESET 🛑 ---

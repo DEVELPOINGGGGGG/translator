@@ -58,7 +58,7 @@ CRITICAL INSTRUCTIONS:
 
 // Video Player Variables
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
-let videoElapsed = 0, videoTotalEst = 0, videoTickInterval, hideControlsTimer;
+let videoElapsed = 0, videoTotalEst = 0, videoTickInterval, hideControlsTimer, videoLineIndex = 0, activeVideoUtterance = null, videoRunToken = 0;
 
 function loadVoices() { availableVoices = window.speechSynthesis.getVoices(); }
 window.speechSynthesis.onvoiceschanged = loadVoices;
@@ -165,10 +165,37 @@ function copyToClipboard(textId) { navigator.clipboard.writeText(document.getEle
 function viewPhotoFullscreen(src) { const viewer = document.getElementById('photoViewer'); const img = document.getElementById('previewImage'); if(viewer && img) { img.src = src; viewer.classList.add('active'); } }
 function getActiveChatContainer(defaultId) { let c = document.getElementById(defaultId); if (!c) c = document.getElementById("mathsChatHistory"); if (!c) c = document.getElementById("chatHistory"); if (!c) c = document.querySelector(".chat-scroll-area"); return c; }
 function track(type) { if(type==='v'){ visionReqs++; localStorage.setItem('visionReqs', visionReqs); } else { textReqs++; localStorage.setItem('textReqs', textReqs); } }
-function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    if (!sidebar || !overlay) return;
+    const active = !sidebar.classList.contains("active");
+    sidebar.classList.toggle("active", active);
+    overlay.classList.toggle("active", active);
+    document.body.classList.toggle("sidebar-open", active);
+}
 if(document.getElementById("overlay")) document.getElementById("overlay").onclick = toggleSidebar;
 function setStatusLoading(id, txt) { const el = document.getElementById(id); if(el) { el.innerHTML = `<div class="spinner"></div> ${txt}`; el.style.display = "flex"; } }
-function scrollToBottom(aid) { setTimeout(() => { const a = document.getElementById(aid) || document.querySelector(".chat-scroll-area"); if(a) a.scrollTop = a.scrollHeight; }, 50); }
+function scrollToBottom(aid, force = true) {
+    const selectors = [aid, "mathScrollArea", "searchChatHistory", "imageScrollArea"];
+    const scrollTargets = [];
+    selectors.forEach(id => {
+        if (!id) return;
+        const el = document.getElementById(id);
+        if (el && !scrollTargets.includes(el)) scrollTargets.push(el);
+    });
+    document.querySelectorAll(".chat-scroll-area, .page.active").forEach(el => {
+        if (!scrollTargets.includes(el)) scrollTargets.push(el);
+    });
+    const run = () => scrollTargets.forEach(a => {
+        if (!a) return;
+        a.scrollTop = a.scrollHeight;
+        if (force && a.scrollTo) a.scrollTo({ top: a.scrollHeight, behavior: "auto" });
+    });
+    requestAnimationFrame(run);
+    setTimeout(run, 40);
+    setTimeout(run, 160);
+}
 
 function appendUserBubble(txt, img, cid) {
     const c = getActiveChatContainer(cid); if(!c) return;
@@ -232,8 +259,8 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
             i += charsPerTick;
             
-            if (Date.now() - lastScroll > 150) {
-                if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+            if (Date.now() - lastScroll > 80) {
+                if (scrollArea) { scrollArea.scrollTop = scrollArea.scrollHeight; scrollArea.scrollTo?.({ top: scrollArea.scrollHeight, behavior: "auto" }); }
                 lastScroll = Date.now();
             }
         } else {
@@ -243,6 +270,7 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             
             if (scrollArea) {
                 scrollArea.scrollTop = scrollArea.scrollHeight;
+                scrollArea.scrollTo?.({ top: scrollArea.scrollHeight, behavior: "auto" });
                 scrollArea.style.scrollBehavior = 'smooth'; 
             }
             if (onComplete) onComplete();
@@ -299,6 +327,26 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
       const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; return d; 
   } catch(e) { isProcessing = false; throw e; }
+}
+
+
+function formatHindiSpeechText(text) {
+    return String(text || "")
+        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ")
+        .replace(/\\times/gi, " guna ")
+        .replace(/-/g, " ghatav ")
+        .replace(/\+/g, " jor ")
+        .replace(/%/g, " pratishat ")
+        .replace(/\(/g, " bracket ")
+        .replace(/\)/g, " bracket ")
+        .replace(/\{/g, " madhyam kosthak ")
+        .replace(/\}/g, " madhyam kosthak ")
+        .replace(/\[/g, " bara kosthak ")
+        .replace(/\]/g, " bara kosthak ")
+        .replace(/\//g, " batta ")
+        .replace(/[\$]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 // 🛑 STRICT HINDI TTS & PREMIUM MINI-PLAYER ENGINE 🛑
@@ -577,7 +625,7 @@ function resetVideoActivity() {
     hideControlsTimer = setTimeout(() => { if(!isVideoPaused) { if(top) top.style.opacity = '0'; if(bot) bot.style.opacity = '0'; if(ov) ov.style.cursor = 'none'; } }, 3000);
 }
 function toggleVideoFullscreen() { const ov = document.getElementById('videoGuiOverlay'); if (!document.fullscreenElement) { ov.requestFullscreen().catch(err => { console.log("Fullscreen blocked."); }); } else { document.exitFullscreen(); } }
-function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); resetVideoActivity(); }
+function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); if (activeVideoUtterance) activeVideoUtterance.volume = currentVideoVolume; resetVideoActivity(); }
 
 function initVideoGui() {
     if(!window.latestMathSolution) return;
@@ -623,7 +671,10 @@ function exitVideoGui() {
 function cycleVideoSpeed() { 
     videoSpeed = videoSpeed === 0.75 ? 1.0 : (videoSpeed === 1.0 ? 1.5 : (videoSpeed === 1.5 ? 2.0 : 0.75)); 
     document.getElementById('vSpeedTxt').innerText = videoSpeed + 'x'; 
-    window.speechSynthesis.cancel(); resetVideoActivity(); replayVideo(); 
+    const wasPaused = isVideoPaused;
+    window.speechSynthesis.cancel();
+    resetVideoActivity();
+    playFractionVideo(videoLineIndex, true, wasPaused);
 }
 
 function toggleVideoPause() { 
@@ -632,44 +683,59 @@ function toggleVideoPause() {
     resetVideoActivity();
 }
 
-function replayVideo() { window.speechSynthesis.cancel(); isVideoPaused = false; document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(); }
+function replayVideo() { window.speechSynthesis.cancel(); videoLineIndex = 0; isVideoPaused = false; document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); }
 
-async function playFractionVideo() {
-    const content = document.getElementById("videoContent"); content.innerHTML = ""; 
+async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
+    const token = ++videoRunToken;
+    const content = document.getElementById("videoContent");
+    if (!content) return;
     const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
+    videoLineIndex = Math.min(startIndex, Math.max(lines.length - 1, 0));
+    if (!preserveContent) content.innerHTML = "";
     startVideoTimer(window.latestMathSolution.length);
-    const pBar = document.getElementById('vProgressBar'); if(pBar) pBar.style.width = '0%';
-    
-    for(let i=0; i<lines.length; i++) {
-        if(!document.getElementById('videoGuiOverlay')) return; 
+    const pBar = document.getElementById('vProgressBar');
+    if(pBar) pBar.style.width = lines.length ? ((videoLineIndex / lines.length) * 100) + '%' : '0%';
+
+    for(let i=videoLineIndex; i<lines.length; i++) {
+        if(token !== videoRunToken || !document.getElementById('videoGuiOverlay')) return;
+        videoLineIndex = i;
         const lineText = lines[i];
-        
-        let cleanSpeech = lineText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
-        cleanSpeech = cleanSpeech.replace(/[\$\\]/g, ' ').replace(/frac/g, ' batta ');
-        
+        const cleanSpeech = formatHindiSpeechText(lineText);
         const u = new SpeechSynthesisUtterance(cleanSpeech);
+        activeVideoUtterance = u;
         if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-        
-        let premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi'))); 
-        
+        let premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
         if (premium) u.voice = premium;
-        u.lang = 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume; 
-        window.speechSynthesis.speak(u);
-        
-        const lineDiv = document.createElement("div"); 
-        lineDiv.style.opacity = 0; lineDiv.style.transform = "translateY(10px)"; lineDiv.style.transition = "all 0.4s ease-out"; 
-        lineDiv.innerHTML = lineText; content.appendChild(lineDiv);
-        
+        u.lang = 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume;
+
+        let lineDiv = document.querySelector(`[data-video-line="${i}"]`);
+        if (!lineDiv) {
+            lineDiv = document.createElement("div");
+            lineDiv.dataset.videoLine = i;
+            lineDiv.className = "video-line-card";
+            lineDiv.innerHTML = lineText;
+            content.appendChild(lineDiv);
+        }
+        lineDiv.classList.add("active");
         if (window.MathJax) { MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); }
-        
-        setTimeout(() => { lineDiv.style.opacity = 1; lineDiv.style.transform = "translateY(0)"; if(content.parentElement) content.parentElement.scrollTop = content.parentElement.scrollHeight; }, 100);
-        await new Promise(r => { u.onend = r; setTimeout(r, 4000); }); 
-        
+        setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 60);
+
+        window.speechSynthesis.speak(u);
+        if (pauseAfterStart) {
+            window.speechSynthesis.pause();
+            isVideoPaused = true;
+            const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "▶️";
+            pauseAfterStart = false;
+        }
+        await new Promise(r => { u.onend = r; u.onerror = r; setTimeout(r, Math.max(3500, lineText.length * 90 / videoSpeed)); });
+        lineDiv.classList.remove("active");
+        if(token !== videoRunToken) return;
+        videoLineIndex = i + 1;
         if(pBar) pBar.style.width = (((i + 1) / lines.length) * 100) + '%';
     }
     clearInterval(videoTickInterval);
-    const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄"; 
-    resetVideoActivity(); 
+    const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄";
+    resetVideoActivity();
 }
 
 // --- TEXT TRANSLATOR ---
@@ -1121,7 +1187,7 @@ function triggerFileDownload(item) {
 function restoreSession(e, id) { 
     if(e) e.stopPropagation(); const item = appHistory.find(i => i.id == id); if(!item) return; 
     let targetPage = ''; 
-    if(item.type === 'math') targetPage = 'maths.html'; else if(item.type === 'search') targetPage = 'search.html'; else if(item.type === 'translation') targetPage = 'translator.html'; else if(item.type === 'image_translation') targetPage = 'image.html'; else if(item.type === 'qa') targetPage = 'qa.html';
+    if(item.type === 'math') targetPage = 'maths.html'; else if(item.type === 'search') targetPage = 'search.html'; else if(item.type === 'translation') targetPage = 'translator.html'; else if(item.type === 'image_translation') targetPage = 'image.html'; else if(item.type === 'qa') targetPage = 'qa.html'; else if(item.type === 'create') targetPage = 'create.html';
     
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     if (currentPage !== targetPage && targetPage !== '') { window.location.href = `${targetPage}?restore=${id}`; return; }

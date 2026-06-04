@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="820" viewBox="0 0 1280 820" role="img" aria-labelledby="title desc">
+  <title id="title">Testing screenshot preview for AI Pro Suite UI fixes</title>
+  <desc id="desc">Static verification screenshot showing the upgraded dashboard, Image Creator card, hidden chat controls behind sidebar overlay, and camera controls.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#020617"/><stop offset=".5" stop-color="#111827"/><stop offset="1" stop-color="#2e1065"/></linearGradient>
+    <linearGradient id="pink" x1="0" x2="1"><stop stop-color="#06b6d4"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1280" height="820" fill="url(#bg)"/>
+  <circle cx="160" cy="120" r="170" fill="#06b6d4" opacity=".18" filter="url(#glow)"/>
+  <circle cx="1110" cy="710" r="230" fill="#ec4899" opacity=".16" filter="url(#glow)"/>
+  <rect x="0" y="0" width="1280" height="72" fill="#020617" opacity=".82"/>
+  <text x="34" y="47" fill="#fff" font-size="34" font-family="Arial">☰</text>
+  <text x="86" y="46" fill="#f8fafc" font-size="28" font-family="Arial" font-weight="700">✦ AI Pro Suite</text>
+  <rect x="0" y="72" width="1280" height="34" fill="#0f172a" opacity=".75"/>
+  <text x="455" y="95" fill="#67e8f9" font-size="18" font-family="Arial" font-weight="700">✅ UI test preview — Image Creator + scroll/menu/camera fixes</text>
+  <rect x="34" y="134" width="312" height="640" rx="34" fill="#020617" opacity=".92" stroke="#38bdf8" stroke-opacity=".35"/>
+  <text x="70" y="190" fill="#f8fafc" font-size="22" font-family="Arial" font-weight="700">Sidebar open</text>
+  <text x="70" y="240" fill="#cbd5e1" font-size="19" font-family="Arial">🏠 Dashboard</text>
+  <text x="70" y="288" fill="#cbd5e1" font-size="19" font-family="Arial">🧮 Math Solver</text>
+  <text x="70" y="336" fill="#cbd5e1" font-size="19" font-family="Arial">🔎 Deep Search</text>
+  <text x="70" y="384" fill="#cbd5e1" font-size="19" font-family="Arial">🖼️ Image Translator</text>
+  <rect x="54" y="414" width="268" height="54" rx="18" fill="#ec4899" opacity=".18" stroke="#f472b6"/>
+  <text x="70" y="449" fill="#f9a8d4" font-size="19" font-family="Arial" font-weight="700">🎨 Image Creator</text>
+  <text x="70" y="510" fill="#cbd5e1" font-size="19" font-family="Arial">📚 Document Q&amp;A</text>
+  <text x="70" y="558" fill="#cbd5e1" font-size="19" font-family="Arial">🕒 History</text>
+  <text x="54" y="705" fill="#86efac" font-size="17" font-family="Arial">Chat search/send controls hidden</text>
+  <text x="54" y="731" fill="#86efac" font-size="17" font-family="Arial">under menu overlay ✅</text>
+  <rect x="386" y="134" width="824" height="180" rx="36" fill="#0f172a" opacity=".78" stroke="#8b5cf6" stroke-opacity=".45"/>
+  <circle cx="462" cy="224" r="46" fill="url(#pink)" filter="url(#glow)"/>
+  <text x="440" y="241" font-size="44" font-family="Arial">🎨</text>
+  <text x="535" y="202" fill="#fff" font-size="34" font-family="Arial" font-weight="800">Cloudflare Image Creator</text>
+  <text x="535" y="244" fill="#cbd5e1" font-size="20" font-family="Arial">Prompt + PDF + image uploads generate a decorated image.</text>
+  <rect x="386" y="346" width="390" height="336" rx="32" fill="#0f172a" opacity=".82" stroke="#38bdf8" stroke-opacity=".28"/>
+  <text x="424" y="400" fill="#67e8f9" font-size="24" font-family="Arial" font-weight="700">1. Describe image</text>
+  <rect x="424" y="432" width="314" height="94" rx="20" fill="#111827" stroke="#ffffff" stroke-opacity=".12"/>
+  <text x="448" y="468" fill="#94a3b8" font-size="16" font-family="Arial">Neon classroom poster...</text>
+  <rect x="424" y="552" width="140" height="82" rx="22" fill="#ffffff" opacity=".06" stroke="#c084fc" stroke-dasharray="7 5"/>
+  <text x="470" y="588" font-size="28" font-family="Arial">🖼️</text>
+  <text x="452" y="615" fill="#e2e8f0" font-size="15" font-family="Arial">Image</text>
+  <rect x="590" y="552" width="140" height="82" rx="22" fill="#ffffff" opacity=".06" stroke="#38bdf8" stroke-dasharray="7 5"/>
+  <text x="638" y="588" font-size="28" font-family="Arial">📄</text>
+  <text x="632" y="615" fill="#e2e8f0" font-size="15" font-family="Arial">PDF</text>
+  <rect x="816" y="346" width="394" height="336" rx="32" fill="#0f172a" opacity=".82" stroke="#ec4899" stroke-opacity=".28"/>
+  <text x="856" y="400" fill="#f9a8d4" font-size="24" font-family="Arial" font-weight="700">2. Generated result</text>
+  <rect x="856" y="432" width="314" height="198" rx="26" fill="#020617" stroke="#ffffff" stroke-opacity=".12"/>
+  <text x="986" y="524" font-size="58" font-family="Arial">🌈</text>
+  <text x="914" y="572" fill="#cbd5e1" font-size="17" font-family="Arial">Cloudflare artwork here</text>
+  <rect x="884" y="714" width="218" height="56" rx="28" fill="url(#pink)" filter="url(#glow)"/>
+  <text x="924" y="750" fill="#020617" font-size="19" font-family="Arial" font-weight="800">Testing SS</text>
+</svg>

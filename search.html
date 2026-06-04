@@ -75,6 +75,7 @@
         <button onclick="window.location.href='search.html'" style="border-left: 5px solid #c084fc; background: rgba(255,255,255,0.08); color: #e9d5ff; padding-left: 40px;">🔍 Deep Search</button>
         <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
         <button onclick="window.location.href='image.html'">📸 Image Chat</button>
+        <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
         <button onclick="window.location.href='translator.html'">🌍 Translator</button>
         <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
         <button onclick="window.location.href='history.html'">🕰️ History</button>
@@ -318,7 +319,16 @@
 
             let processedText = originalSentence;
             if (isBracketReadingEnabled) {
-                processedText = processedText.replace(/[\(\[\{]/g, " kosthak ").replace(/[\)\]\}]/g, " kosthak ");
+                processedText = processedText
+                    .replace(/-/g, " ghatav ")
+                    .replace(/\+/g, " jor ")
+                    .replace(/%/g, " pratishat ")
+                    .replace(/\(/g, " bracket ")
+                    .replace(/\)/g, " bracket ")
+                    .replace(/\{/g, " madhyam kosthak ")
+                    .replace(/\}/g, " madhyam kosthak ")
+                    .replace(/\[/g, " bara kosthak ")
+                    .replace(/\]/g, " bara kosthak ");
             } else {
                 processedText = processedText.replace(/\([^)]*\)/g, " ").replace(/\[[^\]]*\]/g, " ").replace(/\{[^}]*\}/g, " ");
             }
@@ -393,9 +403,21 @@
             startApiTracker();
         });
 
-        function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("overlay");
+            const active = !sidebar.classList.contains("active");
+            sidebar.classList.toggle("active", active);
+            overlay.classList.toggle("active", active);
+            document.body.classList.toggle("sidebar-open", active);
+        }
         function toggleAttachmentMenu() { const menu = document.getElementById('attachmentMenu'); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; }
-        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
+        function scrollToBottom() {
+            const c = document.getElementById("searchChatHistory");
+            if (!c) return;
+            requestAnimationFrame(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }));
+            setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }), 80);
+        }
         
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat and memory?")) {

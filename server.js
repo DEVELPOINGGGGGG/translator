@@ -225,6 +225,41 @@ async function handleGroqSearch(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// CLOUDFLARE IMAGE GENERATION ENDPOINT
+// ==========================================
+async function handleCloudflareImage(req, res) {
+    try {
+        if (!cfAccountId || !cfApiKey) {
+            return sendJson(res, 503, { error: "Cloudflare image generation is not configured. Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_KEY." });
+        }
+
+        const body = JSON.parse(await readRequestBody(req));
+        const prompt = String(body.prompt || "").trim();
+        if (!prompt) return sendJson(res, 400, { error: "Prompt is required." });
+
+        const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${cfApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, num_steps: 4 })
+        });
+
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+            const message = data.errors?.[0]?.message || data.error || "Cloudflare image model failed";
+            throw new Error(message);
+        }
+
+        const base64 = data.result?.image || data.result?.data?.[0]?.b64_json || data.image;
+        if (!base64) throw new Error("Cloudflare did not return image data.");
+
+        apiUsageStats["CLOUDFLARE (IMAGE)"] = (apiUsageStats["CLOUDFLARE (IMAGE)"] || 0) + 1;
+        return sendJson(res, 200, { base64, image: `data:image/png;base64,${base64}`, provider: "CLOUDFLARE (IMAGE)" });
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
 function serveStatic(req, res) {
     let safePath = path.normalize(decodeURIComponent(new URL(req.url, `http://${req.headers.host}`).pathname)).replace(/^(\.\.[/\\])+/, "");
     if (safePath === "/" || safePath === "") safePath = "index.html";
@@ -240,6 +275,7 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/gemini-text") return handleGeminiText(req, res);
         if (req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
         if (req.url === "/api/groq-search") return handleGroqSearch(req, res);
+        if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
     }
     
     // 🛑 ENDPOINT FOR LIVE UI TRACKING 🛑
