@@ -11,6 +11,30 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
+
+    <style>
+        /* JS ANIMATION UTILITIES */
+        .ripple {
+            position: absolute; border-radius: 50%; transform: scale(0);
+            animation: ripple-anim 0.6s linear; background-color: rgba(255, 255, 255, 0.4); pointer-events: none;
+        }
+        @keyframes ripple-anim {
+            to { transform: scale(4); opacity: 0; }
+        }
+        .btn-relative { position: relative; overflow: hidden; }
+        
+        .typewriter-text {
+            overflow: hidden; animation: typing 0.02s linear forwards;
+        }
+        
+        /* Model Badge Animation */
+        .api-badge {
+            position: absolute; top: 12px; right: 16px; font-size: 9px; color: #c084fc; 
+            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            background: rgba(192, 132, 252, 0.1); padding: 4px 8px; border-radius: 10px;
+            border: 1px solid rgba(192, 132, 252, 0.3); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+    </style>
 </head>
 <body class="chat-page-layout">
 
@@ -28,7 +52,7 @@
     <div class="topbar">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
         <div class="appTitle">Deep Search</div>
-        <div class="menuBtn" style="margin-left: auto; font-size: 20px;" onclick="clearSearchChat()" title="Clear Chat">🗑️</div>
+        <div class="menuBtn btn-relative" style="margin-left: auto; font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
     </div>
 
     <div class="apiTracker">
@@ -55,11 +79,11 @@
 
         <div class="chat-input-wrapper">
             <div style="position:relative;">
-                <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File">➕</button>
+                <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
                 
                 <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:rgba(15,23,42,0.95); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
-                    <button style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">📄 Upload PDF</button>
-                    <button style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="openStandaloneCamera(); toggleAttachmentMenu();">📸 Camera</button>
+                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
+                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
                 </div>
             </div>
             
@@ -67,26 +91,28 @@
             
             <textarea id="searchInput" placeholder="Search web, upload PDF, or use Camera..." rows="1"></textarea>
             
-            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" title="Send">🚀</button>
+            <button class="chat-action-btn send btn-relative" id="sendSearchBtn" onclick="createRipple(event); runStandaloneSearch();" title="Send">🚀</button>
         </div>
     </div>
 
     <div id="standaloneCameraModal" class="cameraModal">
-        <button onclick="closeStandaloneCamera()" class="closeBtn" style="position:absolute; top:30px; left:20px; z-index:1000;">✕</button>
+        <button onclick="closeStandaloneCamera()" class="closeBtn btn-relative" style="position:absolute; top:30px; left:20px; z-index:1000;">✕</button>
 
         <video id="standaloneVideo" autoplay playsinline style="flex:1; width:100%; height:100%; object-fit:cover;"></video>
         <canvas id="standaloneCanvas" style="display:none;"></canvas>
 
         <div class="cameraControls">
-            <button class="closeBtn" id="standaloneFlashBtn" onclick="toggleStandaloneFlash()" style="width:60px; height:60px; font-size:24px;">🔦</button>
-            <div class="cameraCircle" onclick="captureStandalonePhoto()" title="Capture"></div>
-            <button class="closeBtn" onclick="switchStandaloneCamera()" style="width:60px; height:60px; font-size:24px;">🔄</button>
+            <button class="closeBtn btn-relative" id="standaloneFlashBtn" onclick="createRipple(event); toggleStandaloneFlash();" style="width:60px; height:60px; font-size:24px;">🔦</button>
+            <div class="cameraCircle btn-relative" onclick="createRipple(event); captureStandalonePhoto();" title="Capture"></div>
+            <button class="closeBtn btn-relative" onclick="createRipple(event); switchStandaloneCamera();" style="width:60px; height:60px; font-size:24px;">🔄</button>
         </div>
     </div>
 
 
     <script>
-        // --- 1. STATE VARIABLES ---
+        // --- 1. STATE VARIABLES & WEBHOOK ---
+        const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
+        
         let standaloneCapturedImage = null;
         let persistentPdfMemory = "";
         let isProcessing = false;
@@ -95,9 +121,82 @@
         let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
         let hasResetToday = false;
 
-        // --- 2. INITIALIZATION (Timers & Welcome Msg) ---
+        // --- 2. JS ANIMATION FACTORY ---
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const circle = document.createElement("span");
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+            circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+            circle.classList.add("ripple");
+            const ripple = button.getElementsByClassName("ripple")[0];
+            if (ripple) ripple.remove();
+            button.appendChild(circle);
+        }
+
+        function fireParticles(element) {
+            const rect = element.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            
+            for(let i=0; i<30; i++) {
+                let p = document.createElement('div');
+                p.style.position = 'fixed'; p.style.left = x+'px'; p.style.top = y+'px';
+                p.style.width = Math.random() * 8 + 4 + 'px'; p.style.height = p.style.width;
+                p.style.background = ['#38bdf8', '#c084fc', '#f472b6', '#34d399', '#facc15'][Math.floor(Math.random()*5)];
+                p.style.borderRadius = '50%'; p.style.pointerEvents = 'none'; p.style.zIndex = 99999;
+                document.body.appendChild(p);
+                
+                let angle = Math.random() * Math.PI * 2;
+                let velocity = 2 + Math.random() * 8;
+                let dx = Math.cos(angle) * velocity;
+                let dy = Math.sin(angle) * velocity;
+                let opacity = 1;
+                
+                function animateParticle() {
+                    let currentX = parseFloat(p.style.left); let currentY = parseFloat(p.style.top);
+                    p.style.left = (currentX + dx) + 'px'; p.style.top = (currentY + dy) + 'px';
+                    opacity -= 0.02; p.style.opacity = opacity;
+                    dy += 0.2; // gravity effect
+                    if(opacity > 0) requestAnimationFrame(animateParticle); else p.remove();
+                }
+                requestAnimationFrame(animateParticle);
+            }
+        }
+
+        function typeWriterEffect(element, text, speed = 10) {
+            element.innerHTML = "";
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    if(text.charAt(i) === '\n') { element.appendChild(document.createElement('br')); }
+                    else { element.appendChild(document.createTextNode(text.charAt(i))); }
+                    i++;
+                    scrollToBottom();
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // --- 3. BACKGROUND WEBHOOK LOGGING ---
+        function syncToSheets(question, answer, provider) {
+            fetch(GOOGLE_SHEETS_WEBHOOK, {
+                method: "POST", mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ 
+                    action: "log", type: "search", 
+                    question: question, 
+                    answer: answer.replace(/<[^>]*>?/gm, ''), 
+                    provider: provider || "Gemini" 
+                })
+            }).catch(e => console.log("Google Sheets sync failed."));
+        }
+
+        // --- 4. INITIALIZATION ---
         document.addEventListener("DOMContentLoaded", () => {
-            // Setup AI Welcome Message using Style.css Classes
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai">
@@ -110,37 +209,21 @@
                 </div>
             `);
 
-            // Enter key to send
             const inp = document.getElementById("searchInput");
             inp.addEventListener("keypress", function(e) {
                 if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runStandaloneSearch(); }
             });
-
-            // Start API Tracker Timer
             startApiTracker();
         });
 
-        // --- 3. UI HELPERS (Sidebar, Menus, Trackers) ---
-        function toggleSidebar() {
-            document.getElementById("sidebar").classList.toggle("active");
-            document.getElementById("overlay").classList.toggle("active");
-        }
-
-        function toggleAttachmentMenu() { 
-            const menu = document.getElementById('attachmentMenu');
-            menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; 
-        }
-
-        function scrollToBottom() { 
-            const c = document.getElementById("searchChatHistory"); 
-            c.scrollTop = c.scrollHeight; 
-        }
+        function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+        function toggleAttachmentMenu() { const menu = document.getElementById('attachmentMenu'); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; }
+        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
         
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat?")) {
-                document.getElementById("searchChatHistory").innerHTML = `
-                    <div class="chat-msg chat-ai"><div class="bubble">Chat cleared. How can I help you next?</div></div>`;
-                clearSearchImage(); clearPdfFile();
+                document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat cleared. How can I help you next?</div></div>`;
+                clearSearchImage(); clearPdfFile(); persistentPdfMemory = "";
             }
         }
 
@@ -166,31 +249,20 @@
             updateTrackerDisplay();
             setInterval(() => {
                 const now = new Date();
-                const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-                const laTime = new Date(laTimeStr);
-                
+                const laTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
                 const nextMidnight = new Date(laTime); nextMidnight.setHours(24, 0, 0, 0);
                 let diffMs = nextMidnight - laTime;
-                
-                let h = Math.floor(diffMs / (1000 * 60 * 60));
-                let m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                let s = Math.floor((diffMs % (1000 * 60)) / 1000);
-                
+                let h = Math.floor(diffMs / (1000 * 60 * 60)), m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((diffMs % (1000 * 60)) / 1000);
                 if (h === 24) { h = 0; m = 0; s = 0; }
                 const pad = (num) => num.toString().padStart(2, '0');
-                
                 if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { 
-                    visionReqs = 0; textReqs = 0; 
-                    localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); 
-                    hasResetToday = true; updateTrackerDisplay();
+                    visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); hasResetToday = true; updateTrackerDisplay();
                 } else if (laTime.getHours() !== 0) { hasResetToday = false; }
-                
-                const t = document.getElementById('apiTimer'); 
-                if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+                const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
             }, 1000);
         }
 
-        // --- 4. PERSISTENT PDF MEMORY ---
+        // --- 5. PERSISTENT PDF MEMORY ---
         async function handlePdfUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -212,8 +284,7 @@
                     persistentPdfMemory = fullText;
                     
                     const chip = document.getElementById("pdfPreviewChip");
-                    chip.style.display = "flex";
-                    document.getElementById("pdfName").innerText = file.name;
+                    chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name;
                     showStandaloneToast(`✅ PDF Attached!`);
                 } catch(e) { showStandaloneToast("❌ Error reading PDF."); }
             };
@@ -226,93 +297,53 @@
             document.getElementById("pdfPreviewChip").style.display = "none";
         }
 
-        // --- 5. PRO CAMERA ENGINE ---
-        let standaloneStream = null;
-        let standaloneFacingMode = "environment";
-        let isStandaloneFlashOn = false;
+        // --- 6. PRO CAMERA ENGINE ---
+        let standaloneStream = null; let standaloneFacingMode = "environment"; let isStandaloneFlashOn = false;
 
         async function startCameraTrack() {
             if (standaloneStream) { standaloneStream.getTracks().forEach(t => t.stop()); }
             try {
-                standaloneStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: standaloneFacingMode, width: {ideal: 1920}, height: {ideal: 1080} } 
-                });
+                standaloneStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: standaloneFacingMode, width: {ideal: 1920}, height: {ideal: 1080} } });
                 document.getElementById("standaloneVideo").srcObject = standaloneStream;
-                
                 setTimeout(async () => {
                     if (standaloneFacingMode === "environment") {
                         const track = standaloneStream.getVideoTracks()[0];
-                        try {
-                            const cap = track.getCapabilities();
-                            if (cap.torch) {
-                                isStandaloneFlashOn = true;
-                                await track.applyConstraints({ advanced: [{ torch: true }] });
-                                updateFlashUI();
-                            }
-                        } catch(err) {}
+                        try { const cap = track.getCapabilities(); if (cap.torch) { isStandaloneFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } } catch(err) {}
                     }
                 }, 500);
             } catch(e) { showStandaloneToast("⚠️ Camera Error."); }
         }
 
-        async function openStandaloneCamera() {
-            document.getElementById("standaloneCameraModal").classList.add("active");
-            await startCameraTrack();
-        }
-
+        async function openStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.add("active"); await startCameraTrack(); }
         function closeStandaloneCamera() {
             document.getElementById("standaloneCameraModal").classList.remove("active");
-            if (standaloneStream) {
-                const track = standaloneStream.getVideoTracks()[0];
-                try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {}
-                standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null;
-            }
+            if (standaloneStream) { const track = standaloneStream.getVideoTracks()[0]; try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; }
             isStandaloneFlashOn = false; updateFlashUI();
         }
 
-        async function switchStandaloneCamera() {
-            standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment";
-            await startCameraTrack();
-        }
-
+        async function switchStandaloneCamera() { standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment"; await startCameraTrack(); }
         async function toggleStandaloneFlash() {
             if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0];
-            try {
-                if (track.getCapabilities().torch) {
-                    isStandaloneFlashOn = !isStandaloneFlashOn;
-                    await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] });
-                    updateFlashUI();
-                }
-            } catch(err){}
+            try { if (track.getCapabilities().torch) { isStandaloneFlashOn = !isStandaloneFlashOn; await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] }); updateFlashUI(); } } catch(err){}
         }
 
         function updateFlashUI() {
             const btn = document.getElementById("standaloneFlashBtn");
-            if (btn) {
-                btn.innerText = isStandaloneFlashOn ? "💡" : "🔦";
-                btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)";
-            }
+            if (btn) { btn.innerText = isStandaloneFlashOn ? "💡" : "🔦"; btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)"; }
         }
 
         function captureStandalonePhoto() {
-            const v = document.getElementById("standaloneVideo");
-            const c = document.getElementById("standaloneCanvas");
-            let w = v.videoWidth, h = v.videoHeight; 
-            if(w > 1500) { h *= 1500/w; w = 1500; }
+            const v = document.getElementById("standaloneVideo"); const c = document.getElementById("standaloneCanvas");
+            let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; }
             c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
             standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7);
-            
-            const chip = document.getElementById("mathPreviewChip");
-            chip.style.display = "block"; chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
+            const chip = document.getElementById("mathPreviewChip"); chip.style.display = "block"; chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
             closeStandaloneCamera();
         }
 
-        function clearSearchImage(e) {
-            if(e) e.stopPropagation(); standaloneCapturedImage = null;
-            document.getElementById("mathPreviewChip").style.display = "none";
-        }
+        function clearSearchImage(e) { if(e) e.stopPropagation(); standaloneCapturedImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-        // --- 6. CORE SEARCH LOGIC & API CALLS ---
+        // --- 7. CORE SEARCH LOGIC & API CALLS ---
         async function runStandaloneSearch() {
             const inp = document.getElementById("searchInput");
             const q = inp.value.trim(); 
@@ -322,7 +353,7 @@
 
             const chatContainer = document.getElementById("searchChatHistory");
             
-            // User Bubble (Master CSS Classes)
+            // User Bubble
             let displayQ = q || "Analyze this document.";
             let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
             chatContainer.insertAdjacentHTML('beforeend', `
@@ -336,7 +367,7 @@
             
             inp.value = ""; scrollToBottom();
 
-            // Loading Bubble (Master CSS Classes)
+            // Loading Bubble
             const loadId = "load_" + Date.now();
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
@@ -373,17 +404,22 @@
                 if (!response.ok) throw new Error(data.error || "Server Error");
 
                 let cleanAns = data.text.replace(/[\*&#_]/g, '');
+                let apiProvider = data.provider || "Gemini Core API"; // DYNAMIC API DETECTION
                 
-                // Track Usage in Topbar
                 trackAPI(standaloneCapturedImage ? 'v' : 't');
+                syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider); // WEBHOOK SYNC
                 
-                // AI Response Bubble
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ BY GEMINI</div>
-                    <div style="margin-top:10px;">${cleanAns.replace(/\n/g, '<br>')}</div>
+                // AI Response Bubble with Dynamic Provider & Typewriter animation
+                const finalBubble = document.getElementById(loadId).querySelector('.bubble');
+                finalBubble.innerHTML = `
+                    <div class="api-badge">✨ BY ${apiProvider}</div>
+                    <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
                 `;
-                scrollToBottom();
-
+                
+                // Fire Particles & Typewriter effect
+                fireParticles(finalBubble);
+                typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns, 15);
+                
                 clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
 
             } catch (error) {
