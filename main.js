@@ -1,6 +1,6 @@
 /* =======================================================
    AI PRO SUITE - THE ULTIMATE BUILD (V61 - MASTER EDITION)
-   Includes TTS Mini-Player, Gemini Deep Search & Context Memory
+   Includes TTS Mini-Player, Gemini Deep Search, Context Memory & PDF Support
 ======================================================= */
 
 let appHistory = [];
@@ -490,13 +490,21 @@ async function executeMathFlow() {
     } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- DEEP SEARCH (GEMINI FIRST, WITH CONTEXT MEMORY) ---
+// --- DEEP SEARCH (GEMINI FIRST, WITH CONTEXT MEMORY & PDF) ---
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
-    const q = inp.value.trim(); if(!q && !capturedImage) return;
+    const q = inp.value.trim(); 
+    
+    // UPDATED: Allow search to run if a PDF is attached, even if no text is typed
+    if(!q && !capturedImage && !window.attachedPdfText) return;
     
     let uiImage = capturedImage;
-    appendUserBubble(q || "Analyze this image.", uiImage, "searchChatHistory"); 
+    
+    // UPDATED: Show the PDF status in the user chat bubble
+    let displayQ = q || (window.attachedPdfText ? "Analyze this document." : "Analyze this image.");
+    if(window.attachedPdfText) displayQ = "📄 [PDF Attached]\n" + displayQ;
+    
+    appendUserBubble(displayQ, uiImage, "searchChatHistory"); 
     inp.value = ""; let lId = appendAiLoading("searchChatHistory");
     
     // THE MEMORY PULL
@@ -504,7 +512,14 @@ async function runGroqSearch() {
     let memoryContext = getSessionContext('search');
     
     let sysPrompt = "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.";
-    let finalPrompt = `${memoryContext}User: ${q}`;
+    
+    // NEW: Inject PDF text into the prompt silently
+    let promptContent = q;
+    if (window.attachedPdfText) {
+        promptContent = `Here is the extracted text from an attached PDF document:\n\n${window.attachedPdfText}\n\nBased ONLY on this document, please answer the user query: ${q || 'Please summarize this document.'}`;
+    }
+    
+    let finalPrompt = `${memoryContext}User: ${promptContent}`;
     
     window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: finalPrompt, image: activeImage };
 
@@ -520,7 +535,7 @@ async function runGroqSearch() {
         }
         
         ans = ans.replace(/[\*&#_]/g, '');
-        saveToHistory('search', q, ans, uiImage, provider); 
+        saveToHistory('search', q || "PDF Analysis", ans, uiImage, provider); 
         
         const bbl = document.getElementById(lId);
         if (bbl) {
@@ -535,7 +550,11 @@ async function runGroqSearch() {
                 </div>`;
             typeWriteResponse(bubbleEl, ans, provider, `search_${lId}`, buttons, false);
         }
+        
+        // Clear attachments after sending
         clearMathImage();
+        if(window.clearPdfFile) window.clearPdfFile();
+        
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
@@ -1198,4 +1217,52 @@ function capturePhoto(){
     closeCamera(); 
 }
 
-window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest;
+// --- 🛑 PDF HANDLING ENGINE 🛑 ---
+window.attachedPdfText = "";
+
+window.handlePdfUpload = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") return showToast("⚠️ Only PDF files are supported!");
+    
+    showToast("📄 Reading PDF... Please wait.");
+    const fileReader = new FileReader();
+    
+    fileReader.onload = async function() {
+        const typedarray = new Uint8Array(this.result);
+        try {
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let fullText = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `\n--- Page ${i} ---\n` + pageText;
+            }
+            window.attachedPdfText = fullText;
+            
+            // Show UI chip
+            const chip = document.getElementById("pdfPreviewChip");
+            if(chip) {
+                chip.style.display = "flex";
+                document.getElementById("pdfName").innerText = file.name;
+            }
+            showToast(`✅ PDF Attached! (${pdf.numPages} pages)`);
+        } catch(e) {
+            showToast("❌ Error reading PDF: " + e.message);
+        }
+    };
+    fileReader.readAsArrayBuffer(file);
+};
+
+window.clearPdfFile = function(e) {
+    if(e) e.stopPropagation();
+    window.attachedPdfText = "";
+    const inp = document.getElementById("pdfUploadInput");
+    if(inp) inp.value = "";
+    const chip = document.getElementById("pdfPreviewChip");
+    if(chip) chip.style.display = "none";
+};
+
+// --- GLOBAL EXPORTS ---
+window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest; window.handlePdfUpload = handlePdfUpload; window.clearPdfFile = clearPdfFile;
