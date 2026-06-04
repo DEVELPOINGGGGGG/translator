@@ -104,7 +104,7 @@
     <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 105px; padding-bottom: 120px;"></div>
 
     <!-- ⌨️ CHAT INPUT AREA -->
-    <div class="chat-input-area">
+    <div class="chat-input-area" style="flex-direction: column;">
         
         <!-- Previews -->
         <div class="image-preview-chip" id="mathPreviewChip" style="display:none; position:absolute; top:-85px; left:20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
@@ -117,32 +117,31 @@
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48;" onclick="clearPdfFile(event)">✕</div>
         </div>
 
-        <!-- Input Wrapper -->
-        <div class="chat-input-wrapper">
-            
-            <div style="display: flex; gap: 5px;">
-                <!-- Model Chooser Dropdown -->
-                <select id="modelSelector" style="background: rgba(15,23,42,0.9); border: 1px solid rgba(255,255,255,0.2); color: #38bdf8; border-radius: 12px; padding: 0 5px; outline: none; font-size: 13px; font-weight: bold; cursor: pointer; height: 45px; margin-top: auto; margin-bottom: auto;">
-                    <option value="gemini">Gemini</option>
-                    <option value="groq">Groq</option>
-                    <option value="cloudflare">Cloudflare</option>
-                </select>
+        <!-- 🧠 MODEL CHOOSER (MOVED ABOVE INPUT) -->
+        <div style="display: flex; justify-content: flex-start; padding-left: 5px; margin-bottom: 8px; width: 100%;">
+            <select id="modelSelector" style="background: rgba(15,23,42,0.95); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 15px; padding: 5px 12px; outline: none; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
+                <option value="gemini">✨ Model: Gemini</option>
+                <option value="groq">⚡ Model: Groq</option>
+                <option value="cloudflare">☁️ Model: Cloudflare</option>
+            </select>
+        </div>
 
-                <div style="position:relative;">
-                    <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
-                    
-                    <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:rgba(15,23,42,0.95); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
-                        <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
-                        <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
-                    </div>
+        <!-- Input Wrapper (Full Width Restored) -->
+        <div class="chat-input-wrapper" style="width: 100%;">
+            <div style="position:relative;">
+                <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
+                
+                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:rgba(15,23,42,0.95); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
+                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
+                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
                 </div>
             </div>
             
             <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
             
-            <textarea id="searchInput" placeholder="Search web, upload PDF, or use Camera..." rows="1"></textarea>
+            <textarea id="searchInput" placeholder="Search web, ask a question..." rows="1"></textarea>
             
-            <!-- 🎙️ NEW VOICE MIC BUTTON -->
+            <!-- 🎙️ VOICE MIC BUTTON -->
             <button class="chat-action-btn btn-relative" id="micBtn" onclick="createRipple(event); openMicModal();" title="Voice Input" style="font-size: 20px; transition: 0.3s;">🎙️</button>
             
             <button class="chat-action-btn send btn-relative" id="sendSearchBtn" onclick="createRipple(event); runStandaloneSearch();" title="Send">🚀</button>
@@ -272,16 +271,11 @@
 
         window.openMicModal = function() {
             if (!speechRecog) return showStandaloneToast("⚠️ Voice recognition not supported on this browser.");
-            if (isRecording) {
-                stopVoiceRecognition();
-            } else {
-                document.getElementById("micLangModal").style.display = "flex";
-            }
+            if (isRecording) { stopVoiceRecognition(); } 
+            else { document.getElementById("micLangModal").style.display = "flex"; }
         }
 
-        window.closeMicModal = function() {
-            document.getElementById("micLangModal").style.display = "none";
-        }
+        window.closeMicModal = function() { document.getElementById("micLangModal").style.display = "none"; }
 
         window.startVoiceRecognition = function(lang) {
             closeMicModal();
@@ -316,7 +310,6 @@
             
             document.getElementById("ttsPlayer").style.display = "flex";
             document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
-            
             playProcessedTts();
         };
 
@@ -616,6 +609,7 @@
                 clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
                 
                 const finalBubble = document.getElementById(loadId).querySelector('.bubble');
+                
                 finalBubble.innerHTML = `
                     <div class="api-badge">✨ BY ${apiProvider}</div>
                     <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
