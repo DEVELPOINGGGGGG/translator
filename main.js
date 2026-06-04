@@ -202,8 +202,8 @@ function appendAiLoading(cid) {
 
 function getRetryButtonsHtml(lId) {
     return `
-    <div style="margin-top:15px; display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:8px; border-radius:15px; border:1px solid rgba(255,255,255,0.05);">
-        <span style="font-size:11px; color:var(--muted); align-self:center;">Retry Model:</span>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:8px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); width:100%; align-items:center; justify-content:flex-start;">
+        <span style="font-size:11px; color:var(--muted);">Retry Model:</span>
         <button style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid #3b82f6; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'gemini')">Gemini</button>
         <button style="background:rgba(245,158,11,0.1); color:#f59e0b; border:1px solid #f59e0b; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'cloudflare')">Cloudflare</button>
         <button style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid #10b981; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'groq')">Groq</button>
@@ -212,7 +212,7 @@ function getRetryButtonsHtml(lId) {
 
 // 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE (WITH ANTI-SHAKE FIX) 🛑
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
-    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}"></div>`;
+    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
     const txtEl = document.getElementById(contentId);
     
     const chars = rawText.length || 1;
@@ -256,17 +256,20 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     const bbl = loadingBubble.querySelector('.bubble');
     window.latestMathSolution = answer; 
     
-    const buttons = getRetryButtonsHtml(lId) + `
-        <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-            <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
-            <button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button>
-            <button class="btn" style="padding:10px; flex:0.5; font-size:13px; border-radius:20px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
+    const buttons = `
+        <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+            <div style="display:flex; gap:10px; width:100%;">
+                <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
+                <button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button>
+                <button class="btn" style="padding:10px; flex:0.5; font-size:13px; border-radius:20px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
+            </div>
+            ${getRetryButtonsHtml(lId)}
         </div>
     `;
     
     if (useTyping) { typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true); } 
     else {
-        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}">${answer.replace(/\n/g, '<br>')}</div>${buttons}`;
+        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px;">${answer.replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
     }
 }
@@ -392,7 +395,15 @@ async function retryRequest(lId, targetProvider) {
             }
             let ans = resObj.text.replace(/[\*&#_]/g, '');
             saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider || targetProvider);
-            const buttons = getRetryButtonsHtml(lId) + `<div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
+            const buttons = `
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <div style="display:flex; gap:10px; width:100%;">
+                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                    </div>
+                    ${getRetryButtonsHtml(lId)}
+                </div>
+            `;
             typeWriteResponse(container, ans, resObj.provider || targetProvider, `search_${lId}`, buttons, false);
         }
         else if (req.type === 'image_trans') {
@@ -401,14 +412,19 @@ async function retryRequest(lId, targetProvider) {
             saveToHistory('image_translation', `Translate to ${req.targetLang} (Retry)`, cleanText + "\n\nHard Words:\n" + hardWordsText, null, resObj.provider);
             container.innerHTML = `
                 <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${resObj.provider}</div>
-                <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
+                <div style="margin-top:10px; font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
                 <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${req.extractedText.replace(/\n/g, '<br>')}</div>
                 <div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${req.targetLang}:</div>
                 <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
                 <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
                 <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
-                ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <div style="display:flex; gap:10px; width:100%;">
+                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
+                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+                    </div>
+                    ${getRetryButtonsHtml(lId)}
+                </div>
             `;
         }
         else if (req.type === 'qa') {
@@ -417,12 +433,17 @@ async function retryRequest(lId, targetProvider) {
             saveToHistory('qa', req.finalQuestion + " (Retry)", cleanAns, null, ansObj.provider);
             container.innerHTML = `
                 <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${ansObj.provider}</div>
-                <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
+                <div style="margin-top:10px; font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
                 <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${req.finalQuestion.replace(/\n/g, '<br>')}</div>
                 <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
                 <div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
-                ${getRetryButtonsHtml(lId)}
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${lId}')">📋 Copy</button></div>
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <div style="display:flex; gap:10px; width:100%;">
+                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button>
+                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${lId}')">📋 Copy</button>
+                    </div>
+                    ${getRetryButtonsHtml(lId)}
+                </div>
             `;
             if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); }
         }
@@ -504,10 +525,13 @@ async function runGroqSearch() {
         const bbl = document.getElementById(lId);
         if (bbl) {
             const bubbleEl = bbl.querySelector('.bubble');
-            const buttons = getRetryButtonsHtml(lId) + `
-                <div style="margin-top:10px; display:flex; gap:10px;">
-                    <button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+            const buttons = `
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <div style="display:flex; gap:10px; width:100%;">
+                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                    </div>
+                    ${getRetryButtonsHtml(lId)}
                 </div>`;
             typeWriteResponse(bubbleEl, ans, provider, `search_${lId}`, buttons, false);
         }
@@ -719,12 +743,14 @@ async function runTranslation(){
         
         const tId = "trans_" + Date.now();
         
-        document.getElementById("translatedText").innerHTML = `
+        const transBox = document.getElementById("translatedText");
+        transBox.style.position = "relative";
+        transBox.innerHTML = `
             <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div>
-            <div id="${tId}">${cleanText}</div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
+            <div id="${tId}" style="margin-top:10px;">${cleanText}</div>
+            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; gap:10px; width:100%;">
+                <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
+                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
             </div>`; 
         document.getElementById("translatedTextStatus").style.display = "none"; 
         
@@ -798,16 +824,18 @@ async function executeImageTransFlow() {
         
         let finalHtml = `
             <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div>
-            <div style="font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
+            <div style="margin-top:10px; font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div>
             <div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${targetLang}:</div>
             <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
             <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
             <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
-            ${getRetryButtonsHtml(lId)}
-            <div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                <div style="display:flex; gap:10px; width:100%;">
+                    <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+                </div>
+                ${getRetryButtonsHtml(lId)}
             </div>
         `;
         
@@ -905,16 +933,19 @@ async function executeQaFlow() {
         
         pBar.style.width = "100%"; statusTxt.innerText = "✅ Done!";
         
+        outBox.style.position = "relative";
         outBox.innerHTML = `
             <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div>
-            <div style="font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
+            <div style="margin-top:10px; font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div>
             <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div>
             <div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
-            ${getRetryButtonsHtml(qaId)}
-            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); display:flex; gap:10px; padding-top:10px; width:100%;">
-                <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${qaId}')">📋 Copy</button>
+            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                <div style="display:flex; gap:10px; width:100%;">
+                    <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button>
+                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${qaId}')">📋 Copy</button>
+                </div>
+                ${getRetryButtonsHtml(qaId)}
             </div>
         `;
         
@@ -1085,9 +1116,14 @@ function restoreSession(e, id) {
             else {
                 bbl.innerHTML = `
                     <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${inter.provider || "AI"}</div>
-                    <div id="search_${lId}">${inter.answer.replace(/\n/g, '<br>')}</div>
-                    ${getRetryButtonsHtml(lId)}
-                    <div style="margin-top:10px; display:flex; gap:10px;"><button class="btn green" style="padding:10px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>`;
+                    <div id="search_${lId}" style="margin-top:10px;">${inter.answer.replace(/\n/g, '<br>')}</div>
+                    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                        <div style="display:flex; gap:10px; width:100%;">
+                            <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                            <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                        </div>
+                        ${getRetryButtonsHtml(lId)}
+                    </div>`;
             }
         });
     } 
