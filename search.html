@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deep Search</title>
     
+    <!-- STRICT MASTER CSS IMPORT ONLY -->
     <link rel="stylesheet" href="style.css">
     
+    <!-- PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
     <style>
-        /* JS ANIMATION UTILITIES ONLY (No layout styles) */
+        /* JS ANIMATION UTILITIES ONLY */
         .ripple {
             position: absolute; border-radius: 50%; transform: scale(0);
             animation: ripple-anim 0.6s linear; background-color: rgba(255, 255, 255, 0.4); pointer-events: none;
@@ -33,6 +35,7 @@
 </head>
 <body class="chat-page-layout">
 
+    <!-- 📱 SIDEBAR & OVERLAY -->
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
         <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
@@ -44,12 +47,14 @@
         <button onclick="window.location.href='history.html'">🕰️ History</button>
     </div>
 
+    <!-- 🌐 TOP NAVIGATION BAR -->
     <div class="topbar">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
         <div class="appTitle">Deep Search</div>
         <div class="menuBtn btn-relative" style="margin-left: auto; font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
     </div>
 
+    <!-- ⏱️ API TRACKER (TIMERS & COUNTS) -->
     <div class="apiTracker">
         <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
         <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
@@ -57,11 +62,15 @@
         <div>📝 <span id="apiText" class="api-val text">0</span></div>
     </div>
 
+    <!-- 💬 MAIN CHAT AREA -->
     <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 105px; padding-bottom: 120px;">
-        </div>
+        <!-- AI Welcome Message injected here via JS -->
+    </div>
 
+    <!-- ⌨️ CHAT INPUT AREA -->
     <div class="chat-input-area">
         
+        <!-- Previews -->
         <div class="image-preview-chip" id="mathPreviewChip" style="display:none; position:absolute; top:-85px; left:20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px;" onclick="clearSearchImage(event)">✕</div>
         </div>
@@ -72,6 +81,7 @@
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48;" onclick="clearPdfFile(event)">✕</div>
         </div>
 
+        <!-- Input Wrapper -->
         <div class="chat-input-wrapper">
             <div style="position:relative;">
                 <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
@@ -90,6 +100,7 @@
         </div>
     </div>
 
+    <!-- 📸 STANDALONE CAMERA MODAL -->
     <div id="standaloneCameraModal" class="cameraModal">
         <button onclick="closeStandaloneCamera()" class="closeBtn btn-relative" style="position:absolute; top:30px; left:20px; z-index:1000;">✕</button>
 
@@ -104,12 +115,16 @@
     </div>
 
 
+    <!-- ==========================================
+         STANDALONE SCRIPT (UI, APIs, WEBHOOKS)
+         ========================================== -->
     <script>
         // --- 1. STATE VARIABLES & WEBHOOK ---
         const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
         
         let standaloneCapturedImage = null;
         let persistentPdfMemory = "";
+        let sessionMessages = []; // NEW: Chat Conversation Memory!
         let isProcessing = false;
         
         let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
@@ -161,23 +176,19 @@
             }
         }
 
-        // SMART TYPEWRITER ENGINE (NO AUTO-SCROLL, 10 SECONDS MAX)
+        // SMART TYPEWRITER ENGINE
         function typeWriterEffect(element, text) {
             element.innerHTML = "";
             let i = 0;
             
-            // Calculate Speed: Maximum 10 seconds total time
             const maxDurationMs = 10000; 
-            let tickRate = 20; // Default fast tick (20ms)
+            let tickRate = 20; 
             let totalTicksAllowed = maxDurationMs / tickRate;
-            
             let charsPerTick = 1;
             
             if (text.length > totalTicksAllowed) {
-                // If it's a huge text, print chunks so it finishes in exactly 10s
                 charsPerTick = Math.ceil(text.length / totalTicksAllowed);
             } else if (text.length < 150) {
-                // Medium speed for short sentences so it doesn't just flash instantly
                 tickRate = 35; 
             }
             
@@ -189,7 +200,6 @@
                         else { element.appendChild(document.createTextNode(c)); }
                     }
                     i += charsPerTick;
-                    // AUTO-SCROLL HAS BEEN COMPLETELY REMOVED HERE
                 } else {
                     clearInterval(timer);
                 }
@@ -219,7 +229,7 @@
                         👋 <b>Welcome to Deep Search!</b><br><br>
                         1. <b>➕ Button:</b> Attach a PDF or use the Camera.<br>
                         2. <b>Search:</b> Type any question; I will use your file + Internet to answer it.<br>
-                        <br><i style="color: var(--muted); font-size: 13px;">Note: I will remember your PDF during our chat!</i>
+                        <br><i style="color: var(--muted); font-size: 13px;">Note: I will remember your PDF and conversation during our chat!</i>
                     </div>
                 </div>
             `);
@@ -240,9 +250,11 @@
         }
         
         function clearSearchChat() {
-            if(confirm("Are you sure you want to clear this chat?")) {
-                document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat cleared. How can I help you next?</div></div>`;
-                clearSearchImage(); clearPdfFile(); persistentPdfMemory = "";
+            if(confirm("Are you sure you want to clear this chat and memory?")) {
+                document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat and memory cleared. How can I help you next?</div></div>`;
+                clearSearchImage(); clearPdfFile(); 
+                persistentPdfMemory = "";
+                sessionMessages = []; // Wipes AI memory too!
             }
         }
 
@@ -385,7 +397,7 @@
             `);
             
             inp.value = ""; 
-            scrollToBottom(); // Scroll once when user sends message
+            scrollToBottom(); 
 
             // Loading Bubble
             const loadId = "load_" + Date.now();
@@ -399,15 +411,29 @@
                     </div>
                 </div>
             `);
-            scrollToBottom(); // Scroll once when loading appears
+            scrollToBottom();
+
+            // CONTEXT MEMORY BUILDER
+            let memoryContextString = "";
+            if (sessionMessages.length > 0) {
+                memoryContextString = "--- PREVIOUS CHAT HISTORY ---\n";
+                // Get the last 6 interactions so it remembers context
+                let recent = sessionMessages.slice(-6);
+                recent.forEach(msg => {
+                    memoryContextString += `User: ${msg.q}\nAI: ${msg.a}\n\n`;
+                });
+                memoryContextString += "--- CURRENT QUESTION ---\n";
+            }
 
             let sysPrompt = `You are an expert AI Assistant and Guide. 
             CRITICAL RULES:
             1. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.
             2. If the user provides a document and asks "how to fill it", DO NOT say the document lacks instructions. 
-            3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.`;
+            3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.
+            4. ALWAYS remember the user's previous context from the Chat History (like if they say they are a teacher, remember it).`;
 
-            let finalPrompt = `User Question: ${q || 'Please help me with this document.'}\n\n`;
+            let finalPrompt = memoryContextString + `User Question: ${q || 'Please help me with this document.'}\n\n`;
+            
             if (persistentPdfMemory) finalPrompt += `[BACKGROUND DOCUMENT CONTEXT]:\n${persistentPdfMemory}`;
 
             try {
@@ -429,18 +455,18 @@
                 trackAPI(standaloneCapturedImage ? 'v' : 't');
                 syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider);
                 
-                // Clear the UI attachments
+                // SAVE CONTEXT TO MEMORY
+                sessionMessages.push({ q: q || "[Image/PDF Upload]", a: cleanAns });
+                
                 clearSearchImage(); 
                 document.getElementById("pdfPreviewChip").style.display = "none";
                 
-                // Inject the final bubble structure (without scrolling)
                 const finalBubble = document.getElementById(loadId).querySelector('.bubble');
                 finalBubble.innerHTML = `
                     <div class="api-badge">✨ BY ${apiProvider}</div>
                     <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
                 `;
                 
-                // Fire animations!
                 fireParticles(finalBubble);
                 typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns);
 
