@@ -15,7 +15,21 @@
     </script>
 
     <style>
-        /* Styles for the attachment popup menu */
+        /* SCROLL FIX: Forces the page to scroll properly */
+        html, body {
+            overflow: auto !important;
+            overflow-x: hidden !important;
+            height: 100%;
+        }
+        .chat-container, .chat-history, .chat-scroll-area {
+            overflow-y: auto !important;
+            scroll-behavior: smooth !important;
+            overscroll-behavior: contain;
+            height: 80vh;
+            padding-bottom: 100px;
+        }
+
+        /* Attachment Menu Styles */
         .attachment-menu {
             display: none; 
             position: absolute; 
@@ -31,29 +45,14 @@
             z-index: 100;
             min-width: 120px;
         }
-        .attachment-menu.active {
-            display: flex;
-        }
+        .attachment-menu.active { display: flex; }
         .attachment-menu button {
-            background: transparent; 
-            border: none; 
-            color: #f8fafc; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 14px;
-            text-align: left;
-            transition: background 0.2s;
+            background: transparent; border: none; color: #f8fafc; cursor: pointer; 
+            display: flex; align-items: center; gap: 10px; padding: 10px; 
+            border-radius: 8px; font-size: 14px; text-align: left; transition: background 0.2s;
         }
-        .attachment-menu button:hover {
-            background: #334155;
-        }
-        .relative-container {
-            position: relative;
-        }
+        .attachment-menu button:hover { background: #334155; }
+        .relative-container { position: relative; }
     </style>
 </head>
 <body>
@@ -61,69 +60,92 @@
     <!-- Main Chat Area -->
     <div class="chat-container">
         <!-- Chat History -->
-        <div id="searchChatHistory" class="chat-history">
+        <div id="searchChatHistory" class="chat-history chat-scroll-area">
             <!-- Messages will appear here -->
         </div>
 
         <!-- Input Area -->
-        <div class="chat-input-area">
+        <div class="chat-input-area" style="position: fixed; bottom: 0; width: 100%; background: #0f172a; padding: 10px; box-sizing: border-box;">
             
             <!-- Previews for Images and PDFs -->
             <div style="display: flex; gap: 10px; margin-bottom: 5px;">
-                <!-- Image Preview Chip -->
-                <div class="image-preview-chip" id="mathPreviewChip" style="display:none;" onclick="viewPhotoFullscreen(this.style.backgroundImage.slice(5, -2))">
-                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; box-shadow:0 5px 15px rgba(0,0,0,0.5); cursor:pointer;" onclick="clearMathImage(event)">✕</div>
+                <div class="image-preview-chip" id="mathPreviewChip" style="display:none; width: 60px; height: 60px; background-size:cover; border-radius:8px; position:relative;">
+                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="clearSearchImage(event)">✕</div>
                 </div>
                 
-                <!-- PDF Preview Chip -->
                 <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; background:#1e293b; color:white; align-items:center; justify-content:center; flex-direction:column; font-size:10px; border: 2px solid #38bdf8; width: 60px; height: 60px; border-radius: 8px; position:relative;">
                     <div style="font-size:24px; margin-bottom: 2px;">📄</div>
                     <div id="pdfName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; padding:0 5px; text-align:center;">doc.pdf</div>
-                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; box-shadow:0 5px 15px rgba(0,0,0,0.5); cursor:pointer;" onclick="clearPdfFile(event)">✕</div>
+                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="clearPdfFile(event)">✕</div>
                 </div>
             </div>
 
-            <div class="chat-input-wrapper">
-                
-                <!-- The + Button and Popup Menu -->
+            <div class="chat-input-wrapper" style="display: flex; gap: 10px; align-items: center;">
                 <div class="relative-container">
-                    <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File">➕</button>
+                    <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File" style="font-size:20px; background:none; border:none; color:white; cursor:pointer;">➕</button>
                     
-                    <!-- Popup Menu -->
                     <div id="attachmentMenu" class="attachment-menu">
-                        <button onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">
-                            📄 PDF Document
-                        </button>
-                        <button onclick="openCamera('search'); toggleAttachmentMenu();">
-                            📸 Camera
-                        </button>
+                        <button onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">📄 PDF Document</button>
+                        <button onclick="openStandaloneCamera(); toggleAttachmentMenu();">📸 Camera</button>
                     </div>
                 </div>
                 
-                <!-- Hidden PDF Input -->
                 <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
                 
-                <input type="hidden" id="voiceSourceLang" value="hi-IN">
+                <textarea id="searchInput" placeholder="Ask about an image, or upload a PDF..." rows="1" style="flex: 1; resize: none; padding: 10px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: white; outline: none;"></textarea>
                 
-                <!-- Text Input -->
-                <textarea id="searchInput" placeholder="Search web, ask about an image, or upload a PDF..." rows="1" style="flex: 1; resize: none;"></textarea>
-                
-                <!-- Mic & Send Buttons -->
-                <button class="chat-action-btn" id="micBtn" onclick="toggleRecording()" title="Voice Input">🎙️</button>
-                <button class="chat-action-btn send" id="sendSearchBtn" onclick="runGroqSearch()" title="Send">🚀</button>
+                <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" title="Send" style="font-size:20px; background:none; border:none; color:#38bdf8; cursor:pointer;">🚀</button>
             </div>
         </div>
     </div>
 
-    <!-- UI Scripts for Menu Toggle -->
-    <script>
-        // Toggles the + menu open and closed
-        function toggleAttachmentMenu() {
-            const menu = document.getElementById('attachmentMenu');
-            menu.classList.toggle('active');
-        }
+    <!-- Camera Modal (Standalone) -->
+    <div id="standaloneCameraModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:9999; flex-direction:column;">
+        <video id="standaloneVideo" autoplay playsinline style="flex:1; width:100%; object-fit:cover;"></video>
+        <canvas id="standaloneCanvas" style="display:none;"></canvas>
+        <div style="padding:20px; display:flex; justify-content:space-around; background:#111;">
+            <button onclick="closeStandaloneCamera()" style="padding:10px 20px; font-size:16px; background:#475569; color:white; border:none; border-radius:8px;">Cancel</button>
+            <button onclick="captureStandalonePhoto()" style="padding:10px 20px; font-size:16px; background:#38bdf8; color:white; border:none; border-radius:8px;">Capture</button>
+        </div>
+    </div>
 
-        // Closes the menu if you click anywhere outside of it
+
+    <!-- ==========================================
+         STANDALONE SCRIPT FOR SEARCH & PDF ONLY
+         ========================================== -->
+    <script>
+        // 1. STATE VARIABLES
+        let standaloneCapturedImage = null;
+        let persistentPdfMemory = "";
+        let isProcessing = false;
+
+        // 2. WELCOME MESSAGE ON LOAD
+        document.addEventListener("DOMContentLoaded", () => {
+            const chatContainer = document.getElementById("searchChatHistory");
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" style="display: flex; margin-bottom: 15px; margin-top: 15px;">
+                    <div class="bubble" style="background: rgba(56, 189, 248, 0.1); border: 1px solid #38bdf8; padding: 15px; border-radius: 15px; color: white; max-width: 80%;">
+                        👋 <b>Welcome!</b><br><br>
+                        1. <b>➕ Button:</b> Attach a PDF or take a Photo.<br>
+                        2. <b>Search:</b> Type any question; I will use your file + Internet to help.<br>
+                        <br><i>Note: I will remember your PDF during our chat!</i>
+                    </div>
+                </div>
+            `);
+
+            // Enter key to send
+            document.getElementById("searchInput").addEventListener("keypress", function(e) {
+                if(e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    runStandaloneSearch();
+                }
+            });
+        });
+
+        // 3. UI TOGGLES
+        function toggleAttachmentMenu() {
+            document.getElementById('attachmentMenu').classList.toggle('active');
+        }
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('attachmentMenu');
             const attachBtn = document.getElementById('attachBtn');
@@ -131,10 +153,178 @@
                 menu.classList.remove('active');
             }
         });
+
+        function scrollToBottom() {
+            const container = document.getElementById("searchChatHistory");
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showStandaloneToast(msg) {
+            let t = document.createElement('div'); t.innerText = msg;
+            t.style.cssText = "position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #3b82f6, #8b5cf6); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:10000; font-weight:600; font-size: 14px; text-align:center;";
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // 4. PDF HANDLING
+        async function handlePdfUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (file.type !== "application/pdf") return showStandaloneToast("⚠️ Only PDF files are supported!");
+            
+            showStandaloneToast("📄 Reading PDF... Please wait.");
+            const fileReader = new FileReader();
+            
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                try {
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let fullText = `DOCUMENT NAME: ${file.name}\n`;
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        fullText += `\n--- Page ${i} ---\n` + textContent.items.map(item => item.str).join(' ');
+                    }
+                    persistentPdfMemory = fullText;
+                    
+                    const chip = document.getElementById("pdfPreviewChip");
+                    chip.style.display = "flex";
+                    document.getElementById("pdfName").innerText = file.name;
+                    showStandaloneToast(`✅ PDF Attached and saved to memory!`);
+                } catch(e) {
+                    showStandaloneToast("❌ Error reading PDF: " + e.message);
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function clearPdfFile(e) {
+            if(e) e.stopPropagation();
+            persistentPdfMemory = "";
+            document.getElementById("pdfUploadInput").value = "";
+            document.getElementById("pdfPreviewChip").style.display = "none";
+        }
+
+        // 5. CAMERA HANDLING
+        let standaloneStream = null;
+        async function openStandaloneCamera() {
+            document.getElementById("standaloneCameraModal").style.display = "flex";
+            try {
+                standaloneStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                document.getElementById("standaloneVideo").srcObject = standaloneStream;
+            } catch(e) { alert("Camera Error."); }
+        }
+
+        function closeStandaloneCamera() {
+            document.getElementById("standaloneCameraModal").style.display = "none";
+            if (standaloneStream) {
+                standaloneStream.getTracks().forEach(t => t.stop());
+                standaloneStream = null;
+            }
+        }
+
+        function captureStandalonePhoto() {
+            const v = document.getElementById("standaloneVideo");
+            const c = document.getElementById("standaloneCanvas");
+            c.width = v.videoWidth; c.height = v.videoHeight;
+            c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+            standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7);
+            
+            const chip = document.getElementById("mathPreviewChip");
+            chip.style.display = "block";
+            chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
+            closeStandaloneCamera();
+        }
+
+        function clearSearchImage(e) {
+            if(e) e.stopPropagation();
+            standaloneCapturedImage = null;
+            document.getElementById("mathPreviewChip").style.display = "none";
+        }
+
+        // 6. CORE SEARCH LOGIC & API CALLS
+        async function runStandaloneSearch() {
+            const inp = document.getElementById("searchInput");
+            const q = inp.value.trim(); 
+            
+            if(!q && !standaloneCapturedImage && !persistentPdfMemory) return;
+            if(isProcessing) return;
+            isProcessing = true;
+
+            const chatContainer = document.getElementById("searchChatHistory");
+            
+            // Build User Bubble
+            let displayQ = q || "Analyze this document.";
+            let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" style="max-width: 100%; border-radius: 8px; margin-bottom: 5px;">` : '';
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-user" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+                    <div class="bubble" style="background: #3b82f6; padding: 10px 15px; border-radius: 15px; color: white; max-width: 80%;">
+                        ${imgHtml}
+                        <div>${displayQ.replace(/\n/g, '<br>')}</div>
+                    </div>
+                </div>
+            `);
+            
+            inp.value = ""; 
+            scrollToBottom();
+
+            // Build Loading Bubble
+            const loadId = "load_" + Date.now();
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" id="${loadId}" style="display: flex; margin-bottom: 15px;">
+                    <div class="bubble" style="background: #1e293b; padding: 10px 15px; border-radius: 15px; color: white; max-width: 80%;">
+                        <i>AI is thinking...</i>
+                    </div>
+                </div>
+            `);
+            scrollToBottom();
+
+            // AI Prompt Engineering (Specifically fixed for "How to fill up")
+            let sysPrompt = `You are an expert AI Assistant and Guide. 
+            CRITICAL RULES:
+            1. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.
+            2. If the user provides a document (like a form or employee details) and asks "how to fill it", DO NOT say the document lacks instructions. 
+            3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.
+            4. Be highly helpful, practical, and solution-oriented.`;
+
+            let finalPrompt = `User Question: ${q || 'Please help me with this document.'}\n\n`;
+            if (persistentPdfMemory) {
+                finalPrompt += `[BACKGROUND DOCUMENT CONTEXT (Use this to answer)]:\n${persistentPdfMemory}`;
+            }
+
+            try {
+                let endpoint = standaloneCapturedImage ? "/api/gemini-vision" : "/api/gemini-text";
+                let bodyData = standaloneCapturedImage ? 
+                    { imageBase64: standaloneCapturedImage, userPrompt: `${sysPrompt}\n\n${finalPrompt}` } : 
+                    { systemPrompt: sysPrompt, userPrompt: finalPrompt };
+
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "Server Error");
+
+                let cleanAns = data.text.replace(/[\*&#_]/g, '');
+                
+                // Update Loading Bubble with Answer
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `
+                    <div style="font-size: 15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
+                `;
+                scrollToBottom();
+
+                // Clear temporary UI attachments (but keep persistent memory)
+                clearSearchImage();
+                document.getElementById("pdfPreviewChip").style.display = "none";
+
+            } catch (error) {
+                document.getElementById(loadId).querySelector('.bubble').innerText = "❌ Error: " + error.message;
+            } finally {
+                isProcessing = false;
+            }
+        }
     </script>
-
-    <!-- Link to your main logic file (where your runGroqSearch and handlePdfUpload functions live) -->
-    <script src="main.js"></script>
-
 </body>
 </html>
