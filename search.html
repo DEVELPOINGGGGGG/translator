@@ -5,96 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deep Search</title>
     
-    <!-- STRICT MASTER CSS IMPORT ONLY -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 </head>
-<body>
+<body class="chat-page-layout">
 
-    <!-- Main Chat Area -->
-    <div class="chat-container">
-        
-        <!-- Chat History -->
-        <div id="searchChatHistory" class="chat-history chat-scroll-area">
-            <!-- AI Bubble Welcome message injected via JS -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+        <button onclick="window.location.href='search.html'" style="border-left: 5px solid #c084fc; background: rgba(255,255,255,0.08); color: #e9d5ff; padding-left: 40px;">🔍 Deep Search</button>
+        <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+        <button onclick="window.location.href='image.html'">📸 Image Chat</button>
+        <button onclick="window.location.href='translator.html'">🌍 Translator</button>
+        <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
+        <button onclick="window.location.href='history.html'">🕰️ History</button>
+    </div>
+
+    <div class="topbar">
+        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+        <div class="appTitle">Deep Search</div>
+        <div class="menuBtn" style="margin-left: auto; font-size: 20px;" onclick="clearSearchChat()" title="Clear Chat">🗑️</div>
+    </div>
+
+    <div class="apiTracker">
+        <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
+        <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+        <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+        <div>📝 <span id="apiText" class="api-val text">0</span></div>
+    </div>
+
+    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 105px; padding-bottom: 120px;">
         </div>
 
-        <!-- Master CSS Chat Input Area -->
-        <div class="chat-input-area">
-            
-            <!-- Previews -->
-            <div class="image-preview-chip" id="mathPreviewChip" style="display:none;">
-                <div class="closeBtn" onclick="clearSearchImage(event)">✕</div>
-            </div>
-            
-            <div class="image-preview-chip" id="pdfPreviewChip" style="display:none;">
-                <div>📄</div>
-                <div id="pdfName">doc.pdf</div>
-                <div class="closeBtn" onclick="clearPdfFile(event)">✕</div>
-            </div>
+    <div class="chat-input-area">
+        
+        <div class="image-preview-chip" id="mathPreviewChip" style="display:none; position:absolute; top:-85px; left:20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+            <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px;" onclick="clearSearchImage(event)">✕</div>
+        </div>
+        
+        <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; position:absolute; top:-85px; left:100px; background:var(--glass-panel); border-color:#38bdf8; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+            <div style="font-size:24px; margin-bottom:2px;">📄</div>
+            <div id="pdfName" style="font-size:10px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center; padding: 0 4px;">doc.pdf</div>
+            <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48;" onclick="clearPdfFile(event)">✕</div>
+        </div>
 
-            <!-- Input Wrapper -->
-            <div class="chat-input-wrapper">
-                <div class="relative-container">
-                    <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File">➕</button>
-                    
-                    <div id="attachmentMenu" class="attachment-menu">
-                        <button onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">📄 Upload PDF</button>
-                        <button onclick="openStandaloneCamera(); toggleAttachmentMenu();">📸 Camera</button>
-                    </div>
+        <div class="chat-input-wrapper">
+            <div style="position:relative;">
+                <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File">➕</button>
+                
+                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:rgba(15,23,42,0.95); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
+                    <button style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">📄 Upload PDF</button>
+                    <button style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="openStandaloneCamera(); toggleAttachmentMenu();">📸 Camera</button>
                 </div>
-                
-                <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
-                
-                <textarea id="searchInput" placeholder="Search web, upload PDF, or use Camera..." rows="1"></textarea>
-                
-                <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" title="Send">🚀</button>
             </div>
+            
+            <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
+            
+            <textarea id="searchInput" placeholder="Search web, upload PDF, or use Camera..." rows="1"></textarea>
+            
+            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" title="Send">🚀</button>
         </div>
     </div>
 
-    <!-- 📸 STANDALONE CAMERA MODAL (USING MASTER CSS) -->
     <div id="standaloneCameraModal" class="cameraModal">
-        <!-- Close Button -->
-        <button onclick="closeStandaloneCamera()" class="closeBtn" id="camCloseBtn">✕</button>
+        <button onclick="closeStandaloneCamera()" class="closeBtn" style="position:absolute; top:30px; left:20px; z-index:1000;">✕</button>
 
-        <!-- Video Feed -->
-        <video id="standaloneVideo" autoplay playsinline></video>
+        <video id="standaloneVideo" autoplay playsinline style="flex:1; width:100%; height:100%; object-fit:cover;"></video>
         <canvas id="standaloneCanvas" style="display:none;"></canvas>
 
-        <!-- Camera Controls -->
         <div class="cameraControls">
-            <!-- Flash Toggle -->
-            <button class="cam-secondary-btn" id="standaloneFlashBtn" onclick="toggleStandaloneFlash()">🔦</button>
-            
-            <!-- Master CSS Capture Button -->
+            <button class="closeBtn" id="standaloneFlashBtn" onclick="toggleStandaloneFlash()" style="width:60px; height:60px; font-size:24px;">🔦</button>
             <div class="cameraCircle" onclick="captureStandalonePhoto()" title="Capture"></div>
-            
-            <!-- Switch Camera Toggle -->
-            <button class="cam-secondary-btn" onclick="switchStandaloneCamera()">🔄</button>
+            <button class="closeBtn" onclick="switchStandaloneCamera()" style="width:60px; height:60px; font-size:24px;">🔄</button>
         </div>
     </div>
 
-    <!-- Flash Animation Overlay -->
-    <div id="cameraFlashOverlay" class="flash-overlay"></div>
 
-
-    <!-- ==========================================
-         STANDALONE SCRIPT FOR SEARCH, PDF & CAMERA
-         ========================================== -->
     <script>
         // --- 1. STATE VARIABLES ---
         let standaloneCapturedImage = null;
         let persistentPdfMemory = "";
         let isProcessing = false;
+        
+        let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
+        let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
+        let hasResetToday = false;
 
-        // --- 2. WELCOME MESSAGE ---
+        // --- 2. INITIALIZATION (Timers & Welcome Msg) ---
         document.addEventListener("DOMContentLoaded", () => {
+            // Setup AI Welcome Message using Style.css Classes
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai">
@@ -102,7 +105,7 @@
                         👋 <b>Welcome to Deep Search!</b><br><br>
                         1. <b>➕ Button:</b> Attach a PDF or use the Camera.<br>
                         2. <b>Search:</b> Type any question; I will use your file + Internet to answer it.<br>
-                        <br><i>Note: I will remember your PDF during our chat!</i>
+                        <br><i style="color: var(--muted); font-size: 13px;">Note: I will remember your PDF during our chat!</i>
                     </div>
                 </div>
             `);
@@ -112,17 +115,79 @@
             inp.addEventListener("keypress", function(e) {
                 if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runStandaloneSearch(); }
             });
+
+            // Start API Tracker Timer
+            startApiTracker();
         });
 
-        // --- 3. UI HELPERS ---
-        function toggleAttachmentMenu() { document.getElementById('attachmentMenu').classList.toggle('active'); }
-        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
+        // --- 3. UI HELPERS (Sidebar, Menus, Trackers) ---
+        function toggleSidebar() {
+            document.getElementById("sidebar").classList.toggle("active");
+            document.getElementById("overlay").classList.toggle("active");
+        }
+
+        function toggleAttachmentMenu() { 
+            const menu = document.getElementById('attachmentMenu');
+            menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; 
+        }
+
+        function scrollToBottom() { 
+            const c = document.getElementById("searchChatHistory"); 
+            c.scrollTop = c.scrollHeight; 
+        }
         
+        function clearSearchChat() {
+            if(confirm("Are you sure you want to clear this chat?")) {
+                document.getElementById("searchChatHistory").innerHTML = `
+                    <div class="chat-msg chat-ai"><div class="bubble">Chat cleared. How can I help you next?</div></div>`;
+                clearSearchImage(); clearPdfFile();
+            }
+        }
+
         function showStandaloneToast(msg) {
             let t = document.createElement('div'); t.innerText = msg;
-            t.className = 'toast-message'; // Relies on your style.css if you have a toast class, otherwise fallback below
-            t.style.cssText = "position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background: #38bdf8; color:black; padding:12px 25px; border-radius:30px; font-weight:bold; z-index:10000;";
+            t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background: var(--gemini-grad); color:black; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,242,254,0.4); z-index:10000; font-weight:800; font-size: 14px; text-align:center; animation: slideUp 0.3s ease-out;";
             document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+        }
+
+        function updateTrackerDisplay() {
+            document.getElementById('apiTotal').innerText = visionReqs + textReqs;
+            document.getElementById('apiVision').innerText = visionReqs;
+            document.getElementById('apiText').innerText = textReqs;
+        }
+
+        function trackAPI(type) {
+            if(type === 'v') { visionReqs++; localStorage.setItem('visionReqs', visionReqs); }
+            else { textReqs++; localStorage.setItem('textReqs', textReqs); }
+            updateTrackerDisplay();
+        }
+
+        function startApiTracker() {
+            updateTrackerDisplay();
+            setInterval(() => {
+                const now = new Date();
+                const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+                const laTime = new Date(laTimeStr);
+                
+                const nextMidnight = new Date(laTime); nextMidnight.setHours(24, 0, 0, 0);
+                let diffMs = nextMidnight - laTime;
+                
+                let h = Math.floor(diffMs / (1000 * 60 * 60));
+                let m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                let s = Math.floor((diffMs % (1000 * 60)) / 1000);
+                
+                if (h === 24) { h = 0; m = 0; s = 0; }
+                const pad = (num) => num.toString().padStart(2, '0');
+                
+                if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { 
+                    visionReqs = 0; textReqs = 0; 
+                    localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); 
+                    hasResetToday = true; updateTrackerDisplay();
+                } else if (laTime.getHours() !== 0) { hasResetToday = false; }
+                
+                const t = document.getElementById('apiTimer'); 
+                if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+            }, 1000);
         }
 
         // --- 4. PERSISTENT PDF MEMORY ---
@@ -131,7 +196,7 @@
             if (!file) return;
             if (file.type !== "application/pdf") return showStandaloneToast("⚠️ Only PDF files are supported!");
             
-            showStandaloneToast("📄 Reading PDF... Please wait.");
+            showStandaloneToast("📄 Reading PDF...");
             const fileReader = new FileReader();
             
             fileReader.onload = async function() {
@@ -149,20 +214,19 @@
                     const chip = document.getElementById("pdfPreviewChip");
                     chip.style.display = "flex";
                     document.getElementById("pdfName").innerText = file.name;
-                    showStandaloneToast(`✅ PDF Attached and saved to memory!`);
-                } catch(e) { showStandaloneToast("❌ Error reading PDF: " + e.message); }
+                    showStandaloneToast(`✅ PDF Attached!`);
+                } catch(e) { showStandaloneToast("❌ Error reading PDF."); }
             };
             fileReader.readAsArrayBuffer(file);
         }
 
         function clearPdfFile(e) {
-            if(e) e.stopPropagation();
-            persistentPdfMemory = "";
+            if(e) e.stopPropagation(); persistentPdfMemory = "";
             document.getElementById("pdfUploadInput").value = "";
             document.getElementById("pdfPreviewChip").style.display = "none";
         }
 
-        // --- 5. PRO CAMERA ENGINE (Auto-Flash & Animations) ---
+        // --- 5. PRO CAMERA ENGINE ---
         let standaloneStream = null;
         let standaloneFacingMode = "environment";
         let isStandaloneFlashOn = false;
@@ -175,7 +239,6 @@
                 });
                 document.getElementById("standaloneVideo").srcObject = standaloneStream;
                 
-                // AUTO FLASHLIGHT LOGIC
                 setTimeout(async () => {
                     if (standaloneFacingMode === "environment") {
                         const track = standaloneStream.getVideoTracks()[0];
@@ -186,11 +249,10 @@
                                 await track.applyConstraints({ advanced: [{ torch: true }] });
                                 updateFlashUI();
                             }
-                        } catch(err) { console.log("Torch capability check failed:", err); }
+                        } catch(err) {}
                     }
                 }, 500);
-
-            } catch(e) { showStandaloneToast("⚠️ Camera Error. Please check permissions."); }
+            } catch(e) { showStandaloneToast("⚠️ Camera Error."); }
         }
 
         async function openStandaloneCamera() {
@@ -202,14 +264,10 @@
             document.getElementById("standaloneCameraModal").classList.remove("active");
             if (standaloneStream) {
                 const track = standaloneStream.getVideoTracks()[0];
-                try {
-                    if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] });
-                } catch(err) {}
-                standaloneStream.getTracks().forEach(t => t.stop());
-                standaloneStream = null;
+                try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {}
+                standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null;
             }
-            isStandaloneFlashOn = false;
-            updateFlashUI();
+            isStandaloneFlashOn = false; updateFlashUI();
         }
 
         async function switchStandaloneCamera() {
@@ -218,56 +276,39 @@
         }
 
         async function toggleStandaloneFlash() {
-            if (!standaloneStream) return;
-            const track = standaloneStream.getVideoTracks()[0];
+            if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0];
             try {
                 if (track.getCapabilities().torch) {
                     isStandaloneFlashOn = !isStandaloneFlashOn;
                     await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] });
                     updateFlashUI();
-                } else {
-                    showStandaloneToast("⚠️ Flashlight not supported on this camera.");
                 }
-            } catch(err){ showStandaloneToast("⚠️ Flashlight Error."); }
+            } catch(err){}
         }
 
         function updateFlashUI() {
             const btn = document.getElementById("standaloneFlashBtn");
             if (btn) {
                 btn.innerText = isStandaloneFlashOn ? "💡" : "🔦";
-                btn.style.background = isStandaloneFlashOn ? "white" : "rgba(255,255,255,0.15)";
-                btn.style.color = isStandaloneFlashOn ? "black" : "white";
+                btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)";
             }
         }
 
         function captureStandalonePhoto() {
-            // Trigger Flash Overlay Animation
-            const overlay = document.getElementById("cameraFlashOverlay");
-            overlay.classList.remove("active");
-            void overlay.offsetWidth; // Trigger reflow
-            overlay.classList.add("active");
+            const v = document.getElementById("standaloneVideo");
+            const c = document.getElementById("standaloneCanvas");
+            let w = v.videoWidth, h = v.videoHeight; 
+            if(w > 1500) { h *= 1500/w; w = 1500; }
+            c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+            standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7);
             
-            // Capture Logic
-            setTimeout(() => {
-                const v = document.getElementById("standaloneVideo");
-                const c = document.getElementById("standaloneCanvas");
-                let w = v.videoWidth, h = v.videoHeight; 
-                if(w > 1500) { h *= 1500/w; w = 1500; }
-                c.width = w; c.height = h;
-                c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-                standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7);
-                
-                const chip = document.getElementById("mathPreviewChip");
-                chip.style.display = "block";
-                chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
-                
-                closeStandaloneCamera();
-            }, 150);
+            const chip = document.getElementById("mathPreviewChip");
+            chip.style.display = "block"; chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
+            closeStandaloneCamera();
         }
 
         function clearSearchImage(e) {
-            if(e) e.stopPropagation();
-            standaloneCapturedImage = null;
+            if(e) e.stopPropagation(); standaloneCapturedImage = null;
             document.getElementById("mathPreviewChip").style.display = "none";
         }
 
@@ -277,12 +318,11 @@
             const q = inp.value.trim(); 
             
             if(!q && !standaloneCapturedImage && !persistentPdfMemory) return;
-            if(isProcessing) return;
-            isProcessing = true;
+            if(isProcessing) return; isProcessing = true;
 
             const chatContainer = document.getElementById("searchChatHistory");
             
-            // Build User Bubble
+            // User Bubble (Master CSS Classes)
             let displayQ = q || "Analyze this document.";
             let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
             chatContainer.insertAdjacentHTML('beforeend', `
@@ -294,15 +334,17 @@
                 </div>
             `);
             
-            inp.value = ""; 
-            scrollToBottom();
+            inp.value = ""; scrollToBottom();
 
-            // Build Loading Bubble
+            // Loading Bubble (Master CSS Classes)
             const loadId = "load_" + Date.now();
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
-                    <div class="bubble">
-                        <span class="typing-indicator">AI is thinking...</span>
+                    <div class="bubble" style="display:flex; align-items:center; gap:12px;">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                        </div>
+                        <span style="color:var(--muted); font-size:14px; font-weight:600;">AI is thinking...</span>
                     </div>
                 </div>
             `);
@@ -312,13 +354,10 @@
             CRITICAL RULES:
             1. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.
             2. If the user provides a document and asks "how to fill it", DO NOT say the document lacks instructions. 
-            3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.
-            4. Be highly helpful, practical, and solution-oriented.`;
+            3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.`;
 
             let finalPrompt = `User Question: ${q || 'Please help me with this document.'}\n\n`;
-            if (persistentPdfMemory) {
-                finalPrompt += `[BACKGROUND DOCUMENT CONTEXT (Use this to answer)]:\n${persistentPdfMemory}`;
-            }
+            if (persistentPdfMemory) finalPrompt += `[BACKGROUND DOCUMENT CONTEXT]:\n${persistentPdfMemory}`;
 
             try {
                 let endpoint = standaloneCapturedImage ? "/api/gemini-vision" : "/api/gemini-text";
@@ -335,19 +374,20 @@
 
                 let cleanAns = data.text.replace(/[\*&#_]/g, '');
                 
-                // Final Answer Bubble Injection
+                // Track Usage in Topbar
+                trackAPI(standaloneCapturedImage ? 'v' : 't');
+                
+                // AI Response Bubble
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-credit">✨ BY GEMINI</div>
-                    <div>${cleanAns.replace(/\n/g, '<br>')}</div>
+                    <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ BY GEMINI</div>
+                    <div style="margin-top:10px;">${cleanAns.replace(/\n/g, '<br>')}</div>
                 `;
                 scrollToBottom();
 
-                // Clear temporary UI attachments (Keep background memory intact)
-                clearSearchImage();
-                document.getElementById("pdfPreviewChip").style.display = "none";
+                clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
 
             } catch (error) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span>❌ Error: ${error.message}</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`;
             } finally {
                 isProcessing = false;
             }
