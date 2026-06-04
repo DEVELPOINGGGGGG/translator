@@ -1148,7 +1148,28 @@ async function startCamera() { try { if(currentStream) currentStream.getTracks()
 async function toggleFlash() { if (!currentStream) return; const track = currentStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isFlashOn = !isFlashOn; await track.applyConstraints({ advanced: [{ torch: isFlashOn }] }); updateFlashUI(); } } catch(err){} }
 function updateFlashUI() { const btn = document.getElementById("toggleFlashBtn"); if(btn) { btn.innerText = isFlashOn ? "💡" : "🔦"; btn.style.background = isFlashOn ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"; } }
 async function openCamera(m){ currentMode = m; const mod = document.getElementById("cameraModal"); if(mod) { mod.classList.add("active"); await startCamera(); } }
-function closeCamera(){ const mod = document.getElementById("cameraModal"); if(mod) mod.classList.remove("active"); if(currentStream) currentStream.getTracks().forEach(t => t.stop()); }
+function closeCamera() { 
+    const mod = document.getElementById("cameraModal"); 
+    if (mod) mod.classList.remove("active"); 
+    
+    if (currentStream) {
+        const track = currentStream.getVideoTracks()[0];
+        // Explicitly force the flashlight OFF before killing the camera
+        try {
+            if (track && track.getCapabilities && track.getCapabilities().torch) {
+                track.applyConstraints({ advanced: [{ torch: false }] });
+            }
+        } catch(err) { console.log("Torch off error:", err); }
+        
+        // Stop all camera tracks
+        currentStream.getTracks().forEach(t => t.stop()); 
+        currentStream = null;
+    }
+    
+    // Reset flash memory state so it doesn't bug out next time
+    isFlashOn = false; 
+    updateFlashUI();
+}
 async function switchCamera() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); }
 
 if(document.getElementById('closeCameraBtn')) document.getElementById('closeCameraBtn').onclick = closeCamera;
