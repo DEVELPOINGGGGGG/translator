@@ -5,168 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deep Search</title>
     
-    <!-- Link to your main CSS file -->
+    <!-- STRICT MASTER CSS IMPORT ONLY -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- PDF.js Library for reading PDFs in the browser -->
+    <!-- PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
-
-    <style>
-        /* SCROLL FIX: Forces the page to scroll properly */
-        html, body {
-            overflow: auto !important;
-            overflow-x: hidden !important;
-            height: 100%;
-        }
-        .chat-container, .chat-history, .chat-scroll-area {
-            overflow-y: auto !important;
-            scroll-behavior: smooth !important;
-            overscroll-behavior: contain;
-            height: 80vh;
-            padding-bottom: 100px;
-        }
-
-        /* Attachment Menu Styles */
-        .attachment-menu {
-            display: none; 
-            position: absolute; 
-            bottom: 60px; 
-            left: 10px; 
-            background: #1e293b; 
-            border: 1px solid #334155;
-            border-radius: 12px; 
-            padding: 8px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
-            flex-direction: column; 
-            gap: 5px; 
-            z-index: 100;
-            min-width: 120px;
-        }
-        .attachment-menu.active { display: flex; }
-        .attachment-menu button {
-            background: transparent; border: none; color: #f8fafc; cursor: pointer; 
-            display: flex; align-items: center; gap: 10px; padding: 10px; 
-            border-radius: 8px; font-size: 14px; text-align: left; transition: background 0.2s;
-        }
-        .attachment-menu button:hover { background: #334155; }
-        .relative-container { position: relative; }
-    </style>
 </head>
 <body>
 
     <!-- Main Chat Area -->
     <div class="chat-container">
+        
         <!-- Chat History -->
         <div id="searchChatHistory" class="chat-history chat-scroll-area">
-            <!-- Messages will appear here -->
+            <!-- AI Bubble Welcome message injected via JS -->
         </div>
 
-        <!-- Input Area -->
-        <div class="chat-input-area" style="position: fixed; bottom: 0; width: 100%; background: #0f172a; padding: 10px; box-sizing: border-box;">
+        <!-- Master CSS Chat Input Area -->
+        <div class="chat-input-area">
             
-            <!-- Previews for Images and PDFs -->
-            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
-                <div class="image-preview-chip" id="mathPreviewChip" style="display:none; width: 60px; height: 60px; background-size:cover; border-radius:8px; position:relative;">
-                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="clearSearchImage(event)">✕</div>
-                </div>
-                
-                <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; background:#1e293b; color:white; align-items:center; justify-content:center; flex-direction:column; font-size:10px; border: 2px solid #38bdf8; width: 60px; height: 60px; border-radius: 8px; position:relative;">
-                    <div style="font-size:24px; margin-bottom: 2px;">📄</div>
-                    <div id="pdfName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; padding:0 5px; text-align:center;">doc.pdf</div>
-                    <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:#f43f5e; color:white; border-radius:50%; width:22px; height:22px; text-align:center; line-height:22px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="clearPdfFile(event)">✕</div>
-                </div>
+            <!-- Previews -->
+            <div class="image-preview-chip" id="mathPreviewChip" style="display:none;">
+                <div class="closeBtn" onclick="clearSearchImage(event)">✕</div>
+            </div>
+            
+            <div class="image-preview-chip" id="pdfPreviewChip" style="display:none;">
+                <div>📄</div>
+                <div id="pdfName">doc.pdf</div>
+                <div class="closeBtn" onclick="clearPdfFile(event)">✕</div>
             </div>
 
-            <div class="chat-input-wrapper" style="display: flex; gap: 10px; align-items: center;">
+            <!-- Input Wrapper -->
+            <div class="chat-input-wrapper">
                 <div class="relative-container">
-                    <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File" style="font-size:20px; background:none; border:none; color:white; cursor:pointer;">➕</button>
+                    <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachmentMenu()" title="Attach File">➕</button>
                     
                     <div id="attachmentMenu" class="attachment-menu">
-                        <button onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">📄 PDF Document</button>
+                        <button onclick="document.getElementById('pdfUploadInput').click(); toggleAttachmentMenu();">📄 Upload PDF</button>
                         <button onclick="openStandaloneCamera(); toggleAttachmentMenu();">📸 Camera</button>
                     </div>
                 </div>
                 
                 <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
                 
-                <textarea id="searchInput" placeholder="Ask about an image, or upload a PDF..." rows="1" style="flex: 1; resize: none; padding: 10px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: white; outline: none;"></textarea>
+                <textarea id="searchInput" placeholder="Search web, upload PDF, or use Camera..." rows="1"></textarea>
                 
-                <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" title="Send" style="font-size:20px; background:none; border:none; color:#38bdf8; cursor:pointer;">🚀</button>
+                <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" title="Send">🚀</button>
             </div>
         </div>
     </div>
 
-    <!-- Camera Modal (Standalone) -->
-    <div id="standaloneCameraModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:9999; flex-direction:column;">
-        <video id="standaloneVideo" autoplay playsinline style="flex:1; width:100%; object-fit:cover;"></video>
+    <!-- 📸 STANDALONE CAMERA MODAL (USING MASTER CSS) -->
+    <div id="standaloneCameraModal" class="cameraModal">
+        <!-- Close Button -->
+        <button onclick="closeStandaloneCamera()" class="closeBtn" id="camCloseBtn">✕</button>
+
+        <!-- Video Feed -->
+        <video id="standaloneVideo" autoplay playsinline></video>
         <canvas id="standaloneCanvas" style="display:none;"></canvas>
-        <div style="padding:20px; display:flex; justify-content:space-around; background:#111;">
-            <button onclick="closeStandaloneCamera()" style="padding:10px 20px; font-size:16px; background:#475569; color:white; border:none; border-radius:8px;">Cancel</button>
-            <button onclick="captureStandalonePhoto()" style="padding:10px 20px; font-size:16px; background:#38bdf8; color:white; border:none; border-radius:8px;">Capture</button>
+
+        <!-- Camera Controls -->
+        <div class="cameraControls">
+            <!-- Flash Toggle -->
+            <button class="cam-secondary-btn" id="standaloneFlashBtn" onclick="toggleStandaloneFlash()">🔦</button>
+            
+            <!-- Master CSS Capture Button -->
+            <div class="cameraCircle" onclick="captureStandalonePhoto()" title="Capture"></div>
+            
+            <!-- Switch Camera Toggle -->
+            <button class="cam-secondary-btn" onclick="switchStandaloneCamera()">🔄</button>
         </div>
     </div>
 
+    <!-- Flash Animation Overlay -->
+    <div id="cameraFlashOverlay" class="flash-overlay"></div>
+
 
     <!-- ==========================================
-         STANDALONE SCRIPT FOR SEARCH & PDF ONLY
+         STANDALONE SCRIPT FOR SEARCH, PDF & CAMERA
          ========================================== -->
     <script>
-        // 1. STATE VARIABLES
+        // --- 1. STATE VARIABLES ---
         let standaloneCapturedImage = null;
         let persistentPdfMemory = "";
         let isProcessing = false;
 
-        // 2. WELCOME MESSAGE ON LOAD
+        // --- 2. WELCOME MESSAGE ---
         document.addEventListener("DOMContentLoaded", () => {
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" style="display: flex; margin-bottom: 15px; margin-top: 15px;">
-                    <div class="bubble" style="background: rgba(56, 189, 248, 0.1); border: 1px solid #38bdf8; padding: 15px; border-radius: 15px; color: white; max-width: 80%;">
-                        👋 <b>Welcome!</b><br><br>
-                        1. <b>➕ Button:</b> Attach a PDF or take a Photo.<br>
-                        2. <b>Search:</b> Type any question; I will use your file + Internet to help.<br>
+                <div class="chat-msg chat-ai">
+                    <div class="bubble">
+                        👋 <b>Welcome to Deep Search!</b><br><br>
+                        1. <b>➕ Button:</b> Attach a PDF or use the Camera.<br>
+                        2. <b>Search:</b> Type any question; I will use your file + Internet to answer it.<br>
                         <br><i>Note: I will remember your PDF during our chat!</i>
                     </div>
                 </div>
             `);
 
             // Enter key to send
-            document.getElementById("searchInput").addEventListener("keypress", function(e) {
-                if(e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    runStandaloneSearch();
-                }
+            const inp = document.getElementById("searchInput");
+            inp.addEventListener("keypress", function(e) {
+                if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runStandaloneSearch(); }
             });
         });
 
-        // 3. UI TOGGLES
-        function toggleAttachmentMenu() {
-            document.getElementById('attachmentMenu').classList.toggle('active');
-        }
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('attachmentMenu');
-            const attachBtn = document.getElementById('attachBtn');
-            if (menu.classList.contains('active') && !menu.contains(event.target) && !attachBtn.contains(event.target)) {
-                menu.classList.remove('active');
-            }
-        });
-
-        function scrollToBottom() {
-            const container = document.getElementById("searchChatHistory");
-            container.scrollTop = container.scrollHeight;
-        }
-
+        // --- 3. UI HELPERS ---
+        function toggleAttachmentMenu() { document.getElementById('attachmentMenu').classList.toggle('active'); }
+        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
+        
         function showStandaloneToast(msg) {
             let t = document.createElement('div'); t.innerText = msg;
-            t.style.cssText = "position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #3b82f6, #8b5cf6); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:10000; font-weight:600; font-size: 14px; text-align:center;";
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 3000);
+            t.className = 'toast-message'; // Relies on your style.css if you have a toast class, otherwise fallback below
+            t.style.cssText = "position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background: #38bdf8; color:black; padding:12px 25px; border-radius:30px; font-weight:bold; z-index:10000;";
+            document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
         }
 
-        // 4. PDF HANDLING
+        // --- 4. PERSISTENT PDF MEMORY ---
         async function handlePdfUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -191,9 +150,7 @@
                     chip.style.display = "flex";
                     document.getElementById("pdfName").innerText = file.name;
                     showStandaloneToast(`✅ PDF Attached and saved to memory!`);
-                } catch(e) {
-                    showStandaloneToast("❌ Error reading PDF: " + e.message);
-                }
+                } catch(e) { showStandaloneToast("❌ Error reading PDF: " + e.message); }
             };
             fileReader.readAsArrayBuffer(file);
         }
@@ -205,35 +162,107 @@
             document.getElementById("pdfPreviewChip").style.display = "none";
         }
 
-        // 5. CAMERA HANDLING
+        // --- 5. PRO CAMERA ENGINE (Auto-Flash & Animations) ---
         let standaloneStream = null;
-        async function openStandaloneCamera() {
-            document.getElementById("standaloneCameraModal").style.display = "flex";
+        let standaloneFacingMode = "environment";
+        let isStandaloneFlashOn = false;
+
+        async function startCameraTrack() {
+            if (standaloneStream) { standaloneStream.getTracks().forEach(t => t.stop()); }
             try {
-                standaloneStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                standaloneStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: standaloneFacingMode, width: {ideal: 1920}, height: {ideal: 1080} } 
+                });
                 document.getElementById("standaloneVideo").srcObject = standaloneStream;
-            } catch(e) { alert("Camera Error."); }
+                
+                // AUTO FLASHLIGHT LOGIC
+                setTimeout(async () => {
+                    if (standaloneFacingMode === "environment") {
+                        const track = standaloneStream.getVideoTracks()[0];
+                        try {
+                            const cap = track.getCapabilities();
+                            if (cap.torch) {
+                                isStandaloneFlashOn = true;
+                                await track.applyConstraints({ advanced: [{ torch: true }] });
+                                updateFlashUI();
+                            }
+                        } catch(err) { console.log("Torch capability check failed:", err); }
+                    }
+                }, 500);
+
+            } catch(e) { showStandaloneToast("⚠️ Camera Error. Please check permissions."); }
+        }
+
+        async function openStandaloneCamera() {
+            document.getElementById("standaloneCameraModal").classList.add("active");
+            await startCameraTrack();
         }
 
         function closeStandaloneCamera() {
-            document.getElementById("standaloneCameraModal").style.display = "none";
+            document.getElementById("standaloneCameraModal").classList.remove("active");
             if (standaloneStream) {
+                const track = standaloneStream.getVideoTracks()[0];
+                try {
+                    if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] });
+                } catch(err) {}
                 standaloneStream.getTracks().forEach(t => t.stop());
                 standaloneStream = null;
+            }
+            isStandaloneFlashOn = false;
+            updateFlashUI();
+        }
+
+        async function switchStandaloneCamera() {
+            standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment";
+            await startCameraTrack();
+        }
+
+        async function toggleStandaloneFlash() {
+            if (!standaloneStream) return;
+            const track = standaloneStream.getVideoTracks()[0];
+            try {
+                if (track.getCapabilities().torch) {
+                    isStandaloneFlashOn = !isStandaloneFlashOn;
+                    await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] });
+                    updateFlashUI();
+                } else {
+                    showStandaloneToast("⚠️ Flashlight not supported on this camera.");
+                }
+            } catch(err){ showStandaloneToast("⚠️ Flashlight Error."); }
+        }
+
+        function updateFlashUI() {
+            const btn = document.getElementById("standaloneFlashBtn");
+            if (btn) {
+                btn.innerText = isStandaloneFlashOn ? "💡" : "🔦";
+                btn.style.background = isStandaloneFlashOn ? "white" : "rgba(255,255,255,0.15)";
+                btn.style.color = isStandaloneFlashOn ? "black" : "white";
             }
         }
 
         function captureStandalonePhoto() {
-            const v = document.getElementById("standaloneVideo");
-            const c = document.getElementById("standaloneCanvas");
-            c.width = v.videoWidth; c.height = v.videoHeight;
-            c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-            standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7);
+            // Trigger Flash Overlay Animation
+            const overlay = document.getElementById("cameraFlashOverlay");
+            overlay.classList.remove("active");
+            void overlay.offsetWidth; // Trigger reflow
+            overlay.classList.add("active");
             
-            const chip = document.getElementById("mathPreviewChip");
-            chip.style.display = "block";
-            chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
-            closeStandaloneCamera();
+            // Capture Logic
+            setTimeout(() => {
+                const v = document.getElementById("standaloneVideo");
+                const c = document.getElementById("standaloneCanvas");
+                let w = v.videoWidth, h = v.videoHeight; 
+                if(w > 1500) { h *= 1500/w; w = 1500; }
+                c.width = w; c.height = h;
+                c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+                standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7);
+                
+                const chip = document.getElementById("mathPreviewChip");
+                chip.style.display = "block";
+                chip.style.backgroundImage = `url(${standaloneCapturedImage})`;
+                
+                closeStandaloneCamera();
+            }, 150);
         }
 
         function clearSearchImage(e) {
@@ -242,7 +271,7 @@
             document.getElementById("mathPreviewChip").style.display = "none";
         }
 
-        // 6. CORE SEARCH LOGIC & API CALLS
+        // --- 6. CORE SEARCH LOGIC & API CALLS ---
         async function runStandaloneSearch() {
             const inp = document.getElementById("searchInput");
             const q = inp.value.trim(); 
@@ -255,10 +284,10 @@
             
             // Build User Bubble
             let displayQ = q || "Analyze this document.";
-            let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" style="max-width: 100%; border-radius: 8px; margin-bottom: 5px;">` : '';
+            let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
             chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-user" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
-                    <div class="bubble" style="background: #3b82f6; padding: 10px 15px; border-radius: 15px; color: white; max-width: 80%;">
+                <div class="chat-msg chat-user">
+                    <div class="bubble">
                         ${imgHtml}
                         <div>${displayQ.replace(/\n/g, '<br>')}</div>
                     </div>
@@ -271,19 +300,18 @@
             // Build Loading Bubble
             const loadId = "load_" + Date.now();
             chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" id="${loadId}" style="display: flex; margin-bottom: 15px;">
-                    <div class="bubble" style="background: #1e293b; padding: 10px 15px; border-radius: 15px; color: white; max-width: 80%;">
-                        <i>AI is thinking...</i>
+                <div class="chat-msg chat-ai" id="${loadId}">
+                    <div class="bubble">
+                        <span class="typing-indicator">AI is thinking...</span>
                     </div>
                 </div>
             `);
             scrollToBottom();
 
-            // AI Prompt Engineering (Specifically fixed for "How to fill up")
             let sysPrompt = `You are an expert AI Assistant and Guide. 
             CRITICAL RULES:
             1. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.
-            2. If the user provides a document (like a form or employee details) and asks "how to fill it", DO NOT say the document lacks instructions. 
+            2. If the user provides a document and asks "how to fill it", DO NOT say the document lacks instructions. 
             3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.
             4. Be highly helpful, practical, and solution-oriented.`;
 
@@ -299,9 +327,7 @@
                     { systemPrompt: sysPrompt, userPrompt: finalPrompt };
 
                 const response = await fetch(endpoint, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(bodyData)
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData)
                 });
 
                 const data = await response.json();
@@ -309,18 +335,19 @@
 
                 let cleanAns = data.text.replace(/[\*&#_]/g, '');
                 
-                // Update Loading Bubble with Answer
+                // Final Answer Bubble Injection
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div style="font-size: 15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
+                    <div class="ai-credit">✨ BY GEMINI</div>
+                    <div>${cleanAns.replace(/\n/g, '<br>')}</div>
                 `;
                 scrollToBottom();
 
-                // Clear temporary UI attachments (but keep persistent memory)
+                // Clear temporary UI attachments (Keep background memory intact)
                 clearSearchImage();
                 document.getElementById("pdfPreviewChip").style.display = "none";
 
             } catch (error) {
-                document.getElementById(loadId).querySelector('.bubble').innerText = "❌ Error: " + error.message;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span>❌ Error: ${error.message}</span>`;
             } finally {
                 isProcessing = false;
             }
