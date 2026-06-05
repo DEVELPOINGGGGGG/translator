@@ -621,14 +621,23 @@ async function runGroqSearch() {
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- MEDIA PLAYER ENGINE (YOUTUBE-STYLE UPGRADE + TYPEWRITER SYNC) ---
+// ==========================================================================
+// 🛑 ADVANCED MEDIA PLAYER ENGINE (ZERO-LAG YOUTUBE STYLE + WORD SYNC) 🛑
+// ==========================================================================
+
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
+
 function startVideoTimer(totalChars) {
-    clearInterval(videoTickInterval); videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
+    clearInterval(videoTickInterval); 
+    videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
     document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(videoTotalEst)}`;
+    
     videoTickInterval = setInterval(() => {
+        // STRICT PAUSE CHECK: Only increment if NOT paused and voice is actually speaking
         if(!isVideoPaused && window.speechSynthesis.speaking) {
-            videoElapsed += 1; let displayTotal = videoTotalEst; if(videoElapsed > videoTotalEst) displayTotal = videoElapsed; 
+            videoElapsed += 1; 
+            let displayTotal = videoTotalEst; 
+            if(videoElapsed > videoTotalEst) displayTotal = videoElapsed; 
             document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(displayTotal)}`;
         }
     }, 1000);
@@ -658,6 +667,7 @@ function initVideoGui() {
     if(!window.latestMathSolution) return;
     
     videoElapsed = 0; // Reset timer on fresh load
+    isVideoPaused = false; // Ensure it starts playing
     const ov = document.createElement('div'); ov.id = 'videoGuiOverlay';
     ov.style.cssText = "position:fixed; inset:0; background:radial-gradient(circle, #1e293b 0%, #000000 100%); z-index:9999; display:flex; flex-direction:column; font-family:'Poppins', sans-serif; touch-action:none;";
     ov.innerHTML = `
@@ -666,17 +676,21 @@ function initVideoGui() {
             <button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
         </div>
         
+        <!-- Double Tap Zones -->
         <div style="position:absolute; left:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, -1)"></div>
         <div style="position:absolute; right:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, 1)"></div>
         
+        <!-- Skip Indicators -->
         <div id="skipIndLeft" style="position:absolute; left:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏪</div>
         <div id="skipIndRight" style="position:absolute; right:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏩</div>
 
         <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px; position:relative; z-index:10;">
+            <!-- 🛑 HUGE VIDEO FONT AND TYPEWRITER SCREEN 🛑 -->
             <div id="videoContent" style="font-size: 36px; font-weight: 700; color: #fff; line-height: 1.8; max-width: 900px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:40px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
         </div>
 
         <div id="vControlsContainer" style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); transition: opacity 0.3s; z-index:100;">
+           <!-- Clickable Progress Bar -->
            <div style="width:100%; height:20px; cursor:pointer; display:flex; align-items:center;" onclick="seekVideo(event)">
                <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; position:relative;" id="vProgressBarBg">
                    <div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.1s linear;" id="vProgressBar"></div>
@@ -765,9 +779,20 @@ function cycleVideoSpeed() {
     playFractionVideo(videoLineIndex, true, wasPaused);
 }
 
+// 🛑 STRICT PAUSE ENGINE FIX 🛑
 function toggleVideoPause() { 
     const btn = document.getElementById('vPlayBtn'); 
-    if(window.speechSynthesis.paused) { window.speechSynthesis.resume(); isVideoPaused = false; btn.innerHTML = "⏸️"; } else if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); isVideoPaused = true; btn.innerHTML = "▶️"; } 
+    
+    // Check internal strict state, NOT browser state
+    if (isVideoPaused) { 
+        isVideoPaused = false; 
+        window.speechSynthesis.resume(); 
+        if(btn) btn.innerHTML = "⏸️"; 
+    } else { 
+        isVideoPaused = true; 
+        window.speechSynthesis.pause(); 
+        if(btn) btn.innerHTML = "▶️"; 
+    } 
     resetVideoActivity();
 }
 
@@ -776,7 +801,7 @@ function replayVideo() {
     document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); 
 }
 
-// 🛑 VIDEO TYPEWRITER ENGINE 🛑
+// 🛑 WORD-BY-WORD REVEAL ENGINE 🛑
 async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
     const token = ++videoRunToken;
     const content = document.getElementById("videoContent");
@@ -819,9 +844,7 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
             content.appendChild(lineDiv);
         }
         lineDiv.classList.add("active");
-        
-        // Clear the new line so we can typewrite it!
-        lineDiv.innerHTML = ""; 
+        lineDiv.innerHTML = ""; // Clear for word-by-word reveal
 
         window.speechSynthesis.speak(u);
         if (pauseAfterStart) {
@@ -831,44 +854,52 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
             pauseAfterStart = false;
         }
 
-        // --- TYPEWRITER SYNC LOGIC ---
-        let cIndex = 0;
-        let tickRate = 25 / videoSpeed; // Math. It adjusts dynamically to keep pace with the voice speed!
+        // --- WORD-BY-WORD SYNC LOGIC ---
+        // Split line into words for chunking (so it drops words, not letters)
+        let chunks = lineText.split(' '); 
         
-        let typeInterval = setInterval(() => {
-            if (isVideoPaused) return; // Wait exactly where we are if paused
-            
-            if (cIndex < lineText.length) {
-                let chunk = lineText.substr(cIndex, 2); // Write 2 characters at once
-                for(let c of chunk) { lineDiv.appendChild(document.createTextNode(c)); }
-                cIndex += 2;
-                
-                // Keep auto-scrolling down slightly as we type
-                setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 10);
-            } else {
-                // Done typing this line! Apply MathJax styling like the Solvers do.
-                clearInterval(typeInterval);
-                if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
-                    MathJax.typesetClear([lineDiv]); MathJax.typesetPromise([lineDiv]); 
-                    lineDiv.setAttribute('data-math-done', 'true');
-                }
-            }
-        }, tickRate);
+        // Calculate the exact duration the audio will take based on text length and speed
+        let estimatedDurationMs = (cleanSpeech.length / 13.5) * 1000 / videoSpeed; 
+        let startTime = Date.now();
+        let lastScroll = 0;
 
-        // Wait until the speech is finished before moving to the next line
+        let typeInterval = setInterval(() => {
+            // 🛑 STRICT FREEZE ON PAUSE
+            if (isVideoPaused) {
+                startTime += 50; // Push start time forward so the text freezes perfectly
+                return; 
+            }
+            
+            let elapsed = Date.now() - startTime;
+            let percent = Math.min(1.0, elapsed / estimatedDurationMs);
+            
+            // Reveal the exact amount of words based on the audio percentage!
+            let wordsToReveal = Math.ceil(percent * chunks.length);
+            lineDiv.innerHTML = chunks.slice(0, wordsToReveal).join(' ');
+
+            // Smooth lag-free scrolling (only triggers once every 300ms)
+            let now = Date.now();
+            if (now - lastScroll > 300 && content.parentElement) {
+                content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" });
+                lastScroll = now;
+            }
+
+            if (percent >= 1.0) clearInterval(typeInterval);
+
+        }, 50);
+
+        // Wait for audio to finish before proceeding to next line
         await new Promise(r => { 
             u.onend = r; u.onerror = r; 
-            setTimeout(r, Math.max(3500, lineText.length * 90 / videoSpeed)); 
+            setTimeout(r, Math.max(estimatedDurationMs + 1000, 3000)); 
         });
 
-        // Failsafe: if the audio ends super fast, finish rendering the line instantly
+        // Lock in final line & render Math symbols (LaTeX)
         clearInterval(typeInterval);
-        if (cIndex < lineText.length) {
-            lineDiv.innerHTML = lineText; 
-            if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
-                MathJax.typesetClear([lineDiv]); MathJax.typesetPromise([lineDiv]); 
-                lineDiv.setAttribute('data-math-done', 'true');
-            }
+        lineDiv.innerHTML = lineText; 
+        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
+            MathJax.typesetClear([lineDiv]); MathJax.typesetPromise([lineDiv]); 
+            lineDiv.setAttribute('data-math-done', 'true');
         }
         
         lineDiv.classList.remove("active");
