@@ -118,8 +118,8 @@
 
 <div id="ytCinemaOverlay" class="yt-cinema-overlay">
     <div class="yt-cinema-header">
-        <button id="fallbackPlayerBtn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; backdrop-filter: blur(5px);">⚠️ Video failed? Use Official Player</button>
-        <button onclick="closeCinemaPlayer()" style="background: rgba(239, 68, 68, 0.8); border: none; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">❌</button>
+        <div style="color:white; font-weight:bold; letter-spacing:1px; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">🎥 AI CINEMA</div>
+        <button onclick="closeCinemaPlayer()" style="background: rgba(239, 68, 68, 0.8); border: 2px solid white; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: 0.2s;">❌</button>
     </div>
     <div id="ytIframeWrapper" class="yt-iframe-container"></div>
 </div>
@@ -234,7 +234,7 @@
         }
     }
 
-    // --- RENDER ENGINE ---
+    // --- RENDER ENGINE WITH ROBUST THUMBNAILS ---
     function renderVideos(videos, provider) {
         const grid = document.getElementById("videoGrid");
         
@@ -242,15 +242,17 @@
             if(!v.id || v.id.length < 10) return; // Skip broken IDs
             fetchedVideoIds.push(v.id);
             
-            // YouTube high quality thumbnail
+            // Official YouTube high quality thumbnail
             const thumbUrl = `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`;
+            // Fallback in case HQ doesn't exist
+            const fallbackThumbUrl = `https://img.youtube.com/vi/${v.id}/default.jpg`;
             
             const card = document.createElement('div');
             card.className = 'yt-card';
             card.onclick = () => openCinemaPlayer(v.id);
             card.innerHTML = `
                 <div class="yt-thumbnail-wrapper">
-                    <img src="${thumbUrl}" class="yt-thumbnail" loading="lazy" onerror="this.src='https://via.placeholder.com/640x360.png?text=Thumbnail+Not+Found'">
+                    <img src="${thumbUrl}" class="yt-thumbnail" loading="lazy" onerror="this.src='${fallbackThumbUrl}'">
                     <div class="yt-play-btn">▶</div>
                 </div>
                 <div class="yt-info">
@@ -262,7 +264,7 @@
         });
     }
 
-    // --- FULLSCREEN CINEMA PLAYER ENGINE ---
+    // --- FULLSCREEN CINEMA PLAYER (OFFICIAL YOUTUBE IFRAME) ---
     function openCinemaPlayer(videoId) {
         currentActiveVideoId = videoId;
         const overlay = document.getElementById('ytCinemaOverlay');
@@ -273,8 +275,15 @@
             screen.orientation.lock('landscape').catch(()=>{});
         }
         
-        // 1. Try loading Ad-Free Version First
-        wrapper.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&showinfo=0&fs=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+        // 🛑 OFFICIAL YOUTUBE IFRAME (REPLACES NOCOOKIE) 🛑
+        wrapper.innerHTML = `
+            <iframe width="100%" height="100%" 
+            src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
+            title="YouTube video player" frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+            </iframe>
+        `;
         
         overlay.classList.add('active');
         
@@ -290,28 +299,6 @@
         if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
         if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
     }
-
-    // 🛑 THE FALLBACK BUTTON LOGIC 🛑
-    // If the Ad-Free nocookie domain restricts the video, the user clicks this to swap to the official YouTube API
-    document.getElementById('fallbackPlayerBtn').onclick = function() {
-        if(!currentActiveVideoId) return;
-        const wrapper = document.getElementById('ytIframeWrapper');
-        
-        // Inject Official YouTube Iframe (Matches user's exact requested code)
-        wrapper.innerHTML = `
-            <iframe width="100%" height="100%" 
-            src="https://www.youtube.com/embed/${currentActiveVideoId}?autoplay=1&rel=0&modestbranding=1" 
-            title="YouTube video player" frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
-            </iframe>
-        `;
-        
-        // Change button text briefly to show it worked
-        const originalText = this.innerHTML;
-        this.innerHTML = "✅ Switched to Official Player";
-        setTimeout(() => { this.innerHTML = originalText; }, 3000);
-    };
 
 </script>
 
