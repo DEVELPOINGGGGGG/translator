@@ -942,3 +942,17 @@ mjx-container[display="true"]::-webkit-scrollbar-thumb,
     height: 100%;
     border: none;
 }
+/* 🛑 CANCEL BUTTON STYLING */
+.chat-action-btn.cancel-mode {
+    background: rgba(239, 68, 68, 0.9) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 100, 100, 0.5) !important;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6) !important;
+    animation: pulseRed 1.5s infinite;
+    transform: scale(1.05);
+}
+@keyframes pulseRed {
+    0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.8); }
+    100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+}
