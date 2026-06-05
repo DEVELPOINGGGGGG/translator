@@ -1,6 +1,6 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V61 - MASTER EDITION)
-   Includes TTS Mini-Player, Gemini Deep Search, Context Memory & PDF Support
+   AI PRO SUITE - THE ULTIMATE BUILD (V62 - MASTER EDITION)
+   Includes Synchronized Video Typewriter, Deep Search, Context Memory & PDF Support
 ======================================================= */
 
 let appHistory = [];
@@ -317,13 +317,22 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
 }
 
 
+// 🛑 UPGRADED HINDI SPEECH TRANSLATOR 🛑
 function formatHindiSpeechText(text) {
     return String(text || "")
+        // Fraction translation
         .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ")
+        // Math symbols to Hindi speech
         .replace(/\\times/gi, " guna ")
+        .replace(/ X /g, " guna ")
+        .replace(/ x /g, " guna ")
+        .replace(/:-/g, " bhag ")
+        .replace(/÷/g, " bhag ")
+        .replace(/=/g, " barabar ")
         .replace(/-/g, " ghatav ")
-        .replace(/\+/g, " jor ")
+        .replace(/\+/g, " jod ")
         .replace(/%/g, " pratishat ")
+        // Brackets
         .replace(/\(/g, " bracket ")
         .replace(/\)/g, " bracket ")
         .replace(/\{/g, " madhyam kosthak ")
@@ -332,6 +341,10 @@ function formatHindiSpeechText(text) {
         .replace(/\]/g, " bara kosthak ")
         .replace(/\//g, " batta ")
         .replace(/[\$]/g, " ")
+        // 1-2 SECOND PAUSE HACK: Stacking commas forces the TTS engine to take a deep breath at periods
+        .replace(/\./g, ". , , , , ")
+        .replace(/\|/g, " , , , , ")
+        // Cleanup spaces
         .replace(/\s+/g, " ")
         .trim();
 }
@@ -351,15 +364,8 @@ function speakAndHighlight(elId) {
         document.getElementById('ttsPlayPauseBtn').innerText = '⏸️';
     }
 
-    let spokenText = el.innerText;
-    spokenText = spokenText.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ");
-    spokenText = spokenText.replace(/\//g, " batta ");
-    spokenText = spokenText.replace(/[\(\[\{]/g, " kosthak ");
-    spokenText = spokenText.replace(/[\)\]\}]/g, " kosthak ");
-    spokenText = spokenText.replace(/[\$]/g, "");
-    spokenText = spokenText.replace(/\\times/gi, " guna ");
-
-    const utterance = new SpeechSynthesisUtterance(spokenText);
+    const cleanSpeech = formatHindiSpeechText(el.innerText);
+    const utterance = new SpeechSynthesisUtterance(cleanSpeech);
     utterance.lang = 'hi-IN';
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
     const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || availableVoices.find(v => v.name.includes('हिन्दी')) || availableVoices.find(v => v.lang.includes('hi')) || availableVoices[0];
@@ -502,10 +508,16 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
+    // 🛑 UPGRADED MATH TUTOR PROMPT (RESTATES QUESTION & TEACHES CONCEPTUALLY) 🛑
     const sysPrompt = `You are a premium, highly engaging, brilliant AI Math & Physics Tutor. Your goal is to make the student fall in love with the subject by explaining concepts beautifully.
 
     CRITICAL STRUCTURE RULES (YOU MUST FOLLOW EVERY STEP IN ORDER):
     
+    0. RESTATE THE QUESTION (प्रश्न दोहराएं):
+       - At the very beginning of your response, write exactly what question you are solving so the user knows you understood it.
+       - Format it EXACTLY like this: "प्रश्न: [Insert the question here]"
+       - Put a blank line after this.
+
     1. THE CONCEPTUAL HOOK (सरल शुरुआत): 
        - Start with a 1-2 line simple real-world analogy or explanation of the core concept. 
        - Explain *why* this formula exists before calculating.
@@ -515,7 +527,6 @@ async function executeMathFlow() {
 
     3. EXPLAIN THE "WHY" IN EVERY STEP (गहन व्याख्या):
        - Do not just write equations. For every mathematical change, explain the logical reason behind it in deep, clear, conceptual Hindi.
-       - Example: Instead of saying "Put variables on left", say "हम x को अकेला करने के लिए उसे बाईं तरफ ला रहे हैं क्योंकि..."
 
     4. COMMON PITFALLS (सावधानियां):
        - End with a quick warning about common calculation mistakes students make in this specific type of question.
@@ -524,9 +535,9 @@ async function executeMathFlow() {
     1. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY).
     2. DO NOT use English words written in Roman characters for explanations.
     3. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. Your output must be purely clean text and LaTeX.
-    4. ALWAYS format fractions as proper LaTeX fractions (e.g., $\\frac{a}{b}$) wrapped in $. Do not write them inline like a/b.
-    5. ALWAYS use the uppercase letter "X" for multiplication instead of "*", "x", or "\\times".
-    6. NEVER put any text or conversational words inside the $ symbols. Keep them strictly for variables and formulas.`;
+    4. ALWAYS format fractions as proper LaTeX fractions (e.g., $\\frac{a}{b}$) wrapped in $.
+    5. ALWAYS use the uppercase letter "X" for multiplication instead of "*".
+    6. NEVER put any text or conversational words inside the $ symbols.`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
@@ -610,8 +621,7 @@ async function runGroqSearch() {
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// ---  PLAYER ENGINE ---
-// --- MEDIA PLAYER ENGINE (YOUTUBE-STYLE UPGRADE) ---
+// --- MEDIA PLAYER ENGINE (YOUTUBE-STYLE UPGRADE + TYPEWRITER SYNC) ---
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 function startVideoTimer(totalChars) {
     clearInterval(videoTickInterval); videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
@@ -656,20 +666,17 @@ function initVideoGui() {
             <button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
         </div>
         
-        <!-- Double Tap Zones -->
         <div style="position:absolute; left:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, -1)"></div>
         <div style="position:absolute; right:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, 1)"></div>
         
-        <!-- Skip Indicators -->
         <div id="skipIndLeft" style="position:absolute; left:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏪</div>
         <div id="skipIndRight" style="position:absolute; right:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏩</div>
 
         <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px; position:relative; z-index:10;">
-            <div id="videoContent" style="font-size: 24px; color: #fff; line-height:2.0; max-width:800px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:30px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
+            <div id="videoContent" style="font-size: 36px; font-weight: 700; color: #fff; line-height: 1.8; max-width: 900px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:40px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
         </div>
 
         <div id="vControlsContainer" style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); transition: opacity 0.3s; z-index:100;">
-           <!-- Clickable Progress Bar -->
            <div style="width:100%; height:20px; cursor:pointer; display:flex; align-items:center;" onclick="seekVideo(event)">
                <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; position:relative;" id="vProgressBarBg">
                    <div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.1s linear;" id="vProgressBar"></div>
@@ -769,6 +776,7 @@ function replayVideo() {
     document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); 
 }
 
+// 🛑 VIDEO TYPEWRITER ENGINE 🛑
 async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
     const token = ++videoRunToken;
     const content = document.getElementById("videoContent");
@@ -778,7 +786,7 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
     
     if (!preserveContent) {
         content.innerHTML = "";
-        // PRE-RENDER previous lines instantly so the screen doesn't go blank when you skip forward!
+        // PRE-RENDER previous lines instantly when skipping so context isn't lost
         for(let i=0; i<videoLineIndex; i++) {
             let div = document.createElement("div");
             div.dataset.videoLine = i; div.className = "video-line-card"; div.innerHTML = lines[i];
@@ -807,15 +815,13 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
         let lineDiv = document.querySelector(`[data-video-line="${i}"]`);
         if (!lineDiv) {
             lineDiv = document.createElement("div");
-            lineDiv.dataset.videoLine = i; lineDiv.className = "video-line-card"; lineDiv.innerHTML = lineText;
+            lineDiv.dataset.videoLine = i; lineDiv.className = "video-line-card"; 
             content.appendChild(lineDiv);
         }
         lineDiv.classList.add("active");
-        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
-            MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); 
-            lineDiv.setAttribute('data-math-done', 'true');
-        }
-        setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 60);
+        
+        // Clear the new line so we can typewrite it!
+        lineDiv.innerHTML = ""; 
 
         window.speechSynthesis.speak(u);
         if (pauseAfterStart) {
@@ -824,7 +830,47 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
             const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "▶️";
             pauseAfterStart = false;
         }
-        await new Promise(r => { u.onend = r; u.onerror = r; setTimeout(r, Math.max(3500, lineText.length * 90 / videoSpeed)); });
+
+        // --- TYPEWRITER SYNC LOGIC ---
+        let cIndex = 0;
+        let tickRate = 25 / videoSpeed; // Math. It adjusts dynamically to keep pace with the voice speed!
+        
+        let typeInterval = setInterval(() => {
+            if (isVideoPaused) return; // Wait exactly where we are if paused
+            
+            if (cIndex < lineText.length) {
+                let chunk = lineText.substr(cIndex, 2); // Write 2 characters at once
+                for(let c of chunk) { lineDiv.appendChild(document.createTextNode(c)); }
+                cIndex += 2;
+                
+                // Keep auto-scrolling down slightly as we type
+                setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 10);
+            } else {
+                // Done typing this line! Apply MathJax styling like the Solvers do.
+                clearInterval(typeInterval);
+                if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
+                    MathJax.typesetClear([lineDiv]); MathJax.typesetPromise([lineDiv]); 
+                    lineDiv.setAttribute('data-math-done', 'true');
+                }
+            }
+        }, tickRate);
+
+        // Wait until the speech is finished before moving to the next line
+        await new Promise(r => { 
+            u.onend = r; u.onerror = r; 
+            setTimeout(r, Math.max(3500, lineText.length * 90 / videoSpeed)); 
+        });
+
+        // Failsafe: if the audio ends super fast, finish rendering the line instantly
+        clearInterval(typeInterval);
+        if (cIndex < lineText.length) {
+            lineDiv.innerHTML = lineText; 
+            if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
+                MathJax.typesetClear([lineDiv]); MathJax.typesetPromise([lineDiv]); 
+                lineDiv.setAttribute('data-math-done', 'true');
+            }
+        }
+        
         lineDiv.classList.remove("active");
         if(token !== videoRunToken) return;
     }
@@ -834,6 +880,7 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
     const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄";
     resetVideoActivity();
 }
+
 // --- TEXT TRANSLATOR ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
