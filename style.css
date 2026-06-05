@@ -265,12 +265,114 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .outputBox, .meaningBox { margin-top: 15px; background: rgba(2, 6, 23, 0.8); border: 1px solid var(--glass-border); border-radius: 25px; padding: 25px; min-height: 80px; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; max-width: 100%; font-size: 15px; line-height: 1.7; }
 
 /* Camera UI */
-.cameraModal { position: fixed; inset: 0; background: black; display: none; z-index: 99999 !important; }
-.cameraModal.active { display: flex; flex-direction: column; animation: fadeIn 0.2s; }
-.cameraControls { min-height: 150px; display: flex; justify-content: center; align-items: center; gap: 40px; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 1)); padding-bottom: calc(30px + env(safe-area-inset-bottom)); position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; }
-.cameraCircle { width: 90px; height: 90px; border-radius: 50%; border: 5px solid white; background: rgba(255, 255, 255, 0.2); box-shadow: 0 0 30px rgba(255, 255, 255, 0.4); transition: transform 0.2s; cursor: pointer;}
-.cameraCircle:active { transform: scale(0.85); background: white; }
+/* ==========================================================================
+   MODERN CAMERA UI (FULLSCREEN NATIVE LOOK)
+   ========================================================================== */
+.cameraModal { 
+    position: fixed; 
+    inset: 0; 
+    background: #000; 
+    display: none; 
+    z-index: 99999 !important; 
+    overflow: hidden; 
+}
 
+.cameraModal.active { 
+    display: flex; 
+    flex-direction: column; 
+    animation: fadeIn 0.3s ease-out; 
+}
+
+#cameraVideo { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    position: absolute; 
+    inset: 0; 
+    z-index: 1; 
+}
+
+.camera-top-bar { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    padding: 25px; 
+    display: flex; 
+    justify-content: flex-start; /* Keeps the X button top left */
+    z-index: 10; 
+    background: linear-gradient(180deg, rgba(0,0,0,0.7), transparent); 
+}
+
+.cameraControls { 
+    position: absolute; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    height: 150px; 
+    display: flex; 
+    justify-content: space-evenly; 
+    align-items: center; 
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
+    background: linear-gradient(0deg, rgba(0,0,0,0.8), transparent); 
+    z-index: 10; 
+}
+
+/* The sleek capture ring */
+.cameraCircle { 
+    width: 80px; 
+    height: 80px; 
+    border-radius: 50%; 
+    border: 4px solid #fff; 
+    background: transparent; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    transition: 0.2s ease; 
+}
+
+.cameraCircle::after { 
+    content: ''; 
+    width: 64px; 
+    height: 64px; 
+    background: white; 
+    border-radius: 50%; 
+    transition: 0.2s ease; 
+}
+
+.cameraCircle:active::after { 
+    transform: scale(0.85); 
+    background: #e2e8f0; 
+}
+
+/* Glassmorphism utility buttons (Flash, Flip, Close) */
+.cam-icon-btn { 
+    width: 55px; 
+    height: 55px; 
+    border-radius: 50%; 
+    background: rgba(255, 255, 255, 0.15); 
+    border: 1px solid rgba(255, 255, 255, 0.25); 
+    color: white; 
+    font-size: 22px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    cursor: pointer; 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px); 
+    transition: 0.3s ease; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4); 
+}
+
+.cam-icon-btn:hover { 
+    background: rgba(255, 255, 255, 0.25); 
+    transform: scale(1.08); 
+}
+
+.cam-icon-btn:active { 
+    transform: scale(0.9); 
+}
 @media(min-width: 768px) { .page { max-width: 850px; margin: auto; left: 50%; transform: translateX(-50%); } .topbar, .apiTracker { justify-content: center; gap: 50px; } }
 /* ==========================================================================
    7. FLOATING TTS AUDIO PLAYER (ZERO LAG GLASSMORPHISM)
