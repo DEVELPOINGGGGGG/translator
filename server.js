@@ -299,6 +299,7 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
         if (req.url === "/api/groq-search") return handleGroqSearch(req, res);
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
+        if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
     }
     
     // 🛑 ENDPOINT FOR LIVE UI TRACKING 🛑
