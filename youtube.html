@@ -1,238 +1,330 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>YouTube Finder — India</title>
+  <title>YouTube Finder — Education (India)</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    :root{
-      --bg:#0b0f14;
-      --card:#0f1720;
-      --accent:#ff0000;
-      --muted:#9aa6b2;
-      --glass: rgba(255,255,255,0.03);
-      --radius:12px;
-      --shadow: 0 8px 30px rgba(2,6,23,0.6);
+    /* Page-specific overrides and extra decoration */
+    .hero {
+      margin-top: 90px;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 28px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+      border: 1px solid rgba(255,255,255,0.04);
     }
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#e6eef6;background:linear-gradient(180deg,#07101a 0%, #071827 60%);}
-    .wrap{max-width:1100px;margin:28px auto;padding:22px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:16px;box-shadow:var(--shadow);backdrop-filter: blur(6px);}
-    header{display:flex;align-items:center;gap:16px}
-    h1{margin:0;font-size:20px;letter-spacing:0.2px}
-    .sub{color:var(--muted);font-size:13px;margin-top:6px}
-    .controls{display:flex;gap:12px;margin-top:18px;align-items:center}
-    input[type="search"]{flex:1;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:#fff;font-size:16px;outline:none}
-    button.primary{background:var(--accent);color:#fff;padding:12px 18px;border-radius:12px;border:none;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(255,0,0,0.12)}
-    button.ghost{background:transparent;color:var(--muted);padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
-    .status{margin-left:8px;color:var(--muted);font-size:13px;display:flex;align-items:center;gap:8px}
-    .spinner{width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--accent);animation:spin 1s linear infinite;display:inline-block}
-    @keyframes spin{to{transform:rotate(360deg)}}
+    .hero h2 { font-size: 22px; color: #fff; margin-bottom: 6px; }
+    .hero p { color: var(--text-muted); margin-bottom: 18px; }
 
-    /* results list */
-    .results{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:20px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
-    .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(2,6,23,0.6)}
-    .thumb{width:160px;height:90px;border-radius:8px;background-size:cover;background-position:center;flex-shrink:0}
-    .meta{flex:1;display:flex;flex-direction:column;gap:6px}
-    .title{font-weight:700;font-size:15px;color:#fff;line-height:1.2}
-    .channel{color:var(--muted);font-size:13px}
-    .duration{color:var(--muted);font-size:12px}
-    .playBtn{background:var(--accent);color:#fff;padding:8px 10px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+    .search-row { display:flex; gap:12px; align-items:center; }
+    .search-input { flex:1; padding:14px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#fff; font-size:16px; outline:none; }
+    .btn-primary { background: linear-gradient(90deg,#ff4d4d,#ff0000); color:#fff; padding:12px 18px; border-radius:12px; border:none; cursor:pointer; font-weight:700; box-shadow:0 8px 24px rgba(255,0,0,0.12); }
+    .btn-ghost { background:transparent; color:var(--text-muted); padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); cursor:pointer; }
 
-    /* player overlay */
-    .overlay{position:fixed;inset:0;background:rgba(2,6,23,0.7);display:none;align-items:center;justify-content:center;z-index:9999}
-    .playerCard{width:100%;max-width:1200px;height:calc(100vh - 60px);background:#000;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;align-items:stretch}
-    .playerTop{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.2));color:#fff}
-    .playerTitle{font-weight:700}
-    .playerActions{display:flex;gap:8px;align-items:center}
-    .btnClose{background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff;padding:8px 10px;border-radius:8px;cursor:pointer}
-    .btnYouTube{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700}
-    .playerFrame{flex:1;background:#000;display:flex;align-items:center;justify-content:center}
-    .playerFrame iframe{width:100%;height:100%;border:0}
+    .plus-upload { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.04); cursor:pointer; color:#fff; }
 
-    /* small helpers */
-    .muted{color:var(--muted)}
-    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
-    @media (max-width:640px){
-      .thumb{width:120px;height:72px}
-      .playerCard{height:100vh;border-radius:0}
+    .decor-row { display:flex; gap:12px; align-items:center; margin-top:12px; }
+    .pill { padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.03); color:var(--text-muted); font-size:13px; border:1px solid rgba(255,255,255,0.02); }
+
+    .results-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:22px; }
+    .video-card { display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); cursor:pointer; transition: transform .12s ease, box-shadow .12s ease; }
+    .video-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(2,6,23,0.6); }
+    .video-thumb { width:180px; height:100px; border-radius:8px; background-size:cover; background-position:center; flex-shrink:0; }
+    .video-meta { flex:1; display:flex; flex-direction:column; gap:6px; }
+    .video-title { font-weight:700; color:#fff; font-size:15px; line-height:1.2; }
+    .video-sub { color:var(--text-muted); font-size:13px; display:flex; justify-content:space-between; gap:8px; }
+    .video-actions { margin-top:8px; display:flex; gap:8px; align-items:center; }
+    .play-small { background:linear-gradient(90deg,#ff6b6b,#ff2d2d); color:#fff; padding:8px 12px; border-radius:10px; border:none; cursor:pointer; font-weight:700; }
+
+    .overlay-player { position:fixed; inset:0; background:linear-gradient(rgba(2,6,23,0.85), rgba(2,6,23,0.85)); display:none; align-items:center; justify-content:center; z-index:9999; }
+    .player-shell { width:100%; max-width:1200px; height:calc(100vh - 60px); background:#000; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+    .player-top { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.2)); color:#fff; }
+    .player-title { font-weight:700; font-size:16px; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .player-actions { display:flex; gap:8px; align-items:center; }
+    .btn-youtube { background:linear-gradient(90deg,#ff4d4d,#ff0000); color:#fff; padding:8px 12px; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
+    .btn-close { background:transparent; color:#fff; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); cursor:pointer; }
+
+    .player-frame { flex:1; display:flex; align-items:center; justify-content:center; background:#000; }
+    .player-frame iframe { width:100%; height:100%; border:0; }
+
+    .empty-state { padding:28px; border-radius:12px; background:rgba(255,255,255,0.02); color:var(--text-muted); text-align:center; }
+
+    /* small responsive tweaks */
+    @media (max-width:640px) {
+      .video-thumb { width:120px; height:72px; }
+      .player-shell { height:100vh; border-radius:0; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap" role="main">
-    <header>
-      <div>
-        <h1>YouTube Finder — India</h1>
-        <div class="sub">Type a topic, let Gemini refine the query, then yt-search returns the best India-focused videos.</div>
-      </div>
-    </header>
-
-    <div class="controls" style="margin-top:18px">
-      <input id="topicInput" type="search" placeholder="e.g. Best Rohit Sharma innings highlights India 2025" aria-label="Search topic" />
-      <button id="searchBtn" class="primary">Search</button>
-      <button id="clearBtn" class="ghost">Clear</button>
-      <div class="status" id="status" aria-live="polite"><span class="muted">Idle</span></div>
-    </div>
-
-    <div id="results" class="results" aria-live="polite"></div>
-
-    <footer>
-      <div class="muted">Powered by Gemini (refine) + yt-search (fetch). Click a result to open the fullscreen player.</div>
-    </footer>
+  <div class="topbar">
+    <div class="menuBtn" id="menuToggle">☰</div>
+    <div class="appTitle">YouTube Finder • Education (India)</div>
   </div>
 
-  <!-- player overlay -->
-  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="playerCard" role="document">
-      <div class="playerTop">
-        <div class="playerTitle" id="playerTitle">Playing</div>
-        <div class="playerActions">
-          <button id="openYoutube" class="btnYouTube">Open in YouTube</button>
-          <button id="closePlayer" class="btnClose">Close</button>
+  <div class="apiTracker" style="top:70px;">
+    <div class="api-val timer">Status: <span id="apiStatus">Ready</span></div>
+    <div class="api-val vision">Vision: <span id="visionProvider">GEMINI</span></div>
+    <div class="api-val text">Text: <span id="textProvider">GEMINI</span></div>
+  </div>
+
+  <main class="hero" role="main" aria-labelledby="pageTitle">
+    <h2 id="pageTitle">Find the best educational YouTube videos in India</h2>
+    <p>Type a topic or tap the + button to take/upload an image. Gemini will extract the educational query and yt-search will return the top 15 education-focused videos.</p>
+
+    <div class="search-row" style="margin-top:8px;">
+      <input id="searchInput" class="search-input" type="search" placeholder="Enter topic or use the + image button" aria-label="Search topic" />
+      <button id="uploadBtn" class="plus-upload" title="Upload or take image">＋</button>
+      <button id="searchBtn" class="btn-primary">Search</button>
+      <button id="clearBtn" class="btn-ghost">Clear</button>
+    </div>
+
+    <div class="decor-row" aria-hidden="true">
+      <div class="pill">Education only</div>
+      <div class="pill">Region: India</div>
+      <div class="pill" id="searchingPill" style="display:none"><span class="spinner" style="width:14px;height:14px;border-top-color:#ff4d4d"></span> Searching…</div>
+    </div>
+
+    <div id="results" class="results-grid" style="margin-top:18px;"></div>
+
+    <div id="empty" class="empty-state" style="margin-top:18px; display:block;">
+      No results yet. Enter a topic or upload an image to begin.
+    </div>
+  </main>
+
+  <!-- hidden file input for image capture/upload -->
+  <input id="fileInput" type="file" accept="image/*" capture="environment" style="display:none" />
+
+  <!-- overlay player -->
+  <div id="overlay" class="overlay-player" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="player-shell" role="document">
+      <div class="player-top">
+        <div class="player-title" id="playerTitle">Playing</div>
+        <div class="player-actions">
+          <button id="openOnYoutube" class="btn-youtube">Open in YouTube</button>
+          <button id="closeOverlay" class="btn-close">Close</button>
         </div>
       </div>
-      <div class="playerFrame" id="playerFrame">
-        <!-- iframe inserted dynamically -->
-      </div>
+      <div class="player-frame" id="playerFrame"></div>
     </div>
   </div>
 
   <script>
-    // ---------- helpers ----------
-    const $ = id => document.getElementById(id);
-    const statusEl = $('status');
-    const resultsEl = $('results');
-    const overlay = $('overlay');
-    const playerTitle = $('playerTitle');
-    const playerFrame = $('playerFrame');
-    const openYoutube = $('openYoutube');
-    const closePlayer = $('closePlayer');
+    // Elements
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+    const resultsEl = document.getElementById('results');
+    const emptyEl = document.getElementById('empty');
+    const searchingPill = document.getElementById('searchingPill');
+    const apiStatus = document.getElementById('apiStatus');
+    const overlay = document.getElementById('overlay');
+    const playerFrame = document.getElementById('playerFrame');
+    const playerTitle = document.getElementById('playerTitle');
+    const openOnYoutube = document.getElementById('openOnYoutube');
+    const closeOverlay = document.getElementById('closeOverlay');
 
-    function setStatus(text, busy=false){
-      statusEl.innerHTML = busy ? '<span class="spinner" aria-hidden="true"></span><span style="margin-left:8px">'+text+'</span>' : '<span class="muted">'+text+'</span>';
+    let lastResults = [];
+
+    function setStatus(text, busy=false) {
+      apiStatus.textContent = text;
+      if (busy) {
+        searchingPill.style.display = 'inline-flex';
+      } else {
+        searchingPill.style.display = 'none';
+      }
     }
 
-    function clearResults(){ resultsEl.innerHTML = ''; }
+    function clearResults() {
+      resultsEl.innerHTML = '';
+      emptyEl.style.display = 'block';
+      lastResults = [];
+    }
 
-    function createCard(video){
+    function createVideoCard(video) {
       const card = document.createElement('div');
-      card.className = 'card';
+      card.className = 'video-card';
       card.tabIndex = 0;
-      card.setAttribute('role','button');
 
       const thumb = document.createElement('div');
-      thumb.className = 'thumb';
+      thumb.className = 'video-thumb';
       thumb.style.backgroundImage = `url(${video.thumbnail})`;
 
       const meta = document.createElement('div');
-      meta.className = 'meta';
+      meta.className = 'video-meta';
 
       const title = document.createElement('div');
-      title.className = 'title';
+      title.className = 'video-title';
       title.textContent = video.title;
 
-      const channel = document.createElement('div');
-      channel.className = 'channel';
-      channel.textContent = video.author.name + ' • ' + (video.timestamp || '');
+      const sub = document.createElement('div');
+      sub.className = 'video-sub';
+      sub.innerHTML = `<span>${video.author.name || ''}</span><span>${video.timestamp || ''}</span>`;
 
       const actions = document.createElement('div');
-      actions.style.marginTop = '8px';
+      actions.className = 'video-actions';
       const playBtn = document.createElement('button');
-      playBtn.className = 'playBtn';
+      playBtn.className = 'play-small';
       playBtn.textContent = 'Play';
       playBtn.onclick = (e) => { e.stopPropagation(); openPlayer(video); };
 
+      const ytBtn = document.createElement('button');
+      ytBtn.className = 'btn-ghost';
+      ytBtn.textContent = 'YouTube';
+      ytBtn.onclick = (e) => { e.stopPropagation(); window.open(video.url, '_blank'); };
+
       actions.appendChild(playBtn);
+      actions.appendChild(ytBtn);
+
       meta.appendChild(title);
-      meta.appendChild(channel);
+      meta.appendChild(sub);
       meta.appendChild(actions);
 
       card.appendChild(thumb);
       card.appendChild(meta);
 
       card.onclick = () => openPlayer(video);
-      card.onkeypress = (e) => { if(e.key === 'Enter') openPlayer(video); };
+      card.onkeypress = (e) => { if (e.key === 'Enter') openPlayer(video); };
 
       return card;
     }
 
-    function openPlayer(video){
+    function renderResults(videos) {
+      resultsEl.innerHTML = '';
+      if (!videos || videos.length === 0) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      videos.forEach(v => {
+        const card = createVideoCard(v);
+        resultsEl.appendChild(card);
+      });
+      // subtle fade-in
+      resultsEl.style.opacity = 0;
+      requestAnimationFrame(() => { resultsEl.style.transition = 'opacity .25s ease-in'; resultsEl.style.opacity = 1; });
+    }
+
+    function openPlayer(video) {
       playerTitle.textContent = video.title;
       playerFrame.innerHTML = '';
       const iframe = document.createElement('iframe');
       iframe.src = `https://www.youtube.com/embed/${video.videoId}?autoplay=1&rel=0&modestbranding=1`;
       iframe.allow = 'autoplay; fullscreen; picture-in-picture';
-      iframe.setAttribute('allowfullscreen','');
+      iframe.setAttribute('allowfullscreen', '');
       playerFrame.appendChild(iframe);
-      openYoutube.onclick = () => window.open(video.url, '_blank', 'noopener');
+      openOnYoutube.onclick = () => window.open(video.url, '_blank', 'noopener');
       overlay.style.display = 'flex';
-      overlay.setAttribute('aria-hidden','false');
+      overlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
     }
 
-    function closeOverlay(){
+    function closePlayer() {
       overlay.style.display = 'none';
-      overlay.setAttribute('aria-hidden','true');
+      overlay.setAttribute('aria-hidden', 'true');
       playerFrame.innerHTML = '';
       document.body.style.overflow = '';
     }
 
-    closePlayer.addEventListener('click', closeOverlay);
-    overlay.addEventListener('click', (e) => { if(e.target === overlay) closeOverlay(); });
+    closeOverlay.addEventListener('click', closePlayer);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closePlayer(); });
 
-    // ---------- main search flow ----------
-    async function doSearch(){
-      const topic = document.getElementById('topicInput').value.trim();
-      if(!topic) return alert('Enter a topic to search for.');
-
-      clearResults();
-      setStatus('Searching with Gemini...', true);
-
+    // Search flow
+    async function doSearch(topic) {
       try {
-        // call backend endpoint that runs Gemini -> yt-search
+        setStatus('Searching', true);
         const resp = await fetch('/api/youtube-search', {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ topic })
         });
-
         const data = await resp.json();
-        if(!resp.ok) throw new Error(data.error || 'Search failed');
-
-        // data.results expected to be an array of video objects
-        const videos = data.results || (data.videoId ? [data] : []);
-        if(videos.length === 0) {
-          setStatus('No videos found', false);
-          resultsEl.innerHTML = '<div class="muted" style="padding:18px">No results. Try a different topic.</div>';
-          return;
-        }
-
-        setStatus(`Found ${videos.length} result${videos.length>1?'s':''}`, false);
-
-        // render cards
-        videos.forEach(v => {
-          const card = createCard(v);
-          resultsEl.appendChild(card);
-        });
-
-        // subtle entrance animation
-        resultsEl.style.opacity = 0;
-        requestAnimationFrame(()=> resultsEl.style.transition = 'opacity .25s ease-in', requestAnimationFrame(()=> resultsEl.style.opacity = 1));
-
+        if (!resp.ok) throw new Error(data.error || 'Search failed');
+        const videos = data.results || [];
+        lastResults = videos;
+        renderResults(videos);
+        setStatus(`Found ${videos.length} videos`, false);
       } catch (err) {
         console.error(err);
-        setStatus('Error: ' + (err.message || 'unknown'), false);
-        resultsEl.innerHTML = `<div class="muted" style="padding:18px">Error: ${err.message}</div>`;
+        setStatus('Error', false);
+        resultsEl.innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
       }
     }
 
+    // Image upload -> send to /api/extract-from-image -> populate search box and optionally auto-search
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      // show preview small spinner
+      setStatus('Extracting from image', true);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result;
+        try {
+          const resp = await fetch('/api/extract-from-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64: base64 })
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.error || 'Image extraction failed');
+          // If model returned parsed JSON with query/title/summary, use it
+          if (data.parsed && data.parsed.query) {
+            searchInput.value = data.parsed.query;
+            // show summary pill
+            setStatus('Image processed — query populated', false);
+            // auto-search after a short delay for smooth UX
+            setTimeout(() => searchBtn.click(), 450);
+          } else if (data.raw) {
+            // fallback: put raw text into search box
+            searchInput.value = data.raw.slice(0, 200);
+            setStatus('Image processed — raw text populated', false);
+            setTimeout(() => searchBtn.click(), 450);
+          } else {
+            setStatus('No usable text found in image', false);
+          }
+        } catch (err) {
+          console.error(err);
+          setStatus('Image extract error', false);
+          resultsEl.innerHTML = `<div class="empty-state">Image extract error: ${err.message}</div>`;
+        }
+      };
+      reader.readAsDataURL(file);
+      // reset input so same file can be selected again
+      fileInput.value = '';
+    });
+
     // UI wiring
-    document.getElementById('searchBtn').addEventListener('click', () => { setStatus('Preparing search...', true); setTimeout(doSearch, 250); });
-    document.getElementById('clearBtn').addEventListener('click', () => { $('topicInput').value=''; clearResults(); setStatus('Idle', false); });
-    document.getElementById('topicInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('searchBtn').click(); });
+    searchBtn.addEventListener('click', () => {
+      const topic = searchInput.value.trim();
+      if (!topic) {
+        alert('Enter a topic or upload an image first');
+        return;
+      }
+      // educational-only hint in UI
+      setStatus('Preparing educational search', true);
+      setTimeout(() => doSearch(topic), 200);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearResults();
+      setStatus('Ready', false);
+    });
+
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchBtn.click(); });
 
     // initial state
-    setStatus('Idle', false);
+    clearResults();
+    setStatus('Ready', false);
   </script>
 </body>
 </html>
