@@ -176,6 +176,7 @@ function toggleSidebar() {
 }
 if(document.getElementById("overlay")) document.getElementById("overlay").onclick = toggleSidebar;
 function setStatusLoading(id, txt) { const el = document.getElementById(id); if(el) { el.innerHTML = `<div class="spinner"></div> ${txt}`; el.style.display = "flex"; } }
+
 function scrollToBottom(aid, force = true) {
     const selectors = [aid, "mathScrollArea", "searchChatHistory", "imageScrollArea"];
     const scrollTargets = [];
@@ -249,30 +250,16 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     if (tickRate > 35) { tickRate = 35; } 
     else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
-    const scrollArea = containerEl.closest('.chat-scroll-area');
-    if (scrollArea) scrollArea.style.scrollBehavior = 'auto';
-    
-    let i = 0; let lastScroll = 0;
+    let i = 0; 
     const timer = setInterval(() => {
         if (i < rawText.length) {
             let chunk = rawText.substr(i, charsPerTick);
             for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
             i += charsPerTick;
-            
-            if (Date.now() - lastScroll > 80) {
-                if (scrollArea) { scrollArea.scrollTop = scrollArea.scrollHeight; scrollArea.scrollTo?.({ top: scrollArea.scrollHeight, behavior: "auto" }); }
-                lastScroll = Date.now();
-            }
         } else {
             clearInterval(timer);
             if (isMath && window.MathJax) { MathJax.typesetClear([containerEl]); MathJax.typesetPromise([containerEl]); }
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
-            
-            if (scrollArea) {
-                scrollArea.scrollTop = scrollArea.scrollHeight;
-                scrollArea.scrollTo?.({ top: scrollArea.scrollHeight, behavior: "auto" });
-                scrollArea.style.scrollBehavior = 'smooth'; 
-            }
             if (onComplete) onComplete();
         }
     }, tickRate);
@@ -999,16 +986,15 @@ async function executeQaFlow() {
         DOCUMENT TEXT:
         ${extractedContext}
         
-        TARGET QUESTION TO SOLVE:
+        TARGET QUESTION(S) TO SOLVE:
         ${finalQuestion}
         
         CRITICAL INSTRUCTIONS (FAILURE IS NOT AN OPTION):
-        1. The document text may contain MULTIPLE different questions.
-        2. YOU MUST IGNORE ALL OTHER QUESTIONS and ONLY SOLVE THE EXACT QUESTION STATED UNDER "TARGET QUESTION TO SOLVE".
-        3. Answer based ONLY on the Document Text provided. 
-        4. You MUST write your entire answer strictly in ${targetLang}. 
-        5. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
-        6. If the answer cannot be found in the provided text, state that clearly.`;
+        1. Answer ALL questions provided in the "TARGET QUESTION(S) TO SOLVE" section thoroughly. Do not skip any!
+        2. Answer based ONLY on the Document Text provided. 
+        3. You MUST write your entire answer strictly in ${targetLang}. 
+        4. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
+        5. If the answer cannot be found in the provided text, state that clearly.`;
         
         const qaId = "qa_ans_" + Date.now();
         window.requestCache[qaId] = { type: 'qa', prompt: prompt, targetLang: targetLang, finalQuestion: finalQuestion };
