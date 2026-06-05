@@ -12,18 +12,11 @@ window.latestMathSolution = "";
 let availableVoices = [];
 window.hasResetToday = false;
 
-// 🛑 YOUR GOOGLE SHEETS WEBHOOK 🛑
-const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
-
-// 🛑 SESSION CACHE & RETRY ENGINE 🛑
-window.requestCache = {};
-let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
 // 🛑 ABORT & CANCEL ENGINE 🛑
 window.currentAbortController = null;
 window.currentTypingTimer = null;
 
 window.toggleChatButton = function(isCancel) {
-    // Targets your send buttons (Math, Search, Image Trans)
     const btnIds = ['sendMathBtn', 'sendSearchBtn', 'sendImageTransBtn'];
     let activeBtn = null;
     for (let id of btnIds) {
@@ -33,18 +26,16 @@ window.toggleChatButton = function(isCancel) {
     if (!activeBtn) return;
     
     if (isCancel) {
-        activeBtn.dataset.originalHtml = activeBtn.innerHTML; // Save the original icon (like ↑)
-        activeBtn.innerHTML = '⏹️'; // Change to Stop Emoji
+        activeBtn.dataset.originalHtml = activeBtn.innerHTML;
+        activeBtn.innerHTML = '⏹️'; 
         activeBtn.classList.add('cancel-mode');
         activeBtn.classList.remove('send');
-        
         activeBtn.dataset.originalOnclick = activeBtn.getAttribute('onclick');
         activeBtn.setAttribute('onclick', 'cancelActiveRequest()');
     } else {
-        activeBtn.innerHTML = activeBtn.dataset.originalHtml || '↑';
+        if(activeBtn.dataset.originalHtml) activeBtn.innerHTML = activeBtn.dataset.originalHtml;
         activeBtn.classList.remove('cancel-mode');
         activeBtn.classList.add('send');
-        
         if (activeBtn.dataset.originalOnclick) {
             activeBtn.setAttribute('onclick', activeBtn.dataset.originalOnclick);
         }
@@ -52,20 +43,26 @@ window.toggleChatButton = function(isCancel) {
 };
 
 window.cancelActiveRequest = function() {
-    // 1. Kill the Server Fetch Request
     if (window.currentAbortController) {
         window.currentAbortController.abort(); 
         window.currentAbortController = null;
     }
-    // 2. Stop the typewriter instantly
     if (window.currentTypingTimer) {
         clearInterval(window.currentTypingTimer);
         window.currentTypingTimer = null;
     }
     isProcessing = false;
-    window.toggleChatButton(false); // Revert button back to normal
+    window.toggleChatButton(false); 
     showToast("⚠️ Generation Stopped");
 };
+
+// 🛑 YOUR GOOGLE SHEETS WEBHOOK 🛑
+const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
+
+// 🛑 SESSION CACHE & RETRY ENGINE 🛑
+window.requestCache = {};
+let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
+
 // 🛑 CONTINUOUS CONTEXT MEMORY ENGINE 🛑
 function getLastContextImage(type) {
     let sessionId = sessionCache[type];
@@ -257,7 +254,6 @@ function appendAiLoading(cid) {
     const c = getActiveChatContainer(cid); if(!c) return null;
     const id = "loading_" + Date.now();
     
-    // Inject the modern typing dots HTML instead of the spinner
     c.insertAdjacentHTML('beforeend', `
         <div class="chat-msg chat-ai" id="${id}">
             <div class="bubble" style="display:flex; align-items:center; gap:12px;">
@@ -285,7 +281,7 @@ function getRetryButtonsHtml(lId) {
     </div>`;
 }
 
-// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE (WITH ANTI-SHAKE FIX) 🛑
+// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE 🛑
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
     const txtEl = document.getElementById(contentId);
@@ -298,16 +294,19 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
     let i = 0; 
-    const timer = setInterval(() => {
+    window.currentTypingTimer = setInterval(() => {
         if (i < rawText.length) {
             let chunk = rawText.substr(i, charsPerTick);
             for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
             i += charsPerTick;
         } else {
-            clearInterval(timer);
+            clearInterval(window.currentTypingTimer);
+            window.currentTypingTimer = null;
             if (isMath && window.MathJax) { MathJax.typesetClear([containerEl]); MathJax.typesetPromise([containerEl]); }
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
             if (onComplete) onComplete();
+            
+            window.toggleChatButton(false); // Done typing, revert button
         }
     }, tickRate);
 }
@@ -333,10 +332,11 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     else {
         bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px;">${answer.replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
+        window.toggleChatButton(false); // Ensure button resets if no typing animation
     }
 }
 
-// --- 🛑 SAFE API FETCHERS WITH RENDER CRASH DETECTION 🛑 ---
+// --- 🛑 SAFE API FETCHERS WITH ABORT CONTROLLER 🛑 ---
 async function checkHtmlError(r) {
     const contentType = r.headers.get("content-type");
     if (contentType && contentType.includes("text/html")) {
@@ -347,86 +347,59 @@ async function checkHtmlError(r) {
 
 async function callGeminiText(sysText, usrText, override = null) {
   if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('t');
-  window.currentAbortController = new AbortController(); // <-- Added
+  window.currentAbortController = new AbortController();
   try { 
       const r = await fetch("/api/gemini-text", { 
           method: "POST", headers: {"Content-Type":"application/json"}, 
           body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText, providerOverride: override }),
-          signal: window.currentAbortController.signal // <-- Added
+          signal: window.currentAbortController.signal
       }); 
       const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
-      isProcessing = false; return d; 
-  } catch(e) { isProcessing = false; throw e; }
+      isProcessing = false; window.currentAbortController = null; return d; 
+  } catch(e) { isProcessing = false; window.currentAbortController = null; throw e; }
 }
 
 async function callGeminiVision(imgData, aiQuery, override = null) {
   if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('v');
-  window.currentAbortController = new AbortController(); // <-- Added
+  window.currentAbortController = new AbortController();
   try { 
       const r = await fetch("/api/gemini-vision", { 
           method: "POST", headers: {"Content-Type":"application/json"}, 
           body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery, providerOverride: override }),
-          signal: window.currentAbortController.signal // <-- Added
+          signal: window.currentAbortController.signal
       }); 
       const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
-      isProcessing = false; return d; 
-  } catch(e) { isProcessing = false; throw e; }
+      isProcessing = false; window.currentAbortController = null; return d; 
+  } catch(e) { isProcessing = false; window.currentAbortController = null; throw e; }
 }
-// 🛑 UPGRADED HINDI SPEECH TRANSLATOR (STRIPS ALL LATEX JUNK) 🛑
+
 function formatHindiSpeechText(text) {
     return String(text || "")
-        // 1. Remove layout and spacing junk
         .replace(/\\text\{([^}]+)\}/g, " $1 ")
-        .replace(/\\quad/g, " ")
-        .replace(/\\qquad/g, " ")
-        .replace(/\\,/g, " ")
-        .replace(/\\;/g, " ")
-        .replace(/\\Rightarrow/g, " iska matlab hai ")
-        .replace(/\\rightarrow/g, " iska matlab hai ")
+        .replace(/\\quad/g, " ").replace(/\\qquad/g, " ").replace(/\\,/g, " ").replace(/\\;/g, " ")
+        .replace(/\\Rightarrow/g, " iska matlab hai ").replace(/\\rightarrow/g, " iska matlab hai ")
         .replace(/\\approx/g, " lagbhag barabar ")
-        .replace(/\\left/g, " ")
-        .replace(/\\right/g, " ")
-        // 2. Math Operations
+        .replace(/\\left/g, " ").replace(/\\right/g, " ")
         .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ")
         .replace(/\\sqrt\{([^}]+)\}/g, " root $1 ")
-        .replace(/\^\{([^}]+)\}/g, " ki power $1 ")
-        .replace(/\^([0-9a-zA-Z])/g, " ki power $1 ")
-        .replace(/_\{([^}]+)\}/g, " base $1 ")
-        .replace(/_([0-9a-zA-Z])/g, " base $1 ")
-        .replace(/\\times/gi, " guna ")
-        .replace(/ X /g, " guna ")
-        .replace(/ x /g, " guna ")
-        .replace(/:-/g, " bhag ")
-        .replace(/÷/g, " bhag ")
-        .replace(/=/g, " barabar ")
-        .replace(/-/g, " minus ") 
-        .replace(/\+/g, " plus ")
-        .replace(/%/g, " percent ")
-        // 3. Brackets & Leftover Symbols
-        .replace(/\(/g, " bracket ")
-        .replace(/\)/g, " bracket ")
-        .replace(/\{/g, " ") // Remove leftover raw curly braces
-        .replace(/\}/g, " ")
-        .replace(/\[/g, " ")
-        .replace(/\]/g, " ")
+        .replace(/\^\{([^}]+)\}/g, " ki power $1 ").replace(/\^([0-9a-zA-Z])/g, " ki power $1 ")
+        .replace(/_\{([^}]+)\}/g, " base $1 ").replace(/_([0-9a-zA-Z])/g, " base $1 ")
+        .replace(/\\times/gi, " guna ").replace(/ X /g, " guna ").replace(/ x /g, " guna ")
+        .replace(/:-/g, " bhag ").replace(/÷/g, " bhag ").replace(/=/g, " barabar ")
+        .replace(/-/g, " minus ").replace(/\+/g, " plus ").replace(/%/g, " percent ")
+        .replace(/\(/g, " bracket ").replace(/\)/g, " bracket ")
+        .replace(/\{/g, " ").replace(/\}/g, " ").replace(/\[/g, " ").replace(/\]/g, " ")
         .replace(/\//g, " batta ")
-        // 4. STRIP ALL REMAINING $ AND \ SO IT NEVER SAYS "BACKSLASH"
         .replace(/[\$\\]/g, " ")
-        // 5. Force 1-2 second pauses at periods
-        .replace(/\./g, ". , , ")
-        .replace(/\|/g, " , , ")
-        // 6. Clean up extra spaces
-        .replace(/\s+/g, " ")
-        .trim();
+        .replace(/\./g, ". , , ").replace(/\|/g, " , , ")
+        .replace(/\s+/g, " ").trim();
 }
-// 🛑 STRICT HINDI TTS & PREMIUM MINI-PLAYER ENGINE 🛑
+
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
     if (!('speechSynthesis' in window)) { alert("Your browser does not support text-to-speech!"); return; }
     
     window.speechSynthesis.cancel(); 
-
-    // Slide the Mini-Player onto the screen!
     const player = document.getElementById('ttsMiniPlayer');
     if (player) {
         player.classList.add('active');
@@ -443,14 +416,11 @@ function speakAndHighlight(elId) {
     if (hindiVoice) { utterance.voice = hindiVoice; }
     utterance.pitch = 1.0; utterance.rate = 0.9;  
     
-    // Auto-close player when finished talking
     utterance.onend = () => { closeTtsPlayer(); };
     utterance.onerror = () => { closeTtsPlayer(); };
-
     window.speechSynthesis.speak(utterance);
 }
 
-// Player Play/Pause Control
 window.toggleTtsPause = function() {
     if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
@@ -463,14 +433,12 @@ window.toggleTtsPause = function() {
     }
 };
 
-// Player Close/Stop Control
 window.closeTtsPlayer = function() {
     window.speechSynthesis.cancel();
     const player = document.getElementById('ttsMiniPlayer');
     if (player) player.classList.remove('active');
 };
 
-// --- THE MASTER RETRY ROUTER ---
 async function retryRequest(lId, targetProvider) {
     const req = window.requestCache[lId];
     if(!req) return showToast("Request data expired.");
@@ -484,6 +452,7 @@ async function retryRequest(lId, targetProvider) {
     
     if(!container) return;
     container.innerHTML = `<div class="spinner"></div> Retrying with ${targetProvider.toUpperCase()}...`;
+    window.toggleChatButton(true);
     
     try {
         if (req.type === 'math') {
@@ -496,12 +465,17 @@ async function retryRequest(lId, targetProvider) {
             let resObj;
             if (req.image) { resObj = await callGeminiVision(req.image, req.prompt, targetProvider); } 
             else { 
-                track('t'); 
+                track('t'); window.currentAbortController = new AbortController();
                 if(targetProvider === "gemini") {
                      resObj = await callGeminiText("Act as an Internet Search Engine.", req.prompt, "gemini");
                 } else {
-                     const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }) });
+                     const res = await fetch("/api/groq-search", { 
+                         method: "POST", headers: {"Content-Type":"application/json"}, 
+                         body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }),
+                         signal: window.currentAbortController.signal
+                     });
                      resObj = await checkHtmlError(res); if(!resObj.text) throw new Error(resObj.error || "Search failed");
+                     window.currentAbortController = null;
                 }
             }
             let ans = resObj.text.replace(/[\*&#_]/g, '');
@@ -537,6 +511,7 @@ async function retryRequest(lId, targetProvider) {
                     ${getRetryButtonsHtml(lId)}
                 </div>
             `;
+            window.toggleChatButton(false);
         }
         else if (req.type === 'qa') {
             let ansObj = await callGeminiText("You are a helpful document assistant.", req.prompt, targetProvider);
@@ -557,14 +532,15 @@ async function retryRequest(lId, targetProvider) {
                 </div>
             `;
             if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); }
+            window.toggleChatButton(false);
         }
     } catch(e) { 
+        window.toggleChatButton(false);
         if(req.type === 'qa') { document.getElementById("qaStatusText").innerText = "❌ Error Occurred"; document.getElementById("qaProgressBar").style.background = "var(--red)"; container.innerHTML = "Error: " + e.message; } 
         else { container.innerText = "❌ Error: " + e.message; }
     }
 }
 
-// --- 🛑 STRICT MATH SOLVER ENGINE (WITH CONTEXT MEMORY) 🛑 ---
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
@@ -574,12 +550,11 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
-    // THE MEMORY PULL: Grab history if no new image!
+    window.toggleChatButton(true);
+
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // 🛑 UPGRADED MATH TUTOR PROMPT (RESTATES QUESTION & TEACHES CONCEPTUALLY) 🛑
-   // 🛑 UPGRADED MATH TUTOR PROMPT (PREVENTS HINDI ALGEBRA BUGS) 🛑
     const sysPrompt = `You are a premium, highly engaging, brilliant AI Math & Physics Tutor. Your goal is to make the student fall in love with the subject by explaining concepts beautifully.
 
     CRITICAL STRUCTURE RULES (YOU MUST FOLLOW EVERY STEP IN ORDER):
@@ -622,33 +597,37 @@ async function executeMathFlow() {
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
         updateAiBubble(lId, cleanSol, resObj.provider, true);
         clearMathImage();
-    } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
+    } catch(e) { 
+        window.toggleChatButton(false);
+        const el = document.getElementById(lId); 
+        if(el) {
+             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
+             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
+        }
+    }
 }
 
-// --- DEEP SEARCH (GEMINI FIRST, WITH CONTEXT MEMORY & PDF) ---
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); 
     
-    // UPDATED: Allow search to run if a PDF is attached, even if no text is typed
     if(!q && !capturedImage && !window.attachedPdfText) return;
     
     let uiImage = capturedImage;
     
-    // UPDATED: Show the PDF status in the user chat bubble
     let displayQ = q || (window.attachedPdfText ? "Analyze this document." : "Analyze this image.");
     if(window.attachedPdfText) displayQ = "📄 [PDF Attached]\n" + displayQ;
     
     appendUserBubble(displayQ, uiImage, "searchChatHistory"); 
     inp.value = ""; let lId = appendAiLoading("searchChatHistory");
     
-    // THE MEMORY PULL
+    window.toggleChatButton(true);
+    
     let activeImage = uiImage || getLastContextImage('search');
     let memoryContext = getSessionContext('search');
     
     let sysPrompt = "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.";
     
-    // NEW: Inject PDF text into the prompt silently
     let promptContent = q;
     if (window.attachedPdfText) {
         promptContent = `Here is the extracted text from an attached PDF document:\n\n${window.attachedPdfText}\n\nBased ONLY on this document, please answer the user query: ${q || 'Please summarize this document.'}`;
@@ -686,16 +665,18 @@ async function runGroqSearch() {
             typeWriteResponse(bubbleEl, ans, provider, `search_${lId}`, buttons, false);
         }
         
-        // Clear attachments after sending
         clearMathImage();
         if(window.clearPdfFile) window.clearPdfFile();
         
-    } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
+    } catch(e) { 
+        window.toggleChatButton(false);
+        const el = document.getElementById(lId); 
+        if(el) {
+             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
+             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
+        }
+    }
 }
-
-// ==========================================================================
-// 🛑 ADVANCED MEDIA PLAYER ENGINE (ZERO-LAG YOUTUBE STYLE + WORD SYNC) 🛑
-// ==========================================================================
 
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 
@@ -705,7 +686,6 @@ function startVideoTimer(totalChars) {
     document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(videoTotalEst)}`;
     
     videoTickInterval = setInterval(() => {
-        // STRICT PAUSE CHECK: Only increment if NOT paused and voice is actually speaking
         if(!isVideoPaused && window.speechSynthesis.speaking) {
             videoElapsed += 1; 
             let displayTotal = videoTotalEst; 
@@ -738,8 +718,7 @@ function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); if (acti
 function initVideoGui() {
     if(!window.latestMathSolution) return;
     
-    videoElapsed = 0; // Reset timer on fresh load
-    isVideoPaused = false; // Ensure it starts playing
+    videoElapsed = 0; isVideoPaused = false; 
     const ov = document.createElement('div'); ov.id = 'videoGuiOverlay';
     ov.style.cssText = "position:fixed; inset:0; background:radial-gradient(circle, #1e293b 0%, #000000 100%); z-index:9999; display:flex; flex-direction:column; font-family:'Poppins', sans-serif; touch-action:none;";
     ov.innerHTML = `
@@ -748,21 +727,17 @@ function initVideoGui() {
             <button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
         </div>
         
-        <!-- Double Tap Zones -->
         <div style="position:absolute; left:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, -1)"></div>
         <div style="position:absolute; right:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, 1)"></div>
         
-        <!-- Skip Indicators -->
         <div id="skipIndLeft" style="position:absolute; left:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏪</div>
         <div id="skipIndRight" style="position:absolute; right:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏩</div>
 
         <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px; position:relative; z-index:10;">
-            <!-- 🛑 HUGE VIDEO FONT AND TYPEWRITER SCREEN 🛑 -->
             <div id="videoContent" style="font-size: 36px; font-weight: 700; color: #fff; line-height: 1.8; max-width: 900px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:40px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
         </div>
 
         <div id="vControlsContainer" style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); transition: opacity 0.3s; z-index:100;">
-           <!-- Clickable Progress Bar -->
            <div style="width:100%; height:20px; cursor:pointer; display:flex; align-items:center;" onclick="seekVideo(event)">
                <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; position:relative;" id="vProgressBarBg">
                    <div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.1s linear;" id="vProgressBar"></div>
@@ -784,7 +759,6 @@ function initVideoGui() {
     `;
     document.body.appendChild(ov); 
     
-    // Auto Fullscreen & Landscape on Launch
     if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
     if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
 
@@ -792,16 +766,10 @@ function initVideoGui() {
     resetVideoActivity(); playFractionVideo(0);
 }
 
-// Custom Double-Tap handler for Left/Right sides
 window.handleVideoTap = function(e, dir) {
     const now = Date.now();
-    if (now - (e.target.lastTap || 0) < 300) {
-        skipVideo(dir);
-        e.target.lastTap = 0; 
-    } else {
-        e.target.lastTap = now;
-        resetVideoActivity();
-    }
+    if (now - (e.target.lastTap || 0) < 300) { skipVideo(dir); e.target.lastTap = 0; } 
+    else { e.target.lastTap = now; resetVideoActivity(); }
 };
 
 window.skipVideo = function(dir) {
@@ -814,7 +782,6 @@ window.skipVideo = function(dir) {
     if(target < 0) target = 0;
     if(target >= lines.length) target = lines.length - 1;
     
-    // Recalculate estimated time elapsed based on skipped lines
     videoElapsed = Math.floor((target / lines.length) * videoTotalEst);
     playFractionVideo(target, false, isVideoPaused);
 };
@@ -844,27 +811,14 @@ function exitVideoGui() {
 function cycleVideoSpeed() { 
     videoSpeed = videoSpeed === 0.75 ? 1.0 : (videoSpeed === 1.0 ? 1.5 : (videoSpeed === 1.5 ? 2.0 : 0.75)); 
     document.getElementById('vSpeedTxt').innerText = videoSpeed + 'x'; 
-    const wasPaused = isVideoPaused;
-    window.speechSynthesis.cancel();
-    resetVideoActivity();
-    // Restart exactly from current line without clearing the screen!
+    const wasPaused = isVideoPaused; window.speechSynthesis.cancel(); resetVideoActivity();
     playFractionVideo(videoLineIndex, true, wasPaused);
 }
 
-// 🛑 STRICT PAUSE ENGINE FIX 🛑
 function toggleVideoPause() { 
     const btn = document.getElementById('vPlayBtn'); 
-    
-    // Check internal strict state, NOT browser state
-    if (isVideoPaused) { 
-        isVideoPaused = false; 
-        window.speechSynthesis.resume(); 
-        if(btn) btn.innerHTML = "⏸️"; 
-    } else { 
-        isVideoPaused = true; 
-        window.speechSynthesis.pause(); 
-        if(btn) btn.innerHTML = "▶️"; 
-    } 
+    if (isVideoPaused) { isVideoPaused = false; window.speechSynthesis.resume(); if(btn) btn.innerHTML = "⏸️"; } 
+    else { isVideoPaused = true; window.speechSynthesis.pause(); if(btn) btn.innerHTML = "▶️"; } 
     resetVideoActivity();
 }
 
@@ -873,8 +827,6 @@ function replayVideo() {
     document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); 
 }
 
-// 🛑 WORD-BY-WORD REVEAL ENGINE 🛑
-// 🛑 VIDEO SYNC ENGINE (WRITE & RENDER FULL LINE -> THEN SPEAK) 🛑
 async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
     const token = ++videoRunToken;
     const content = document.getElementById("videoContent");
@@ -884,7 +836,6 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
     
     if (!preserveContent) {
         content.innerHTML = "";
-        // Pre-render previous lines instantly when skipping so context isn't lost
         for(let i=0; i<videoLineIndex; i++) {
             let div = document.createElement("div");
             div.dataset.videoLine = i; div.className = "video-line-card"; div.innerHTML = lines[i];
@@ -917,93 +868,62 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
             content.appendChild(lineDiv);
         }
         
-        // 🛑 THE FIX: INSTANTLY WRITE THE FULL LINE & RENDER IT BEFORE SPEAKING
-        lineDiv.innerHTML = lineText;
-        lineDiv.classList.add("active");
+        lineDiv.innerHTML = lineText; lineDiv.classList.add("active");
 
-        // Force MathJax to run so the equation looks beautiful instantly
         if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
-            MathJax.typesetClear([lineDiv]); 
-            await MathJax.typesetPromise([lineDiv]); 
-            lineDiv.setAttribute('data-math-done', 'true');
+            MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); lineDiv.setAttribute('data-math-done', 'true');
         }
 
-        // Auto-scroll the screen
         setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 10);
 
-        // 🛑 NOW START SPEAKING (AFTER TEXT IS RENDERED)
         window.speechSynthesis.speak(u);
         if (pauseAfterStart) {
-            window.speechSynthesis.pause();
-            isVideoPaused = true;
+            window.speechSynthesis.pause(); isVideoPaused = true;
             const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "▶️";
             pauseAfterStart = false;
         }
 
-        // Calculate duration based on speech length
         let estimatedDurationMs = (cleanSpeech.length / 13.5) * 1000 / videoSpeed; 
         let startTime = Date.now();
 
-        // Check for pauses constantly so the timer freezes if user clicks pause
         let waitInterval = setInterval(() => {
             if (isVideoPaused) startTime += 50; 
             let elapsed = Date.now() - startTime;
             if (elapsed >= estimatedDurationMs) clearInterval(waitInterval);
         }, 50);
 
-        // Wait for audio to fully finish before proceeding to the next line
-        await new Promise(r => { 
-            u.onend = r; u.onerror = r; 
-            setTimeout(r, Math.max(estimatedDurationMs + 500, 2000)); 
-        });
+        await new Promise(r => { u.onend = r; u.onerror = r; setTimeout(r, Math.max(estimatedDurationMs + 500, 2000)); });
         
         lineDiv.classList.remove("active");
         if(token !== videoRunToken) return;
     }
     
-    if(pBar) pBar.style.width = '100%';
-    clearInterval(videoTickInterval);
+    if(pBar) pBar.style.width = '100%'; clearInterval(videoTickInterval);
     const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄";
     resetVideoActivity();
 }
 
-// --- TEXT TRANSLATOR ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
-// --- UNIVERSAL VOICE RECOGNITION ENGINE ---
 let recognition; let isRecording = false;
 
-// Smart Helper: Finds the active typing box no matter what page you are on!
 function getActiveTextInput() {
-    return document.getElementById("searchInput") || 
-           document.getElementById("inputText") || 
-           document.getElementById("mathInstructionInput") || 
-           document.getElementById("qaQuestionInput");
+    return document.getElementById("searchInput") || document.getElementById("inputText") || document.getElementById("mathInstructionInput") || document.getElementById("qaQuestionInput");
 }
 
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) { 
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
-    recognition = new SpeechRec(); 
-    recognition.continuous = false; 
-    recognition.interimResults = true; 
+    recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true; 
     
     recognition.onstart = () => { 
         isRecording = true; 
         const mic = document.getElementById("micBtn"); 
-        if(mic) { 
-            mic.classList.add("recording"); 
-            // Gives the mic a glowing red shadow so you know it's listening!
-            mic.style.background = "rgba(239, 68, 68, 0.8)";
-            mic.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.8)";
-        } 
+        if(mic) { mic.classList.add("recording"); mic.style.background = "rgba(239, 68, 68, 0.8)"; mic.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.8)"; } 
     }; 
     
     recognition.onresult = (e) => { 
-        let tr = ""; 
-        for (let i = 0; i < e.results.length; i++) tr += e.results[i][0].transcript; 
-        // Injects the text into the correct box
-        const inp = getActiveTextInput(); 
-        if(inp) inp.value = tr; 
+        let tr = ""; for (let i = 0; i < e.results.length; i++) tr += e.results[i][0].transcript; 
+        const inp = getActiveTextInput(); if(inp) inp.value = tr; 
     }; 
     
     recognition.onerror = () => stopRecording(); 
@@ -1012,13 +932,11 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 
 window.toggleRecording = function() { 
     if (!recognition) return showToast("⚠️ Microphone not supported on this browser."); 
-    if (isRecording) {
-        recognition.stop(); 
-    } else { 
+    if (isRecording) { recognition.stop(); } 
+    else { 
         const langEl = document.getElementById("voiceSourceLang");
-        recognition.lang = langEl ? langEl.value : "hi-IN"; // Defaults to Hindi if no tag is found
-        const inp = getActiveTextInput();
-        if(inp) inp.value = "Listening..."; 
+        recognition.lang = langEl ? langEl.value : "hi-IN"; 
+        const inp = getActiveTextInput(); if(inp) inp.value = "Listening..."; 
         recognition.start(); 
     } 
 };
@@ -1026,15 +944,11 @@ window.toggleRecording = function() {
 window.stopRecording = function() { 
     isRecording = false; 
     const mic = document.getElementById("micBtn"); 
-    if(mic) { 
-        mic.classList.remove("recording"); 
-        // Removes the red glow when it stops
-        mic.style.background = "rgba(255, 255, 255, 0.08)"; 
-        mic.style.boxShadow = "none";
-    } 
+    if(mic) { mic.classList.remove("recording"); mic.style.background = "rgba(255, 255, 255, 0.08)"; mic.style.boxShadow = "none"; } 
     const inp = getActiveTextInput();
-    if(inp && inp.value === "Listening...") inp.value = ""; // Clears it if you didn't say anything
+    if(inp && inp.value === "Listening...") inp.value = ""; 
 };
+
 async function runTranslation(){ 
     const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value; if(!txt) return; 
     setStatusLoading("translatedTextStatus", "Translating..."); document.getElementById("translatedTextStatus").style.display = "block";
@@ -1045,8 +959,7 @@ async function runTranslation(){
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
         RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
         RULE 5: Format EACH hard word EXACTLY like this: [Original Word from text] - [Meaning in ${lang}] (Part of Speech) other meaning- [Alternative meanings].
-        Text to translate:
-        ${txt}`;
+        Text to translate:\n${txt}`;
         
         let resObj = await callGeminiText("You are a strict translator.", prompt); 
         
@@ -1056,9 +969,7 @@ async function runTranslation(){
         let provider = resObj.provider;
         
         const tId = "trans_" + Date.now();
-        
-        const transBox = document.getElementById("translatedText");
-        transBox.style.position = "relative";
+        const transBox = document.getElementById("translatedText"); transBox.style.position = "relative";
         transBox.innerHTML = `
             <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div>
             <div id="${tId}" style="margin-top:10px;">${cleanText}</div>
@@ -1069,21 +980,15 @@ async function runTranslation(){
         document.getElementById("translatedTextStatus").style.display = "none"; 
         
         let hwDiv = document.getElementById("hardWords");
-        if(!hwDiv) {
-             document.getElementById("translatedText").insertAdjacentHTML('afterend', `<div class="cardTitle" style="margin-top: 20px;">Hard Words Meaning</div><div class="outputBox" id="hardWords">${hardWordsText.replace(/\n/g, '<br>')}</div>`);
-        } else {
-             hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
-        }
+        if(!hwDiv) { document.getElementById("translatedText").insertAdjacentHTML('afterend', `<div class="cardTitle" style="margin-top: 20px;">Hard Words Meaning</div><div class="outputBox" id="hardWords">${hardWordsText.replace(/\n/g, '<br>')}</div>`); } 
+        else { hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>'); }
         saveToHistory('translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, null, provider);
     }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
 }
 
-// 🛑 MULTI-IMAGE CHAT TRANSLATOR ENGINE 🛑
 function renderTransImagePreviews() {
-    const container = document.getElementById("imagePreviewContainer");
-    if (!container) return;
+    const container = document.getElementById("imagePreviewContainer"); if (!container) return;
     if (transImages.length === 0) { container.style.display = "none"; return; }
-    
     container.style.display = "flex";
     container.innerHTML = transImages.map((img, index) => `
         <div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;">
@@ -1092,9 +997,7 @@ function renderTransImagePreviews() {
     `).join('');
 }
 
-function removeTransImage(index, event) {
-    if(event) event.stopPropagation(); transImages.splice(index, 1); renderTransImagePreviews();
-}
+function removeTransImage(index, event) { if(event) event.stopPropagation(); transImages.splice(index, 1); renderTransImagePreviews(); }
 
 async function executeImageTransFlow() {
     if (transImages.length === 0) return showToast("Please click ➕ to attach at least 1 image!");
@@ -1107,6 +1010,8 @@ async function executeImageTransFlow() {
     scrollToBottom("imageScrollArea");
     
     let lId = appendAiLoading("imageChatHistory");
+    window.toggleChatButton(true);
+
     let imagesToProcess = [...transImages];
     transImages = []; renderTransImagePreviews();
     
@@ -1125,8 +1030,7 @@ async function executeImageTransFlow() {
         RULE 3: After your translation, write the exact symbol "|||" on a new line.
         RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text.
         RULE 5: Format EACH hard word EXACTLY like this: [Original Word from text] - [Meaning in ${targetLang}] (Part of Speech) other meaning- [Alternative meanings].
-        Text to translate:
-        ${combinedText}`;
+        Text to translate:\n${combinedText}`;
         
         window.requestCache[lId] = { type: 'image_trans', prompt: prompt, extractedText: combinedText, targetLang: targetLang };
 
@@ -1156,13 +1060,19 @@ async function executeImageTransFlow() {
         const loadingBubble = document.getElementById(lId);
         if (loadingBubble) { loadingBubble.querySelector('.bubble').innerHTML = finalHtml; }
         saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0], provider); 
+        window.toggleChatButton(false);
         
-    } catch(e) { const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
+    } catch(e) { 
+        window.toggleChatButton(false);
+        const el = document.getElementById(lId); 
+        if(el) {
+             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
+             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
+        }
+    }
 }
 
-// 🛑 4-STEP DOCUMENT QA ENGINE 🛑
-let qaSourceImages = [];
-let qaQuestionImage = null;
+let qaSourceImages = []; let qaQuestionImage = null;
 
 function renderQaSourcePreviews() {
     const count = document.getElementById("qaSourceCount"); if(count) count.innerText = qaSourceImages.length;
@@ -1204,6 +1114,7 @@ async function executeQaFlow() {
     const outBox = document.getElementById("qaAnswerBox");
     
     outBox.innerHTML = ""; pBar.style.width = "5%"; pBar.style.background = "#3b82f6";
+    window.toggleChatButton(true);
     
     try {
         let extractedContext = "";
@@ -1224,13 +1135,7 @@ async function executeQaFlow() {
         statusTxt.innerText = `Solving... Generating answer in ${targetLang}`; pBar.style.width = "85%";
         
         let prompt = `You are an expert Document Assistant.
-        
-        DOCUMENT TEXT:
-        ${extractedContext}
-        
-        TARGET QUESTION(S) TO SOLVE:
-        ${finalQuestion}
-        
+        DOCUMENT TEXT:\n${extractedContext}\n\nTARGET QUESTION(S) TO SOLVE:\n${finalQuestion}
         CRITICAL INSTRUCTIONS (FAILURE IS NOT AN OPTION):
         1. Answer ALL questions provided in the "TARGET QUESTION(S) TO SOLVE" section thoroughly. Do not skip any!
         2. Answer based ONLY on the Document Text provided. 
@@ -1264,46 +1169,38 @@ async function executeQaFlow() {
         
         if (window.MathJax) { MathJax.typesetClear([outBox]); MathJax.typesetPromise([outBox]); }
         saveToHistory('qa', finalQuestion, outBox.innerHTML, qaSourceImages[0], provider);
+        window.toggleChatButton(false);
         
-    } catch(e) { statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; }
+    } catch(e) { 
+        window.toggleChatButton(false);
+        if (e.name === 'AbortError') {
+             statusTxt.innerText = "⚠️ Stopped by user."; pBar.style.background = "#f59e0b";
+        } else {
+             statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; 
+        }
+    }
 }
 
-// 🛑 GROQ BACKGROUND TITLE GENERATOR 🛑
 async function generateTitleWithGroq(sessionId) {
     const item = appHistory.find(i => i.id === sessionId);
     if (!item || !item.interactions) return;
     
     const allQuestions = item.interactions.map(inter => inter.question).join(" | ");
-    
     try {
         const res = await fetch("/api/groq-search", {
             method: "POST", headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({
-                prompt: "Create a highly concise, 2 to 4 word title summarizing the following user queries. Do not use quotes, punctuation, or any prefixes. Just give me the title text. Queries: " + allQuestions,
-                providerOverride: "groq"
-            })
+            body: JSON.stringify({ prompt: "Create a highly concise, 2 to 4 word title summarizing the following user queries. Do not use quotes, punctuation, or any prefixes. Just give me the title text. Queries: " + allQuestions, providerOverride: "groq" })
         });
         const data = await checkHtmlError(res);
-        if (data.text) {
-            item.title = data.text.replace(/["'*]/g, '').trim();
-            saveHistorySafe();
-            if(document.getElementById('historyList')) renderHistory();
-        }
+        if (data.text) { item.title = data.text.replace(/["'*]/g, '').trim(); saveHistorySafe(); if(document.getElementById('historyList')) renderHistory(); }
     } catch(e) { console.log("Groq title generation failed"); }
 }
 
-// 🛑 ADVANCED SESSION HISTORY ENGINE 🛑
-function saveHistorySafe() { 
-    try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } 
-    catch(e) { appHistory.pop(); saveHistorySafe(); } 
-}
+function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
 
 function persistHistoryOnChatClose(reason = "page-close") {
-    try {
-        saveHistorySafe();
-        localStorage.setItem('aiHistoryLastCloseReason', reason);
-        localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString());
-    } catch(e) { console.log("Close-safe history save failed", e); }
+    try { saveHistorySafe(); localStorage.setItem('aiHistoryLastCloseReason', reason); localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString()); } 
+    catch(e) { console.log("Close-safe history save failed", e); }
 }
 
 window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'));
@@ -1311,49 +1208,35 @@ window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeu
 
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
     fetch(GOOGLE_SHEETS_WEBHOOK, {
-        method: "POST", mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-        body: JSON.stringify({
-            action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" 
-        })
+        method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+        body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
     }).catch(e => console.log("Google Sheets sync failed."));
 
     let sessionId = sessionCache[type];
     let histItem = appHistory.find(i => i.id === sessionId);
 
     if (!histItem) {
-        sessionId = Date.now();
-        sessionCache[type] = sessionId; 
-        histItem = {
-            id: sessionId, type: type, title: q.substring(0,25) + '...',
-            interactions: [{ question: q, answer: a, image: img, provider: provider }],
-            provider: provider,
-            question: q, answer: a 
-        };
+        sessionId = Date.now(); sessionCache[type] = sessionId; 
+        histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
         appHistory.unshift(histItem);
     } else {
         histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
         histItem.question = q; histItem.answer = a; 
     }
     
-    saveHistorySafe();
-    generateTitleWithGroq(sessionId); 
+    saveHistorySafe(); generateTitleWithGroq(sessionId); 
 }
 
-// 🛑 MULTI-CHAT HISTORY VIEWER 🛑
 window.viewHistory = function(id) {
-    const item = appHistory.find(i => i.id === id);
-    if(!item) return;
+    const item = appHistory.find(i => i.id === id); if(!item) return;
     document.getElementById('histTitle').innerText = item.title;
-    const qBox = document.getElementById('histQuestion');
-    const aBox = document.getElementById('histAnswer');
+    const qBox = document.getElementById('histQuestion'), aBox = document.getElementById('histAnswer');
 
     if (item.interactions) {
         qBox.innerHTML = item.interactions.map((interaction, i) => `<div style="margin-bottom:10px;"><b>[Q${i+1}]</b> ${interaction.question}</div>`).join('');
         aBox.innerHTML = item.interactions.map((interaction, i) => `<div style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;"><b>[A${i+1}]</b> ${interaction.answer}</div>`).join('');
     } else {
-        qBox.innerHTML = item.question;
-        aBox.innerHTML = item.answer;
+        qBox.innerHTML = item.question; aBox.innerHTML = item.answer;
     }
     
     const modal = document.getElementById('historyModal');
@@ -1361,10 +1244,7 @@ window.viewHistory = function(id) {
     if(window.MathJax) { MathJax.typesetClear(); MathJax.typesetPromise(); }
 };
 
-window.closeHistory = function() {
-    const modal = document.getElementById('historyModal');
-    if (modal) modal.classList.remove('active');
-};
+window.closeHistory = function() { const modal = document.getElementById('historyModal'); if (modal) modal.classList.remove('active'); };
 
 function renderHistory() { 
     const list = document.getElementById('historyList'); if(!list) return; 
@@ -1394,24 +1274,20 @@ function cleanLatexForDownload(text) { return text.replace(/\\frac{([^}]+)}{([^}
 function quickDownload(e, id) { e.stopPropagation(); const item = appHistory.find(i => i.id === id); if(item) triggerFileDownload(item); }
 function triggerFileDownload(item) { 
     let content = `Chat Title: ${item.title}\n\n`;
-    
     if (item.interactions) {
         item.interactions.forEach((inter, idx) => {
-            let q = inter.question.replace(/<[^>]*>?/gm, '');
-            let a = cleanLatexForDownload(inter.answer.replace(/<[^>]*>?/gm, ''));
+            let q = inter.question.replace(/<[^>]*>?/gm, ''); let a = cleanLatexForDownload(inter.answer.replace(/<[^>]*>?/gm, ''));
             content += `--- QUESTION ${idx+1} ---\n${q}\n\n--- ANSWER ${idx+1} ---\n${a}\n\n`;
         });
     } else {
         let q = item.question.replace(/<[^>]*>?/gm, ''); let a = cleanLatexForDownload(item.answer.replace(/<[^>]*>?/gm, '')); 
         content += `--- QUESTION ---\n${q}\n\n--- ANSWER ---\n${a}`;
     }
-    
     const b = new Blob([content], { type: "text/plain;charset=utf-8" }); 
     const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `AI_Chat_${item.title}.txt`; l.click(); 
     showToast("📥 Download started!");
 }
 
-// 🛑 MULTI-RESTORATION ENGINE 🛑
 function restoreSession(e, id) { 
     if(e) e.stopPropagation(); const item = appHistory.find(i => i.id == id); if(!item) return; 
     let targetPage = ''; 
@@ -1421,7 +1297,6 @@ function restoreSession(e, id) {
     if (currentPage !== targetPage && targetPage !== '') { window.location.href = `${targetPage}?restore=${id}`; return; }
     
     sessionCache[item.type] = item.id;
-    
     const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
 
     if(item.type === 'math') { 
@@ -1466,7 +1341,6 @@ function restoreSession(e, id) {
     showToast("🔄 Session Restored");
 }
 
-// --- CAMERA CONTROL ---
 let currentStream = null, currentFacing = "environment";
 async function startCamera() { try { if(currentStream) currentStream.getTracks().forEach(t => t.stop()); currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); document.getElementById("cameraVideo").srcObject = currentStream; const track = currentStream.getVideoTracks()[0]; setTimeout(async () => { try { const cap = track.getCapabilities(); if (cap.torch && currentFacing === "environment") { isFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } else { isFlashOn = false; updateFlashUI(); } } catch(err) {} }, 500); } catch(e) { alert("Camera Error."); } }
 async function toggleFlash() { if (!currentStream) return; const track = currentStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isFlashOn = !isFlashOn; await track.applyConstraints({ advanced: [{ torch: isFlashOn }] }); updateFlashUI(); } } catch(err){} }
@@ -1475,24 +1349,12 @@ async function openCamera(m){ currentMode = m; const mod = document.getElementBy
 function closeCamera() { 
     const mod = document.getElementById("cameraModal"); 
     if (mod) mod.classList.remove("active"); 
-    
     if (currentStream) {
         const track = currentStream.getVideoTracks()[0];
-        // Explicitly force the flashlight OFF before killing the camera
-        try {
-            if (track && track.getCapabilities && track.getCapabilities().torch) {
-                track.applyConstraints({ advanced: [{ torch: false }] });
-            }
-        } catch(err) { console.log("Torch off error:", err); }
-        
-        // Stop all camera tracks
-        currentStream.getTracks().forEach(t => t.stop()); 
-        currentStream = null;
+        try { if (track && track.getCapabilities && track.getCapabilities().torch) { track.applyConstraints({ advanced: [{ torch: false }] }); } } catch(err) { console.log("Torch off error:", err); }
+        currentStream.getTracks().forEach(t => t.stop()); currentStream = null;
     }
-    
-    // Reset flash memory state so it doesn't bug out next time
-    isFlashOn = false; 
-    updateFlashUI();
+    isFlashOn = false; updateFlashUI();
 }
 async function switchCamera() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); }
 
@@ -1522,12 +1384,10 @@ function capturePhoto(){
     closeCamera(); 
 }
 
-// --- 🛑 PDF HANDLING ENGINE 🛑 ---
 window.attachedPdfText = "";
 
 window.handlePdfUpload = async function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+    const file = event.target.files[0]; if (!file) return;
     if (file.type !== "application/pdf") return showToast("⚠️ Only PDF files are supported!");
     
     showToast("📄 Reading PDF... Please wait.");
@@ -1545,28 +1405,18 @@ window.handlePdfUpload = async function(event) {
                 fullText += `\n--- Page ${i} ---\n` + pageText;
             }
             window.attachedPdfText = fullText;
-            
-            // Show UI chip
             const chip = document.getElementById("pdfPreviewChip");
-            if(chip) {
-                chip.style.display = "flex";
-                document.getElementById("pdfName").innerText = file.name;
-            }
+            if(chip) { chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name; }
             showToast(`✅ PDF Attached! (${pdf.numPages} pages)`);
-        } catch(e) {
-            showToast("❌ Error reading PDF: " + e.message);
-        }
+        } catch(e) { showToast("❌ Error reading PDF: " + e.message); }
     };
     fileReader.readAsArrayBuffer(file);
 };
 
 window.clearPdfFile = function(e) {
-    if(e) e.stopPropagation();
-    window.attachedPdfText = "";
-    const inp = document.getElementById("pdfUploadInput");
-    if(inp) inp.value = "";
-    const chip = document.getElementById("pdfPreviewChip");
-    if(chip) chip.style.display = "none";
+    if(e) e.stopPropagation(); window.attachedPdfText = "";
+    const inp = document.getElementById("pdfUploadInput"); if(inp) inp.value = "";
+    const chip = document.getElementById("pdfPreviewChip"); if(chip) chip.style.display = "none";
 };
 
 // --- GLOBAL EXPORTS ---
