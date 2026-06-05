@@ -69,14 +69,23 @@
   </div>
 </div>
 
-<div class="cameraModal" id="cameraModal">
-  <div class="cameraHeader"><button id="closeCameraBtn">✕</button><div>Camera</div><div></div></div>
-  <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
-  <div class="cameraControls">
-    <button class="flashBtn" id="toggleFlashBtn">🔦</button>
-    <button class="cameraCircle" id="capturePhotoBtn"></button>
-    <button class="switchBtn" id="switchCameraBtn">🔄</button>
-  </div>
+<!-- MODERN CAMERA MODAL -->
+<div id="cameraModal" class="cameraModal">
+    <video id="cameraVideo" autoplay playsinline></video>
+    
+    <!-- Top Bar for Close Button -->
+    <div class="camera-top-bar">
+        <button id="closeCameraBtn" class="cam-icon-btn">❌</button>
+    </div>
+    
+    <!-- Bottom Controls -->
+    <div class="cameraControls">
+        <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
+        <div id="capturePhotoBtn" class="cameraCircle"></div>
+        <button id="switchCameraBtn" class="cam-icon-btn">🔄</button>
+    </div>
+    
+    <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
 <div class="photoViewer" id="photoViewer">
