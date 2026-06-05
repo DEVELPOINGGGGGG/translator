@@ -3,23 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>YouTube Finder — Education (India)</title>
+  <title>YouTube Finder — Education Dashboard (India)</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* Page-specific overrides and extra decoration */
+    /* Page-specific overrides and extra decoration for dashboard */
     .hero {
       margin-top: 90px;
-      max-width: 1100px;
+      max-width: 1200px;
       margin-left: auto;
       margin-right: auto;
-      padding: 28px;
-      border-radius: 18px;
+      padding: 22px;
+      border-radius: 16px;
       background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+      box-shadow: 0 12px 40px rgba(2,6,23,0.6);
       border: 1px solid rgba(255,255,255,0.04);
     }
-    .hero h2 { font-size: 22px; color: #fff; margin-bottom: 6px; }
-    .hero p { color: var(--text-muted); margin-bottom: 18px; }
+    .hero-grid { display:grid; grid-template-columns: 1fr 360px; gap:18px; align-items:start; }
+    .left-col { display:flex; flex-direction:column; gap:14px; }
+    .right-col { display:flex; flex-direction:column; gap:14px; }
 
     .search-row { display:flex; gap:12px; align-items:center; }
     .search-input { flex:1; padding:14px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); color:#fff; font-size:16px; outline:none; }
@@ -28,10 +29,10 @@
 
     .plus-upload { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.04); cursor:pointer; color:#fff; }
 
-    .decor-row { display:flex; gap:12px; align-items:center; margin-top:12px; }
+    .pill-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
     .pill { padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.03); color:var(--text-muted); font-size:13px; border:1px solid rgba(255,255,255,0.02); }
 
-    .results-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:22px; }
+    .results-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:18px; }
     .video-card { display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); cursor:pointer; transition: transform .12s ease, box-shadow .12s ease; }
     .video-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(2,6,23,0.6); }
     .video-thumb { width:180px; height:100px; border-radius:8px; background-size:cover; background-position:center; flex-shrink:0; }
@@ -52,53 +53,131 @@
     .player-frame { flex:1; display:flex; align-items:center; justify-content:center; background:#000; }
     .player-frame iframe { width:100%; height:100%; border:0; }
 
-    .empty-state { padding:28px; border-radius:12px; background:rgba(255,255,255,0.02); color:var(--text-muted); text-align:center; }
+    .dashboard-card { padding:14px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); }
+    .small-stat { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:10px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); }
 
-    /* small responsive tweaks */
-    @media (max-width:640px) {
-      .video-thumb { width:120px; height:72px; }
-      .player-shell { height:100vh; border-radius:0; }
+    .cameraModal { position: fixed; inset: 0; display: none; z-index: 10000; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); }
+    .cameraBox { width: 100%; max-width: 720px; border-radius: 12px; overflow: hidden; background: #000; display:flex; flex-direction:column; }
+    .cameraHeader { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; color:#fff; background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.2)); }
+    .cameraVideo { width:100%; height:420px; object-fit:cover; background:#111; }
+    .cameraControls { display:flex; gap:12px; padding:12px; justify-content:center; align-items:center; background:rgba(0,0,0,0.6); }
+    .cameraCircle { width:70px; height:70px; border-radius:50%; border:4px solid white; background: rgba(255,255,255,0.06); cursor:pointer; }
+
+    @media (max-width:980px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .right-col { order: 2; }
     }
   </style>
 </head>
 <body>
+  <!-- Topbar & Sidebar (from maths dashboard) -->
   <div class="topbar">
     <div class="menuBtn" id="menuToggle">☰</div>
-    <div class="appTitle">YouTube Finder • Education (India)</div>
+    <div class="appTitle">AI Pro Suite</div>
   </div>
 
   <div class="apiTracker" style="top:70px;">
-    <div class="api-val timer">Status: <span id="apiStatus">Ready</span></div>
-    <div class="api-val vision">Vision: <span id="visionProvider">GEMINI</span></div>
-    <div class="api-val text">Text: <span id="textProvider">GEMINI</span></div>
+    <div class="api-val timer">Status: <span id="apiTimer">Ready</span></div>
+    <div class="api-val vision">Vision: <span id="apiVision">GEMINI</span></div>
+    <div class="api-val text">Text: <span id="apiText">GEMINI</span></div>
   </div>
 
+  <div class="sidebar" id="sidebar">
+    <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+    <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+    <button style="border-left: 4px solid #ef4444; color: #ffb4b4; background: #111827;">🎬 YouTube Finder (Education)</button>
+    <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
+    <button onclick="window.location.href='translator.html'">🎙️ Translator</button>
+    <button onclick="window.location.href='history.html'">🕒 History</button>
+  </div>
+
+  <!-- Main hero/dashboard -->
   <main class="hero" role="main" aria-labelledby="pageTitle">
-    <h2 id="pageTitle">Find the best educational YouTube videos in India</h2>
-    <p>Type a topic or tap the + button to take/upload an image. Gemini will extract the educational query and yt-search will return the top 15 education-focused videos.</p>
+    <div class="hero-grid">
+      <div class="left-col">
+        <h2 id="pageTitle">YouTube Finder — Education (India)</h2>
+        <p class="muted">Type a topic, upload/take an image, or use the dashboard quick-links. Gemini extracts an education-focused query and yt-search returns the top 15 videos.</p>
 
-    <div class="search-row" style="margin-top:8px;">
-      <input id="searchInput" class="search-input" type="search" placeholder="Enter topic or use the + image button" aria-label="Search topic" />
-      <button id="uploadBtn" class="plus-upload" title="Upload or take image">＋</button>
-      <button id="searchBtn" class="btn-primary">Search</button>
-      <button id="clearBtn" class="btn-ghost">Clear</button>
-    </div>
+        <div class="search-row" style="margin-top:8px;">
+          <input id="searchInput" class="search-input" type="search" placeholder="Enter topic or use + to capture an image" aria-label="Search topic" />
+          <button id="uploadBtn" class="plus-upload" title="Upload or take image">＋</button>
+          <button id="searchBtn" class="btn-primary">Search</button>
+          <button id="clearBtn" class="btn-ghost">Clear</button>
+        </div>
 
-    <div class="decor-row" aria-hidden="true">
-      <div class="pill">Education only</div>
-      <div class="pill">Region: India</div>
-      <div class="pill" id="searchingPill" style="display:none"><span class="spinner" style="width:14px;height:14px;border-top-color:#ff4d4d"></span> Searching…</div>
-    </div>
+        <div class="pill-row" aria-hidden="true">
+          <div class="pill">Education only</div>
+          <div class="pill">Region: India</div>
+          <div class="pill" id="searchingPill" style="display:none"><span class="spinner" style="width:14px;height:14px;border-top-color:#ff4d4d"></span> Searching…</div>
+        </div>
 
-    <div id="results" class="results-grid" style="margin-top:18px;"></div>
+        <div id="results" class="results-grid" style="margin-top:18px;"></div>
+        <div id="empty" class="empty-state" style="margin-top:18px; display:block;">No results yet. Enter a topic or upload an image to begin.</div>
+      </div>
 
-    <div id="empty" class="empty-state" style="margin-top:18px; display:block;">
-      No results yet. Enter a topic or upload an image to begin.
+      <aside class="right-col">
+        <div class="dashboard-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:700;font-size:15px">Quick Actions</div>
+              <div class="muted" style="font-size:13px">One-click educational searches</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-ghost" id="btnMaths">Maths</button>
+              <button class="btn-ghost" id="btnPhysics">Physics</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="small-stat" data-query="calculus basics lecture">Calculus</button>
+            <button class="small-stat" data-query="linear algebra lecture">Linear Algebra</button>
+            <button class="small-stat" data-query="physics mechanics lecture">Mechanics</button>
+            <button class="small-stat" data-query="chemistry organic basics">Organic Chem</button>
+          </div>
+        </div>
+
+        <div class="dashboard-card">
+          <div style="font-weight:700">Search Insights</div>
+          <div class="muted" style="font-size:13px;margin-top:8px">Last query used and provider info</div>
+          <div style="margin-top:12px">
+            <div class="muted">Query used</div>
+            <div id="lastQuery" style="font-weight:600;margin-top:6px">—</div>
+            <div style="margin-top:10px" class="muted">Provider</div>
+            <div id="lastProvider" style="font-weight:600;margin-top:6px">—</div>
+          </div>
+        </div>
+
+        <div class="dashboard-card">
+          <div style="font-weight:700">Tips</div>
+          <ul style="margin-top:8px;color:var(--text-muted);font-size:13px;line-height:1.5">
+            <li>Use concise queries for better results.</li>
+            <li>Upload clear images of notes or problems for Gemini to extract text.</li>
+            <li>Prefer keywords like "lecture", "tutorial", "explain" for educational videos.</li>
+          </ul>
+        </div>
+      </aside>
     </div>
   </main>
 
   <!-- hidden file input for image capture/upload -->
   <input id="fileInput" type="file" accept="image/*" capture="environment" style="display:none" />
+
+  <!-- camera modal (maths-style) -->
+  <div class="cameraModal" id="cameraModal" aria-hidden="true">
+    <div class="cameraBox" role="dialog" aria-modal="true">
+      <div class="cameraHeader">
+        <button id="closeCameraBtn" class="btn-ghost">✕</button>
+        <div style="font-weight:700">Camera</div>
+        <div></div>
+      </div>
+      <video id="cameraVideo" class="cameraVideo" autoplay playsinline></video>
+      <div class="cameraControls">
+        <button id="switchCameraBtn" class="btn-ghost">🔄</button>
+        <button id="capturePhotoBtn" class="cameraCircle" title="Capture"></button>
+        <button id="toggleFlashBtn" class="btn-ghost">🔦</button>
+      </div>
+    </div>
+  </div>
 
   <!-- overlay player -->
   <div id="overlay" class="overlay-player" role="dialog" aria-modal="true" aria-hidden="true">
@@ -114,7 +193,14 @@
     </div>
   </div>
 
+  <canvas id="captureCanvas" style="display:none;"></canvas>
+
   <script>
+    // Basic UI wiring and behavior
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+
     // Elements
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
@@ -124,22 +210,30 @@
     const resultsEl = document.getElementById('results');
     const emptyEl = document.getElementById('empty');
     const searchingPill = document.getElementById('searchingPill');
-    const apiStatus = document.getElementById('apiStatus');
+    const lastQueryEl = document.getElementById('lastQuery');
+    const lastProviderEl = document.getElementById('lastProvider');
+    const apiTimer = document.getElementById('apiTimer');
+
     const overlay = document.getElementById('overlay');
     const playerFrame = document.getElementById('playerFrame');
     const playerTitle = document.getElementById('playerTitle');
     const openOnYoutube = document.getElementById('openOnYoutube');
     const closeOverlay = document.getElementById('closeOverlay');
 
+    const cameraModal = document.getElementById('cameraModal');
+    const cameraVideo = document.getElementById('cameraVideo');
+    const captureCanvas = document.getElementById('captureCanvas');
+    const captureBtn = document.getElementById('capturePhotoBtn');
+    const closeCameraBtn = document.getElementById('closeCameraBtn');
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
+
     let lastResults = [];
+    let currentStream = null;
+    let useFront = false;
 
     function setStatus(text, busy=false) {
-      apiStatus.textContent = text;
-      if (busy) {
-        searchingPill.style.display = 'inline-flex';
-      } else {
-        searchingPill.style.display = 'none';
-      }
+      document.getElementById('apiTimer').textContent = text;
+      searchingPill.style.display = busy ? 'inline-flex' : 'none';
     }
 
     function clearResults() {
@@ -207,7 +301,6 @@
         const card = createVideoCard(v);
         resultsEl.appendChild(card);
       });
-      // subtle fade-in
       resultsEl.style.opacity = 0;
       requestAnimationFrame(() => { resultsEl.style.transition = 'opacity .25s ease-in'; resultsEl.style.opacity = 1; });
     }
@@ -239,7 +332,7 @@
     // Search flow
     async function doSearch(topic) {
       try {
-        setStatus('Searching', true);
+        setStatus('Searching…', true);
         const resp = await fetch('/api/youtube-search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -251,6 +344,8 @@
         lastResults = videos;
         renderResults(videos);
         setStatus(`Found ${videos.length} videos`, false);
+        lastQueryEl.textContent = data.queryUsed || topic;
+        lastProviderEl.textContent = data.provider || 'GEMINI';
       } catch (err) {
         console.error(err);
         setStatus('Error', false);
@@ -258,12 +353,36 @@
       }
     }
 
-    // Image upload -> send to /api/extract-from-image -> populate search box and optionally auto-search
+    // UI wiring
+    searchBtn.addEventListener('click', () => {
+      const topic = searchInput.value.trim();
+      if (!topic) { alert('Enter a topic or upload an image first'); return; }
+      setStatus('Preparing educational search', true);
+      setTimeout(() => doSearch(topic), 200);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearResults();
+      setStatus('Ready', false);
+    });
+
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchBtn.click(); });
+
+    // Quick action buttons
+    document.querySelectorAll('.small-stat').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const q = btn.getAttribute('data-query');
+        searchInput.value = q;
+        searchBtn.click();
+      });
+    });
+
+    // File upload -> send to /api/extract-from-image -> populate search box and auto-search
     uploadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      // show preview small spinner
       setStatus('Extracting from image', true);
       const reader = new FileReader();
       reader.onload = async () => {
@@ -276,15 +395,11 @@
           });
           const data = await resp.json();
           if (!resp.ok) throw new Error(data.error || 'Image extraction failed');
-          // If model returned parsed JSON with query/title/summary, use it
           if (data.parsed && data.parsed.query) {
             searchInput.value = data.parsed.query;
-            // show summary pill
             setStatus('Image processed — query populated', false);
-            // auto-search after a short delay for smooth UX
             setTimeout(() => searchBtn.click(), 450);
           } else if (data.raw) {
-            // fallback: put raw text into search box
             searchInput.value = data.raw.slice(0, 200);
             setStatus('Image processed — raw text populated', false);
             setTimeout(() => searchBtn.click(), 450);
@@ -298,29 +413,93 @@
         }
       };
       reader.readAsDataURL(file);
-      // reset input so same file can be selected again
       fileInput.value = '';
     });
 
-    // UI wiring
-    searchBtn.addEventListener('click', () => {
-      const topic = searchInput.value.trim();
-      if (!topic) {
-        alert('Enter a topic or upload an image first');
-        return;
+    // Camera capture flow (maths-style)
+    uploadBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); openCamera(); }); // long-press alternative
+    // open camera on long press or double-click; also provide explicit camera modal via right-click fallback
+    uploadBtn.addEventListener('dblclick', openCamera);
+
+    async function openCamera() {
+      cameraModal.style.display = 'flex';
+      cameraModal.setAttribute('aria-hidden', 'false');
+      try {
+        if (currentStream) {
+          cameraVideo.srcObject = currentStream;
+          return;
+        }
+        const constraints = { video: { facingMode: useFront ? 'user' : 'environment' }, audio: false };
+        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraVideo.srcObject = currentStream;
+        cameraVideo.play();
+      } catch (err) {
+        console.error('Camera error', err);
+        alert('Camera access failed: ' + (err.message || 'permission denied'));
+        closeCamera();
       }
-      // educational-only hint in UI
-      setStatus('Preparing educational search', true);
-      setTimeout(() => doSearch(topic), 200);
+    }
+
+    function closeCamera() {
+      cameraModal.style.display = 'none';
+      cameraModal.setAttribute('aria-hidden', 'true');
+      if (currentStream) {
+        currentStream.getTracks().forEach(t => t.stop());
+        currentStream = null;
+      }
+    }
+
+    closeCameraBtn.addEventListener('click', closeCamera);
+    switchCameraBtn.addEventListener('click', async () => {
+      useFront = !useFront;
+      if (currentStream) {
+        currentStream.getTracks().forEach(t => t.stop());
+        currentStream = null;
+      }
+      await openCamera();
     });
 
-    clearBtn.addEventListener('click', () => {
-      searchInput.value = '';
-      clearResults();
-      setStatus('Ready', false);
+    captureBtn.addEventListener('click', () => {
+      if (!cameraVideo || !cameraVideo.videoWidth) return;
+      const w = cameraVideo.videoWidth;
+      const h = cameraVideo.videoHeight;
+      captureCanvas.width = w;
+      captureCanvas.height = h;
+      const ctx = captureCanvas.getContext('2d');
+      ctx.drawImage(cameraVideo, 0, 0, w, h);
+      const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.9);
+      // close camera and send to extract endpoint
+      closeCamera();
+      processCapturedImage(dataUrl);
     });
 
-    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchBtn.click(); });
+    async function processCapturedImage(dataUrl) {
+      setStatus('Processing captured image', true);
+      try {
+        const resp = await fetch('/api/extract-from-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: dataUrl })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Image extraction failed');
+        if (data.parsed && data.parsed.query) {
+          searchInput.value = data.parsed.query;
+          setStatus('Image processed — query populated', false);
+          setTimeout(() => searchBtn.click(), 450);
+        } else if (data.raw) {
+          searchInput.value = data.raw.slice(0, 200);
+          setStatus('Image processed — raw text populated', false);
+          setTimeout(() => searchBtn.click(), 450);
+        } else {
+          setStatus('No usable text found in image', false);
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus('Image extract error', false);
+        resultsEl.innerHTML = `<div class="empty-state">Image extract error: ${err.message}</div>`;
+      }
+    }
 
     // initial state
     clearResults();
