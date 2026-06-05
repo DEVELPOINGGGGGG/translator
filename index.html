@@ -24,6 +24,7 @@
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
   <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
   <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
@@ -37,12 +38,10 @@
     <p style="color: var(--muted); margin-top: 10px;">Select a tool below to get started</p>
   </div>
 
-  <!-- 🛑 LIVE API USAGE DASHBOARD WITH TIMER 🛑 -->
   <div class="card" style="margin-bottom: 25px; border-top: 3px solid #3b82f6;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <div>
             <div class="cardTitle" style="margin: 0;">📊 Live API Usage</div>
-            <!-- Timer Display -->
             <div id="apiResetTimer" style="font-size: 13px; color: #f59e0b; font-weight: 600; margin-top: 4px; letter-spacing: 0.5px;">
                 ⏳ Quota Reset: Calculating...
             </div>
@@ -50,7 +49,6 @@
         <button class="actionBtnSmall blue" onclick="fetchApiUsage()" title="Refresh Stats">🔄</button>
     </div>
     
-    <!-- This is where the stats will be injected -->
     <div id="apiUsageContainer" style="display: flex; flex-wrap: wrap; gap: 10px;">
         <div style="color: var(--muted); font-size: 14px;">Loading server stats...</div>
     </div>
@@ -64,6 +62,10 @@
     <div class="dash-card" onclick="window.location.href='search.html'">
       <div class="dash-icon">🔎</div>
       <div class="dash-title">Deep Search</div>
+    </div>
+    <div class="dash-card" onclick="window.location.href='youtube.html'">
+      <div class="dash-icon">▶️</div>
+      <div class="dash-title">YouTube Search</div>
     </div>
     <div class="dash-card" onclick="window.location.href='translator.html'">
       <div class="dash-icon">🎙️</div>
