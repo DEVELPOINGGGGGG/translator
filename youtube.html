@@ -235,6 +235,7 @@
     }
 
     // --- RENDER ENGINE WITH ROBUST THUMBNAILS ---
+   // --- RENDER ENGINE WITH ROBUST THUMBNAILS ---
     function renderVideos(videos, provider) {
         const grid = document.getElementById("videoGrid");
         
@@ -242,17 +243,17 @@
             if(!v.id || v.id.length < 10) return; // Skip broken IDs
             fetchedVideoIds.push(v.id);
             
-            // Official YouTube high quality thumbnail
-            const thumbUrl = `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`;
-            // Fallback in case HQ doesn't exist
-            const fallbackThumbUrl = `https://img.youtube.com/vi/${v.id}/default.jpg`;
+            // 🛑 THE FIX: Force the official YouTube high-quality thumbnail URL 🛑
+            // This bypasses any broken links returned by the search library
+            const thumbUrl = `https://img.youtube.com/vi/${v.id}/mqdefault.jpg`;
             
             const card = document.createElement('div');
             card.className = 'yt-card';
             card.onclick = () => openCinemaPlayer(v.id);
             card.innerHTML = `
                 <div class="yt-thumbnail-wrapper">
-                    <img src="${thumbUrl}" class="yt-thumbnail" loading="lazy" onerror="this.src='${fallbackThumbUrl}'">
+                    <img src="${thumbUrl}" class="yt-thumbnail" loading="lazy" 
+                         onerror="this.src='https://via.placeholder.com/640x360?text=No+Thumbnail'">
                     <div class="yt-play-btn">▶</div>
                 </div>
                 <div class="yt-info">
@@ -263,7 +264,6 @@
             grid.appendChild(card);
         });
     }
-
     // --- FULLSCREEN CINEMA PLAYER (OFFICIAL YOUTUBE IFRAME) ---
     function openCinemaPlayer(videoId) {
         currentActiveVideoId = videoId;
