@@ -1,307 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Pro Suite - YouTube Search</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    
-    <style>
-        /* YOUTUBE SPECIFIC STYLES */
-        .yt-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .yt-card {
-            background: #0f172a;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-        .yt-card:hover {
-            transform: translateY(-5px);
-            border-color: #ef4444;
-            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
-        }
-        .yt-thumbnail-wrapper {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-            background: #000;
-        }
-        .yt-thumbnail {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover;
-        }
-        .yt-play-btn {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50px; height: 50px;
-            background: rgba(239, 68, 68, 0.9);
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 20px; color: white;
-            opacity: 0; transition: 0.3s;
-        }
-        .yt-card:hover .yt-play-btn { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-        .yt-info { padding: 15px; }
-        .yt-title { font-size: 15px; font-weight: 700; color: #f8fafc; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
-        .yt-provider { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        .yt-cinema-overlay {
-            position: fixed; inset: 0; background: #000; z-index: 999999;
-            display: none; flex-direction: column;
-        }
-        .yt-cinema-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
-        .yt-cinema-header {
-            position: absolute; top: 0; left: 0; right: 0; padding: 20px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.9), transparent);
-            display: flex; justify-content: space-between; align-items: center; z-index: 10;
-        }
-        .yt-iframe-container { flex: 1; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-        .yt-iframe-container iframe { width: 100%; height: 100%; border: none; }
-        
-        #showMoreBtn { display: none; margin-top: 30px; margin-bottom: 50px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>YouTube Finder</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+    }
+    #searchBox {
+      margin: 20px;
+      padding: 10px;
+      width: 60%;
+      font-size: 18px;
+    }
+    #searchBtn {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      background: #ff0000;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+    }
+    #videoContainer {
+      margin-top: 20px;
+      position: relative;
+    }
+    iframe {
+      width: 100%;
+      height: 80vh;
+      border: none;
+    }
+    #youtubeBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #ff0000;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
+  <h1>🎬 YouTube Finder (India)</h1>
+  <input id="searchBox" type="text" placeholder="Enter topic...">
+  <button id="searchBtn">Search</button>
 
-<div class="overlay" id="overlay"></div>
+  <div id="videoContainer" style="display:none;">
+    <button id="youtubeBtn">Open in YouTube</button>
+    <iframe id="videoFrame" allowfullscreen></iframe>
+  </div>
 
-<div class="topbar">
-  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle" style="background: linear-gradient(90deg, #ef4444, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI YouTube</div>
-</div>
+  <script>
+    async function searchVideo() {
+      const topic = document.getElementById("searchBox").value.trim();
+      if (!topic) return alert("Enter a topic!");
 
-<div class="sidebar" id="sidebar">
-  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
-  <button onclick="window.location.href='youtube.html'" style="border-left: 5px solid #ef4444; background: rgba(255,255,255,0.05); color: #fca5a5;">▶️ YouTube Search</button>
-  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-</div>
+      // Call your backend search endpoint
+      const res = await fetch("/api/groq-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userPrompt: `Find the best YouTube video in India about ${topic}` })
+      });
+      const data = await res.json();
 
-<div class="page active" style="top: 70px;">
-    
-    <div style="text-align: center; margin-bottom: 25px; margin-top: 10px;">
-        <h1 style="font-size: 24px; color: white;">What do you want to learn?</h1>
-        <p style="color: var(--muted); font-size: 14px; margin-top: 5px;">The AI will curate the absolute best videos for you.</p>
-    </div>
+      // Extract YouTube link from AI response
+      const text = data.text;
+      const match = text.match(/https:\/\/www\.youtube\.com\/watch\?v=[\w-]+/);
+      if (!match) return alert("No YouTube link found!");
 
-    <div style="position: relative; margin-bottom: 30px;">
-        <input type="text" id="ytSearchInput" placeholder="e.g., Quantum Physics Explained..." style="width: 100%; padding: 20px 25px; border-radius: 30px; border: 1px solid rgba(239, 68, 68, 0.4); background: #0f172a; color: white; font-size: 16px; outline: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <button id="ytSearchBtn" style="position: absolute; right: 8px; top: 8px; bottom: 8px; width: 50px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #b91c1c); border: none; color: white; cursor: pointer; font-size: 18px; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4); transition: 0.2s;">🔍</button>
-    </div>
+      const videoUrl = match[0];
+      const videoId = new URL(videoUrl).searchParams.get("v");
 
-    <div id="ytStatus" style="text-align: center; color: #ef4444; font-weight: bold; font-size: 15px; display: none; margin-bottom: 20px;">
-        <div class="spinner" style="border-top-color: #ef4444;"></div> Searching YouTube with AI...
-    </div>
-
-    <div id="videoGrid" class="yt-grid"></div>
-
-    <button id="showMoreBtn" class="btn red">➕ Show 10 More Videos</button>
-
-</div>
-
-<div id="ytCinemaOverlay" class="yt-cinema-overlay">
-    <div class="yt-cinema-header">
-        <a id="externalLinkBtn" href="#" target="_blank" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none;">Watch on YouTube ↗</a>
-        
-        <button onclick="closeCinemaPlayer()" style="background: rgba(239, 68, 68, 0.8); border: 2px solid white; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer;">❌</button>
-    </div>
-    <div id="ytIframeWrapper" class="yt-iframe-container"></div>
-</div>
-
-<script>
-    function toggleSidebar() {
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("overlay");
-        const active = !sidebar.classList.contains("active");
-        sidebar.classList.toggle("active", active);
-        overlay.classList.toggle("active", active);
-    }
-    document.getElementById("overlay").onclick = toggleSidebar;
-
-    let currentTopic = "";
-    let fetchedVideoIds = [];
-    let currentActiveVideoId = "";
-
-    // Allow Enter key to search
-    document.getElementById("ytSearchInput").addEventListener("keypress", function(e) {
-        if (e.key === "Enter") triggerSearch();
-    });
-    document.getElementById("ytSearchBtn").onclick = triggerSearch;
-    document.getElementById("showMoreBtn").onclick = fetchMoreVideos;
-
-    function triggerSearch() {
-        const inp = document.getElementById("ytSearchInput").value.trim();
-        if (!inp) return;
-        currentTopic = inp;
-        fetchedVideoIds = [];
-        document.getElementById("videoGrid").innerHTML = "";
-        document.getElementById("showMoreBtn").style.display = "none";
-        
-        fetchVideos(currentTopic);
+      // Show video player
+      document.getElementById("videoContainer").style.display = "block";
+      document.getElementById("videoFrame").src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      document.getElementById("youtubeBtn").onclick = () => window.open(videoUrl, "_blank");
     }
 
-    function fetchMoreVideos() {
-        fetchVideos(currentTopic);
-    }
-
-    // --- AI FALLBACK SEARCH ENGINE (Gemini -> Cloudflare -> Groq) ---
-    async function fetchVideos(topic) {
-        const statusEl = document.getElementById("ytStatus");
-        statusEl.innerHTML = `<div class="spinner" style="border-top-color: #ef4444;"></div> AI is hunting for the best videos...`;
-        statusEl.style.display = "block";
-        document.getElementById("showMoreBtn").style.display = "none";
-
-        const sysPrompt = `You are a YouTube Video Curator. 
-        Return exactly 10 highly relevant, real YouTube video IDs and Titles for the user's topic.
-        YOUR OUTPUT MUST BE STRICTLY A RAW JSON ARRAY. NO MARKDOWN, NO BACKTICKS, NO EXTRA TEXT.
-        Format Example: [{"id": "dQw4w9WgXcQ", "title": "Video Title Here"}]
-        Ensure IDs are exactly 11 characters long.`;
-
-        let usrPrompt = `Topic: ${topic}. Give me 10 videos.`;
-        if (fetchedVideoIds.length > 0) {
-            usrPrompt += ` Do NOT include these IDs: ${fetchedVideoIds.join(', ')}. I need 10 DIFFERENT videos.`;
-        }
-
-        let rawResponse = "";
-        let usedProvider = "";
-
-        try {
-            // 1. Try Gemini First
-            statusEl.innerHTML = `<div class="spinner" style="border-top-color: #ef4444;"></div> Asking Gemini for videos...`;
-            const r1 = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: usrPrompt, providerOverride: "gemini" }) });
-            const d1 = await r1.json();
-            if(!r1.ok || !d1.text) throw new Error("Gemini Failed");
-            rawResponse = d1.text; usedProvider = "Gemini";
-        } catch(e1) {
-            try {
-                // 2. Try Cloudflare Second
-                statusEl.innerHTML = `<div class="spinner" style="border-top-color: #f59e0b;"></div> Gemini busy. Asking Cloudflare...`;
-                const r2 = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: usrPrompt, providerOverride: "cloudflare" }) });
-                const d2 = await r2.json();
-                if(!r2.ok || !d2.text) throw new Error("Cloudflare Failed");
-                rawResponse = d2.text; usedProvider = "Cloudflare";
-            } catch(e2) {
-                try {
-                    // 3. Try Groq Third
-                    statusEl.innerHTML = `<div class="spinner" style="border-top-color: #10b981;"></div> Asking Groq...`;
-                    const r3 = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: `${sysPrompt}\n\n${usrPrompt}`, providerOverride: "groq" }) });
-                    const d3 = await r3.json();
-                    if(!r3.ok || !d3.text) throw new Error("Groq Failed");
-                    rawResponse = d3.text; usedProvider = "Groq Llama 3";
-                } catch (e3) {
-                    statusEl.innerHTML = `❌ All AI models failed. Please try again.`;
-                    setTimeout(() => statusEl.style.display = "none", 3000);
-                    return;
-                }
-            }
-        }
-
-        // Parse JSON Robustly
-        try {
-            let cleanJson = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-            let startIndex = cleanJson.indexOf('[');
-            let endIndex = cleanJson.lastIndexOf(']');
-            if (startIndex !== -1 && endIndex !== -1) {
-                cleanJson = cleanJson.substring(startIndex, endIndex + 1);
-            }
-            
-            const videoArray = JSON.parse(cleanJson);
-            renderVideos(videoArray, usedProvider);
-            statusEl.style.display = "none";
-            document.getElementById("showMoreBtn").style.display = "block";
-            
-        } catch(parseErr) {
-            console.error("AI returned invalid JSON:", rawResponse);
-            statusEl.innerHTML = `❌ AI returned invalid format. Retrying...`;
-            setTimeout(() => { fetchVideos(topic); }, 1500); // Auto-retry if it hallucinates text instead of JSON
-        }
-    }
-
-    // --- RENDER ENGINE WITH ROBUST THUMBNAILS ---
-   // --- RENDER ENGINE WITH ROBUST THUMBNAILS ---
-    function renderVideos(videos, provider) {
-        const grid = document.getElementById("videoGrid");
-        
-        videos.forEach(v => {
-            if(!v.id || v.id.length < 10) return; // Skip broken IDs
-            fetchedVideoIds.push(v.id);
-            
-            // 🛑 THE FIX: Force the official YouTube high-quality thumbnail URL 🛑
-            // This bypasses any broken links returned by the search library
-            const thumbUrl = `https://img.youtube.com/vi/${v.id}/mqdefault.jpg`;
-            
-            const card = document.createElement('div');
-            card.className = 'yt-card';
-            card.onclick = () => openCinemaPlayer(v.id);
-            card.innerHTML = `
-                <div class="yt-thumbnail-wrapper">
-                    <img src="${thumbUrl}" class="yt-thumbnail" loading="lazy" 
-                         onerror="this.src='https://via.placeholder.com/640x360?text=No+Thumbnail'">
-                    <div class="yt-play-btn">▶</div>
-                </div>
-                <div class="yt-info">
-                    <div class="yt-title">${v.title}</div>
-                    <div class="yt-provider">✨ Curated by ${provider}</div>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-    }
-    // --- FULLSCREEN CINEMA PLAYER (OFFICIAL YOUTUBE IFRAME) ---
-   function openCinemaPlayer(videoId) {
-        currentActiveVideoId = videoId;
-        const overlay = document.getElementById('ytCinemaOverlay');
-        const wrapper = document.getElementById('ytIframeWrapper');
-        const linkBtn = document.getElementById('externalLinkBtn');
-        
-        // Update the external link so users can always watch, even if embed is blocked
-        linkBtn.href = `https://www.youtube.com/watch?v=${videoId}`;
-        
-        if(screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('landscape').catch(()=>{});
-        }
-        
-        // Use the official Iframe
-        wrapper.innerHTML = `
-            <iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1" 
-            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-            allowfullscreen></iframe>
-        `;
-        
-        overlay.classList.add('active');
-        if (overlay.requestFullscreen) overlay.requestFullscreen().catch(()=>{});
-    }
-        // Auto request fullscreen
-        if (overlay.requestFullscreen) overlay.requestFullscreen().catch(()=>{});
-    }
-
-    function closeCinemaPlayer() {
-        const overlay = document.getElementById('ytCinemaOverlay');
-        overlay.classList.remove('active');
-        document.getElementById('ytIframeWrapper').innerHTML = ""; // Stop audio immediately
-        
-        if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-        if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-    }
-
-</script>
-
+    document.getElementById("searchBtn").addEventListener("click", searchVideo);
+  </script>
 </body>
 </html>
