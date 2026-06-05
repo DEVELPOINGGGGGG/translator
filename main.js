@@ -18,7 +18,54 @@ const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2
 // 🛑 SESSION CACHE & RETRY ENGINE 🛑
 window.requestCache = {};
 let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
+// 🛑 ABORT & CANCEL ENGINE 🛑
+window.currentAbortController = null;
+window.currentTypingTimer = null;
 
+window.toggleChatButton = function(isCancel) {
+    // Targets your send buttons (Math, Search, Image Trans)
+    const btnIds = ['sendMathBtn', 'sendSearchBtn', 'sendImageTransBtn'];
+    let activeBtn = null;
+    for (let id of btnIds) {
+        const btn = document.getElementById(id);
+        if (btn) activeBtn = btn;
+    }
+    if (!activeBtn) return;
+    
+    if (isCancel) {
+        activeBtn.dataset.originalHtml = activeBtn.innerHTML; // Save the original icon (like ↑)
+        activeBtn.innerHTML = '⏹️'; // Change to Stop Emoji
+        activeBtn.classList.add('cancel-mode');
+        activeBtn.classList.remove('send');
+        
+        activeBtn.dataset.originalOnclick = activeBtn.getAttribute('onclick');
+        activeBtn.setAttribute('onclick', 'cancelActiveRequest()');
+    } else {
+        activeBtn.innerHTML = activeBtn.dataset.originalHtml || '↑';
+        activeBtn.classList.remove('cancel-mode');
+        activeBtn.classList.add('send');
+        
+        if (activeBtn.dataset.originalOnclick) {
+            activeBtn.setAttribute('onclick', activeBtn.dataset.originalOnclick);
+        }
+    }
+};
+
+window.cancelActiveRequest = function() {
+    // 1. Kill the Server Fetch Request
+    if (window.currentAbortController) {
+        window.currentAbortController.abort(); 
+        window.currentAbortController = null;
+    }
+    // 2. Stop the typewriter instantly
+    if (window.currentTypingTimer) {
+        clearInterval(window.currentTypingTimer);
+        window.currentTypingTimer = null;
+    }
+    isProcessing = false;
+    window.toggleChatButton(false); // Revert button back to normal
+    showToast("⚠️ Generation Stopped");
+};
 // 🛑 CONTINUOUS CONTEXT MEMORY ENGINE 🛑
 function getLastContextImage(type) {
     let sessionId = sessionCache[type];
@@ -300,8 +347,13 @@ async function checkHtmlError(r) {
 
 async function callGeminiText(sysText, usrText, override = null) {
   if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('t');
+  window.currentAbortController = new AbortController(); // <-- Added
   try { 
-      const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText, providerOverride: override }) }); 
+      const r = await fetch("/api/gemini-text", { 
+          method: "POST", headers: {"Content-Type":"application/json"}, 
+          body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText, providerOverride: override }),
+          signal: window.currentAbortController.signal // <-- Added
+      }); 
       const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; return d; 
   } catch(e) { isProcessing = false; throw e; }
@@ -309,15 +361,17 @@ async function callGeminiText(sysText, usrText, override = null) {
 
 async function callGeminiVision(imgData, aiQuery, override = null) {
   if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('v');
+  window.currentAbortController = new AbortController(); // <-- Added
   try { 
-      const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery, providerOverride: override }) }); 
+      const r = await fetch("/api/gemini-vision", { 
+          method: "POST", headers: {"Content-Type":"application/json"}, 
+          body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery, providerOverride: override }),
+          signal: window.currentAbortController.signal // <-- Added
+      }); 
       const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; return d; 
   } catch(e) { isProcessing = false; throw e; }
 }
-
-
-// 🛑 UPGRADED HINDI SPEECH TRANSLATOR 🛑
 // 🛑 UPGRADED HINDI SPEECH TRANSLATOR (STRIPS ALL LATEX JUNK) 🛑
 function formatHindiSpeechText(text) {
     return String(text || "")
