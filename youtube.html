@@ -23,7 +23,7 @@
             background: rgba(239, 68, 68, 0.9) !important;
             border-color: #ef4444 !important;
         }
-        /* Grid Fix to ensure videos look good */
+        /* Grid Fix */
         .yt-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -31,6 +31,11 @@
             width: 100%;
             max-width: 1100px;
             margin-top: 30px;
+        }
+        .yt-player-top {
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 20px; background: #000; border-bottom: 1px solid rgba(255,255,255,0.1); 
+            gap: 10px; flex-wrap: wrap;
         }
     </style>
 </head>
@@ -57,15 +62,11 @@
 
 <div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; padding-bottom: 150px;">
     
-    <div class="card" style="width: 100%; max-width: 800px; text-align: center; padding: 25px; position: sticky; top: 0; z-index: 50; box-shadow: 0 15px 40px rgba(0,0,0,0.8);">
+    <div class="card" style="width: 100%; max-width: 800px; text-align: center; padding: 25px;">
+        <h2 class="cardTitle" style="color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.4); font-size: 24px; margin-bottom: 5px;">YouTube AI Engine</h2>
         
         <div style="display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap;">
-            <select id="micLang" style="width: auto; padding: 12px; border-radius: 12px; margin-bottom: 0; flex-shrink: 0; font-size: 14px;">
-                <option value="en-US">English</option>
-                <option value="hi-IN">Hindi</option>
-            </select>
-
-            <button id="voiceBtn" class="cam-icon-btn" style="border-radius: 12px; width: 50px; height: 50px; flex-shrink: 0; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.4);" title="Voice Search">
+            <button id="openVoiceGuiBtn" class="cam-icon-btn" style="border-radius: 12px; width: 50px; height: 50px; flex-shrink: 0; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.4);" title="Voice Search">
                 <span style="font-size: 20px;">🎤</span>
             </button>
 
@@ -73,7 +74,7 @@
                 <span style="font-size: 20px;">📷</span>
             </button>
             
-            <input type="text" id="ytSearchInput" class="standard" placeholder="Topic or voice..." style="margin-bottom: 0; font-size: 15px; border-radius: 12px; flex: 1; min-width: 200px;">
+            <input type="text" id="ytSearchInput" class="standard" placeholder="Enter topic to search..." style="margin-bottom: 0; font-size: 15px; border-radius: 12px; flex: 1; min-width: 200px;">
         </div>
         
         <button id="ytSearchBtn" class="btn red" style="margin-top: 15px; border-radius: 30px; font-size: 15px;">🔍 AI Search & Rank</button>
@@ -88,6 +89,28 @@
     </button>
 </div>
 
+<div id="voiceModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; text-align: center; padding: 30px; border-radius: 25px;">
+        <h3 class="cardTitle" style="font-size: 22px; color: #38bdf8;">🎙️ Voice Input</h3>
+        
+        <select id="voiceModalLang" class="standard" style="margin-top: 15px; border-radius: 15px;">
+            <option value="en-US">English</option>
+            <option value="hi-IN">Hindi</option>
+        </select>
+
+        <div style="margin: 25px 0;">
+            <button id="voiceRecordBtn" class="cam-icon-btn" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(239, 68, 68, 0.2); border: 2px solid #ef4444; font-size: 30px; margin: 0 auto;">🎤</button>
+        </div>
+        
+        <textarea id="voiceModalText" class="standard" placeholder="Tap the mic and speak. Your text will appear here..." style="min-height: 100px; border-radius: 15px; font-size: 16px;"></textarea>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="voiceCancelBtn" class="btn" style="flex: 1; background: #475569; color: white;">Cancel</button>
+            <button id="voiceApplyBtn" class="btn blue" style="flex: 1;">✔️ Use Text</button>
+        </div>
+    </div>
+</div>
+
 <div id="cameraModal" class="cameraModal">
     <video id="cameraVideo" autoplay playsinline></video>
     <div class="camera-top-bar"><button id="closeCameraBtn" class="cam-icon-btn">❌</button></div>
@@ -99,13 +122,16 @@
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
-<div id="ytPlayerOverlay" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 99999; display: none; flex-direction: column;">
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #000; border-bottom: 1px solid rgba(255,255,255,0.1);">
-        <button id="ytRedirectBtn" class="btn red" style="width: auto; margin: 0; padding: 10px 20px; border-radius: 30px;">🚀 Open App</button>
-        <button id="ytCloseBtn" class="closeBtn" style="position: static; margin: 0;">✕</button>
+<div id="ytPlayerOverlay" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 99999; display: none; flex-direction: column;">
+    <div class="yt-player-top">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="ytRedirectBtn" class="btn red" style="width: auto; margin: 0; padding: 8px 15px; border-radius: 30px; font-size: 13px;">🚀 Open App</button>
+            <button id="ytOrientationBtn" class="btn blue" style="width: auto; margin: 0; padding: 8px 15px; border-radius: 30px; font-size: 13px; box-shadow: 0 0 15px rgba(56,189,248,0.4);">📱 Portrait Mode</button>
+        </div>
+        <button id="ytCloseBtn" class="closeBtn" style="position: static; margin: 0; width: 45px; height: 45px; font-size: 18px;">✕</button>
     </div>
-    <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px;">
-        <iframe id="ytIframe" style="width: 100%; max-width: 1200px; height: 100%; max-height: 700px; border-radius: 12px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.8);" allow="autoplay; fullscreen; encrypted-media"></iframe>
+    <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px;">
+        <iframe id="ytIframe" style="width: 100%; max-width: 1200px; height: 100%; border-radius: 12px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.8);" allow="autoplay; fullscreen; encrypted-media"></iframe>
     </div>
 </div>
 
@@ -132,26 +158,63 @@
 
     searchInput.addEventListener("keypress", (e) => { if(e.key === "Enter") searchBtn.click(); });
 
-    // --- Voice Recognition Engine ---
-    const voiceBtn = document.getElementById('voiceBtn');
+    // --- NEW: VOICE GUI LOGIC ---
+    const voiceModal = document.getElementById('voiceModal');
+    const voiceRecordBtn = document.getElementById('voiceRecordBtn');
+    const voiceModalText = document.getElementById('voiceModalText');
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = SpeechRec ? new SpeechRec() : null;
+    let isRecording = false;
 
+    // Open Voice GUI
+    document.getElementById('openVoiceGuiBtn').addEventListener('click', () => {
+        voiceModalText.value = "";
+        voiceModal.style.display = 'flex';
+    });
+
+    // Close Voice GUI (Cancel)
+    document.getElementById('voiceCancelBtn').addEventListener('click', () => {
+        if(isRecording && recognition) recognition.stop();
+        voiceModal.style.display = 'none';
+    });
+
+    // Apply Text (Wait for user to manually search)
+    document.getElementById('voiceApplyBtn').addEventListener('click', () => {
+        if(isRecording && recognition) recognition.stop();
+        if(voiceModalText.value.trim() !== "") {
+            searchInput.value = voiceModalText.value.trim();
+        }
+        voiceModal.style.display = 'none';
+    });
+
+    // Handle Mic Recording
     if(recognition) {
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.onstart = () => { voiceBtn.classList.add('recording'); searchInput.placeholder = "Listening..."; };
-        recognition.onresult = (e) => { searchInput.value = e.results[0][0].transcript; };
+        
+        recognition.onstart = () => { 
+            isRecording = true;
+            voiceRecordBtn.classList.add('recording'); 
+            voiceModalText.placeholder = "Listening..."; 
+        };
+        recognition.onresult = (e) => { 
+            voiceModalText.value = e.results[0][0].transcript; 
+        };
         recognition.onend = () => { 
-            voiceBtn.classList.remove('recording'); searchInput.placeholder = "Topic or voice..."; 
-            if(searchInput.value.trim() !== "") searchBtn.click(); 
+            isRecording = false;
+            voiceRecordBtn.classList.remove('recording'); 
+            voiceModalText.placeholder = "Tap the mic and speak. Your text will appear here..."; 
         };
     }
 
-    voiceBtn.addEventListener('click', () => {
+    voiceRecordBtn.addEventListener('click', () => {
         if(!recognition) return alert("Microphone not supported on this browser.");
-        recognition.lang = document.getElementById('micLang').value;
-        recognition.start();
+        if(isRecording) {
+            recognition.stop();
+        } else {
+            recognition.lang = document.getElementById('voiceModalLang').value;
+            recognition.start();
+        }
     });
 
     // --- BULLETPROOF Render Engine ---
@@ -161,7 +224,6 @@
         const batch = allRankedVideos.slice(currentRenderIndex, currentRenderIndex + count);
         
         const html = batch.map((vid, index) => {
-            // First 3 videos get the Top Pick badge
             const isTopPick = (currentRenderIndex + index) < 3;
             const badgeHtml = isTopPick ? `<div style="position:absolute; top:-10px; left:-10px; background:linear-gradient(135deg, #f59e0b, #ef4444); color:white; padding:4px 10px; border-radius:10px; font-size:11px; font-weight:900; box-shadow:0 5px 15px rgba(245,158,11,0.5); z-index:10; transform:rotate(-5deg);">⭐ TOP PICK</div>` : '';
 
@@ -186,7 +248,6 @@
 
         currentRenderIndex += batch.length;
 
-        // FORCE BUTTON TO SHOW OR HIDE BASED ON REMAINING VIDEOS
         if (currentRenderIndex >= allRankedVideos.length) {
             loadMoreBtn.style.display = 'none';
         } else {
@@ -210,7 +271,6 @@
         statusText.innerHTML = "Fetching videos from server...";
 
         try {
-            // 1. Fetch videos
             const ytResponse = await fetch('/api/youtube-search', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic: rawTopic })
             });
@@ -222,11 +282,9 @@
 
             statusText.innerHTML = `🧠 Server found <b>${rawVideos.length}</b> videos. Gemini is ranking them...`;
 
-            // 2. Format list for Gemini
             const titleList = rawVideos.map((v, i) => `${i} - ${v.title}`).join('\n');
             const rankingPrompt = `Analyze these YouTube video titles for: "${rawTopic}". Determine the highest quality educational videos. Return STRICTLY a JSON array of the indices ranked from best to worst. Example: [5, 1, 0, 12].`;
 
-            // 3. Ask Gemini to re-rank
             let rankedIndices = [];
             try {
                 const aiResponse = await fetch('/api/gemini-text', {
@@ -238,11 +296,9 @@
                 if(match) rankedIndices = JSON.parse(`[${match[1]}]`);
                 else throw new Error("Format failed");
             } catch (aiErr) {
-                // FALLBACK: If Gemini fails, just use the normal YouTube order
                 rankedIndices = rawVideos.map((_, i) => i); 
             }
 
-            // 4. Sort the video array perfectly
             allRankedVideos = [];
             let addedIndices = new Set();
             
@@ -253,12 +309,10 @@
                 }
             });
             
-            // Catch any videos Gemini missed
             rawVideos.forEach((v, idx) => {
                 if(!addedIndices.has(idx)) allRankedVideos.push(v);
             });
 
-            // 5. Render
             currentRenderIndex = 0;
             renderVideos(15);
             statusText.innerHTML = `✅ Successfully loaded and ranked <b>${allRankedVideos.length}</b> videos!`;
@@ -309,27 +363,58 @@
             if (!res.ok) throw new Error(data.error);
             
             searchInput.value = data.text.replace(/[\*\"]/g, '').trim();
-            searchBtn.disabled = false; searchBtn.style.opacity = '1'; searchBtn.click(); 
+            // Intentionally not auto-searching so you can review it
+            searchBtn.disabled = false; searchBtn.style.opacity = '1'; searchBtn.innerHTML = '🔍 AI Search & Rank';
         } catch (e) {
             searchInput.value = ""; statusText.innerHTML = "❌ Failed: " + e.message;
             searchBtn.disabled = false; searchBtn.style.opacity = '1'; searchBtn.innerHTML = '🔍 AI Search & Rank';
         }
     };
 
-    // --- Video Player Logic ---
+    // --- Video Player & Auto-Landscape Logic ---
     let currentVideoUrl = "";
+    let isLandscape = true;
     const playerOverlay = document.getElementById('ytPlayerOverlay');
     const ytIframe = document.getElementById('ytIframe');
+    const orientationBtn = document.getElementById('ytOrientationBtn');
 
-    window.openVideoPlayer = function(videoId, url) {
+    window.openVideoPlayer = async function(videoId, url) {
         currentVideoUrl = url;
         ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
         playerOverlay.style.display = 'flex';
         document.body.style.overflow = 'hidden'; 
+        
+        try {
+            if (playerOverlay.requestFullscreen) { await playerOverlay.requestFullscreen(); } 
+            else if (playerOverlay.webkitRequestFullscreen) { await playerOverlay.webkitRequestFullscreen(); }
+            
+            if (screen.orientation && screen.orientation.lock) {
+                await screen.orientation.lock('landscape');
+                isLandscape = true; orientationBtn.innerText = '📱 Portrait Mode';
+            }
+        } catch (err) { console.log("Auto-landscape ignored by device: ", err); }
     };
 
-    document.getElementById('ytCloseBtn').addEventListener('click', () => {
+    orientationBtn.addEventListener('click', async () => {
+        try {
+            if (isLandscape) {
+                await screen.orientation.lock('portrait');
+                orientationBtn.innerText = '🔲 Landscape Mode';
+                isLandscape = false;
+            } else {
+                await screen.orientation.lock('landscape');
+                orientationBtn.innerText = '📱 Portrait Mode';
+                isLandscape = true;
+            }
+        } catch (err) { alert("Ensure auto-rotate is enabled and you are in full screen."); }
+    });
+
+    document.getElementById('ytCloseBtn').addEventListener('click', async () => {
         ytIframe.src = ""; playerOverlay.style.display = 'none'; document.body.style.overflow = ''; 
+        try {
+            if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
+            if (document.fullscreenElement) { await document.exitFullscreen(); }
+        } catch (e) { console.log("Cleanup error: ", e); }
     });
 
     document.getElementById('ytRedirectBtn').addEventListener('click', () => {
