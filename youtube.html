@@ -10,25 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
-    
-    <style>
-        /* Minimal specific styles to ensure the player overlay looks perfect */
-        #ytPlayerOverlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px);
-            z-index: 99999; display: none; flex-direction: column;
-        }
-        .yt-top-controls {
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 20px; background: #000; border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .video-container {
-            flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px;
-        }
-        .video-container iframe {
-            width: 100%; max-width: 1200px; height: 100%; max-height: 700px; border-radius: 12px; border: none;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-    </style>
 </head>
 <body>
 
@@ -51,33 +32,53 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<div class="page active" style="top: 85px; display: block; position: relative;">
-    <div class="card" style="max-width: 700px; margin: 0 auto; text-align: center;">
-        <h2 class="cardTitle" style="color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.4);">YouTube Learning Engine</h2>
-        <p class="cardSub">Type a topic. The AI will optimize your request and fetch the best educational videos.</p>
+<div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px;">
+    
+    <div class="card" style="width: 100%; max-width: 800px; text-align: center; padding: 30px;">
+        <h2 class="cardTitle" style="color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.4); font-size: 26px;">YouTube Learning Engine</h2>
+        <p class="cardSub" style="font-size: 15px;">Type a topic or scan a problem to find the best tutorials.</p>
         
-        <input type="text" id="ytSearchInput" class="standard" placeholder="Enter a topic (e.g., Quantum Physics, Calculus...)">
-        <button id="ytSearchBtn" class="btn red" style="margin-top: 10px;">🔍 Find Videos</button>
+        <div style="display: flex; gap: 15px; margin-top: 25px; align-items: center;">
+            <button class="cam-icon-btn" style="border-radius: 16px; width: 60px; height: 60px; flex-shrink: 0; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); box-shadow: 0 10px 20px rgba(0,0,0,0.5);" onclick="openCamera()" title="Scan Problem">
+                <span style="font-size: 24px;">📷</span>
+            </button>
+            <input type="text" id="ytSearchInput" class="standard" placeholder="Enter topic or scan problem..." style="margin-bottom: 0; font-size: 16px; border-radius: 16px; flex: 1;">
+        </div>
         
-        <div id="ytStatus" style="margin-top: 15px; font-size: 14px; font-weight: 600; color: #94a3b8;"></div>
+        <button id="ytSearchBtn" class="btn red" style="margin-top: 25px; border-radius: 30px; font-size: 16px;">🔍 Find Videos</button>
+        
+        <div id="ytStatus" style="margin-top: 15px; font-size: 14px; font-weight: 600; color: #94a3b8; min-height: 25px;"></div>
     </div>
 
-    <div id="ytResults" class="dashboard-grid" style="margin-top: 30px;">
+    <div id="ytResults" class="dashboard-grid" style="width: 100%; max-width: 1000px; margin-top: 30px;">
         </div>
 </div>
 
-<div id="ytPlayerOverlay">
-    <div class="yt-top-controls">
+<div id="cameraModal" class="cameraModal">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <div class="camera-top-bar">
+        <button id="closeCameraBtn" class="cam-icon-btn">❌</button>
+    </div>
+    <div class="cameraControls">
+        <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
+        <div id="capturePhotoBtn" class="cameraCircle"></div>
+        <button id="switchCameraBtn" class="cam-icon-btn">🔄</button>
+    </div>
+    <canvas id="captureCanvas" style="display:none;"></canvas>
+</div>
+
+<div id="ytPlayerOverlay" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 99999; display: none; flex-direction: column;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #000; border-bottom: 1px solid rgba(255,255,255,0.1);">
         <button id="ytRedirectBtn" class="btn red" style="width: auto; margin: 0; padding: 12px 25px; border-radius: 30px;">🚀 Open in YouTube App</button>
         <button id="ytCloseBtn" class="closeBtn" style="position: static; margin: 0;">✕</button>
     </div>
-    <div class="video-container">
-        <iframe id="ytIframe" allow="autoplay; fullscreen; encrypted-media"></iframe>
+    <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px;">
+        <iframe id="ytIframe" style="width: 100%; max-width: 1200px; height: 100%; max-height: 700px; border-radius: 12px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.8);" allow="autoplay; fullscreen; encrypted-media"></iframe>
     </div>
 </div>
 
 <script>
-    // Sidebar logic
+    // --- Sidebar ---
     function toggleSidebar() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
@@ -87,34 +88,30 @@
     }
     document.getElementById("overlay").onclick = toggleSidebar;
 
-    // Elements
+    // --- Elements ---
     const searchInput = document.getElementById('ytSearchInput');
     const searchBtn = document.getElementById('ytSearchBtn');
     const statusText = document.getElementById('ytStatus');
     const resultsContainer = document.getElementById('ytResults');
     
-    // Player Elements
-    const playerOverlay = document.getElementById('ytPlayerOverlay');
-    const ytIframe = document.getElementById('ytIframe');
-    const closeBtn = document.getElementById('ytCloseBtn');
-    const redirectBtn = document.getElementById('ytRedirectBtn');
-    let currentVideoUrl = "";
+    // Allow Enter key
+    searchInput.addEventListener("keypress", (e) => { if(e.key === "Enter") searchBtn.click(); });
 
-    // Allow Enter key to trigger search
-    searchInput.addEventListener("keypress", (e) => {
-        if(e.key === "Enter") searchBtn.click();
-    });
-
-    // Main Search Logic
+    // --- Core Search Logic ---
     searchBtn.addEventListener('click', async () => {
         const rawTopic = searchInput.value.trim();
         if (!rawTopic) return;
 
+        // LOCK THE BUTTON & SHOW SPINNER
+        searchBtn.disabled = true;
+        searchBtn.style.opacity = '0.6';
+        searchBtn.innerHTML = '<div class="spinner"></div> AI Optimizing...';
+        
         resultsContainer.innerHTML = "";
-        statusText.innerHTML = `<span class="spinner" style="border-top-color: #ef4444;"></span> AI is optimizing your request...`;
+        statusText.innerHTML = "Asking Gemini to format the perfect search query...";
 
         try {
-            // STEP 1: Send to AI to finalize/optimize the query
+            // 1. Optimize query with AI
             const aiResponse = await fetch('/api/gemini-text', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -123,72 +120,144 @@
                     userPrompt: rawTopic
                 })
             });
-            
             const aiData = await aiResponse.json();
-            if (!aiResponse.ok) throw new Error(aiData.error || "AI failed to optimize the query");
-            
+            if (!aiResponse.ok) throw new Error(aiData.error || "AI optimization failed");
             const optimizedQuery = aiData.text.replace(/["*]/g, '').trim();
-            statusText.innerHTML = `<span class="spinner" style="border-top-color: #ef4444;"></span> Searching YouTube for: <span style="color: #fff;">"${optimizedQuery}"</span>`;
+            
+            // UPDATE BUTTON & STATUS
+            searchBtn.innerHTML = '<div class="spinner"></div> Searching YouTube...';
+            statusText.innerHTML = `Searching YouTube for: <span style="color: #fff;">"${optimizedQuery}"</span>`;
 
-            // STEP 2: Send optimized query to yt-search endpoint
+            // 2. Search YouTube
             const ytResponse = await fetch('/api/youtube-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ topic: optimizedQuery })
             });
-
             const ytData = await ytResponse.json();
-            if (!ytResponse.ok) throw new Error(ytData.error || "YouTube search failed");
+            if (!ytResponse.ok) throw new Error("YouTube search failed. Ensure /api/youtube-search exists in server.js!");
 
             const videos = ytData.results || [];
-            
             if (videos.length === 0) {
                 statusText.innerHTML = `⚠️ No videos found for "${optimizedQuery}"`;
-                return;
-            }
-
-            statusText.innerHTML = `✅ Displaying top results for: <span style="color: #fff;">"${optimizedQuery}"</span>`;
-
-            // STEP 3: Render Thumbnails
-            resultsContainer.innerHTML = videos.map(vid => `
-                <div class="card" style="padding: 15px; display: flex; flex-direction: column; gap: 12px;" onclick="openVideoPlayer('${vid.videoId}', '${vid.url}')">
-                    <div style="position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                        <img src="${vid.thumbnail}" style="width: 100%; height: 100%; object-fit: cover;">
-                        <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px;">
-                            ${vid.timestamp || 'Video'}
+            } else {
+                statusText.innerHTML = `✅ Top results for: <span style="color: #fff;">"${optimizedQuery}"</span>`;
+                
+                // 3. Render Thumbnails
+                resultsContainer.innerHTML = videos.map(vid => `
+                    <div class="card" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; cursor: pointer;" onclick="openVideoPlayer('${vid.videoId}', '${vid.url}')">
+                        <div style="position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <img src="${vid.thumbnail}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px;">
+                                ${vid.timestamp || 'Video'}
+                            </div>
+                        </div>
+                        <div style="font-weight: 800; font-size: 14px; line-height: 1.4; color: #f8fafc; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            ${vid.title}
+                        </div>
+                        <div style="font-size: 12px; color: var(--muted); font-weight: 600;">
+                            👤 ${vid.author?.name || 'YouTube Creator'}
                         </div>
                     </div>
-                    <div style="font-weight: 800; font-size: 14px; line-height: 1.4; color: #f8fafc; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                        ${vid.title}
-                    </div>
-                    <div style="font-size: 12px; color: var(--muted); font-weight: 600;">
-                        👤 ${vid.author?.name || 'YouTube Creator'}
-                    </div>
-                </div>
-            `).join('');
-
+                `).join('');
+            }
         } catch (error) {
             statusText.innerHTML = `❌ Error: ${error.message}`;
+        } finally {
+            // UNLOCK THE BUTTON
+            searchBtn.disabled = false;
+            searchBtn.style.opacity = '1';
+            searchBtn.innerHTML = '🔍 Find Videos';
         }
     });
 
-    // Player Logic
+    // --- Camera & AI Extraction Logic ---
+    let currentStream = null;
+    let currentFacing = "environment";
+    
+    async function openCamera() {
+        document.getElementById('cameraModal').classList.add('active');
+        try {
+            if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+            currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } });
+            document.getElementById("cameraVideo").srcObject = currentStream;
+        } catch(e) { alert("Camera Error."); }
+    }
+    
+    function closeCamera() {
+        document.getElementById('cameraModal').classList.remove('active');
+        if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+        currentStream = null;
+    }
+    
+    document.getElementById('closeCameraBtn').onclick = closeCamera;
+    document.getElementById('switchCameraBtn').onclick = async () => {
+        currentFacing = currentFacing === "environment" ? "user" : "environment";
+        await openCamera();
+    };
+
+    document.getElementById('capturePhotoBtn').onclick = async () => {
+        const v = document.getElementById("cameraVideo");
+        const c = document.getElementById("captureCanvas");
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+        const b64 = c.toDataURL("image/jpeg", 0.8);
+        closeCamera();
+
+        // Lock button & indicate scanning
+        searchInput.value = "Scanning image...";
+        searchBtn.disabled = true;
+        searchBtn.style.opacity = '0.6';
+        searchBtn.innerHTML = '<div class="spinner"></div> Extracting Text...';
+
+        try {
+            const res = await fetch("/api/gemini-vision", {
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({
+                    imageBase64: b64,
+                    userPrompt: "Extract the core educational topic or question from this image to use as a YouTube search query. Be highly concise. Only output the search terms, nothing else. DO NOT use formatting."
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            
+            searchInput.value = data.text.replace(/[\*\"]/g, '').trim();
+            
+            // Unlock and Auto-Search
+            searchBtn.disabled = false;
+            searchBtn.style.opacity = '1';
+            searchBtn.click(); 
+
+        } catch (e) {
+            searchInput.value = "";
+            statusText.innerHTML = "❌ Failed to extract text: " + e.message;
+            searchBtn.disabled = false;
+            searchBtn.style.opacity = '1';
+            searchBtn.innerHTML = '🔍 Find Videos';
+        }
+    };
+
+    // --- Player Logic ---
+    let currentVideoUrl = "";
+    const playerOverlay = document.getElementById('ytPlayerOverlay');
+    const ytIframe = document.getElementById('ytIframe');
+
     window.openVideoPlayer = function(videoId, url) {
         currentVideoUrl = url;
         ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
         playerOverlay.style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Stop background scrolling
+        document.body.style.overflow = 'hidden'; 
     };
 
-    closeBtn.addEventListener('click', () => {
-        ytIframe.src = ""; // Instantly cuts off the audio/video
+    document.getElementById('ytCloseBtn').addEventListener('click', () => {
+        ytIframe.src = ""; 
         playerOverlay.style.display = 'none';
-        document.body.style.overflow = ''; // Restore background scrolling
+        document.body.style.overflow = ''; 
     });
 
-    redirectBtn.addEventListener('click', () => {
+    document.getElementById('ytRedirectBtn').addEventListener('click', () => {
         if(currentVideoUrl) window.open(currentVideoUrl, '_blank');
-        closeBtn.click(); // Close the overlay while they redirect
+        document.getElementById('ytCloseBtn').click(); 
     });
 </script>
 </body>
