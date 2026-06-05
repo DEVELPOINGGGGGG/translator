@@ -816,3 +816,37 @@ h1 { font-size: clamp(1.45rem, calc(1.75rem * var(--app-font-scale)), 2.9rem) !i
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+/* ==========================================================================
+   11. MATH EQUATION HORIZONTAL SCROLL FIX
+   ========================================================================== */
+/* 1. Stop the main text container from stretching the bubble */
+.bubble > div[id^="text_"], 
+.bubble > div[id^="search_"], 
+.bubble > div[id^="trans_"],
+.bubble > div[id^="qa_ans_"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Force MathJax blocks to be scrollable horizontally */
+mjx-container[display="true"] {
+    display: block !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 5px !important;
+}
+
+/* 3. Give the equation a sleek, tiny scrollbar so it's easy to drag */
+mjx-container[display="true"]::-webkit-scrollbar,
+.bubble > div::-webkit-scrollbar {
+    height: 5px;
+}
+mjx-container[display="true"]::-webkit-scrollbar-thumb,
+.bubble > div::-webkit-scrollbar-thumb {
+    background: rgba(192, 132, 252, 0.4); /* Glowing purple scrollbar */
+    border-radius: 10px;
+}
