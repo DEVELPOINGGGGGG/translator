@@ -3,7 +3,7 @@
 ================================================================================ */
 /* FORCED SCROLL FIX */
 html, body {
-    overflow: auto !important;
+    overflow: hidden !important; /* Locks background so only chat scrolls */
     overflow-x: hidden !important;
     height: 100%;
 }
@@ -14,7 +14,8 @@ html, body {
 }
 * { 
     margin: 0; padding: 0; box-sizing: border-box; 
-    font-family: 'Poppins', sans-serif; 
+    /* Changed to a clean, highly readable, premium font */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
     -webkit-tap-highlight-color: transparent; 
 }
 
@@ -236,12 +237,12 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 /* ==========================================================================
    6. SIDEBAR & MODALS
    ========================================================================== */
-.sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 999; transition: 0.3s ease-in-out; padding-top: 110px; box-shadow: 15px 0 50px rgba(0,0,0,0.8); border-right: 1px solid var(--glass-border); }
+.sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 15001 !important; transition: 0.3s ease-in-out; padding-top: 110px; box-shadow: 15px 0 50px rgba(0,0,0,0.8); border-right: 1px solid var(--glass-border); }
 .sidebar.active { left: 0; }
 .sidebar button { width: 100%; background: none; border: none; color: var(--text); padding: 22px 30px; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; transition: 0.2s; border-left: 0px solid transparent; }
 .sidebar button:hover { background: rgba(255,255,255,0.08); padding-left: 40px; border-left: 5px solid #c084fc; color: #e9d5ff; }
 
-.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: none; z-index: 998; }
+.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: none; z-index: 15000 !important; }
 .overlay.active { display: block; animation: fadeIn 0.3s; }
 
 .page { display: none; position: absolute; top: 105px; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 20px; scroll-behavior: smooth; padding-bottom: 120px; }
@@ -416,8 +417,18 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 }
 
 /* ============================================================================
-   10. EXTRA DECORATION + SAFE GLOBAL FONT SIZE CONTROLS
+   10. EXTRA DECORATION + SAFE GLOBAL FONT SIZE CONTROLS & NEW FIXES
    ============================================================================ */
+
+/* Creator output image size fix */
+.creator-output-img {
+    max-width: 100%;
+    max-height: 40vh; /* Keeps the image compact */
+    object-fit: contain;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
 :root {
     --app-font-scale: 1;
     --neon-cyan: rgba(56, 189, 248, 0.55);
@@ -583,13 +594,15 @@ h1 { font-size: clamp(1.45rem, calc(1.75rem * var(--app-font-scale)), 2.9rem) !i
     overflow-wrap: anywhere;
 }
 
+/* UPDATED FONT DOCK: Fixed to the top so it doesn't overlap the input */
 .font-size-dock {
     position: fixed;
     right: max(16px, env(safe-area-inset-right));
-    bottom: calc(18px + env(safe-area-inset-bottom));
+    top: 85px;
+    bottom: auto !important;
     z-index: 12000;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     align-items: flex-end;
     gap: 12px;
 }
@@ -637,7 +650,7 @@ h1 { font-size: clamp(1.45rem, calc(1.75rem * var(--app-font-scale)), 2.9rem) !i
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
     box-shadow: 0 20px 55px rgba(0,0,0,.65), 0 0 36px rgba(139,92,246,.22);
-    transform: translateY(10px) scale(.96);
+    transform: translateY(-10px) scale(.96); /* Adjusted animation to drop down */
     opacity: 0;
     pointer-events: none;
     transition: .22s ease;
@@ -685,11 +698,12 @@ h1 { font-size: clamp(1.45rem, calc(1.75rem * var(--app-font-scale)), 2.9rem) !i
 @media (max-width: 520px) {
     .font-size-dock {
         right: 12px;
-        bottom: calc(12px + env(safe-area-inset-bottom));
+        top: 85px;
+        bottom: auto !important;
     }
     .chat-input-area + .font-size-dock,
     body:has(.chat-input-area) .font-size-dock {
-        bottom: calc(98px + env(safe-area-inset-bottom));
+        bottom: auto !important;
     }
     .font-size-toggle {
         width: 52px;
