@@ -10,6 +10,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Mic Recording Animation */
+        @keyframes pulse-mic {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .recording {
+            animation: pulse-mic 1.5s infinite;
+            background: rgba(239, 68, 68, 0.9) !important;
+            border-color: #ef4444 !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -34,31 +48,40 @@
 
 <div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px;">
     
-    <div class="card" style="width: 100%; max-width: 800px; text-align: center; padding: 30px;">
-        <h2 class="cardTitle" style="color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.4); font-size: 26px;">YouTube Learning Engine</h2>
-        <p class="cardSub" style="font-size: 15px;">Type a topic or scan a problem to find the best tutorials.</p>
+    <div class="card" style="width: 100%; max-width: 800px; text-align: center; padding: 25px; position: sticky; top: 0; z-index: 50;">
+        <h2 class="cardTitle" style="color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.4); font-size: 24px; margin-bottom: 5px;">YouTube AI Engine</h2>
         
-        <div style="display: flex; gap: 15px; margin-top: 25px; align-items: center;">
-            <button class="cam-icon-btn" style="border-radius: 16px; width: 60px; height: 60px; flex-shrink: 0; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); box-shadow: 0 10px 20px rgba(0,0,0,0.5);" onclick="openCamera()" title="Scan Problem">
-                <span style="font-size: 24px;">📷</span>
+        <div style="display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap;">
+            
+            <select id="micLang" style="width: auto; padding: 12px; border-radius: 12px; margin-bottom: 0; flex-shrink: 0; font-size: 14px;">
+                <option value="en-US">English</option>
+                <option value="hi-IN">Hindi</option>
+            </select>
+
+            <button id="voiceBtn" class="cam-icon-btn" style="border-radius: 12px; width: 50px; height: 50px; flex-shrink: 0; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.4);" title="Voice Search">
+                <span style="font-size: 20px;">🎤</span>
             </button>
-            <input type="text" id="ytSearchInput" class="standard" placeholder="Enter topic or scan problem..." style="margin-bottom: 0; font-size: 16px; border-radius: 16px; flex: 1;">
+
+            <button class="cam-icon-btn" style="border-radius: 12px; width: 50px; height: 50px; flex-shrink: 0; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4);" onclick="openCamera()" title="Scan Problem">
+                <span style="font-size: 20px;">📷</span>
+            </button>
+            
+            <input type="text" id="ytSearchInput" class="standard" placeholder="Topic or voice..." style="margin-bottom: 0; font-size: 15px; border-radius: 12px; flex: 1; min-width: 200px;">
         </div>
         
-        <button id="ytSearchBtn" class="btn red" style="margin-top: 25px; border-radius: 30px; font-size: 16px;">🔍 Find Videos</button>
-        
-        <div id="ytStatus" style="margin-top: 15px; font-size: 14px; font-weight: 600; color: #94a3b8; min-height: 25px;"></div>
+        <button id="ytSearchBtn" class="btn red" style="margin-top: 15px; border-radius: 30px; font-size: 15px;">🔍 AI Search & Rank</button>
+        <div id="ytStatus" style="margin-top: 10px; font-size: 13px; font-weight: 600; color: #94a3b8; min-height: 20px;">Ready.</div>
     </div>
 
     <div id="ytResults" class="dashboard-grid" style="width: 100%; max-width: 1000px; margin-top: 30px;">
         </div>
+
+    <button id="loadMoreBtn" class="btn blue" style="width: auto; padding: 12px 35px; border-radius: 30px; margin-top: 30px; display: none; box-shadow: 0 0 20px rgba(56,189,248,0.3);">⬇️ Load More +15</button>
 </div>
 
 <div id="cameraModal" class="cameraModal">
     <video id="cameraVideo" autoplay playsinline></video>
-    <div class="camera-top-bar">
-        <button id="closeCameraBtn" class="cam-icon-btn">❌</button>
-    </div>
+    <div class="camera-top-bar"><button id="closeCameraBtn" class="cam-icon-btn">❌</button></div>
     <div class="cameraControls">
         <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
         <div id="capturePhotoBtn" class="cameraCircle"></div>
@@ -69,7 +92,7 @@
 
 <div id="ytPlayerOverlay" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); z-index: 99999; display: none; flex-direction: column;">
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #000; border-bottom: 1px solid rgba(255,255,255,0.1);">
-        <button id="ytRedirectBtn" class="btn red" style="width: auto; margin: 0; padding: 12px 25px; border-radius: 30px;">🚀 Open in YouTube App</button>
+        <button id="ytRedirectBtn" class="btn red" style="width: auto; margin: 0; padding: 10px 20px; border-radius: 30px;">🚀 Open App</button>
         <button id="ytCloseBtn" class="closeBtn" style="position: static; margin: 0;">✕</button>
     </div>
     <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px;">
@@ -88,93 +111,168 @@
     }
     document.getElementById("overlay").onclick = toggleSidebar;
 
-    // --- Elements ---
+    // --- Elements & State ---
     const searchInput = document.getElementById('ytSearchInput');
     const searchBtn = document.getElementById('ytSearchBtn');
     const statusText = document.getElementById('ytStatus');
     const resultsContainer = document.getElementById('ytResults');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
     
-    // Allow Enter key
+    let allRankedVideos = [];
+    let currentRenderIndex = 0;
+
     searchInput.addEventListener("keypress", (e) => { if(e.key === "Enter") searchBtn.click(); });
 
-    // --- Core Search Logic ---
+    // --- Voice Recognition Engine ---
+    const voiceBtn = document.getElementById('voiceBtn');
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = SpeechRec ? new SpeechRec() : null;
+
+    if(recognition) {
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        recognition.onstart = () => {
+            voiceBtn.classList.add('recording');
+            searchInput.placeholder = "Listening...";
+        };
+        
+        recognition.onresult = (e) => {
+            searchInput.value = e.results[0][0].transcript;
+        };
+        
+        recognition.onend = () => {
+            voiceBtn.classList.remove('recording');
+            searchInput.placeholder = "Topic or voice...";
+            if(searchInput.value.trim() !== "") searchBtn.click(); // Auto search
+        };
+    }
+
+    voiceBtn.addEventListener('click', () => {
+        if(!recognition) return alert("Microphone not supported on this browser.");
+        recognition.lang = document.getElementById('micLang').value;
+        recognition.start();
+    });
+
+    // --- Render Engine ---
+    function renderVideos(count) {
+        const batch = allRankedVideos.slice(currentRenderIndex, currentRenderIndex + count);
+        
+        const html = batch.map((vid, index) => {
+            // Give a "Top Pick" badge to the first 3 videos
+            const isTopPick = (currentRenderIndex + index) < 3;
+            const badgeHtml = isTopPick ? `<div style="position:absolute; top:-10px; left:-10px; background:linear-gradient(135deg, #f59e0b, #ef4444); color:white; padding:4px 10px; border-radius:10px; font-size:11px; font-weight:900; box-shadow:0 5px 15px rgba(245,158,11,0.5); z-index:10; transform:rotate(-5deg);">⭐ TOP PICK</div>` : '';
+
+            return `
+            <div class="card" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position:relative;" onclick="openVideoPlayer('${vid.videoId}', '${vid.url}')">
+                ${badgeHtml}
+                <div style="position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                    <img src="${vid.thumbnail}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px;">
+                        ${vid.timestamp || 'Video'}
+                    </div>
+                </div>
+                <div style="font-weight: 800; font-size: 14px; line-height: 1.4; color: #f8fafc; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    ${vid.title}
+                </div>
+                <div style="font-size: 12px; color: var(--muted); font-weight: 600;">👤 ${vid.author?.name || 'Creator'}</div>
+            </div>`;
+        }).join('');
+
+        if(currentRenderIndex === 0) resultsContainer.innerHTML = html;
+        else resultsContainer.insertAdjacentHTML('beforeend', html);
+
+        currentRenderIndex += count;
+
+        if (currentRenderIndex >= allRankedVideos.length) {
+            loadMoreBtn.style.display = 'none';
+        } else {
+            loadMoreBtn.style.display = 'block';
+        }
+    }
+
+    loadMoreBtn.addEventListener('click', () => renderVideos(15));
+
+    // --- Core Search & Gemini Rank Logic ---
     searchBtn.addEventListener('click', async () => {
         const rawTopic = searchInput.value.trim();
         if (!rawTopic) return;
 
-        // LOCK THE BUTTON & SHOW SPINNER
         searchBtn.disabled = true;
         searchBtn.style.opacity = '0.6';
-        searchBtn.innerHTML = '<div class="spinner"></div> AI Optimizing...';
+        searchBtn.innerHTML = '<div class="spinner"></div> AI Processing...';
+        loadMoreBtn.style.display = 'none';
         
         resultsContainer.innerHTML = "";
-        statusText.innerHTML = "Asking Gemini to format the perfect search query...";
+        statusText.innerHTML = "Fetching results...";
 
         try {
-            // 1. Optimize query with AI
-            const aiResponse = await fetch('/api/gemini-text', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    systemPrompt: "You are an expert at creating YouTube search queries. Take the user's input and convert it into a highly optimized, concise search string specifically for finding the best educational and tutorial videos. Return STRICTLY ONLY the optimized search string. No quotes, no explanations.",
-                    userPrompt: rawTopic
-                })
-            });
-            const aiData = await aiResponse.json();
-            if (!aiResponse.ok) throw new Error(aiData.error || "AI optimization failed");
-            const optimizedQuery = aiData.text.replace(/["*]/g, '').trim();
-            
-            // UPDATE BUTTON & STATUS
-            searchBtn.innerHTML = '<div class="spinner"></div> Searching YouTube...';
-            statusText.innerHTML = `Searching YouTube for: <span style="color: #fff;">"${optimizedQuery}"</span>`;
-
-            // 2. Search YouTube
+            // 1. Fetch 45 videos from YouTube
             const ytResponse = await fetch('/api/youtube-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ topic: optimizedQuery })
+                body: JSON.stringify({ topic: rawTopic })
             });
             const ytData = await ytResponse.json();
-            if (!ytResponse.ok) throw new Error("YouTube search failed. Ensure /api/youtube-search exists in server.js!");
+            if (!ytResponse.ok) throw new Error("YouTube search failed.");
+            const rawVideos = ytData.results || [];
+            if (rawVideos.length === 0) throw new Error(`No videos found for "${rawTopic}"`);
 
-            const videos = ytData.results || [];
-            if (videos.length === 0) {
-                statusText.innerHTML = `⚠️ No videos found for "${optimizedQuery}"`;
-            } else {
-                statusText.innerHTML = `✅ Top results for: <span style="color: #fff;">"${optimizedQuery}"</span>`;
-                
-                // 3. Render Thumbnails
-                resultsContainer.innerHTML = videos.map(vid => `
-                    <div class="card" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; cursor: pointer;" onclick="openVideoPlayer('${vid.videoId}', '${vid.url}')">
-                        <div style="position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                            <img src="${vid.thumbnail}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px;">
-                                ${vid.timestamp || 'Video'}
-                            </div>
-                        </div>
-                        <div style="font-weight: 800; font-size: 14px; line-height: 1.4; color: #f8fafc; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                            ${vid.title}
-                        </div>
-                        <div style="font-size: 12px; color: var(--muted); font-weight: 600;">
-                            👤 ${vid.author?.name || 'YouTube Creator'}
-                        </div>
-                    </div>
-                `).join('');
+            statusText.innerHTML = "🧠 Gemini is ranking videos from best to worst...";
+
+            // 2. Format list for Gemini to rank
+            const titleList = rawVideos.map((v, i) => `${i} - ${v.title}`).join('\n');
+            const rankingPrompt = `You are an expert educational curator. Analyze these YouTube video titles for the topic: "${rawTopic}". Determine which are the highest quality educational videos. Push off-topic, short, or clickbait videos to the bottom. \n\nTitles:\n${titleList}\n\nReturn STRICTLY a JSON array of the indices in your newly ranked order from best to worst. Example format: [5, 1, 0, 12, 4] NOTHING ELSE.`;
+
+            // 3. Ask Gemini to re-rank
+            let rankedIndices = [];
+            try {
+                const aiResponse = await fetch('/api/gemini-text', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ systemPrompt: "You return strictly a valid JSON array of numbers.", userPrompt: rankingPrompt })
+                });
+                const aiData = await aiResponse.json();
+                // Extract array from response string
+                const match = aiData.text.match(/\[(.*?)\]/);
+                if(match) rankedIndices = JSON.parse(`[${match[1]}]`);
+                else throw new Error("Format failed");
+            } catch (aiErr) {
+                // If Gemini fails to format the array, fallback to normal YouTube ordering
+                rankedIndices = rawVideos.map((_, i) => i); 
             }
+
+            // 4. Sort the video array based on Gemini's ranking
+            allRankedVideos = [];
+            let addedIndices = new Set();
+            
+            // Add in ranked order
+            rankedIndices.forEach(idx => {
+                if(rawVideos[idx] && !addedIndices.has(idx)) {
+                    allRankedVideos.push(rawVideos[idx]);
+                    addedIndices.add(idx);
+                }
+            });
+            // Append any Gemini missed
+            rawVideos.forEach((v, idx) => {
+                if(!addedIndices.has(idx)) allRankedVideos.push(v);
+            });
+
+            // 5. Render Top 15
+            currentRenderIndex = 0;
+            renderVideos(15);
+            statusText.innerHTML = `✅ Top Gemini-curated results for: <span style="color: #fff;">"${rawTopic}"</span>`;
+
         } catch (error) {
             statusText.innerHTML = `❌ Error: ${error.message}`;
         } finally {
-            // UNLOCK THE BUTTON
             searchBtn.disabled = false;
             searchBtn.style.opacity = '1';
-            searchBtn.innerHTML = '🔍 Find Videos';
+            searchBtn.innerHTML = '🔍 AI Search & Rank';
         }
     });
 
     // --- Camera & AI Extraction Logic ---
-    let currentStream = null;
-    let currentFacing = "environment";
-    
+    let currentStream = null; let currentFacing = "environment";
     async function openCamera() {
         document.getElementById('cameraModal').classList.add('active');
         try {
@@ -183,7 +281,6 @@
             document.getElementById("cameraVideo").srcObject = currentStream;
         } catch(e) { alert("Camera Error."); }
     }
-    
     function closeCamera() {
         document.getElementById('cameraModal').classList.remove('active');
         if (currentStream) currentStream.getTracks().forEach(t => t.stop());
@@ -191,53 +288,35 @@
     }
     
     document.getElementById('closeCameraBtn').onclick = closeCamera;
-    document.getElementById('switchCameraBtn').onclick = async () => {
-        currentFacing = currentFacing === "environment" ? "user" : "environment";
-        await openCamera();
-    };
+    document.getElementById('switchCameraBtn').onclick = async () => { currentFacing = currentFacing === "environment" ? "user" : "environment"; await openCamera(); };
 
     document.getElementById('capturePhotoBtn').onclick = async () => {
-        const v = document.getElementById("cameraVideo");
-        const c = document.getElementById("captureCanvas");
+        const v = document.getElementById("cameraVideo"); const c = document.getElementById("captureCanvas");
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
         const b64 = c.toDataURL("image/jpeg", 0.8);
         closeCamera();
 
-        // Lock button & indicate scanning
         searchInput.value = "Scanning image...";
-        searchBtn.disabled = true;
-        searchBtn.style.opacity = '0.6';
-        searchBtn.innerHTML = '<div class="spinner"></div> Extracting Text...';
+        searchBtn.disabled = true; searchBtn.style.opacity = '0.6'; searchBtn.innerHTML = '<div class="spinner"></div> Extracting...';
 
         try {
             const res = await fetch("/api/gemini-vision", {
                 method: "POST", headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({
-                    imageBase64: b64,
-                    userPrompt: "Extract the core educational topic or question from this image to use as a YouTube search query. Be highly concise. Only output the search terms, nothing else. DO NOT use formatting."
-                })
+                body: JSON.stringify({ imageBase64: b64, userPrompt: "Extract the core educational topic or question from this image to use as a YouTube search query. Be highly concise. Only output the search terms, nothing else. DO NOT use formatting." })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             
             searchInput.value = data.text.replace(/[\*\"]/g, '').trim();
-            
-            // Unlock and Auto-Search
-            searchBtn.disabled = false;
-            searchBtn.style.opacity = '1';
-            searchBtn.click(); 
-
+            searchBtn.disabled = false; searchBtn.style.opacity = '1'; searchBtn.click(); 
         } catch (e) {
-            searchInput.value = "";
-            statusText.innerHTML = "❌ Failed to extract text: " + e.message;
-            searchBtn.disabled = false;
-            searchBtn.style.opacity = '1';
-            searchBtn.innerHTML = '🔍 Find Videos';
+            searchInput.value = ""; statusText.innerHTML = "❌ Failed: " + e.message;
+            searchBtn.disabled = false; searchBtn.style.opacity = '1'; searchBtn.innerHTML = '🔍 AI Search & Rank';
         }
     };
 
-    // --- Player Logic ---
+    // --- Video Player Logic ---
     let currentVideoUrl = "";
     const playerOverlay = document.getElementById('ytPlayerOverlay');
     const ytIframe = document.getElementById('ytIframe');
@@ -250,9 +329,7 @@
     };
 
     document.getElementById('ytCloseBtn').addEventListener('click', () => {
-        ytIframe.src = ""; 
-        playerOverlay.style.display = 'none';
-        document.body.style.overflow = ''; 
+        ytIframe.src = ""; playerOverlay.style.display = 'none'; document.body.style.overflow = ''; 
     });
 
     document.getElementById('ytRedirectBtn').addEventListener('click', () => {
