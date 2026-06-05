@@ -610,11 +610,12 @@ async function runGroqSearch() {
     } catch(e) { if(document.getElementById(lId)) document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
-// --- MEDIA PLAYER ENGINE ---
+// ---  PLAYER ENGINE ---
+// --- MEDIA PLAYER ENGINE (YOUTUBE-STYLE UPGRADE) ---
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 function startVideoTimer(totalChars) {
-    clearInterval(videoTickInterval); videoElapsed = 0; videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
-    document.getElementById('vTimeDisplay').innerText = `00:00 / ${formatTime(videoTotalEst)}`;
+    clearInterval(videoTickInterval); videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
+    document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(videoTotalEst)}`;
     videoTickInterval = setInterval(() => {
         if(!isVideoPaused && window.speechSynthesis.speaking) {
             videoElapsed += 1; let displayTotal = videoTotalEst; if(videoElapsed > videoTotalEst) displayTotal = videoElapsed; 
@@ -622,32 +623,60 @@ function startVideoTimer(totalChars) {
         }
     }, 1000);
 }
+
 function resetVideoActivity() {
     const top = document.getElementById('vTopBar'); const bot = document.getElementById('vControlsContainer'); const ov = document.getElementById('videoGuiOverlay');
     if(top) top.style.opacity = '1'; if(bot) bot.style.opacity = '1'; if(ov) ov.style.cursor = 'default';
     clearTimeout(hideControlsTimer);
     hideControlsTimer = setTimeout(() => { if(!isVideoPaused) { if(top) top.style.opacity = '0'; if(bot) bot.style.opacity = '0'; if(ov) ov.style.cursor = 'none'; } }, 3000);
 }
-function toggleVideoFullscreen() { const ov = document.getElementById('videoGuiOverlay'); if (!document.fullscreenElement) { ov.requestFullscreen().catch(err => { console.log("Fullscreen blocked."); }); } else { document.exitFullscreen(); } }
+
+function toggleVideoFullscreen() { 
+    const ov = document.getElementById('videoGuiOverlay'); 
+    if (!document.fullscreenElement) { 
+        if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
+        if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+    } else { 
+        document.exitFullscreen().catch(()=>{}); 
+        if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    } 
+}
+
 function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); if (activeVideoUtterance) activeVideoUtterance.volume = currentVideoVolume; resetVideoActivity(); }
 
 function initVideoGui() {
     if(!window.latestMathSolution) return;
-    if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
     
+    videoElapsed = 0; // Reset timer on fresh load
     const ov = document.createElement('div'); ov.id = 'videoGuiOverlay';
-    ov.style.cssText = "position:fixed; inset:0; background:radial-gradient(circle, #1e293b 0%, #000000 100%); z-index:9999; display:flex; flex-direction:column; font-family:'Poppins', sans-serif;";
+    ov.style.cssText = "position:fixed; inset:0; background:radial-gradient(circle, #1e293b 0%, #000000 100%); z-index:9999; display:flex; flex-direction:column; font-family:'Poppins', sans-serif; touch-action:none;";
     ov.innerHTML = `
         <div id="vTopBar" style="position:absolute; top:0; left:0; right:0; padding:20px; background:linear-gradient(rgba(0,0,0,0.9), transparent); display:flex; justify-content:space-between; transition: opacity 0.3s; z-index:100;">
             <div style="color:white; font-weight:bold; font-size:18px;">🔴 AI TUTOR LIVE</div>
             <button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
         </div>
-        <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px;">
+        
+        <!-- Double Tap Zones -->
+        <div style="position:absolute; left:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, -1)"></div>
+        <div style="position:absolute; right:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, 1)"></div>
+        
+        <!-- Skip Indicators -->
+        <div id="skipIndLeft" style="position:absolute; left:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏪</div>
+        <div id="skipIndRight" style="position:absolute; right:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏩</div>
+
+        <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px; position:relative; z-index:10;">
             <div id="videoContent" style="font-size: 24px; color: #fff; line-height:2.0; max-width:800px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:30px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
         </div>
+
         <div id="vControlsContainer" style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); transition: opacity 0.3s; z-index:100;">
-           <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; margin-bottom:15px;" id="vProgressBarBg"><div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.4s ease;" id="vProgressBar"></div></div>
-           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+           <!-- Clickable Progress Bar -->
+           <div style="width:100%; height:20px; cursor:pointer; display:flex; align-items:center;" onclick="seekVideo(event)">
+               <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; position:relative;" id="vProgressBarBg">
+                   <div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.1s linear;" id="vProgressBar"></div>
+               </div>
+           </div>
+
+           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:5px;">
                <div style="display:flex; align-items:center; gap:20px;">
                    <button id="vPlayBtn" onclick="toggleVideoPause()" style="background:none; border:none; color:white; font-size:26px; cursor:pointer;">⏸️</button>
                    <span id="vTimeDisplay" style="color:#cbd5e1; font-size:14px; font-weight:500; font-family:monospace;">00:00 / 00:00</span>
@@ -661,9 +690,56 @@ function initVideoGui() {
         </div>
     `;
     document.body.appendChild(ov); 
-    ov.addEventListener('mousemove', resetVideoActivity); ov.addEventListener('touchstart', resetVideoActivity); ov.addEventListener('click', resetVideoActivity);
-    resetVideoActivity(); playFractionVideo();
+    
+    // Auto Fullscreen & Landscape on Launch
+    if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
+    if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+
+    ov.addEventListener('mousemove', resetVideoActivity); ov.addEventListener('touchstart', resetVideoActivity);
+    resetVideoActivity(); playFractionVideo(0);
 }
+
+// Custom Double-Tap handler for Left/Right sides
+window.handleVideoTap = function(e, dir) {
+    const now = Date.now();
+    if (now - (e.target.lastTap || 0) < 300) {
+        skipVideo(dir);
+        e.target.lastTap = 0; 
+    } else {
+        e.target.lastTap = now;
+        resetVideoActivity();
+    }
+};
+
+window.skipVideo = function(dir) {
+    const ind = document.getElementById(dir === 1 ? 'skipIndRight' : 'skipIndLeft');
+    if(ind) { ind.style.opacity = '1'; setTimeout(()=>ind.style.opacity='0', 400); }
+    
+    window.speechSynthesis.cancel();
+    const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
+    let target = videoLineIndex + dir;
+    if(target < 0) target = 0;
+    if(target >= lines.length) target = lines.length - 1;
+    
+    // Recalculate estimated time elapsed based on skipped lines
+    videoElapsed = Math.floor((target / lines.length) * videoTotalEst);
+    playFractionVideo(target, false, isVideoPaused);
+};
+
+window.seekVideo = function(e) {
+    const barBg = document.getElementById('vProgressBarBg');
+    const rect = barBg.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percent = Math.max(0, Math.min(1, clickX / rect.width));
+    
+    const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
+    let targetLine = Math.floor(percent * lines.length);
+    if(targetLine >= lines.length) targetLine = lines.length - 1;
+
+    window.speechSynthesis.cancel();
+    videoElapsed = Math.floor((targetLine / lines.length) * videoTotalEst);
+    playFractionVideo(targetLine, false, isVideoPaused);
+};
 
 function exitVideoGui() { 
     window.speechSynthesis.cancel(); clearInterval(videoTickInterval); clearTimeout(hideControlsTimer);
@@ -678,6 +754,7 @@ function cycleVideoSpeed() {
     const wasPaused = isVideoPaused;
     window.speechSynthesis.cancel();
     resetVideoActivity();
+    // Restart exactly from current line without clearing the screen!
     playFractionVideo(videoLineIndex, true, wasPaused);
 }
 
@@ -687,7 +764,10 @@ function toggleVideoPause() {
     resetVideoActivity();
 }
 
-function replayVideo() { window.speechSynthesis.cancel(); videoLineIndex = 0; isVideoPaused = false; document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); }
+function replayVideo() { 
+    window.speechSynthesis.cancel(); videoLineIndex = 0; videoElapsed = 0; isVideoPaused = false; 
+    document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); 
+}
 
 async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
     const token = ++videoRunToken;
@@ -695,14 +775,26 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
     if (!content) return;
     const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
     videoLineIndex = Math.min(startIndex, Math.max(lines.length - 1, 0));
-    if (!preserveContent) content.innerHTML = "";
+    
+    if (!preserveContent) {
+        content.innerHTML = "";
+        // PRE-RENDER previous lines instantly so the screen doesn't go blank when you skip forward!
+        for(let i=0; i<videoLineIndex; i++) {
+            let div = document.createElement("div");
+            div.dataset.videoLine = i; div.className = "video-line-card"; div.innerHTML = lines[i];
+            content.appendChild(div);
+            if (window.MathJax) MathJax.typesetPromise([div]);
+        }
+    }
+    
     startVideoTimer(window.latestMathSolution.length);
     const pBar = document.getElementById('vProgressBar');
-    if(pBar) pBar.style.width = lines.length ? ((videoLineIndex / lines.length) * 100) + '%' : '0%';
 
     for(let i=videoLineIndex; i<lines.length; i++) {
         if(token !== videoRunToken || !document.getElementById('videoGuiOverlay')) return;
         videoLineIndex = i;
+        if(pBar) pBar.style.width = ((i / lines.length) * 100) + '%';
+        
         const lineText = lines[i];
         const cleanSpeech = formatHindiSpeechText(lineText);
         const u = new SpeechSynthesisUtterance(cleanSpeech);
@@ -715,13 +807,14 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
         let lineDiv = document.querySelector(`[data-video-line="${i}"]`);
         if (!lineDiv) {
             lineDiv = document.createElement("div");
-            lineDiv.dataset.videoLine = i;
-            lineDiv.className = "video-line-card";
-            lineDiv.innerHTML = lineText;
+            lineDiv.dataset.videoLine = i; lineDiv.className = "video-line-card"; lineDiv.innerHTML = lineText;
             content.appendChild(lineDiv);
         }
         lineDiv.classList.add("active");
-        if (window.MathJax) { MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); }
+        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
+            MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); 
+            lineDiv.setAttribute('data-math-done', 'true');
+        }
         setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 60);
 
         window.speechSynthesis.speak(u);
@@ -734,14 +827,13 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
         await new Promise(r => { u.onend = r; u.onerror = r; setTimeout(r, Math.max(3500, lineText.length * 90 / videoSpeed)); });
         lineDiv.classList.remove("active");
         if(token !== videoRunToken) return;
-        videoLineIndex = i + 1;
-        if(pBar) pBar.style.width = (((i + 1) / lines.length) * 100) + '%';
     }
+    
+    if(pBar) pBar.style.width = '100%';
     clearInterval(videoTickInterval);
     const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄";
     resetVideoActivity();
 }
-
 // --- TEXT TRANSLATOR ---
 const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
