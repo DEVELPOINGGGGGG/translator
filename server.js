@@ -1,7 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-
+const ytSearch = require('yt-search');
 const port = process.env.PORT || 10000;
 
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
@@ -223,6 +223,29 @@ async function handleGroqSearch(req, res) {
         }, override);
         return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
+}
+// ==========================================
+// YOUTUBE SEARCH ENDPOINT
+// ==========================================
+async function handleYoutubeSearch(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        if (!body.topic) return sendJson(res, 400, { error: "Topic is required" });
+
+        const results = await ytSearch(body.topic);
+        const videos = results.videos.slice(0, 15).map(v => ({
+            videoId: v.videoId, 
+            title: v.title, 
+            url: v.url, 
+            thumbnail: v.thumbnail,
+            author: v.author, 
+            timestamp: v.timestamp
+        }));
+        
+        return sendJson(res, 200, { results: videos });
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
 }
 
 // ==========================================
