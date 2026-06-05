@@ -1,6 +1,49 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const ytSearch = require("yt-search");
+
+// ==========================================
+// YOUTUBE SEARCH ENDPOINT
+// ==========================================
+async function handleYoutubeSearch(req, res) {
+  try {
+    const body = JSON.parse(await readRequestBody(req));
+    const topic = body.topic || "India trending";
+
+    // Step 1: Ask Gemini to refine the query
+    const geminiResult = await tryProviders(TEXT_PROVIDERS, async (p) => {
+      const payload = { contents: [{ role: "user", parts: [{ text: `Find the best YouTube video in India about ${topic}` }] }] };
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || "Gemini failed");
+      return data.candidates[0].content.parts[0].text;
+    });
+
+    // Step 2: Use yt-search with Gemini’s refined query
+    const searchResult = await ytSearch(geminiResult.text || topic);
+    if (!searchResult.videos || searchResult.videos.length === 0) {
+      return sendJson(res, 404, { error: "No videos found" });
+    }
+
+    const bestVideo = searchResult.videos[0];
+    return sendJson(res, 200, {
+      title: bestVideo.title,
+      url: bestVideo.url,
+      videoId: bestVideo.videoId,
+      thumbnail: bestVideo.thumbnail
+    });
+  } catch (e) {
+    return sendJson(res, 502, { error: e.message });
+  }
+}
+
+// Add route
+if (req.method === "POST" && req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
 
 const port = process.env.PORT || 10000;
 
