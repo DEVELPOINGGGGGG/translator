@@ -318,37 +318,53 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
 
 
 // 🛑 UPGRADED HINDI SPEECH TRANSLATOR 🛑
+// 🛑 UPGRADED HINDI SPEECH TRANSLATOR (STRIPS ALL LATEX JUNK) 🛑
 function formatHindiSpeechText(text) {
     return String(text || "")
-        // Fraction translation
+        // 1. Remove layout and spacing junk
+        .replace(/\\text\{([^}]+)\}/g, " $1 ")
+        .replace(/\\quad/g, " ")
+        .replace(/\\qquad/g, " ")
+        .replace(/\\,/g, " ")
+        .replace(/\\;/g, " ")
+        .replace(/\\Rightarrow/g, " iska matlab hai ")
+        .replace(/\\rightarrow/g, " iska matlab hai ")
+        .replace(/\\approx/g, " lagbhag barabar ")
+        .replace(/\\left/g, " ")
+        .replace(/\\right/g, " ")
+        // 2. Math Operations
         .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ")
-        // Math symbols to Hindi speech
+        .replace(/\\sqrt\{([^}]+)\}/g, " root $1 ")
+        .replace(/\^\{([^}]+)\}/g, " ki power $1 ")
+        .replace(/\^([0-9a-zA-Z])/g, " ki power $1 ")
+        .replace(/_\{([^}]+)\}/g, " base $1 ")
+        .replace(/_([0-9a-zA-Z])/g, " base $1 ")
         .replace(/\\times/gi, " guna ")
         .replace(/ X /g, " guna ")
         .replace(/ x /g, " guna ")
         .replace(/:-/g, " bhag ")
         .replace(/÷/g, " bhag ")
         .replace(/=/g, " barabar ")
-        .replace(/-/g, " ghatav ")
-        .replace(/\+/g, " jod ")
-        .replace(/%/g, " pratishat ")
-        // Brackets
+        .replace(/-/g, " minus ") 
+        .replace(/\+/g, " plus ")
+        .replace(/%/g, " percent ")
+        // 3. Brackets & Leftover Symbols
         .replace(/\(/g, " bracket ")
         .replace(/\)/g, " bracket ")
-        .replace(/\{/g, " madhyam kosthak ")
-        .replace(/\}/g, " madhyam kosthak ")
-        .replace(/\[/g, " bara kosthak ")
-        .replace(/\]/g, " bara kosthak ")
+        .replace(/\{/g, " ") // Remove leftover raw curly braces
+        .replace(/\}/g, " ")
+        .replace(/\[/g, " ")
+        .replace(/\]/g, " ")
         .replace(/\//g, " batta ")
-        .replace(/[\$]/g, " ")
-        // 1-2 SECOND PAUSE HACK: Stacking commas forces the TTS engine to take a deep breath at periods
-        .replace(/\./g, ". , , , , ")
-        .replace(/\|/g, " , , , , ")
-        // Cleanup spaces
+        // 4. STRIP ALL REMAINING $ AND \ SO IT NEVER SAYS "BACKSLASH"
+        .replace(/[\$\\]/g, " ")
+        // 5. Force 1-2 second pauses at periods
+        .replace(/\./g, ". , , ")
+        .replace(/\|/g, " , , ")
+        // 6. Clean up extra spaces
         .replace(/\s+/g, " ")
         .trim();
 }
-
 // 🛑 STRICT HINDI TTS & PREMIUM MINI-PLAYER ENGINE 🛑
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
@@ -802,6 +818,7 @@ function replayVideo() {
 }
 
 // 🛑 WORD-BY-WORD REVEAL ENGINE 🛑
+// 🛑 VIDEO SYNC ENGINE (WRITE & RENDER FULL LINE -> THEN SPEAK) 🛑
 async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
     const token = ++videoRunToken;
     const content = document.getElementById("videoContent");
@@ -811,7 +828,7 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
     
     if (!preserveContent) {
         content.innerHTML = "";
-        // PRE-RENDER previous lines instantly when skipping so context isn't lost
+        // Pre-render previous lines instantly when skipping so context isn't lost
         for(let i=0; i<videoLineIndex; i++) {
             let div = document.createElement("div");
             div.dataset.videoLine = i; div.className = "video-line-card"; div.innerHTML = lines[i];
@@ -843,9 +860,22 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
             lineDiv.dataset.videoLine = i; lineDiv.className = "video-line-card"; 
             content.appendChild(lineDiv);
         }
+        
+        // 🛑 THE FIX: INSTANTLY WRITE THE FULL LINE & RENDER IT BEFORE SPEAKING
+        lineDiv.innerHTML = lineText;
         lineDiv.classList.add("active");
-        lineDiv.innerHTML = ""; // Clear for word-by-word reveal
 
+        // Force MathJax to run so the equation looks beautiful instantly
+        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
+            MathJax.typesetClear([lineDiv]); 
+            await MathJax.typesetPromise([lineDiv]); 
+            lineDiv.setAttribute('data-math-done', 'true');
+        }
+
+        // Auto-scroll the screen
+        setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 10);
+
+        // 🛑 NOW START SPEAKING (AFTER TEXT IS RENDERED)
         window.speechSynthesis.speak(u);
         if (pauseAfterStart) {
             window.speechSynthesis.pause();
@@ -854,53 +884,22 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
             pauseAfterStart = false;
         }
 
-        // --- WORD-BY-WORD SYNC LOGIC ---
-        // Split line into words for chunking (so it drops words, not letters)
-        let chunks = lineText.split(' '); 
-        
-        // Calculate the exact duration the audio will take based on text length and speed
+        // Calculate duration based on speech length
         let estimatedDurationMs = (cleanSpeech.length / 13.5) * 1000 / videoSpeed; 
         let startTime = Date.now();
-        let lastScroll = 0;
 
-        let typeInterval = setInterval(() => {
-            // 🛑 STRICT FREEZE ON PAUSE
-            if (isVideoPaused) {
-                startTime += 50; // Push start time forward so the text freezes perfectly
-                return; 
-            }
-            
+        // Check for pauses constantly so the timer freezes if user clicks pause
+        let waitInterval = setInterval(() => {
+            if (isVideoPaused) startTime += 50; 
             let elapsed = Date.now() - startTime;
-            let percent = Math.min(1.0, elapsed / estimatedDurationMs);
-            
-            // Reveal the exact amount of words based on the audio percentage!
-            let wordsToReveal = Math.ceil(percent * chunks.length);
-            lineDiv.innerHTML = chunks.slice(0, wordsToReveal).join(' ');
-
-            // Smooth lag-free scrolling (only triggers once every 300ms)
-            let now = Date.now();
-            if (now - lastScroll > 300 && content.parentElement) {
-                content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" });
-                lastScroll = now;
-            }
-
-            if (percent >= 1.0) clearInterval(typeInterval);
-
+            if (elapsed >= estimatedDurationMs) clearInterval(waitInterval);
         }, 50);
 
-        // Wait for audio to finish before proceeding to next line
+        // Wait for audio to fully finish before proceeding to the next line
         await new Promise(r => { 
             u.onend = r; u.onerror = r; 
-            setTimeout(r, Math.max(estimatedDurationMs + 1000, 3000)); 
+            setTimeout(r, Math.max(estimatedDurationMs + 500, 2000)); 
         });
-
-        // Lock in final line & render Math symbols (LaTeX)
-        clearInterval(typeInterval);
-        lineDiv.innerHTML = lineText; 
-        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
-            MathJax.typesetClear([lineDiv]); MathJax.typesetPromise([lineDiv]); 
-            lineDiv.setAttribute('data-math-done', 'true');
-        }
         
         lineDiv.classList.remove("active");
         if(token !== videoRunToken) return;
