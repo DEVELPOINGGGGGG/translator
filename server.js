@@ -227,13 +227,17 @@ async function handleGroqSearch(req, res) {
 // ==========================================
 // YOUTUBE SEARCH ENDPOINT
 // ==========================================
+// ==========================================
+// YOUTUBE SEARCH ENDPOINT
+// ==========================================
 async function handleYoutubeSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         if (!body.topic) return sendJson(res, 400, { error: "Topic is required" });
 
         const results = await ytSearch(body.topic);
-        const videos = results.videos.slice(0, 15).map(v => ({
+        // FETCH 45 VIDEOS INSTEAD OF 15 FOR GEMINI TO RANK & PAGINATE
+        const videos = results.videos.slice(0, 45).map(v => ({
             videoId: v.videoId, 
             title: v.title, 
             url: v.url, 
@@ -247,7 +251,6 @@ async function handleYoutubeSearch(req, res) {
         return sendJson(res, 502, { error: e.message });
     }
 }
-
 // ==========================================
 // CLOUDFLARE IMAGE GENERATION ENDPOINT
 // ==========================================
