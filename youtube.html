@@ -23,6 +23,15 @@
             background: rgba(239, 68, 68, 0.9) !important;
             border-color: #ef4444 !important;
         }
+        /* Grid Fix to ensure videos look good */
+        .yt-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1100px;
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
@@ -46,13 +55,12 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px;">
+<div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; padding-bottom: 150px;">
     
-    <div class="card" style="width: 100%; max-width: 800px; text-align: center; padding: 25px; position: sticky; top: 0; z-index: 50;">
+    <div class="card" style="width: 100%; max-width: 800px; text-align: center; padding: 25px; position: sticky; top: 0; z-index: 50; box-shadow: 0 15px 40px rgba(0,0,0,0.8);">
         <h2 class="cardTitle" style="color: #ef4444; text-shadow: 0 0 15px rgba(239, 68, 68, 0.4); font-size: 24px; margin-bottom: 5px;">YouTube AI Engine</h2>
         
         <div style="display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap;">
-            
             <select id="micLang" style="width: auto; padding: 12px; border-radius: 12px; margin-bottom: 0; flex-shrink: 0; font-size: 14px;">
                 <option value="en-US">English</option>
                 <option value="hi-IN">Hindi</option>
@@ -70,13 +78,15 @@
         </div>
         
         <button id="ytSearchBtn" class="btn red" style="margin-top: 15px; border-radius: 30px; font-size: 15px;">🔍 AI Search & Rank</button>
-        <div id="ytStatus" style="margin-top: 10px; font-size: 13px; font-weight: 600; color: #94a3b8; min-height: 20px;">Ready.</div>
+        <div id="ytStatus" style="margin-top: 10px; font-size: 14px; font-weight: 600; color: #94a3b8; min-height: 20px;">Ready.</div>
     </div>
 
-    <div id="ytResults" class="dashboard-grid" style="width: 100%; max-width: 1000px; margin-top: 30px;">
+    <div id="ytResults" class="yt-grid">
         </div>
 
-    <button id="loadMoreBtn" class="btn blue" style="width: auto; padding: 12px 35px; border-radius: 30px; margin-top: 30px; display: none; box-shadow: 0 0 20px rgba(56,189,248,0.3);">⬇️ Load More +15</button>
+    <button id="loadMoreBtn" class="btn blue" style="width: 100%; max-width: 400px; padding: 15px; border-radius: 30px; margin-top: 40px; display: none; font-size: 16px; font-weight: 800; box-shadow: 0 10px 30px rgba(56,189,248,0.4);">
+        ⬇️ Load 15 More Videos
+    </button>
 </div>
 
 <div id="cameraModal" class="cameraModal">
@@ -131,20 +141,11 @@
     if(recognition) {
         recognition.continuous = false;
         recognition.interimResults = false;
-        
-        recognition.onstart = () => {
-            voiceBtn.classList.add('recording');
-            searchInput.placeholder = "Listening...";
-        };
-        
-        recognition.onresult = (e) => {
-            searchInput.value = e.results[0][0].transcript;
-        };
-        
-        recognition.onend = () => {
-            voiceBtn.classList.remove('recording');
-            searchInput.placeholder = "Topic or voice...";
-            if(searchInput.value.trim() !== "") searchBtn.click(); // Auto search
+        recognition.onstart = () => { voiceBtn.classList.add('recording'); searchInput.placeholder = "Listening..."; };
+        recognition.onresult = (e) => { searchInput.value = e.results[0][0].transcript; };
+        recognition.onend = () => { 
+            voiceBtn.classList.remove('recording'); searchInput.placeholder = "Topic or voice..."; 
+            if(searchInput.value.trim() !== "") searchBtn.click(); 
         };
     }
 
@@ -154,17 +155,19 @@
         recognition.start();
     });
 
-    // --- Render Engine ---
+    // --- BULLETPROOF Render Engine ---
     function renderVideos(count) {
+        if (allRankedVideos.length === 0) return;
+
         const batch = allRankedVideos.slice(currentRenderIndex, currentRenderIndex + count);
         
         const html = batch.map((vid, index) => {
-            // Give a "Top Pick" badge to the first 3 videos
+            // First 3 videos get the Top Pick badge
             const isTopPick = (currentRenderIndex + index) < 3;
             const badgeHtml = isTopPick ? `<div style="position:absolute; top:-10px; left:-10px; background:linear-gradient(135deg, #f59e0b, #ef4444); color:white; padding:4px 10px; border-radius:10px; font-size:11px; font-weight:900; box-shadow:0 5px 15px rgba(245,158,11,0.5); z-index:10; transform:rotate(-5deg);">⭐ TOP PICK</div>` : '';
 
             return `
-            <div class="card" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position:relative;" onclick="openVideoPlayer('${vid.videoId}', '${vid.url}')">
+            <div class="card" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; position:relative; overflow: visible;" onclick="openVideoPlayer('${vid.videoId}', '${vid.url}')">
                 ${badgeHtml}
                 <div style="position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
                     <img src="${vid.thumbnail}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -182,12 +185,14 @@
         if(currentRenderIndex === 0) resultsContainer.innerHTML = html;
         else resultsContainer.insertAdjacentHTML('beforeend', html);
 
-        currentRenderIndex += count;
+        currentRenderIndex += batch.length;
 
+        // FORCE BUTTON TO SHOW OR HIDE BASED ON REMAINING VIDEOS
         if (currentRenderIndex >= allRankedVideos.length) {
             loadMoreBtn.style.display = 'none';
         } else {
             loadMoreBtn.style.display = 'block';
+            loadMoreBtn.innerText = `⬇️ Load 15 More Videos (${allRankedVideos.length - currentRenderIndex} left)`;
         }
     }
 
@@ -198,31 +203,29 @@
         const rawTopic = searchInput.value.trim();
         if (!rawTopic) return;
 
-        searchBtn.disabled = true;
-        searchBtn.style.opacity = '0.6';
-        searchBtn.innerHTML = '<div class="spinner"></div> AI Processing...';
+        searchBtn.disabled = true; searchBtn.style.opacity = '0.6';
+        searchBtn.innerHTML = '<div class="spinner"></div> Processing...';
         loadMoreBtn.style.display = 'none';
         
         resultsContainer.innerHTML = "";
-        statusText.innerHTML = "Fetching results...";
+        statusText.innerHTML = "Fetching videos from server...";
 
         try {
-            // 1. Fetch 45 videos from YouTube
+            // 1. Fetch videos
             const ytResponse = await fetch('/api/youtube-search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ topic: rawTopic })
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic: rawTopic })
             });
             const ytData = await ytResponse.json();
             if (!ytResponse.ok) throw new Error("YouTube search failed.");
+            
             const rawVideos = ytData.results || [];
             if (rawVideos.length === 0) throw new Error(`No videos found for "${rawTopic}"`);
 
-            statusText.innerHTML = "🧠 Gemini is ranking videos from best to worst...";
+            statusText.innerHTML = `🧠 Server found <b>${rawVideos.length}</b> videos. Gemini is ranking them...`;
 
-            // 2. Format list for Gemini to rank
+            // 2. Format list for Gemini
             const titleList = rawVideos.map((v, i) => `${i} - ${v.title}`).join('\n');
-            const rankingPrompt = `You are an expert educational curator. Analyze these YouTube video titles for the topic: "${rawTopic}". Determine which are the highest quality educational videos. Push off-topic, short, or clickbait videos to the bottom. \n\nTitles:\n${titleList}\n\nReturn STRICTLY a JSON array of the indices in your newly ranked order from best to worst. Example format: [5, 1, 0, 12, 4] NOTHING ELSE.`;
+            const rankingPrompt = `Analyze these YouTube video titles for: "${rawTopic}". Determine the highest quality educational videos. Return STRICTLY a JSON array of the indices ranked from best to worst. Example: [5, 1, 0, 12].`;
 
             // 3. Ask Gemini to re-rank
             let rankedIndices = [];
@@ -232,41 +235,39 @@
                     body: JSON.stringify({ systemPrompt: "You return strictly a valid JSON array of numbers.", userPrompt: rankingPrompt })
                 });
                 const aiData = await aiResponse.json();
-                // Extract array from response string
                 const match = aiData.text.match(/\[(.*?)\]/);
                 if(match) rankedIndices = JSON.parse(`[${match[1]}]`);
                 else throw new Error("Format failed");
             } catch (aiErr) {
-                // If Gemini fails to format the array, fallback to normal YouTube ordering
+                // FALLBACK: If Gemini fails, just use the normal YouTube order
                 rankedIndices = rawVideos.map((_, i) => i); 
             }
 
-            // 4. Sort the video array based on Gemini's ranking
+            // 4. Sort the video array perfectly
             allRankedVideos = [];
             let addedIndices = new Set();
             
-            // Add in ranked order
             rankedIndices.forEach(idx => {
                 if(rawVideos[idx] && !addedIndices.has(idx)) {
                     allRankedVideos.push(rawVideos[idx]);
                     addedIndices.add(idx);
                 }
             });
-            // Append any Gemini missed
+            
+            // Catch any videos Gemini missed
             rawVideos.forEach((v, idx) => {
                 if(!addedIndices.has(idx)) allRankedVideos.push(v);
             });
 
-            // 5. Render Top 15
+            // 5. Render
             currentRenderIndex = 0;
             renderVideos(15);
-            statusText.innerHTML = `✅ Top Gemini-curated results for: <span style="color: #fff;">"${rawTopic}"</span>`;
+            statusText.innerHTML = `✅ Successfully loaded and ranked <b>${allRankedVideos.length}</b> videos!`;
 
         } catch (error) {
             statusText.innerHTML = `❌ Error: ${error.message}`;
         } finally {
-            searchBtn.disabled = false;
-            searchBtn.style.opacity = '1';
+            searchBtn.disabled = false; searchBtn.style.opacity = '1';
             searchBtn.innerHTML = '🔍 AI Search & Rank';
         }
     });
