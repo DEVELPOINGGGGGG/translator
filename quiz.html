@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="style.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         .quiz-setup, .quiz-active, .quiz-results {
@@ -38,6 +41,7 @@
             cursor: pointer;
             transition: all 0.2s;
             margin-bottom: 10px;
+            word-wrap: break-word; /* Prevents text overflow in options */
         }
         .option-btn:hover {
             background: rgba(255, 255, 255, 0.1);
@@ -73,6 +77,7 @@
             padding: 20px;
             margin-bottom: 15px;
             text-align: left;
+            word-wrap: break-word; /* Prevents overflow in review */
         }
 
         /* Animated Loading Bar */
@@ -90,9 +95,11 @@
             100% { opacity: 0; bottom: 10px; }
         }
 
-        /* Custom Scrollbars for Question Text */
-        #questionText::-webkit-scrollbar, #optionsContainer::-webkit-scrollbar { width: 4px; }
-        #questionText::-webkit-scrollbar-thumb, #optionsContainer::-webkit-scrollbar-thumb { background: rgba(192, 132, 252, 0.5); border-radius: 10px; }
+        /* Premium Select Dropdown Styling */
+        select.standard option {
+            background: #0f172a;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -122,6 +129,15 @@
     <div id="quizSetup" class="card quiz-setup active" style="padding: 30px; text-align: center;">
         <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 20px;">AI Quiz Generator</h2>
         
+        <div style="text-align: left; margin-bottom: 15px;">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Language / भाषा</label>
+            <select id="quizLanguage" class="standard" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; outline: none;">
+                <option value="Hindi">Hindi (हिंदी)</option>
+                <option value="English">English</option>
+                <option value="Hinglish">Hinglish</option>
+            </select>
+        </div>
+
         <div style="text-align: left; margin-bottom: 15px;">
             <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Subject / Topic</label>
             <input type="text" id="quizSubject" class="standard" placeholder="e.g., Physics, Indian History, Cells...">
@@ -160,9 +176,9 @@
             <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1;"></div>
         </div>
 
-        <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; max-height: 200px; overflow-y: auto; padding-right: 10px;">Loading Question...</div>
+        <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; word-wrap: break-word; white-space: normal;">Loading Question...</div>
 
-        <div id="optionsContainer" style="display: flex; flex-direction: column; max-height: 40vh; overflow-y: auto; padding-right: 5px;">
+        <div id="optionsContainer" style="display: flex; flex-direction: column; padding-right: 5px;">
             </div>
 
         <div style="display: flex; gap: 15px; margin-top: 25px;">
@@ -237,6 +253,7 @@
     startBtn.addEventListener('click', async () => {
         const subject = document.getElementById('quizSubject').value.trim();
         const grade = document.getElementById('quizClass').value.trim();
+        const language = document.getElementById('quizLanguage').value; // 🛑 Fetch Selected Language
         let count = parseInt(document.getElementById('quizCount').value);
 
         if(!subject || !grade) {
@@ -252,11 +269,14 @@
         loadBar.style.display = 'block';
         setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
 
+        // 🛑 AI PROMPT UPDATED FOR LANGUAGE AND NUMBER FIX
         const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${subject}". 
         CRITICAL RULES:
-        1. You MUST return ONLY a strictly valid JSON array.
-        2. Do NOT use markdown code blocks.
-        3. Array format must be exactly like this:
+        1. The text of the quiz MUST be generated entirely in ${language}.
+        2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals (१, २, ३ etc.).
+        3. You MUST return ONLY a strictly valid JSON array.
+        4. Do NOT use markdown code blocks.
+        5. Array format must be exactly like this:
         [
           {
             "question": "What is the powerhouse of the cell?",
@@ -294,7 +314,7 @@
 
             currentQuestionIndex = 0;
             userAnswers = [];
-            document.getElementById('quizTag').innerText = `${subject} • Class ${grade}`;
+            document.getElementById('quizTag').innerText = `${subject} • Class ${grade} • ${language}`;
             
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
@@ -333,7 +353,6 @@
             btn.className = 'option-btn';
             btn.innerText = opt;
             
-            // 🛑 BLIND MODE FIX: If answered already, JUST highlight it neutrally
             if (prevAns) {
                 btn.disabled = true;
                 if (opt === prevAns) {
@@ -349,6 +368,12 @@
         // Setup Nav Buttons
         prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
         nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
+
+        // 🛑 TRIGGER MATHJAX RENDER AFTER INJECTING HTML
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')])
+                .catch((err) => console.log('MathJax Render Error: ', err));
+        }
     }
 
     // --- Handle Selection ---
@@ -357,7 +382,6 @@
         
         userAnswers[currentQuestionIndex] = selectedString;
 
-        // 🛑 BLIND MODE FIX: Neutral Visual Feedback (Only highlights what you clicked)
         const allBtns = document.querySelectorAll('.option-btn');
         allBtns.forEach(b => {
             b.disabled = true;
@@ -433,6 +457,12 @@
         document.getElementById('statWrong').innerText = total - correctCount;
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
+
+        // 🛑 TRIGGER MATHJAX RENDER FOR RESULTS REVIEW
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('reviewContainer')])
+                .catch((err) => console.log('MathJax Review Render Error: ', err));
+        }
 
         saveQuizToHistory(subject, grade, correctCount, total, reviewHtml);
     }
