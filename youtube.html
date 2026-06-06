@@ -158,7 +158,32 @@
 
     searchInput.addEventListener("keypress", (e) => { if(e.key === "Enter") searchBtn.click(); });
 
-    // --- NEW: VOICE GUI LOGIC ---
+    // --- HISTORY SAVING ENGINE ---
+    function saveYoutubeHistory(topic, videoCount) {
+        try {
+            let history = JSON.parse(localStorage.getItem('aiHistory') || '[]');
+            let sessionId = Date.now();
+            let histItem = {
+                id: sessionId,
+                type: 'youtube', // Gives it the right badge in History tab
+                title: topic.substring(0, 30) + '...',
+                interactions: [{
+                    question: "YouTube Search: " + topic,
+                    answer: "Successfully found and ranked " + videoCount + " educational videos.",
+                    provider: "Gemini + YouTube"
+                }],
+                provider: "Gemini + YouTube",
+                question: "YouTube Search: " + topic,
+                answer: "Successfully found and ranked " + videoCount + " educational videos."
+            };
+            history.unshift(histItem);
+            localStorage.setItem('aiHistory', JSON.stringify(history));
+        } catch(e) {
+            console.error("Failed to save history", e);
+        }
+    }
+
+    // --- VOICE GUI LOGIC ---
     const voiceModal = document.getElementById('voiceModal');
     const voiceRecordBtn = document.getElementById('voiceRecordBtn');
     const voiceModalText = document.getElementById('voiceModalText');
@@ -166,28 +191,25 @@
     let recognition = SpeechRec ? new SpeechRec() : null;
     let isRecording = false;
 
-    // Open Voice GUI
     document.getElementById('openVoiceGuiBtn').addEventListener('click', () => {
         voiceModalText.value = "";
         voiceModal.style.display = 'flex';
     });
 
-    // Close Voice GUI (Cancel)
     document.getElementById('voiceCancelBtn').addEventListener('click', () => {
         if(isRecording && recognition) recognition.stop();
         voiceModal.style.display = 'none';
     });
 
-    // Apply Text (Wait for user to manually search)
     document.getElementById('voiceApplyBtn').addEventListener('click', () => {
         if(isRecording && recognition) recognition.stop();
         if(voiceModalText.value.trim() !== "") {
             searchInput.value = voiceModalText.value.trim();
         }
         voiceModal.style.display = 'none';
+        // DOES NOT AUTO-SEARCH. Waits for user!
     });
 
-    // Handle Mic Recording
     if(recognition) {
         recognition.continuous = false;
         recognition.interimResults = false;
@@ -316,6 +338,9 @@
             currentRenderIndex = 0;
             renderVideos(15);
             statusText.innerHTML = `✅ Successfully loaded and ranked <b>${allRankedVideos.length}</b> videos!`;
+            
+            // SAVE TO HISTORY!
+            saveYoutubeHistory(rawTopic, allRankedVideos.length);
 
         } catch (error) {
             statusText.innerHTML = `❌ Error: ${error.message}`;
@@ -363,7 +388,7 @@
             if (!res.ok) throw new Error(data.error);
             
             searchInput.value = data.text.replace(/[\*\"]/g, '').trim();
-            // Intentionally not auto-searching so you can review it
+            // Wait for user to manually click search!
             searchBtn.disabled = false; searchBtn.style.opacity = '1'; searchBtn.innerHTML = '🔍 AI Search & Rank';
         } catch (e) {
             searchInput.value = ""; statusText.innerHTML = "❌ Failed: " + e.message;
