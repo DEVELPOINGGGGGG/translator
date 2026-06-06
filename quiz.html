@@ -234,7 +234,7 @@
     const nextBtn = document.getElementById('nextBtn');
     const prevBtn = document.getElementById('prevBtn');
 
-    // --- Start Quiz Flow ---
+    // --- Start Quiz Flow (BULLETPROOF JSON FIX) ---
     startBtn.addEventListener('click', async () => {
         const subject = document.getElementById('quizSubject').value.trim();
         const grade = document.getElementById('quizClass').value.trim();
@@ -257,7 +257,7 @@
         const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${subject}". 
         CRITICAL RULES:
         1. You MUST return ONLY a strictly valid JSON array.
-        2. Do NOT use markdown code blocks (like \`\`\`json). Just the raw text array.
+        2. Do NOT use markdown code blocks.
         3. Array format must be exactly like this:
         [
           {
@@ -266,15 +266,14 @@
             "correctOption": "Mitochondria",
             "explanation": "Mitochondria are responsible for creating ATP, which provides energy to the cell."
           }
-        ]
-        Make sure the correctOption is an exact match to one of the strings in the options array.`;
+        ]`;
 
         try {
             const response = await fetch('/api/gemini-text', {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    systemPrompt: "You are an expert educational AI. You output ONLY valid JSON arrays without markdown styling.",
+                    systemPrompt: "You are a strict data-only API. Output nothing except the requested JSON array.",
                     userPrompt: prompt
                 })
             });
@@ -282,14 +281,20 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
 
-            // Extract JSON robustly, stripping accidental markdown blocks
-            let rawText = data.text.trim();
-            rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            
-            const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-            if (!jsonMatch) throw new Error("AI did not return a valid array format.");
-            
-            quizData = JSON.parse(jsonMatch[0]);
+            console.log("Raw AI Response:", data.text);
+
+            // BULLETPROOF JSON EXTRACTION
+            let rawText = data.text;
+            let startIdx = rawText.indexOf('[');
+            let endIdx = rawText.lastIndexOf(']');
+
+            if (startIdx === -1 || endIdx === -1) {
+                throw new Error("AI did not return the correct array format.");
+            }
+
+            // Slice out EXACTLY the JSON array and ignore everything else
+            let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
+            quizData = JSON.parse(cleanJsonString);
             
             if(quizData.length === 0) throw new Error("AI returned empty quiz array.");
 
@@ -305,8 +310,11 @@
             renderQuestion();
 
         } catch(err) {
-            console.error(err);
-            setupStatus.innerHTML = `❌ Error: ${err.message}. Try again.`;
+            console.error("Quiz Generation Failed:", err);
+            setupStatus.innerHTML = `❌ Error: AI formatting glitch.`;
+            showToast("⚠️ AI formatting error. Just click start again!");
+            
+            // Reset UI so user can try again
             startBtn.disabled = false;
             startBtn.style.display = 'block';
             loadBar.style.display = 'none';
@@ -498,4 +506,3 @@
 </script>
 </body>
 </html>
-    
