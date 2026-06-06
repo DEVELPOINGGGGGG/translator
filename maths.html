@@ -128,8 +128,8 @@
 2. NON-MATH EXCEPTION: If the user just says "Hi" or a casual greeting with no math, reply normally and briefly.
 3. SINGLE QUESTION FORMAT:
    - First line: Write the exact question at the top (e.g., "प्रश्न: [Question]").
-   - Next: Provide the math step line by line without explanation.
-   - Last: Add a "💡 Explanation:" section at the end. This explanation MUST be exactly 6 to 12 lines long, explaining the core concept and math concept.
+   - Next: Provide the math SOULTION FIRST step line by line WITHOUT EXPLANATION.
+   - Last: Add a "💡 Explanation:" section at the end. This explanation MUST be exactly 3 to 6 lines long, explaining the core concept and math concept.
 4. MULTIPLE QUESTIONS FORMAT (If the user gives multiple questions to solve):
    - Format EACH question exactly like this:
      Q[Number]. [Write the Question]
@@ -137,7 +137,8 @@
      💡 Explanation: [If it's a hard question, explain in 4 to 8 lines. If it's an easy/casual question, explain in 2 to 4 lines].
    - Move immediately to the next question without any filler text.
 5. MATH NOTATION: Use $ for inline math and $$ for block math equations.
-6. LANGUAGE: Respond in the exact language the user used (e.g., Hindi, English, or Hinglish).
+6. EXPLANATION: If user says Explain the [question] or previous question it will explain the queestion EXPLANATION MUST BE 8-12 LINES.
+7. LANGUAGE: Respond in the exact language the user used (e.g., Hindi, English, or Hinglish).
 
 Current Task: ${userText || "Solve the image."}`;
 
