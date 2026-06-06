@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pro Suite - Smart Quiz</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        .quiz-setup, .quiz-active, .quiz-results {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            animation: fadeIn 0.4s ease;
+        }
+        .quiz-setup.active, .quiz-active.active, .quiz-results.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        .option-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #38bdf8;
+        }
+        .option-btn.selected {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+        .option-btn.correct {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+        .option-btn.wrong {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            flex: 1;
+        }
+        .stat-box .num { font-size: 32px; font-weight: 900; }
+        
+        .result-card {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
+  <button onclick="window.location.href='youtube.html'">🎬 YouTube Learning</button>
+  <button style="border-left: 4px solid #a855f7; color: #e9d5ff; background: rgba(168,85,247,0.1);">📝 Smart Quiz</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
+  <button onclick="window.location.href='create.html'">✨ Image Creator</button>
+  <button onclick="window.location.href='history.html'">🕒 History</button>
+</div>
+
+<div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; padding-bottom: 150px;">
+    
+    <div id="quizSetup" class="card quiz-setup active" style="padding: 30px; text-align: center;">
+        <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 20px;">AI Quiz Generator</h2>
+        
+        <div style="text-align: left; margin-bottom: 15px;">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Subject / Topic</label>
+            <input type="text" id="quizSubject" class="standard" placeholder="e.g., Physics, Indian History, Cells...">
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+            <div style="flex: 1; text-align: left;">
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Class / Grade</label>
+                <input type="text" id="quizClass" class="standard" placeholder="e.g., 9th, 12th">
+            </div>
+            <div style="flex: 1; text-align: left;">
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Total Questions</label>
+                <input type="number" id="quizCount" class="standard" min="1" max="15" value="5">
+            </div>
+        </div>
+
+        <button id="startQuizBtn" class="btn" style="background: linear-gradient(135deg, #a855f7, #7e22ce); padding: 15px; border-radius: 30px; font-size: 18px; width: 100%; box-shadow: 0 10px 30px rgba(168,85,247,0.4);">
+            🚀 Generate & Start Quiz!
+        </button>
+        <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; min-height: 20px;"></div>
+    </div>
+
+    <div id="quizActive" class="card quiz-active" style="padding: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+            <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
+            <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1;"></div>
+        </div>
+
+        <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px;">Loading Question...</div>
+
+        <div id="optionsContainer" style="display: flex; flex-direction: column;">
+            </div>
+
+        <button id="nextQuestionBtn" class="btn blue" style="margin-top: 25px; padding: 15px; border-radius: 12px; display: none; width: 100%; font-size: 16px;">
+            Next Question ➡️
+        </button>
+    </div>
+
+    <div id="quizResults" class="quiz-results">
+        <div id="pdfExportArea" class="card" style="padding: 30px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #22c55e; font-size: 32px; margin-bottom: 5px;">Quiz Completed!</h2>
+                <div id="resultSubtext" style="color: #94a3b8; font-weight: 600;">Physics - 9th Grade</div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+                <div class="stat-box"><div class="num" id="statCorrect" style="color: #22c55e;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Correct</div></div>
+                <div class="stat-box"><div class="num" id="statWrong" style="color: #ef4444;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Incorrect</div></div>
+                <div class="stat-box"><div class="num" id="statTotal" style="color: #38bdf8;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Total</div></div>
+            </div>
+
+            <h3 style="color: white; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Detailed Review</h3>
+            <div id="reviewContainer">
+                </div>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
+            <button onclick="downloadPDF()" class="btn red" style="flex: 1; padding: 15px; border-radius: 15px; min-width: 150px;">📄 Download PDF</button>
+            <button onclick="location.reload()" class="btn" style="flex: 1; padding: 15px; border-radius: 15px; background: #475569; color: white; min-width: 150px;">🔄 Create New Quiz</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- Sidebar Toggle ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("overlay");
+        const active = !sidebar.classList.contains("active");
+        sidebar.classList.toggle("active", active);
+        overlay.classList.toggle("active", active);
+    }
+    document.getElementById("overlay").onclick = toggleSidebar;
+
+    // --- State Variables ---
+    let quizData = [];
+    let currentQuestionIndex = 0;
+    let userAnswers = []; // Store selected options
+
+    // --- Elements ---
+    const setupEl = document.getElementById('quizSetup');
+    const activeEl = document.getElementById('quizActive');
+    const resultsEl = document.getElementById('quizResults');
+    const startBtn = document.getElementById('startQuizBtn');
+    const setupStatus = document.getElementById('setupStatus');
+    const nextBtn = document.getElementById('nextQuestionBtn');
+
+    // --- Start Quiz Flow ---
+    startBtn.addEventListener('click', async () => {
+        const subject = document.getElementById('quizSubject').value.trim();
+        const grade = document.getElementById('quizClass').value.trim();
+        let count = parseInt(document.getElementById('quizCount').value);
+
+        if(!subject || !grade) return alert("Please enter both Subject and Class.");
+        if(isNaN(count) || count < 1) count = 5;
+        if(count > 15) count = 15;
+
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.7';
+        startBtn.innerHTML = '<div class="spinner"></div> Generating Questions...';
+        setupStatus.innerHTML = "Connecting to Gemini AI...";
+
+        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${subject}". 
+        CRITICAL RULES:
+        1. You MUST return ONLY a strictly valid JSON array.
+        2. Do NOT use markdown code blocks (like \`\`\`json). Just the raw text array.
+        3. Array format must be exactly like this:
+        [
+          {
+            "question": "What is the powerhouse of the cell?",
+            "options": ["Nucleus", "Mitochondria", "Ribosome", "Endoplasmic Reticulum"],
+            "correctOption": "Mitochondria",
+            "explanation": "Mitochondria are responsible for creating ATP, which provides energy to the cell."
+          }
+        ]
+        Make sure the correctOption is an exact match to one of the strings in the options array.`;
+
+        try {
+            const response = await fetch('/api/gemini-text', {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    systemPrompt: "You are an expert educational AI. You output ONLY valid JSON arrays without markdown styling.",
+                    userPrompt: prompt
+                })
+            });
+            
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
+
+            // Extract JSON robustly
+            let rawText = data.text.trim();
+            const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+            if (!jsonMatch) throw new Error("AI did not return a valid array format.");
+            
+            quizData = JSON.parse(jsonMatch[0]);
+            
+            if(quizData.length === 0) throw new Error("AI returned empty quiz array.");
+
+            // Initialize Quiz
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            document.getElementById('quizTag').innerText = `${subject} • Class ${grade}`;
+            
+            // Switch UI
+            setupEl.classList.remove('active');
+            activeEl.classList.add('active');
+            
+            renderQuestion();
+
+        } catch(err) {
+            console.error(err);
+            setupStatus.innerHTML = `❌ Error: ${err.message}. Try again.`;
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.innerHTML = '🚀 Generate & Start Quiz!';
+        }
+    });
+
+    // --- Render Active Question ---
+    function renderQuestion() {
+        nextBtn.style.display = 'none';
+        const qData = quizData[currentQuestionIndex];
+        
+        document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+        document.getElementById('questionText').innerText = qData.question;
+        
+        const optsContainer = document.getElementById('optionsContainer');
+        optsContainer.innerHTML = '';
+
+        // Shuffle options slightly for randomness (optional but good)
+        let options = [...qData.options];
+        
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => handleAnswerSelect(opt, btn);
+            optsContainer.appendChild(btn);
+        });
+    }
+
+    // --- Handle Selection ---
+    function handleAnswerSelect(selectedString, btnElement) {
+        // Prevent changing answer
+        if (userAnswers[currentQuestionIndex] !== undefined) return;
+        
+        userAnswers[currentQuestionIndex] = selectedString;
+        
+        const qData = quizData[currentQuestionIndex];
+        const isCorrect = selectedString === qData.correctOption;
+
+        // Visual Feedback
+        const allBtns = document.querySelectorAll('.option-btn');
+        allBtns.forEach(b => {
+            b.disabled = true; // Lock all
+            if(b.innerText === qData.correctOption) {
+                b.classList.add('correct');
+            } else if (b === btnElement && !isCorrect) {
+                b.classList.add('wrong');
+            }
+        });
+
+        // Show Next Button
+        if (currentQuestionIndex === quizData.length - 1) {
+            nextBtn.innerText = "Finish & See Results 🏆";
+        } else {
+            nextBtn.innerText = "Next Question ➡️";
+        }
+        nextBtn.style.display = 'block';
+    }
+
+    // --- Next Button Logic ---
+    nextBtn.addEventListener('click', () => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex >= quizData.length) {
+            finishQuiz();
+        } else {
+            renderQuestion();
+        }
+    });
+
+    // --- Finish & Calculate ---
+    function finishQuiz() {
+        activeEl.classList.remove('active');
+        resultsEl.classList.add('active');
+        
+        let correctCount = 0;
+        let reviewHtml = '';
+
+        quizData.forEach((q, index) => {
+            const userAns = userAnswers[index] || "Unanswered";
+            const isCorrect = userAns === q.correctOption;
+            if(isCorrect) correctCount++;
+
+            const statusIcon = isCorrect ? '✅' : '❌';
+            const colorClass = isCorrect ? '#22c55e' : '#ef4444';
+
+            reviewHtml += `
+            <div class="result-card">
+                <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">
+                    ${index + 1}. ${q.question}
+                </div>
+                <div style="font-size: 13px; margin-bottom: 5px;">
+                    <span style="color: #94a3b8;">Your Answer:</span> 
+                    <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${userAns}</span>
+                </div>
+                <div style="font-size: 13px; margin-bottom: 10px;">
+                    <span style="color: #94a3b8;">Correct Answer:</span> 
+                    <span style="color: #22c55e; font-weight: 600;">${q.correctOption}</span>
+                </div>
+                <div style="font-size: 13px; color: #cbd5e1; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 3px solid #a855f7;">
+                    <b>Why?</b> ${q.explanation}
+                </div>
+            </div>`;
+        });
+
+        const subject = document.getElementById('quizSubject').value;
+        const grade = document.getElementById('quizClass').value;
+        const total = quizData.length;
+
+        document.getElementById('resultSubtext').innerText = `${subject} - Class ${grade}`;
+        document.getElementById('statCorrect').innerText = correctCount;
+        document.getElementById('statWrong').innerText = total - correctCount;
+        document.getElementById('statTotal').innerText = total;
+        document.getElementById('reviewContainer').innerHTML = reviewHtml;
+
+        saveQuizToHistory(subject, grade, correctCount, total, reviewHtml);
+    }
+
+    // --- Save To History ---
+    function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
+        try {
+            let history = JSON.parse(localStorage.getItem('aiHistory') || '[]');
+            let sessionId = Date.now();
+            let summaryText = `Quiz Result: ${correct}/${total} correct.\nSubject: ${subject} (Class ${grade})`;
+            
+            // To make history viewer display it nicely, wrap the HTML safely
+            let formattedAnswer = `
+                <div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div>
+                <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
+                ${htmlDetails}
+            `;
+
+            let histItem = {
+                id: sessionId,
+                type: 'quiz',
+                title: `${subject} Quiz (${correct}/${total})`,
+                interactions: [{
+                    question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`,
+                    answer: formattedAnswer,
+                    provider: "Gemini Quiz Engine"
+                }],
+                provider: "Gemini Quiz Engine",
+                question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`,
+                answer: formattedAnswer
+            };
+            history.unshift(histItem);
+            localStorage.setItem('aiHistory', JSON.stringify(history));
+        } catch(e) { 
+            console.error("Failed to save history", e); 
+        }
+    }
+
+    // --- Export PDF ---
+    function downloadPDF() {
+        const element = document.getElementById('pdfExportArea');
+        const subject = document.getElementById('quizSubject').value;
+        
+        // Temporarily adjust styling so PDF doesn't cut dark backgrounds weirdly
+        const opt = {
+            margin:       10,
+            filename:     `AI_Quiz_Result_${subject.replace(/\s+/g, '_')}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // html2pdf is included via CDN in the head
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Optional: show toast from main.js if it was included, else fallback to alert
+            if(typeof showToast === 'function') {
+                showToast("✅ PDF Downloaded!");
+            }
+        });
+    }
+
+</script>
+</body>
+</html>
