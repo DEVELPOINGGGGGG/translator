@@ -135,11 +135,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // PACIFIC TIME & GOOGLE SHEETS RESET ENGINE
+// 🛑 BULLETPROOF PACIFIC TIME & GOOGLE SHEETS RESET ENGINE 🛑
     setInterval(() => {
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
         const laTime = new Date(laTimeStr);
         
+        // 1. Get the current calendar date in PT (e.g., "6/6/2026")
+        const currentPtDate = laTime.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles" });
+        // 2. Check the last recorded reset date
+        const lastResetDate = localStorage.getItem('lastApiResetDatePT');
+        
+        // Calculate time until next PT Midnight for the UI timer
         const nextMidnight = new Date(laTime);
         nextMidnight.setHours(24, 0, 0, 0);
         
@@ -147,24 +154,29 @@ document.addEventListener("DOMContentLoaded", () => {
         let h = Math.floor(diffMs / (1000 * 60 * 60));
         let m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
         let s = Math.floor((diffMs % (1000 * 60)) / 1000);
-        
-        if (h === 24) { h = 0; m = 0; s = 0; }
         const pad = (num) => num.toString().padStart(2, '0');
         
-        if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !window.hasResetToday) { 
+        // 3. THE TRIGGER: If the PT date has changed, FIRE THE RESET!
+        if (currentPtDate !== lastResetDate) { 
+            console.log("🕛 Pacific Time Midnight Hit! Wiping Database...");
+            
+            // Reset local quotas
             visionReqs = 0; textReqs = 0; 
             localStorage.setItem('visionReqs', '0'); 
             localStorage.setItem('textReqs', '0'); 
-            window.hasResetToday = true;
             
+            // Save the new date so it doesn't loop
+            localStorage.setItem('lastApiResetDatePT', currentPtDate); 
+            
+            // Nuke the Google Sheet
             fetch(GOOGLE_SHEETS_WEBHOOK, {
                 method: "POST", mode: "no-cors",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify({ action: "reset" })
             }).catch(e => console.log("Failed to wipe DB", e));
-            
-        } else if (laTime.getHours() !== 0) { window.hasResetToday = false; }
+        }
         
+        // 4. Update the UI trackers perfectly in sync
         const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
         
         const total = visionReqs + textReqs;
