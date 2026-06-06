@@ -16,7 +16,7 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* 🛑 INDESTRUCTIBLE CENTERING (Ignores main.js overrides) 🛑 */
+        /* 🛑 INDESTRUCTIBLE CENTERING 🛑 */
         .quiz-page-container {
             position: absolute !important;
             top: 70px !important;
@@ -38,7 +38,7 @@
             width: 100% !important;
             max-width: 600px !important;
             margin: 0 auto !important;
-            align-self: center !important; /* Locks it to the middle */
+            align-self: center !important;
             flex-shrink: 0 !important;
         }
 
@@ -71,7 +71,7 @@
         }
         .quiz-btn:active { transform: scale(0.97); }
 
-        input[type="number"].standard {
+        input[type="number"].standard, select.standard {
             width: 100%;
             padding: 15px 20px;
             background: rgba(15, 23, 42, 0.6);
@@ -81,8 +81,9 @@
             outline: none;
             font-size: 15px;
             box-sizing: border-box;
+            appearance: none;
         }
-        input[type="number"].standard:focus {
+        input[type="number"].standard:focus, select.standard:focus {
             border-color: #c084fc;
             background: rgba(15, 23, 42, 0.9);
         }
@@ -106,7 +107,6 @@
             border-color: #38bdf8 !important;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important;
         }
-        .option-btn:disabled { cursor: default; opacity: 0.9; }
 
         .stat-box {
             background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
@@ -123,6 +123,37 @@
         @keyframes fadeToast { 0% { opacity: 0; bottom: 10px; } 10% { opacity: 1; bottom: 30px; } 90% { opacity: 1; bottom: 30px; } 100% { opacity: 0; bottom: 10px; } }
 
         select.standard option { background: #0f172a; color: white; }
+
+        /* Subject Modal Styling & SCROLL FIX */
+        .subj-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .subj-btn:hover {
+            background: rgba(168, 85, 247, 0.2);
+            border-color: #a855f7;
+        }
+        
+        /* Forces the modal list to scroll perfectly */
+        .subj-scroll-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 55vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .subj-scroll-container::-webkit-scrollbar { width: 4px; }
+        .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -147,14 +178,35 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
+<!-- SUBJECT SELECTION MODAL -->
+<div id="subjectModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
+            <h3 style="color: white; margin: 0; font-size: 20px;">Select Subject</h3>
+            <button id="closeSubjectModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
+        </div>
+        <!-- Scrollable List Container -->
+        <div class="subj-scroll-container">
+            <button class="subj-btn">Science</button>
+            <button class="subj-btn">Math</button>
+            <button class="subj-btn">Computer</button>
+            <button class="subj-btn">English Grammar</button>
+            <button class="subj-btn">Hindi Grammar</button>
+            <button class="subj-btn">SST</button>
+            <button class="subj-btn">GK</button>
+        </div>
+    </div>
+</div>
+
 <div class="page active quiz-page-container" id="quizPageContainer">
     
+    <!-- SETUP STAGE -->
     <div id="quizSetup" class="card quiz-card quiz-setup active" style="padding: 30px;">
         <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 25px; text-align: center;">AI Quiz Generator</h2>
         
         <div style="text-align: left; margin-bottom: 18px;">
             <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Language / भाषा</label>
-            <select id="quizLanguage" class="standard" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px 20px; border-radius: 12px; font-size: 15px; outline: none;">
+            <select id="quizLanguage" class="standard" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
                 <option value="Hindi">Hindi (हिंदी)</option>
                 <option value="English">English</option>
                 <option value="Hinglish">Hinglish</option>
@@ -163,13 +215,21 @@
 
         <div style="text-align: left; margin-bottom: 18px;">
             <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject / Topic</label>
-            <input type="text" id="quizSubject" class="standard" placeholder="e.g., Physics, Indian History, Cells...">
+            <div id="quizSubjectSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+                <span id="selectedSubjectText">Select Subject...</span>
+                <span style="font-size: 12px;">▼</span>
+            </div>
         </div>
 
         <div style="display: flex; gap: 15px; margin-bottom: 10px;">
             <div style="flex: 1; text-align: left;">
                 <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Class / Grade</label>
-                <input type="text" id="quizClass" class="standard" placeholder="e.g., 9th, 12th">
+                <select id="quizClass" class="standard" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
+                    <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
+                    <option value="7">Class 7</option><option value="8">Class 8</option><option value="9" selected>Class 9</option>
+                    <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+                </select>
             </div>
             <div style="flex: 1; text-align: left;">
                 <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Questions</label>
@@ -186,6 +246,7 @@
         <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; text-align: center; min-height: 20px;"></div>
     </div>
 
+    <!-- ACTIVE QUIZ STAGE -->
     <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
         
         <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
@@ -207,6 +268,7 @@
         </div>
     </div>
 
+    <!-- RESULTS STAGE -->
     <div id="quizResults" class="card quiz-card quiz-results" style="background: transparent; border: none; padding: 0;">
         <div id="pdfExportArea" class="card" style="padding: 30px; width: 100%; box-sizing: border-box;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -244,7 +306,6 @@
         overlay.classList.toggle("active", active);
     }
     
-    // Safety check just in case overlay isn't present
     if(document.getElementById("overlay")) {
         document.getElementById("overlay").onclick = toggleSidebar;
     }
@@ -257,6 +318,29 @@
         setTimeout(() => t.remove(), 3000);
     }
 
+    // --- Subject Modal Logic ---
+    let chosenSubject = "";
+    const subjModal = document.getElementById('subjectModal');
+    
+    document.getElementById('quizSubjectSelector').addEventListener('click', () => {
+        subjModal.style.display = 'flex';
+    });
+    
+    document.getElementById('closeSubjectModalBtn').addEventListener('click', () => {
+        subjModal.style.display = 'none';
+    });
+
+    document.querySelectorAll('.subj-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            chosenSubject = e.target.innerText;
+            const textEl = document.getElementById('selectedSubjectText');
+            textEl.innerText = chosenSubject;
+            textEl.style.color = "white";
+            subjModal.style.display = 'none';
+        });
+    });
+
+    // --- Quiz Logic ---
     let quizData = [];
     let currentQuestionIndex = 0;
     let userAnswers = [];
@@ -267,18 +351,16 @@
     const startBtn = document.getElementById('startQuizBtn');
     const setupStatus = document.getElementById('setupStatus');
     const loadBar = document.getElementById('loadingBarContainer');
-    
     const nextBtn = document.getElementById('nextBtn');
     const prevBtn = document.getElementById('prevBtn');
 
     startBtn.addEventListener('click', async () => {
-        const subject = document.getElementById('quizSubject').value.trim();
-        const grade = document.getElementById('quizClass').value.trim();
+        const grade = document.getElementById('quizClass').value;
         const language = document.getElementById('quizLanguage').value;
         let count = parseInt(document.getElementById('quizCount').value);
 
-        if(!subject || !grade) {
-            showToast("⚠️ Please enter both Subject and Class.");
+        if(!chosenSubject) {
+            showToast("⚠️ Please select a Subject first.");
             return;
         }
         
@@ -289,7 +371,7 @@
         loadBar.style.display = 'block';
         setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
 
-        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${subject}". 
+        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${chosenSubject}". 
         CRITICAL RULES:
         1. The text of the quiz MUST be generated entirely in ${language}.
         2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
@@ -333,7 +415,7 @@
 
             currentQuestionIndex = 0;
             userAnswers = [];
-            document.getElementById('quizTag').innerText = `${subject} • Class ${grade}`;
+            document.getElementById('quizTag').innerText = `${chosenSubject} • Class ${grade}`;
             
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
@@ -369,14 +451,14 @@
             btn.className = 'option-btn';
             btn.innerText = opt;
             
-            if (prevAns) {
-                btn.disabled = true;
-                if (opt === prevAns) {
-                    btn.classList.add('selected'); 
-                }
-            } else {
-                btn.onclick = () => handleAnswerSelect(opt, btn);
+            if (prevAns && opt === prevAns) {
+                btn.classList.add('selected'); 
             }
+            
+            btn.onclick = () => {
+                userAnswers[currentQuestionIndex] = opt;
+                renderQuestion(); 
+            };
             
             optsContainer.appendChild(btn);
         });
@@ -388,20 +470,6 @@
             MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')])
                 .catch((err) => console.log('MathJax Render Error: ', err));
         }
-    }
-
-    function handleAnswerSelect(selectedString, btnElement) {
-        if (userAnswers[currentQuestionIndex] !== undefined) return;
-        
-        userAnswers[currentQuestionIndex] = selectedString;
-
-        const allBtns = document.querySelectorAll('.option-btn');
-        allBtns.forEach(b => {
-            b.disabled = true;
-            if (b === btnElement) {
-                b.classList.add('selected');
-            }
-        });
     }
 
     nextBtn.addEventListener('click', () => {
@@ -459,11 +527,10 @@
             </div>`;
         });
 
-        const subject = document.getElementById('quizSubject').value;
         const grade = document.getElementById('quizClass').value;
         const total = quizData.length;
 
-        document.getElementById('resultSubtext').innerText = `${subject} - Class ${grade}`;
+        document.getElementById('resultSubtext').innerText = `${chosenSubject} - Class ${grade}`;
         document.getElementById('statCorrect').innerText = correctCount;
         document.getElementById('statWrong').innerText = total - correctCount;
         document.getElementById('statTotal').innerText = total;
@@ -474,7 +541,7 @@
                 .catch((err) => console.log('MathJax Review Render Error: ', err));
         }
 
-        saveQuizToHistory(subject, grade, correctCount, total, reviewHtml);
+        saveQuizToHistory(chosenSubject, grade, correctCount, total, reviewHtml);
     }
 
     function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
@@ -510,11 +577,9 @@
 
     function downloadPDF() {
         const element = document.getElementById('pdfExportArea');
-        const subject = document.getElementById('quizSubject').value;
-        
         const opt = {
             margin:       10,
-            filename:     `AI_Quiz_Result_${subject.replace(/\s+/g, '_')}.pdf`,
+            filename:     `AI_Quiz_Result_${chosenSubject.replace(/\s+/g, '_')}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
