@@ -57,8 +57,8 @@
             border-color: #ef4444;
         }
         .option-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.8;
+            cursor: default;
+            opacity: 0.9;
         }
 
         .stat-box {
@@ -78,6 +78,21 @@
             padding: 20px;
             margin-bottom: 15px;
             text-align: left;
+        }
+
+        /* Animated Loading Bar */
+        @keyframes loadingSweep {
+            0% { left: -30%; width: 30%; }
+            50% { width: 50%; }
+            100% { left: 100%; width: 30%; }
+        }
+
+        /* Toast Animation */
+        @keyframes fadeToast {
+            0% { opacity: 0; bottom: 10px; }
+            10% { opacity: 1; bottom: 30px; }
+            90% { opacity: 1; bottom: 30px; }
+            100% { opacity: 0; bottom: 10px; }
         }
     </style>
 </head>
@@ -127,10 +142,20 @@
         <button id="startQuizBtn" class="btn" style="background: linear-gradient(135deg, #a855f7, #7e22ce); padding: 15px; border-radius: 30px; font-size: 18px; width: 100%; box-shadow: 0 10px 30px rgba(168,85,247,0.4);">
             🚀 Generate & Start Quiz!
         </button>
+        
+        <div id="loadingBarContainer" style="display:none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 20px; overflow: hidden; position: relative;">
+            <div style="height: 100%; width: 30%; background: #a855f7; position: absolute; animation: loadingSweep 1.5s infinite ease-in-out;"></div>
+        </div>
+        
         <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; min-height: 20px;"></div>
     </div>
 
     <div id="quizActive" class="card quiz-active" style="padding: 30px;">
+        
+        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
+            <div id="quizProgressBar" style="height: 100%; width: 0%; background: #38bdf8; transition: width 0.3s ease;"></div>
+        </div>
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
             <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
             <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1;"></div>
@@ -141,9 +166,10 @@
         <div id="optionsContainer" style="display: flex; flex-direction: column;">
             </div>
 
-        <button id="nextQuestionBtn" class="btn blue" style="margin-top: 25px; padding: 15px; border-radius: 12px; display: none; width: 100%; font-size: 16px;">
-            Next Question ➡️
-        </button>
+        <div style="display: flex; gap: 15px; margin-top: 25px;">
+            <button id="prevBtn" class="btn" style="flex: 1; padding: 15px; border-radius: 12px; background: #475569; color: white; display: none;">⬅️ Previous</button>
+            <button id="nextBtn" class="btn blue" style="flex: 1; padding: 15px; border-radius: 12px;">Next ➡️</button>
+        </div>
     </div>
 
     <div id="quizResults" class="quiz-results">
@@ -183,6 +209,15 @@
     }
     document.getElementById("overlay").onclick = toggleSidebar;
 
+    // --- Toast Notification System ---
+    function showToast(msg) {
+        let t = document.createElement('div');
+        t.innerText = msg;
+        t.style.cssText = "position:fixed; bottom:10px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #ef4444, #b91c1c); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:100000; font-weight:600; font-size: 14px; text-align:center; animation:fadeToast 3s forwards; pointer-events: none;";
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
     // --- State Variables ---
     let quizData = [];
     let currentQuestionIndex = 0;
@@ -194,7 +229,10 @@
     const resultsEl = document.getElementById('quizResults');
     const startBtn = document.getElementById('startQuizBtn');
     const setupStatus = document.getElementById('setupStatus');
-    const nextBtn = document.getElementById('nextQuestionBtn');
+    const loadBar = document.getElementById('loadingBarContainer');
+    
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
 
     // --- Start Quiz Flow ---
     startBtn.addEventListener('click', async () => {
@@ -202,14 +240,19 @@
         const grade = document.getElementById('quizClass').value.trim();
         let count = parseInt(document.getElementById('quizCount').value);
 
-        if(!subject || !grade) return alert("Please enter both Subject and Class.");
+        if(!subject || !grade) {
+            showToast("⚠️ Please enter both Subject and Class.");
+            return;
+        }
+        
         if(isNaN(count) || count < 1) count = 5;
         if(count > 15) count = 15;
 
+        // UI Loading State
         startBtn.disabled = true;
-        startBtn.style.opacity = '0.7';
-        startBtn.innerHTML = '<div class="spinner"></div> Generating Questions...';
-        setupStatus.innerHTML = "Connecting to Gemini AI...";
+        startBtn.style.display = 'none';
+        loadBar.style.display = 'block';
+        setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
 
         const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${subject}". 
         CRITICAL RULES:
@@ -239,8 +282,10 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
 
-            // Extract JSON robustly
+            // Extract JSON robustly, stripping accidental markdown blocks
             let rawText = data.text.trim();
+            rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            
             const jsonMatch = rawText.match(/\[[\s\S]*\]/);
             if (!jsonMatch) throw new Error("AI did not return a valid array format.");
             
@@ -248,7 +293,7 @@
             
             if(quizData.length === 0) throw new Error("AI returned empty quiz array.");
 
-            // Initialize Quiz
+            // Initialize Quiz State
             currentQuestionIndex = 0;
             userAnswers = [];
             document.getElementById('quizTag').innerText = `${subject} • Class ${grade}`;
@@ -263,70 +308,91 @@
             console.error(err);
             setupStatus.innerHTML = `❌ Error: ${err.message}. Try again.`;
             startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-            startBtn.innerHTML = '🚀 Generate & Start Quiz!';
+            startBtn.style.display = 'block';
+            loadBar.style.display = 'none';
         }
     });
 
     // --- Render Active Question ---
     function renderQuestion() {
-        nextBtn.style.display = 'none';
         const qData = quizData[currentQuestionIndex];
         
+        // Update Progress Bar & Text
+        const progressPct = ((currentQuestionIndex) / quizData.length) * 100;
+        document.getElementById('quizProgressBar').style.width = progressPct + '%';
         document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+        
         document.getElementById('questionText').innerText = qData.question;
         
         const optsContainer = document.getElementById('optionsContainer');
         optsContainer.innerHTML = '';
 
-        // Shuffle options slightly for randomness (optional but good)
-        let options = [...qData.options];
-        
-        options.forEach(opt => {
+        const prevAns = userAnswers[currentQuestionIndex];
+
+        // Setup Options
+        qData.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
             btn.innerText = opt;
-            btn.onclick = () => handleAnswerSelect(opt, btn);
+            
+            // If answered already, show the state and lock the button
+            if (prevAns) {
+                btn.disabled = true;
+                if (opt === qData.correctOption) {
+                    btn.classList.add('correct');
+                } else if (opt === prevAns && prevAns !== qData.correctOption) {
+                    btn.classList.add('wrong');
+                }
+            } else {
+                btn.onclick = () => handleAnswerSelect(opt, btn);
+            }
+            
             optsContainer.appendChild(btn);
         });
+
+        // Setup Nav Buttons
+        prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+        nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
     }
 
     // --- Handle Selection ---
     function handleAnswerSelect(selectedString, btnElement) {
-        // Prevent changing answer
         if (userAnswers[currentQuestionIndex] !== undefined) return;
         
         userAnswers[currentQuestionIndex] = selectedString;
-        
         const qData = quizData[currentQuestionIndex];
         const isCorrect = selectedString === qData.correctOption;
 
         // Visual Feedback
         const allBtns = document.querySelectorAll('.option-btn');
         allBtns.forEach(b => {
-            b.disabled = true; // Lock all
+            b.disabled = true;
             if(b.innerText === qData.correctOption) {
                 b.classList.add('correct');
             } else if (b === btnElement && !isCorrect) {
                 b.classList.add('wrong');
             }
         });
-
-        // Show Next Button
-        if (currentQuestionIndex === quizData.length - 1) {
-            nextBtn.innerText = "Finish & See Results 🏆";
-        } else {
-            nextBtn.innerText = "Next Question ➡️";
-        }
-        nextBtn.style.display = 'block';
     }
 
-    // --- Next Button Logic ---
+    // --- Button Actions ---
     nextBtn.addEventListener('click', () => {
+        if (!userAnswers[currentQuestionIndex]) {
+            showToast("⚠️ Please select an answer first!");
+            return;
+        }
+
         currentQuestionIndex++;
         if (currentQuestionIndex >= quizData.length) {
             finishQuiz();
         } else {
+            renderQuestion();
+        }
+    });
+
+    prevBtn.addEventListener('click', () => {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
             renderQuestion();
         }
     });
@@ -384,9 +450,7 @@
         try {
             let history = JSON.parse(localStorage.getItem('aiHistory') || '[]');
             let sessionId = Date.now();
-            let summaryText = `Quiz Result: ${correct}/${total} correct.\nSubject: ${subject} (Class ${grade})`;
             
-            // To make history viewer display it nicely, wrap the HTML safely
             let formattedAnswer = `
                 <div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div>
                 <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
@@ -418,7 +482,6 @@
         const element = document.getElementById('pdfExportArea');
         const subject = document.getElementById('quizSubject').value;
         
-        // Temporarily adjust styling so PDF doesn't cut dark backgrounds weirdly
         const opt = {
             margin:       10,
             filename:     `AI_Quiz_Result_${subject.replace(/\s+/g, '_')}.pdf`,
@@ -427,15 +490,12 @@
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        // html2pdf is included via CDN in the head
         html2pdf().set(opt).from(element).save().then(() => {
-            // Optional: show toast from main.js if it was included, else fallback to alert
-            if(typeof showToast === 'function') {
-                showToast("✅ PDF Downloaded!");
-            }
+            showToast("✅ PDF Downloaded!");
         });
     }
 
 </script>
 </body>
 </html>
+    
