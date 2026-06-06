@@ -114,35 +114,29 @@
     };
 
     // --- 🛑 TIMER LOGIC FOR GOOGLE API RESET 🛑 ---
+// --- 🛑 TIMER LOGIC FOR GOOGLE API RESET (PACIFIC TIME) 🛑 ---
     function updateResetTimer() {
-        // Get the current time in Los Angeles (Google's timezone)
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
         const laTime = new Date(laTimeStr);
         
-        // Create a date object for the NEXT midnight in Los Angeles
         const nextMidnight = new Date(laTime);
-        nextMidnight.setHours(24, 0, 0, 0); // Sets to 12:00 AM next day
+        nextMidnight.setHours(24, 0, 0, 0); 
         
-        // Calculate the difference in milliseconds
         const diffMs = nextMidnight - laTime;
         
-        // Convert milliseconds to hours, minutes, and seconds
         const h = Math.floor(diffMs / (1000 * 60 * 60));
         const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((diffMs % (1000 * 60)) / 1000);
         
-        // Format to always show two digits (e.g., 09h 05m)
         const pad = (num) => num.toString().padStart(2, '0');
         
-        // Update the UI
         const timerElement = document.getElementById("apiResetTimer");
         if (timerElement) {
             timerElement.innerText = `⏳ Quota resets in: ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
         }
     }
     
-    // Run the timer right away, then update every 1 second
     updateResetTimer();
     setInterval(updateResetTimer, 1000);
     // ----------------------------------------------
