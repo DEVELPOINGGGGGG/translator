@@ -17,35 +17,23 @@
     <script>
         MathJax = {
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
-            startup: { typeset: false } // We manually trigger it when questions load
+            startup: { typeset: false } 
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* 🛑 INDESTRUCTIBLE CENTERING 🛑 */
         .quiz-page-container {
-            position: absolute !important;
-            top: 70px !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
             width: 100% !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
+            max-width: 600px !important;
+            margin: 70px auto 0 auto !important; 
             display: flex !important;
             flex-direction: column !important;
-            align-items: center !important;
-            justify-content: flex-start !important;
-            padding: 30px 15px 150px 15px !important;
-            box-sizing: border-box !important;
+            padding: 30px 20px 150px 20px !important;
         }
 
         .quiz-card {
             width: 100% !important;
-            max-width: 600px !important;
-            margin: 0 auto !important;
-            align-self: center !important;
             flex-shrink: 0 !important;
         }
 
@@ -60,7 +48,6 @@
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Core UI Elements */
         .quiz-btn {
             background: linear-gradient(135deg, #a855f7, #7e22ce);
             color: white;
@@ -131,7 +118,7 @@
 
         select.standard option { background: #0f172a; color: white; }
 
-        /* Subject Modal Styling & SCROLL FIX */
+        /* Modal & Topic Styling */
         .subj-btn {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -149,12 +136,11 @@
             background: rgba(168, 85, 247, 0.2);
             border-color: #a855f7;
         }
-        
         .subj-scroll-container {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            max-height: 55vh;
+            max-height: 60vh;
             overflow-y: auto;
             padding-right: 10px;
         }
@@ -191,14 +177,25 @@
             <button id="closeSubjectModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
         </div>
         <div class="subj-scroll-container">
-            <button class="subj-btn">Science</button>
-            <button class="subj-btn">Math</button>
-            <button class="subj-btn">Computer</button>
-            <button class="subj-btn">English Grammar</button>
-            <button class="subj-btn">Hindi Grammar</button>
-            <button class="subj-btn">SST</button>
-            <button class="subj-btn">GK</button>
+            <button class="subj-btn main-subj">Science</button>
+            <button class="subj-btn main-subj">Math</button>
+            <button class="subj-btn main-subj">Computer</button>
+            <button class="subj-btn main-subj">English Grammar</button>
+            <button class="subj-btn main-subj">Hindi Grammar</button>
+            <button class="subj-btn main-subj">SST</button>
+            <button class="subj-btn main-subj">GK</button>
         </div>
+    </div>
+</div>
+
+<div id="topicModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100001; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
+            <h3 style="color: white; margin: 0; font-size: 20px;">Select Topic</h3>
+            <button id="closeTopicModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
+        </div>
+        <div class="subj-scroll-container" id="topicListContainer">
+            </div>
     </div>
 </div>
 
@@ -208,7 +205,7 @@
         <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 25px; text-align: center;">AI Quiz Generator</h2>
         
         <div style="text-align: left; margin-bottom: 18px;">
-            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Language / भाषा</label>
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Quiz Generation Language</label>
             <select id="quizLanguage" class="standard" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
                 <option value="Hindi">Hindi (हिंदी)</option>
                 <option value="English">English</option>
@@ -217,9 +214,22 @@
         </div>
 
         <div style="text-align: left; margin-bottom: 18px;">
-            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject / Topic</label>
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject</label>
             <div id="quizSubjectSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
                 <span id="selectedSubjectText">Select Subject...</span>
+                <span style="font-size: 12px;">▼</span>
+            </div>
+        </div>
+
+        <div id="topicContainer" style="display: none; text-align: left; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin: 0;">Specific Topic</label>
+                <button id="topicLangToggle" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; border-radius: 15px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s;">
+                    <span style="font-size: 15px;">🌐</span> English
+                </button>
+            </div>
+            <div id="quizTopicSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+                <span id="selectedTopicText">Select Topic...</span>
                 <span style="font-size: 12px;">▼</span>
             </div>
         </div>
@@ -319,29 +329,141 @@
         setTimeout(() => t.remove(), 3000);
     }
 
-    // --- Subject Modal Logic ---
-    let chosenSubject = "";
-    const subjModal = document.getElementById('subjectModal');
-    
-    document.getElementById('quizSubjectSelector').addEventListener('click', () => {
-        subjModal.style.display = 'flex';
-    });
-    
-    document.getElementById('closeSubjectModalBtn').addEventListener('click', () => {
-        subjModal.style.display = 'none';
-    });
+    // --- TOPIC DATABASE (15+ Per Subject) ---
+    const topicData = {
+        "Math": [
+            { en: "Number System", hi: "संख्या पद्धति" },
+            { en: "Algebra", hi: "बीजगणित" },
+            { en: "Geometry", hi: "ज्यामिति" },
+            { en: "Trigonometry", hi: "त्रिकोणमिति" },
+            { en: "Mensuration", hi: "क्षेत्रमिति" },
+            { en: "Statistics", hi: "सांख्यिकी" },
+            { en: "Probability", hi: "प्रायिकता" },
+            { en: "Profit & Loss", hi: "लाभ और हानि" },
+            { en: "Simple Interest", hi: "साधारण ब्याज" },
+            { en: "Compound Interest", hi: "चक्रवृद्धि ब्याज" },
+            { en: "Time & Work", hi: "समय और कार्य" },
+            { en: "Speed, Distance & Time", hi: "चाल, दूरी और समय" },
+            { en: "Percentages", hi: "प्रतिशत" },
+            { en: "Ratio & Proportion", hi: "अनुपात और समानुपात" },
+            { en: "Fractions & Decimals", hi: "भिन्न और दशमलव" },
+            { en: "Data Handling", hi: "आंकड़ों का प्रबंधन" }
+        ],
+        "Science": [
+            { en: "Physics (General)", hi: "भौतिक विज्ञान (सामान्य)" },
+            { en: "Chemistry (General)", hi: "रसायन विज्ञान (सामान्य)" },
+            { en: "Biology (General)", hi: "जीव विज्ञान (सामान्य)" },
+            { en: "Motion", hi: "गति" },
+            { en: "Force & Laws of Motion", hi: "बल और गति के नियम" },
+            { en: "Gravitation", hi: "गुरुत्वाकर्षण" },
+            { en: "Work, Energy & Power", hi: "कार्य, ऊर्जा और शक्ति" },
+            { en: "Sound", hi: "ध्वनि" },
+            { en: "Matter in our Surroundings", hi: "हमारे आस-पास के पदार्थ" },
+            { en: "Atoms & Molecules", hi: "परमाणु और अणु" },
+            { en: "Structure of the Atom", hi: "परमाणु की संरचना" },
+            { en: "The Fundamental Unit of Life (Cell)", hi: "जीवन की मौलिक इकाई (कोशिका)" },
+            { en: "Tissues", hi: "ऊतक" },
+            { en: "Diversity in Living Organisms", hi: "जीवों में विविधता" },
+            { en: "Diseases & Health", hi: "बीमारियां और स्वास्थ्य" },
+            { en: "Natural Resources", hi: "प्राकृतिक संसाधन" },
+            { en: "Light - Reflection & Refraction", hi: "प्रकाश - परावर्तन और अपवर्तन" },
+            { en: "Electricity & Magnetism", hi: "विद्युत और चुंबकत्व" }
+        ],
+        "SST": [
+            { en: "Ancient History", hi: "प्राचीन इतिहास" },
+            { en: "Medieval History", hi: "मध्यकालीन इतिहास" },
+            { en: "Modern History", hi: "आधुनिक इतिहास" },
+            { en: "Indian National Movement", hi: "भारतीय स्वतंत्रता आंदोलन" },
+            { en: "World History", hi: "विश्व इतिहास" },
+            { en: "Geography (Physical)", hi: "भौतिक भूगोल" },
+            { en: "Geography (Indian)", hi: "भारतीय भूगोल" },
+            { en: "Climate & Weather", hi: "जलवायु और मौसम" },
+            { en: "Agriculture & Resources", hi: "कृषि और संसाधन" },
+            { en: "Political Science / Civics", hi: "राजनीति विज्ञान / नागरिक शास्त्र" },
+            { en: "Indian Constitution", hi: "भारतीय संविधान" },
+            { en: "Democracy & Elections", hi: "लोकतंत्र और चुनाव" },
+            { en: "Economics (General)", hi: "अर्थशास्त्र (सामान्य)" },
+            { en: "Poverty & Employment", hi: "गरीबी और रोजगार" },
+            { en: "Money & Credit", hi: "मुद्रा और साख" },
+            { en: "Disaster Management", hi: "आपदा प्रबंधन" }
+        ]
+    };
 
-    document.querySelectorAll('.subj-btn').forEach(btn => {
+    let chosenSubject = "";
+    let chosenTopic = "";
+    let topicLang = "en"; // 'en' or 'hi'
+
+    // --- Subject Modal Logic ---
+    const subjModal = document.getElementById('subjectModal');
+    document.getElementById('quizSubjectSelector').addEventListener('click', () => { subjModal.style.display = 'flex'; });
+    document.getElementById('closeSubjectModalBtn').addEventListener('click', () => { subjModal.style.display = 'none'; });
+
+    document.querySelectorAll('.main-subj').forEach(btn => {
         btn.addEventListener('click', (e) => {
             chosenSubject = e.target.innerText;
             const textEl = document.getElementById('selectedSubjectText');
             textEl.innerText = chosenSubject;
             textEl.style.color = "white";
             subjModal.style.display = 'none';
+
+            // Show/Hide Topic menu based on Subject
+            if (topicData[chosenSubject]) {
+                document.getElementById('topicContainer').style.display = 'block';
+                chosenTopic = "";
+                document.getElementById('selectedTopicText').innerText = "Select Topic...";
+                document.getElementById('selectedTopicText').style.color = "#94a3b8";
+                renderTopics();
+            } else {
+                document.getElementById('topicContainer').style.display = 'none';
+                chosenTopic = "";
+            }
         });
     });
 
-    // --- Quiz Logic ---
+    // --- Topic Modal & Lang Toggle Logic ---
+    const topicModal = document.getElementById('topicModal');
+    
+    document.getElementById('topicLangToggle').addEventListener('click', () => {
+        topicLang = topicLang === 'en' ? 'hi' : 'en';
+        document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
+        renderTopics();
+        
+        // Update selected text if a topic was already chosen
+        if (chosenTopic && topicData[chosenSubject]) {
+            const found = topicData[chosenSubject].find(t => t.en === chosenTopic || t.hi === chosenTopic);
+            if(found) {
+                chosenTopic = found[topicLang];
+                document.getElementById('selectedTopicText').innerText = chosenTopic;
+            }
+        }
+    });
+
+    document.getElementById('quizTopicSelector').addEventListener('click', () => {
+        if(topicData[chosenSubject]) topicModal.style.display = 'flex';
+    });
+    document.getElementById('closeTopicModalBtn').addEventListener('click', () => { topicModal.style.display = 'none'; });
+
+    function renderTopics() {
+        const container = document.getElementById('topicListContainer');
+        container.innerHTML = '';
+        if(!topicData[chosenSubject]) return;
+        
+        topicData[chosenSubject].forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'subj-btn';
+            btn.innerText = t[topicLang];
+            btn.onclick = () => {
+                chosenTopic = t[topicLang];
+                const textEl = document.getElementById('selectedTopicText');
+                textEl.innerText = chosenTopic;
+                textEl.style.color = "white";
+                topicModal.style.display = 'none';
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    // --- Quiz Engine Logic ---
     let quizData = [];
     let currentQuestionIndex = 0;
     let userAnswers = [];
@@ -360,10 +482,8 @@
         const language = document.getElementById('quizLanguage').value;
         let count = parseInt(document.getElementById('quizCount').value);
 
-        if(!chosenSubject) {
-            showToast("⚠️ Please select a Subject first.");
-            return;
-        }
+        if(!chosenSubject) { showToast("⚠️ Please select a Subject first."); return; }
+        if(topicData[chosenSubject] && !chosenTopic) { showToast("⚠️ Please select a Specific Topic."); return; }
         
         if(isNaN(count) || count < 1) count = 5;
         if(count > 15) count = 15;
@@ -372,9 +492,9 @@
         loadBar.style.display = 'block';
         setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
 
-        // 🛑 UPDATED MATH PROMPT 🛑
-        // Tells the AI specifically to use $...$ for inline math so MathJax reads it flawlessly
-        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${chosenSubject}". 
+        const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
+
+        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
         1. The text of the quiz MUST be generated entirely in ${language}.
         2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
@@ -419,7 +539,7 @@
 
             currentQuestionIndex = 0;
             userAnswers = [];
-            document.getElementById('quizTag').innerText = `${chosenSubject} • Class ${grade}`;
+            document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
             
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
@@ -470,7 +590,6 @@
         prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
         nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
 
-        // 🛑 MATHJAX TRIGGER FOR LIVE QUESTIONS 🛑
         if (window.MathJax) {
             MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')])
                 .catch((err) => console.log('MathJax Render Error: ', err));
@@ -534,20 +653,20 @@
 
         const grade = document.getElementById('quizClass').value;
         const total = quizData.length;
+        const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
 
-        document.getElementById('resultSubtext').innerText = `${chosenSubject} - Class ${grade}`;
+        document.getElementById('resultSubtext').innerText = `${finalTopicStr} - Class ${grade}`;
         document.getElementById('statCorrect').innerText = correctCount;
         document.getElementById('statWrong').innerText = total - correctCount;
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
-        // 🛑 MATHJAX TRIGGER FOR REVIEW SCREEN 🛑
         if (window.MathJax) {
             MathJax.typesetPromise([document.getElementById('reviewContainer')])
                 .catch((err) => console.log('MathJax Review Render Error: ', err));
         }
 
-        saveQuizToHistory(chosenSubject, grade, correctCount, total, reviewHtml);
+        saveQuizToHistory(finalTopicStr, grade, correctCount, total, reviewHtml);
     }
 
     function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
@@ -583,9 +702,10 @@
 
     function downloadPDF() {
         const element = document.getElementById('pdfExportArea');
+        const finalTopicStr = chosenTopic ? `${chosenSubject}_${chosenTopic}` : chosenSubject;
         const opt = {
             margin:       10,
-            filename:     `AI_Quiz_Result_${chosenSubject.replace(/\s+/g, '_')}.pdf`,
+            filename:     `AI_Quiz_Result_${finalTopicStr.replace(/\s+/g, '_')}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
