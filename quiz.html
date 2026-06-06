@@ -11,18 +11,7 @@
     
     <link rel="stylesheet" href="style.css">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js">
-function openSolutionModal(qData){
-document.getElementById('solutionModal').style.display='flex';
-document.getElementById('solutionContent').innerHTML=`
-<h3 style="color:#38bdf8">${qData.question}</h3>
-<div><b>Correct Answer:</b> ${qData.correctOption}</div>
-<div style="margin-top:15px">${qData.deepSolution || qData.explanation}</div>`;
-if(window.MathJax){MathJax.typesetClear();MathJax.typesetPromise([document.getElementById('solutionContent')]);}
-}
-function closeSolutionModal(){document.getElementById('solutionModal').style.display='none';}
-
-</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
@@ -173,7 +162,7 @@ function closeSolutionModal(){document.getElementById('solutionModal').style.dis
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">AI Pro Suite</div><button id="langToggle" style="margin-left:auto;background:none;border:none;font-size:24px;color:white;cursor:pointer;">🌍</button>
+  <div class="appTitle">AI Pro Suite</div>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -230,12 +219,7 @@ function closeSolutionModal(){document.getElementById('solutionModal').style.dis
                 <span id="selectedSubjectText">Select Subject...</span>
                 <span style="font-size: 12px;">▼</span>
             </div>
-        
-<div id="topicContainer" style="display:none; margin-top:18px;">
-<label style="color:#cbd5e1;display:block;margin-bottom:8px;">Topic</label>
-<select id="quizTopic" class="standard"></select>
-</div>
-
+        </div>
 
         <div style="display: flex; gap: 15px; margin-bottom: 10px;">
             <div style="flex: 1; text-align: left;">
@@ -270,7 +254,7 @@ function closeSolutionModal(){document.getElementById('solutionModal').style.dis
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
-            <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div><div id="timerDisplay" style="background:#ef4444;color:white;padding:6px 12px;border-radius:20px;">00:00</div>
+            <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
             <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1; max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
         </div>
 
@@ -336,13 +320,6 @@ function closeSolutionModal(){document.getElementById('solutionModal').style.dis
 
     // --- Subject Modal Logic ---
     let chosenSubject = "";
-
-const topicMap={
-Math:["Algebra","Profit & Loss","Percentage","Geometry","Trigonometry","Statistics","Probability","Fractions","Decimals","Number System"],
-Science:["Physics","Chemistry","Biology","Motion","Electricity","Magnetism","Cell","Genetics","Human Body","Atoms"],
-SST:["History","Geography","Civics","Economics","Constitution","Democracy","Climate","Population","Resources","Ancient India"]
-};
-
     const subjModal = document.getElementById('subjectModal');
     
     document.getElementById('quizSubjectSelector').addEventListener('click', () => {
@@ -462,7 +439,7 @@ CRITICAL FORMATTING RULES:
         document.getElementById('quizProgressBar').style.width = progressPct + '%';
         document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
         
-        document.getElementById('questionText').innerHTML = qData.question;
+        document.getElementById('questionText').innerText = qData.question;
         
         const optsContainer = document.getElementById('optionsContainer');
         optsContainer.innerHTML = '';
@@ -472,7 +449,7 @@ CRITICAL FORMATTING RULES:
         qData.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
-            btn.innerHTML = opt;
+            btn.innerText = opt;
             
             if (prevAns && opt === prevAns) {
                 btn.classList.add('selected'); 
@@ -490,8 +467,7 @@ CRITICAL FORMATTING RULES:
         nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
 
         if (window.MathJax) {
-        MathJax.typesetClear();
-        MathJax.typesetPromise([document.getElementById('questionText'),document.getElementById('optionsContainer')])
+        MathJax.typesetPromise([document.getElementById('questionText')])
             .catch((err) => console.log('MathJax Error:', err));
     }
 }
@@ -614,77 +590,5 @@ CRITICAL FORMATTING RULES:
         });
     }
 </script>
-
-<div id="solutionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:999999;justify-content:center;align-items:center;padding:20px;">
-<div style="width:100%;max-width:900px;max-height:85vh;overflow:auto;background:#0f172a;border-radius:25px;padding:25px;border:1px solid rgba(255,255,255,.1);">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-<h2 style="color:white;">🧠 Deep Solution</h2>
-<button onclick="closeSolutionModal()" style="background:#ef4444;border:none;padding:12px 20px;border-radius:12px;color:white;cursor:pointer;">✕ Close</button>
-</div>
-<div id="solutionContent"></div>
-</div></div>
-
-
-<style>
-.quiz-btn{
-background:linear-gradient(90deg,red,orange,yellow,green,cyan,blue,violet);
-background-size:400% 400%;
-animation:rainbow 8s linear infinite;
-}
-.card,.quiz-card{
-backdrop-filter:blur(18px);
-background:rgba(255,255,255,.08)!important;
-border:1px solid rgba(255,255,255,.15)!important;
-}
-@keyframes rainbow{
-0%{background-position:0% 50%}
-100%{background-position:100% 50%}
-}
-</style>
-
-<script>
-let uiLang='English';
-let quizTimer=null;
-let timeLeft=0;
-
-const hindiTopics={
-'Geography':'भूगोल','History':'इतिहास','Civics':'नागरिक शास्त्र',
-'Physics':'भौतिकी','Chemistry':'रसायन विज्ञान','Biology':'जीव विज्ञान',
-'Algebra':'बीजगणित'
-};
-
-document.addEventListener('DOMContentLoaded',()=>{
- const b=document.getElementById('langToggle');
- if(b){
-  b.onclick=()=>{
-   uiLang=uiLang==='English'?'Hindi':'English';
-   const sel=document.getElementById('quizTopic');
-   if(sel){
-    [...sel.options].forEach(o=>{
-      o.textContent=(uiLang==='Hindi' && hindiTopics[o.value])?hindiTopics[o.value]:o.value;
-    });
-   }
-  };
- }
-});
-
-function startQuizTimer(totalQuestions){
- clearInterval(quizTimer);
- timeLeft=totalQuestions*60;
- quizTimer=setInterval(()=>{
-   timeLeft--;
-   const m=Math.floor(timeLeft/60);
-   const s=timeLeft%60;
-   const el=document.getElementById('timerDisplay');
-   if(el) el.textContent='⏳ '+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-   if(timeLeft<=0){
-      clearInterval(quizTimer);
-      alert('Time Over! Showing score.');
-      if(typeof finishQuiz==='function') finishQuiz();
-   }
- },1000);
-}
-</script>
-
 </body>
 </html>
