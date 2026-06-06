@@ -16,10 +16,28 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Extra fix for MathJax rendering inside bubbles */
+        mjx-container {
+            padding: 5px 0 !important;
+            margin: 0 !important;
+        }
+        .typing-indicator {
+            display: flex; gap: 5px; padding: 10px;
+        }
+        .typing-indicator span {
+            width: 8px; height: 8px; background: #c084fc; border-radius: 50%;
+            animation: pulse 1s infinite alternate;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
+    </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay"></div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
@@ -50,50 +68,231 @@
     </div>
     
     <div id="mathChatHistory"></div>
-
   </div>
   <div class="chat-input-area">
     <div class="image-preview-chip" id="mathPreviewChip">
-        <div class="image-preview-close" id="clearMathImgBtn">✕</div>
+        <div class="image-preview-close" id="clearMathImgBtn" onclick="clearMathImage()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; font-size:12px; cursor:pointer;">✕</div>
     </div>
     <div class="chat-input-wrapper">
-        <button class="chat-action-btn" id="openMathCameraBtn" title="Take Photo">➕</button>
+        <button class="chat-action-btn" id="openMathCameraBtn" onclick="openCamera()" title="Take Photo">➕</button>
         <textarea id="mathInstructionInput" placeholder="Ask math question or attach image... (Press Enter)"></textarea>
-        
         <button class="chat-action-btn send" id="sendMathBtn" onclick="executeMathFlow()">↑</button>
     </div>
   </div>
 </div>
 
-<!-- MODERN CAMERA MODAL -->
 <div id="cameraModal" class="cameraModal">
     <video id="cameraVideo" autoplay playsinline></video>
     
-    <!-- Top Bar for Close Button -->
     <div class="camera-top-bar">
-        <button id="closeCameraBtn" class="cam-icon-btn">❌</button>
+        <button id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()">❌</button>
     </div>
     
-    <!-- Bottom Controls -->
     <div class="cameraControls">
         <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
-        <div id="capturePhotoBtn" class="cameraCircle"></div>
-        <button id="switchCameraBtn" class="cam-icon-btn">🔄</button>
+        <div id="capturePhotoBtn" class="cameraCircle" onclick="captureImage()"></div>
+        <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
     
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
-<div class="photoViewer" id="photoViewer">
-  <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
-      <button class="closeBtn" id="closePreviewBtn">✕</button>
-  </div>
-  <img id="previewImage" src="" alt="Preview">
-</div>
+<script>
+    let currentMathImage = null;
+    let mathConversationHistory = [];
+    let videoStream = null;
+    let usingFrontCamera = false;
 
-<canvas id="captureCanvas" style="display:none;"></canvas>
+    // Handle Enter Key for submission
+    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            executeMathFlow();
+        }
+    });
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function appendMessage(role, text, imageUrl = null) {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
+        
+        let contentHtml = `<div class="bubble">`;
+        if (imageUrl) {
+            contentHtml += `<img src="${imageUrl}" class="bubble-img" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
+        }
+        
+        // Replace markdown bold with HTML bold and handle newlines
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        formattedText = formattedText.replace(/\n/g, '<br>');
+        
+        contentHtml += `<div>${formattedText}</div></div>`;
+        msgDiv.innerHTML = contentHtml;
+        historyDiv.appendChild(msgDiv);
+        
+        // Re-render math equations
+        if (window.MathJax) {
+            MathJax.typesetPromise([msgDiv]).catch(err => console.log('MathJax error:', err));
+        }
+        
+        scrollToBottom();
+    }
+
+    function showTyping() {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const typingDiv = document.createElement("div");
+        typingDiv.id = "mathTyping";
+        typingDiv.className = "chat-msg chat-ai";
+        typingDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+        historyDiv.appendChild(typingDiv);
+        scrollToBottom();
+    }
+
+    function removeTyping() {
+        const typingDiv = document.getElementById("mathTyping");
+        if (typingDiv) typingDiv.remove();
+    }
+
+    function scrollToBottom() {
+        const scrollArea = document.getElementById("mathScrollArea");
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+
+    async function executeMathFlow() {
+        const inputEl = document.getElementById("mathInstructionInput");
+        const userText = inputEl.value.trim();
+        
+        if (!userText && !currentMathImage) return;
+
+        // Display user message
+        appendMessage('user', userText || "Solve this image.", currentMathImage);
+        inputEl.value = "";
+        
+        // Save to history to prevent "Answer: answer" bug on follow-ups
+        mathConversationHistory.push(`User: ${userText}`);
+        
+        // THE UPDATED SMART PROMPT: Adapts to how hard the question is
+        const tutorPrompt = `Act as an expert math tutor. Follow these STRICT formatting rules based on the problem's difficulty:
+
+1. IF SIMPLE MATH (e.g., basic arithmetic like 2+2): Solve it in 2 to 5 lines MAXIMUM. Be extremely direct.
+2. IF COMPLEX MATH (e.g., algebra, physics formulas, word problems): Solve it in 10 to 20 lines MAXIMUM. Show brief, numbered steps, and add a short "💡 Important Concept" note at the end to explain the underlying logic.
+3. NO FLUFF: Do not write introductory paragraphs like "Sure, I can help with that." Just output the math.
+4. NEVER reply with just "Answer: [X]". Always show at least one step.
+5. Use $ for inline math and $$ for block math equations.
+
+Previous context (if any):
+${mathConversationHistory.slice(-4).join("\n")}
+
+Current Request: ${userText || "Solve the math problem in this image."}`;
+
+        showTyping();
+        
+        const payload = {
+            userPrompt: tutorPrompt
+        };
+
+        let endpoint = "/api/gemini-text";
+        if (currentMathImage) {
+            endpoint = "/api/gemini-vision";
+            payload.imageBase64 = currentMathImage;
+        }
+
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await res.json();
+            removeTyping();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to solve.");
+            }
+
+            const answer = data.text || "I couldn't solve that. Please try again.";
+            appendMessage('ai', answer);
+            
+            // Save AI response to history
+            mathConversationHistory.push(`AI: ${answer}`);
+            
+            // Clear image after successful send
+            clearMathImage();
+
+        } catch (error) {
+            removeTyping();
+            appendMessage('ai', `❌ Error: ${error.message}`);
+        }
+    }
+
+    // --- CAMERA & IMAGE LOGIC ---
+    function openCamera() {
+        const modal = document.getElementById("cameraModal");
+        modal.classList.add("active");
+        startVideoStream();
+    }
+
+    function closeCamera() {
+        const modal = document.getElementById("cameraModal");
+        modal.classList.remove("active");
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+    }
+
+    async function startVideoStream() {
+        const video = document.getElementById("cameraVideo");
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: usingFrontCamera ? "user" : "environment" }
+            });
+            video.srcObject = videoStream;
+        } catch (err) {
+            alert("Camera access denied or unavailable.");
+            closeCamera();
+        }
+    }
+
+    function switchCamera() {
+        usingFrontCamera = !usingFrontCamera;
+        startVideoStream();
+    }
+
+    function captureImage() {
+        const video = document.getElementById("cameraVideo");
+        const canvas = document.getElementById("captureCanvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Compress image to Base64 to save upload time
+        currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
+        
+        // Show Chip
+        const chip = document.getElementById("mathPreviewChip");
+        chip.style.backgroundImage = `url(${currentMathImage})`;
+        chip.style.display = "block";
+        
+        closeCamera();
+    }
+
+    function clearMathImage() {
+        currentMathImage = null;
+        document.getElementById("mathPreviewChip").style.display = "none";
+    }
+</script>
+
 <script src="ui-controls.js" defer></script>
 <script src="main.js" defer></script>
 </body>
 </html>
-
