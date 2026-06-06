@@ -12,17 +12,34 @@
     <link rel="stylesheet" href="style.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* 🛑 DESKTOP CENTERING FIX ADDED HERE (margin: 0 auto) 🛑 */
+        /* 🛑 TOTAL LAYOUT OVERHAUL FOR PC & MOBILE 🛑 */
+        .quiz-page-container {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 15px 150px 15px; /* Heavy bottom padding so nothing hides under mobile menus */
+        }
+
+        .quiz-card {
+            width: 100%;
+            max-width: 600px; /* Perfectly sized for PC and Mobile */
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+
         .quiz-setup, .quiz-active, .quiz-results {
             display: none;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto; 
             animation: fadeIn 0.4s ease;
         }
         .quiz-setup.active, .quiz-active.active, .quiz-results.active {
@@ -31,6 +48,40 @@
         }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Core UI Elements */
+        .quiz-btn {
+            background: linear-gradient(135deg, #a855f7, #7e22ce);
+            color: white;
+            padding: 16px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 800;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(168,85,247,0.4);
+            margin-top: 25px;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .quiz-btn:active { transform: scale(0.97); }
+
+        input[type="number"].standard {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            border-radius: 12px;
+            outline: none;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        input[type="number"].standard:focus {
+            border-color: #c084fc;
+            background: rgba(15, 23, 42, 0.9);
+        }
 
         .option-btn {
             background: rgba(255, 255, 255, 0.05);
@@ -45,59 +96,29 @@
             margin-bottom: 10px;
             word-wrap: break-word; 
         }
-        .option-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: #38bdf8;
-        }
-        
+        .option-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #38bdf8; }
         .option-btn.selected {
             background: rgba(56, 189, 248, 0.2) !important;
             border-color: #38bdf8 !important;
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important;
         }
-        
-        .option-btn:disabled {
-            cursor: default;
-            opacity: 0.9;
-        }
+        .option-btn:disabled { cursor: default; opacity: 0.9; }
 
         .stat-box {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            flex: 1;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; border-radius: 15px; text-align: center; flex: 1;
         }
         .stat-box .num { font-size: 32px; font-weight: 900; }
         
         .result-card {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            text-align: left;
-            word-wrap: break-word; 
+            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; 
         }
 
-        @keyframes loadingSweep {
-            0% { left: -30%; width: 30%; }
-            50% { width: 50%; }
-            100% { left: 100%; width: 30%; }
-        }
+        @keyframes loadingSweep { 0% { left: -30%; width: 30%; } 50% { width: 50%; } 100% { left: 100%; width: 30%; } }
+        @keyframes fadeToast { 0% { opacity: 0; bottom: 10px; } 10% { opacity: 1; bottom: 30px; } 90% { opacity: 1; bottom: 30px; } 100% { opacity: 0; bottom: 10px; } }
 
-        @keyframes fadeToast {
-            0% { opacity: 0; bottom: 10px; }
-            10% { opacity: 1; bottom: 30px; }
-            90% { opacity: 1; bottom: 30px; }
-            100% { opacity: 0; bottom: 10px; }
-        }
-
-        select.standard option {
-            background: #0f172a;
-            color: white;
-        }
+        select.standard option { background: #0f172a; color: white; }
     </style>
 </head>
 <body>
@@ -122,48 +143,46 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; padding-bottom: 150px; width: 100%;">
+<div class="page active quiz-page-container">
     
-    <div id="quizSetup" class="card quiz-setup active" style="padding: 30px; text-align: center; margin-bottom: 50px;">
-        <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 20px;">AI Quiz Generator</h2>
+    <div id="quizSetup" class="card quiz-card quiz-setup active" style="padding: 30px;">
+        <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 25px; text-align: center;">AI Quiz Generator</h2>
         
-        <div style="text-align: left; margin-bottom: 15px;">
-            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Language / भाषा</label>
-            <select id="quizLanguage" class="standard" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; outline: none;">
+        <div style="text-align: left; margin-bottom: 18px;">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Language / भाषा</label>
+            <select id="quizLanguage" class="standard" style="width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px 20px; border-radius: 12px; font-size: 15px; outline: none;">
                 <option value="Hindi">Hindi (हिंदी)</option>
                 <option value="English">English</option>
                 <option value="Hinglish">Hinglish</option>
             </select>
         </div>
 
-        <div style="text-align: left; margin-bottom: 15px;">
-            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Subject / Topic</label>
+        <div style="text-align: left; margin-bottom: 18px;">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject / Topic</label>
             <input type="text" id="quizSubject" class="standard" placeholder="e.g., Physics, Indian History, Cells...">
         </div>
 
-        <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+        <div style="display: flex; gap: 15px; margin-bottom: 10px;">
             <div style="flex: 1; text-align: left;">
-                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Class / Grade</label>
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Class / Grade</label>
                 <input type="text" id="quizClass" class="standard" placeholder="e.g., 9th, 12th">
             </div>
             <div style="flex: 1; text-align: left;">
-                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 5px; display: block;">Total Questions</label>
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Questions</label>
                 <input type="number" id="quizCount" class="standard" min="1" max="15" value="5">
             </div>
         </div>
 
-        <button id="startQuizBtn" class="btn" style="display: block !important; visibility: visible !important; background: linear-gradient(135deg, #a855f7, #7e22ce) !important; color: white !important; padding: 15px !important; border-radius: 30px !important; font-size: 18px !important; font-weight: bold !important; width: 100% !important; border: none !important; cursor: pointer !important; box-shadow: 0 10px 30px rgba(168,85,247,0.4) !important; margin-top: 10px !important;">
-            🚀 Generate & Start Quiz!
-        </button>
+        <button id="startQuizBtn" class="quiz-btn">🚀 Generate & Start Quiz!</button>
         
-        <div id="loadingBarContainer" style="display:none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 20px; overflow: hidden; position: relative;">
+        <div id="loadingBarContainer" style="display:none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 25px; overflow: hidden; position: relative;">
             <div style="height: 100%; width: 30%; background: #a855f7; position: absolute; animation: loadingSweep 1.5s infinite ease-in-out;"></div>
         </div>
         
-        <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; min-height: 20px;"></div>
+        <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; text-align: center; min-height: 20px;"></div>
     </div>
 
-    <div id="quizActive" class="card quiz-active" style="padding: 30px; margin-bottom: 50px;">
+    <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
         
         <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
             <div id="quizProgressBar" style="height: 100%; width: 0%; background: #38bdf8; transition: width 0.3s ease;"></div>
@@ -171,13 +190,12 @@
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
             <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
-            <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1;"></div>
+            <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1; max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
         </div>
 
         <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; word-wrap: break-word; white-space: normal;">Loading Question...</div>
 
-        <div id="optionsContainer" style="display: flex; flex-direction: column; padding-right: 5px;">
-        </div>
+        <div id="optionsContainer" style="display: flex; flex-direction: column;"></div>
 
         <div style="display: flex; gap: 15px; margin-top: 25px;">
             <button id="prevBtn" class="btn" style="flex: 1; padding: 15px; border-radius: 12px; background: #475569; color: white; display: none;">⬅️ Previous</button>
@@ -185,7 +203,7 @@
         </div>
     </div>
 
-    <div id="quizResults" class="quiz-results" style="margin-bottom: 50px;">
+    <div id="quizResults" class="quiz-card quiz-results">
         <div id="pdfExportArea" class="card" style="padding: 30px;">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h2 style="color: #22c55e; font-size: 32px; margin-bottom: 5px;">Quiz Completed!</h2>
@@ -223,7 +241,7 @@
     function showToast(msg) {
         let t = document.createElement('div');
         t.innerText = msg;
-        t.style.cssText = "position:fixed; bottom:10px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #ef4444, #b91c1c); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:100000; font-weight:600; font-size: 14px; text-align:center; animation:fadeToast 3s forwards; pointer-events: none;";
+        t.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #ef4444, #b91c1c); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:100000; font-weight:600; font-size: 14px; text-align:center; animation:fadeToast 3s forwards; pointer-events: none;";
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 3000);
     }
@@ -256,7 +274,6 @@
         if(isNaN(count) || count < 1) count = 5;
         if(count > 15) count = 15;
 
-        startBtn.disabled = true;
         startBtn.style.display = 'none';
         loadBar.style.display = 'block';
         setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
@@ -305,7 +322,7 @@
 
             currentQuestionIndex = 0;
             userAnswers = [];
-            document.getElementById('quizTag').innerText = `${subject} • Class ${grade} • ${language}`;
+            document.getElementById('quizTag').innerText = `${subject} • Class ${grade}`;
             
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
@@ -317,7 +334,6 @@
             setupStatus.innerHTML = `❌ Error: AI formatting glitch.`;
             showToast("⚠️ AI formatting error. Just click start again!");
             
-            startBtn.disabled = false;
             startBtn.style.display = 'block';
             loadBar.style.display = 'none';
         }
@@ -497,7 +513,6 @@
             showToast("✅ PDF Downloaded!");
         });
     }
-
 </script>
 </body>
 </html>
