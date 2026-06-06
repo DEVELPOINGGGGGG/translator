@@ -65,10 +65,11 @@
   <div class="chat-input-area" style="flex-direction: column;">
     <div id="imagePreviewContainer" style="display: none; gap: 10px; margin-bottom: 10px; overflow-x: auto; width: 100%; padding-bottom: 5px;"></div>
     
-    <div class="chat-input-wrapper" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 5px;">
-        <button class="chat-action-btn" id="openImageCameraBtn" title="Take Photo" onclick="openCamera('image_trans')" style="flex-shrink: 0;">➕</button>
+    <div class="chat-input-wrapper" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border-radius: 40px;">
         
-        <select id="chatTargetLang" style="flex: 1; padding: 12px; border-radius: 12px; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); outline: none; font-family: 'Poppins', sans-serif;">
+        <button class="chat-action-btn" id="openImageCameraBtn" title="Take Photo" onclick="openCamera('image_trans')" style="flex-shrink: 0; margin-bottom: 0;">➕</button>
+        
+        <select id="chatTargetLang" style="flex: 1; padding: 0 12px; border-radius: 20px; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); outline: none; font-family: 'Poppins', sans-serif; margin-bottom: 0; height: 45px;">
             <option value="Hindi">Target: Hindi</option>
             <option value="English">Target: English</option>
             <option value="French">Target: French</option>
@@ -77,7 +78,8 @@
             <option value="Japanese">Target: Japanese</option>
         </select>
         
-        <button class="btn blue" id="sendImageTransBtn" onclick="executeImageTransFlow()" style="margin:0; padding: 12px 20px; border-radius: 12px; white-space: nowrap; flex-shrink: 0;">Convert</button>
+        <button class="btn blue" id="sendImageTransBtn" onclick="executeImageTransFlow()" style="margin: 0; padding: 0 20px; border-radius: 30px; white-space: nowrap; flex-shrink: 0; width: auto; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);">Convert</button>
+        
     </div>
   </div>
 </div>
