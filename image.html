@@ -7,8 +7,21 @@
     
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f172a">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Forces the Image Translator dropdown, chat bubbles, and text to listen to the "Aa" Menu */
+        #chatTargetLang, .bubble, p {
+            font-size: calc(15px * var(--app-font-scale, 1)) !important;
+            line-height: 1.6 !important;
+            transition: font-size 0.25s ease-in-out;
+        }
+        h1 {
+            font-size: calc(24px * var(--app-font-scale, 1)) !important;
+            transition: font-size 0.25s ease-in-out;
+        }
+    </style>
 </head>
 <body>
 
@@ -69,16 +82,13 @@
   </div>
 </div>
 
-<!-- MODERN CAMERA MODAL -->
 <div id="cameraModal" class="cameraModal">
     <video id="cameraVideo" autoplay playsinline></video>
     
-    <!-- Top Bar for Close Button -->
     <div class="camera-top-bar">
         <button id="closeCameraBtn" class="cam-icon-btn">❌</button>
     </div>
     
-    <!-- Bottom Controls -->
     <div class="cameraControls">
         <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
         <div id="capturePhotoBtn" class="cameraCircle"></div>
