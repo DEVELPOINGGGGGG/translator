@@ -16,35 +16,39 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* 🛑 TOTAL LAYOUT OVERHAUL FOR PC & MOBILE 🛑 */
+        /* 🛑 INDESTRUCTIBLE CENTERING (Ignores main.js overrides) 🛑 */
         .quiz-page-container {
-            position: absolute;
-            top: 70px;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            overflow-y: auto;
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 30px 15px 150px 15px; /* Heavy bottom padding so nothing hides under mobile menus */
+            position: absolute !important;
+            top: 70px !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            padding: 30px 15px 150px 15px !important;
+            box-sizing: border-box !important;
         }
 
         .quiz-card {
-            width: 100%;
-            max-width: 600px; /* Perfectly sized for PC and Mobile */
-            margin: 0 auto;
-            flex-shrink: 0;
+            width: 100% !important;
+            max-width: 600px !important;
+            margin: 0 auto !important;
+            align-self: center !important; /* Locks it to the middle */
+            flex-shrink: 0 !important;
         }
 
         .quiz-setup, .quiz-active, .quiz-results {
-            display: none;
+            display: none !important;
             animation: fadeIn 0.4s ease;
         }
         .quiz-setup.active, .quiz-active.active, .quiz-results.active {
-            display: flex;
-            flex-direction: column;
+            display: flex !important;
+            flex-direction: column !important;
         }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -143,7 +147,7 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<div class="page active quiz-page-container">
+<div class="page active quiz-page-container" id="quizPageContainer">
     
     <div id="quizSetup" class="card quiz-card quiz-setup active" style="padding: 30px;">
         <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 25px; text-align: center;">AI Quiz Generator</h2>
@@ -203,8 +207,8 @@
         </div>
     </div>
 
-    <div id="quizResults" class="quiz-card quiz-results">
-        <div id="pdfExportArea" class="card" style="padding: 30px;">
+    <div id="quizResults" class="card quiz-card quiz-results" style="background: transparent; border: none; padding: 0;">
+        <div id="pdfExportArea" class="card" style="padding: 30px; width: 100%; box-sizing: border-box;">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h2 style="color: #22c55e; font-size: 32px; margin-bottom: 5px;">Quiz Completed!</h2>
                 <div id="resultSubtext" style="color: #94a3b8; font-weight: 600;">Physics - 9th Grade</div>
@@ -220,13 +224,16 @@
             <div id="reviewContainer"></div>
         </div>
 
-        <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; width: 100%;">
             <button onclick="downloadPDF()" class="btn red" style="flex: 1; padding: 15px; border-radius: 15px; min-width: 150px;">📄 Download PDF</button>
             <button onclick="location.reload()" class="btn" style="flex: 1; padding: 15px; border-radius: 15px; background: #475569; color: white; min-width: 150px;">🔄 Create New Quiz</button>
         </div>
     </div>
 
 </div>
+
+<script src="ui-controls.js" defer></script>
+<script src="main.js" defer></script>
 
 <script>
     function toggleSidebar() {
@@ -236,7 +243,11 @@
         sidebar.classList.toggle("active", active);
         overlay.classList.toggle("active", active);
     }
-    document.getElementById("overlay").onclick = toggleSidebar;
+    
+    // Safety check just in case overlay isn't present
+    if(document.getElementById("overlay")) {
+        document.getElementById("overlay").onclick = toggleSidebar;
+    }
 
     function showToast(msg) {
         let t = document.createElement('div');
