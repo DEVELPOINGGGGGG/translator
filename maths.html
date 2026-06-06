@@ -111,11 +111,62 @@
         }
     });
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
+    // --- SUBMISSION LOGIC ---
+    function executeMathFlow() {
+        const inputEl = document.getElementById("mathInstructionInput");
+        const userText = inputEl.value.trim();
+        if (!userText && !currentMathImage) return;
+
+        appendMessage('user', userText || "Solve the questions in this image.", currentMathImage);
+        inputEl.value = "";
+        mathConversationHistory.push(`User: ${userText}`);
+
+        // THE "EXAMINER" PROMPT - Strict Formatting Rules
+        const tutorPrompt = `You are an expert, direct math and science tutor. Follow these STRICT formatting rules:
+
+1. ABSOLUTELY NO GREETINGS: Do not say "Hi", "Sure", "Here is the solution", or "Let's solve this." Start immediately with the math.
+2. NON-MATH EXCEPTION: If the user just says "Hi" or a casual greeting with no math, reply normally and briefly.
+3. SINGLE QUESTION FORMAT:
+   - First line: Write the exact question at the top (e.g., "प्रश्न: [Question]").
+   - Next: Provide the step-by-step solution clearly.
+   - Last: Add a "💡 Explanation:" section at the end. This explanation MUST be exactly 6 to 12 lines long, explaining the core concept.
+4. MULTIPLE QUESTIONS FORMAT (If the user gives multiple questions to solve):
+   - Format EACH question exactly like this:
+     Q[Number]. [Write the Question]
+     [Step-by-step solution]
+     💡 Explanation: [If it's a hard question, explain in 4 to 8 lines. If it's an easy/casual question, explain in 2 to 4 lines].
+   - Move immediately to the next question without any filler text.
+5. MATH NOTATION: Use $ for inline math and $$ for block math equations.
+6. LANGUAGE: Respond in the exact language the user used (e.g., Hindi, English, or Hinglish).
+
+Current Task: ${userText || "Solve the image."}`;
+
+        showTyping();
+        
+        // FORCING GEMINI 2.5 FLASH ONLY
+        fetch("/api/gemini-text", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userPrompt: tutorPrompt,
+                providerOverride: "gemini" 
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            removeTyping();
+            if (data.error) throw new Error(data.error);
+            appendMessage('ai', data.text);
+            mathConversationHistory.push(`AI: ${data.text}`);
+            clearMathImage();
+        })
+        .catch(err => {
+            removeTyping();
+            appendMessage('ai', "❌ Error: " + err.message);
+        });
     }
 
+    // --- UI HELPERS ---
     function appendMessage(role, text, imageUrl = null) {
         const historyDiv = document.getElementById("mathChatHistory");
         const msgDiv = document.createElement("div");
@@ -126,7 +177,6 @@
             contentHtml += `<img src="${imageUrl}" class="bubble-img" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
         }
         
-        // Replace markdown bold with HTML bold and handle newlines
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
         formattedText = formattedText.replace(/\n/g, '<br>');
         
@@ -134,12 +184,11 @@
         msgDiv.innerHTML = contentHtml;
         historyDiv.appendChild(msgDiv);
         
-        // Re-render math equations
         if (window.MathJax) {
             MathJax.typesetPromise([msgDiv]).catch(err => console.log('MathJax error:', err));
         }
         
-        scrollToBottom();
+        document.getElementById("mathScrollArea").scrollTop = 99999;
     }
 
     function showTyping() {
@@ -149,7 +198,7 @@
         typingDiv.className = "chat-msg chat-ai";
         typingDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
         historyDiv.appendChild(typingDiv);
-        scrollToBottom();
+        document.getElementById("mathScrollArea").scrollTop = 99999;
     }
 
     function removeTyping() {
@@ -157,86 +206,12 @@
         if (typingDiv) typingDiv.remove();
     }
 
-    function scrollToBottom() {
-        const scrollArea = document.getElementById("mathScrollArea");
-        scrollArea.scrollTop = scrollArea.scrollHeight;
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
     }
 
-    async function executeMathFlow() {
-        const inputEl = document.getElementById("mathInstructionInput");
-        const userText = inputEl.value.trim();
-        
-        if (!userText && !currentMathImage) return;
-
-        // Display user message
-        appendMessage('user', userText || "Solve this image.", currentMathImage);
-        inputEl.value = "";
-        
-        // Save to history to prevent "Answer: answer" bug on follow-ups
-        mathConversationHistory.push(`User: ${userText}`);
-        
-        // 🔥 THE NEW VISUAL & EMOJI PROMPT 🔥
-        const tutorPrompt = `You are an expert, engaging math tutor. Follow these STRICT formatting rules:
-
-1. DIRECT ANSWER FIRST: Give the final answer in the very first line (e.g., "2 + 2 का जवाब 4 होता है।").
-2. NO LONG PARAGRAPHS: NEVER write long, boring textbook paragraphs. 
-3. VISUAL & EMOJI EXPLANATION (For Simple Math): If it's basic math, explain it using emojis and real-world objects. 
-   - Example format: 
-     "🍎 सेब की मदद से समझें:"
-     पहले आपके पास थे: 🍎 🍎 (दो सेब)
-     आपको और मिले: 🍎 🍎 (दो और सेब)
-     अब कुल मिलाकर हुए: 🍎 🍎 🍎 🍎 (चार सेब)
-4. NUMBER LINE (For Simple Math): Include a quick "📈 नंबर लाइन (संख्या रेखा) पर" explanation.
-5. COMPLEX MATH (9th Grade+): If the math is hard (Physics, Algebra, Formulas), skip the apples. Use short, numbered steps. Keep it under 15 lines. Add a "💡 Important Concept" note at the bottom.
-6. LANGUAGE: Always reply in the exact language the user asked in (use simple, natural Hindi if asked in Hindi).
-
-Previous context (if any):
-${mathConversationHistory.slice(-4).join("\n")}
-
-Current Request: ${userText || "Solve the math problem in this image."}`;
-
-        showTyping();
-        
-        const payload = {
-            userPrompt: tutorPrompt
-        };
-
-        let endpoint = "/api/gemini-text";
-        if (currentMathImage) {
-            endpoint = "/api/gemini-vision";
-            payload.imageBase64 = currentMathImage;
-        }
-
-        try {
-            const res = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            
-            const data = await res.json();
-            removeTyping();
-
-            if (!res.ok) {
-                throw new Error(data.error || "Failed to solve.");
-            }
-
-            const answer = data.text || "I couldn't solve that. Please try again.";
-            appendMessage('ai', answer);
-            
-            // Save AI response to history
-            mathConversationHistory.push(`AI: ${answer}`);
-            
-            // Clear image after successful send
-            clearMathImage();
-
-        } catch (error) {
-            removeTyping();
-            appendMessage('ai', `❌ Error: ${error.message}`);
-        }
-    }
-
-    // --- CAMERA & IMAGE LOGIC ---
+    // --- CAMERA LOGIC ---
     function openCamera() {
         const modal = document.getElementById("cameraModal");
         modal.classList.add("active");
@@ -281,10 +256,8 @@ Current Request: ${userText || "Solve the math problem in this image."}`;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Compress image to Base64 to save upload time
         currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
         
-        // Show Chip
         const chip = document.getElementById("mathPreviewChip");
         chip.style.backgroundImage = `url(${currentMathImage})`;
         chip.style.display = "block";
