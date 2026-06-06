@@ -131,7 +131,7 @@
         <button id="ytCloseBtn" class="closeBtn" style="position: static; margin: 0; width: 45px; height: 45px; font-size: 18px;">✕</button>
     </div>
     <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px;">
-        <iframe id="ytIframe" style="width: 100%; max-width: 1200px; height: 100%; border-radius: 12px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.8);" allow="autoplay; fullscreen; encrypted-media"></iframe>
+        <iframe id="ytIframe" style="width: 100%; max-width: 1200px; height: 100%; border-radius: 12px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.8);" allow="autoplay; fullscreen; encrypted-media" sandbox="allow-same-origin allow-scripts allow-presentation"></iframe>
     </div>
 </div>
 
@@ -165,7 +165,7 @@
             let sessionId = Date.now();
             let histItem = {
                 id: sessionId,
-                type: 'youtube', // Gives it the right badge in History tab
+                type: 'youtube',
                 title: topic.substring(0, 30) + '...',
                 interactions: [{
                     question: "YouTube Search: " + topic,
@@ -207,7 +207,7 @@
             searchInput.value = voiceModalText.value.trim();
         }
         voiceModal.style.display = 'none';
-        // DOES NOT AUTO-SEARCH. Waits for user!
+        // Wait for user to manually click search!
     });
 
     if(recognition) {
@@ -388,7 +388,6 @@
             if (!res.ok) throw new Error(data.error);
             
             searchInput.value = data.text.replace(/[\*\"]/g, '').trim();
-            // Wait for user to manually click search!
             searchBtn.disabled = false; searchBtn.style.opacity = '1'; searchBtn.innerHTML = '🔍 AI Search & Rank';
         } catch (e) {
             searchInput.value = ""; statusText.innerHTML = "❌ Failed: " + e.message;
@@ -405,7 +404,10 @@
 
     window.openVideoPlayer = async function(videoId, url) {
         currentVideoUrl = url;
-        ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+        
+        // ANTI-REDIRECT FIX: uses youtube-nocookie.com & playsinline=1 & modestbranding=1
+        ytIframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1&modestbranding=1`;
+        
         playerOverlay.style.display = 'flex';
         document.body.style.overflow = 'hidden'; 
         
