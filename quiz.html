@@ -43,19 +43,14 @@
             background: rgba(255, 255, 255, 0.1);
             border-color: #38bdf8;
         }
+        
+        /* 🛑 NEUTRAL SELECTION COLOR (No spoilers) */
         .option-btn.selected {
-            background: rgba(56, 189, 248, 0.2);
-            border-color: #38bdf8;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            background: rgba(56, 189, 248, 0.2) !important;
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important;
         }
-        .option-btn.correct {
-            background: rgba(34, 197, 94, 0.2);
-            border-color: #22c55e;
-        }
-        .option-btn.wrong {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
-        }
+        
         .option-btn:disabled {
             cursor: default;
             opacity: 0.9;
@@ -94,6 +89,10 @@
             90% { opacity: 1; bottom: 30px; }
             100% { opacity: 0; bottom: 10px; }
         }
+
+        /* Custom Scrollbars for Question Text */
+        #questionText::-webkit-scrollbar, #optionsContainer::-webkit-scrollbar { width: 4px; }
+        #questionText::-webkit-scrollbar-thumb, #optionsContainer::-webkit-scrollbar-thumb { background: rgba(192, 132, 252, 0.5); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -161,9 +160,9 @@
             <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1;"></div>
         </div>
 
-        <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px;">Loading Question...</div>
+        <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; max-height: 200px; overflow-y: auto; padding-right: 10px;">Loading Question...</div>
 
-        <div id="optionsContainer" style="display: flex; flex-direction: column;">
+        <div id="optionsContainer" style="display: flex; flex-direction: column; max-height: 40vh; overflow-y: auto; padding-right: 5px;">
             </div>
 
         <div style="display: flex; gap: 15px; margin-top: 25px;">
@@ -234,7 +233,7 @@
     const nextBtn = document.getElementById('nextBtn');
     const prevBtn = document.getElementById('prevBtn');
 
-    // --- Start Quiz Flow (BULLETPROOF JSON FIX) ---
+    // --- Start Quiz Flow ---
     startBtn.addEventListener('click', async () => {
         const subject = document.getElementById('quizSubject').value.trim();
         const grade = document.getElementById('quizClass').value.trim();
@@ -248,7 +247,6 @@
         if(isNaN(count) || count < 1) count = 5;
         if(count > 15) count = 15;
 
-        // UI Loading State
         startBtn.disabled = true;
         startBtn.style.display = 'none';
         loadBar.style.display = 'block';
@@ -281,9 +279,6 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
 
-            console.log("Raw AI Response:", data.text);
-
-            // BULLETPROOF JSON EXTRACTION
             let rawText = data.text;
             let startIdx = rawText.indexOf('[');
             let endIdx = rawText.lastIndexOf(']');
@@ -292,18 +287,15 @@
                 throw new Error("AI did not return the correct array format.");
             }
 
-            // Slice out EXACTLY the JSON array and ignore everything else
             let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
             quizData = JSON.parse(cleanJsonString);
             
             if(quizData.length === 0) throw new Error("AI returned empty quiz array.");
 
-            // Initialize Quiz State
             currentQuestionIndex = 0;
             userAnswers = [];
             document.getElementById('quizTag').innerText = `${subject} • Class ${grade}`;
             
-            // Switch UI
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
             
@@ -314,7 +306,6 @@
             setupStatus.innerHTML = `❌ Error: AI formatting glitch.`;
             showToast("⚠️ AI formatting error. Just click start again!");
             
-            // Reset UI so user can try again
             startBtn.disabled = false;
             startBtn.style.display = 'block';
             loadBar.style.display = 'none';
@@ -325,7 +316,6 @@
     function renderQuestion() {
         const qData = quizData[currentQuestionIndex];
         
-        // Update Progress Bar & Text
         const progressPct = ((currentQuestionIndex) / quizData.length) * 100;
         document.getElementById('quizProgressBar').style.width = progressPct + '%';
         document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
@@ -343,13 +333,11 @@
             btn.className = 'option-btn';
             btn.innerText = opt;
             
-            // If answered already, show the state and lock the button
+            // 🛑 BLIND MODE FIX: If answered already, JUST highlight it neutrally
             if (prevAns) {
                 btn.disabled = true;
-                if (opt === qData.correctOption) {
-                    btn.classList.add('correct');
-                } else if (opt === prevAns && prevAns !== qData.correctOption) {
-                    btn.classList.add('wrong');
+                if (opt === prevAns) {
+                    btn.classList.add('selected'); 
                 }
             } else {
                 btn.onclick = () => handleAnswerSelect(opt, btn);
@@ -368,17 +356,13 @@
         if (userAnswers[currentQuestionIndex] !== undefined) return;
         
         userAnswers[currentQuestionIndex] = selectedString;
-        const qData = quizData[currentQuestionIndex];
-        const isCorrect = selectedString === qData.correctOption;
 
-        // Visual Feedback
+        // 🛑 BLIND MODE FIX: Neutral Visual Feedback (Only highlights what you clicked)
         const allBtns = document.querySelectorAll('.option-btn');
         allBtns.forEach(b => {
             b.disabled = true;
-            if(b.innerText === qData.correctOption) {
-                b.classList.add('correct');
-            } else if (b === btnElement && !isCorrect) {
-                b.classList.add('wrong');
+            if (b === btnElement) {
+                b.classList.add('selected');
             }
         });
     }
