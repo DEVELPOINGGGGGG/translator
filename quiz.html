@@ -41,14 +41,13 @@
             cursor: pointer;
             transition: all 0.2s;
             margin-bottom: 10px;
-            word-wrap: break-word; /* Prevents text overflow in options */
+            word-wrap: break-word; 
         }
         .option-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             border-color: #38bdf8;
         }
         
-        /* 🛑 NEUTRAL SELECTION COLOR (No spoilers) */
         .option-btn.selected {
             background: rgba(56, 189, 248, 0.2) !important;
             border-color: #38bdf8 !important;
@@ -77,17 +76,15 @@
             padding: 20px;
             margin-bottom: 15px;
             text-align: left;
-            word-wrap: break-word; /* Prevents overflow in review */
+            word-wrap: break-word; 
         }
 
-        /* Animated Loading Bar */
         @keyframes loadingSweep {
             0% { left: -30%; width: 30%; }
             50% { width: 50%; }
             100% { left: 100%; width: 30%; }
         }
 
-        /* Toast Animation */
         @keyframes fadeToast {
             0% { opacity: 0; bottom: 10px; }
             10% { opacity: 1; bottom: 30px; }
@@ -95,7 +92,6 @@
             100% { opacity: 0; bottom: 10px; }
         }
 
-        /* Premium Select Dropdown Styling */
         select.standard option {
             background: #0f172a;
             color: white;
@@ -124,9 +120,9 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; padding-bottom: 150px;">
+<div class="page active" style="position: absolute; top: 70px; left: 0; right: 0; height: calc(100vh - 70px); overflow-y: auto !important; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; padding-bottom: 150px;">
     
-    <div id="quizSetup" class="card quiz-setup active" style="padding: 30px; text-align: center;">
+    <div id="quizSetup" class="card quiz-setup active" style="padding: 30px; text-align: center; margin-bottom: 50px;">
         <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 20px;">AI Quiz Generator</h2>
         
         <div style="text-align: left; margin-bottom: 15px;">
@@ -154,10 +150,9 @@
             </div>
         </div>
 
-       <!-- यह कोड quizCount वाले div के ठीक नीचे पेस्ट करें -->
-<button id="startQuizBtn" style="display: block !important; visibility: visible !important; background: linear-gradient(135deg, #a855f7, #7e22ce) !important; color: white !important; padding: 15px !important; border-radius: 30px !important; font-size: 18px !important; font-weight: bold !important; width: 100% !important; border: none !important; cursor: pointer !important; box-shadow: 0 10px 30px rgba(168,85,247,0.4) !important; margin-top: 25px !important; margin-bottom: 25px !important; z-index: 9999 !important;">
-    🚀 Generate & Start Quiz!
-</button>
+        <button id="startQuizBtn" class="btn" style="display: block !important; visibility: visible !important; background: linear-gradient(135deg, #a855f7, #7e22ce) !important; color: white !important; padding: 15px !important; border-radius: 30px !important; font-size: 18px !important; font-weight: bold !important; width: 100% !important; border: none !important; cursor: pointer !important; box-shadow: 0 10px 30px rgba(168,85,247,0.4) !important; margin-top: 10px !important;">
+            🚀 Generate & Start Quiz!
+        </button>
         
         <div id="loadingBarContainer" style="display:none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 20px; overflow: hidden; position: relative;">
             <div style="height: 100%; width: 30%; background: #a855f7; position: absolute; animation: loadingSweep 1.5s infinite ease-in-out;"></div>
@@ -166,7 +161,7 @@
         <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; min-height: 20px;"></div>
     </div>
 
-    <div id="quizActive" class="card quiz-active" style="padding: 30px;">
+    <div id="quizActive" class="card quiz-active" style="padding: 30px; margin-bottom: 50px;">
         
         <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
             <div id="quizProgressBar" style="height: 100%; width: 0%; background: #38bdf8; transition: width 0.3s ease;"></div>
@@ -180,7 +175,7 @@
         <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; word-wrap: break-word; white-space: normal;">Loading Question...</div>
 
         <div id="optionsContainer" style="display: flex; flex-direction: column; padding-right: 5px;">
-            </div>
+        </div>
 
         <div style="display: flex; gap: 15px; margin-top: 25px;">
             <button id="prevBtn" class="btn" style="flex: 1; padding: 15px; border-radius: 12px; background: #475569; color: white; display: none;">⬅️ Previous</button>
@@ -188,7 +183,7 @@
         </div>
     </div>
 
-    <div id="quizResults" class="quiz-results">
+    <div id="quizResults" class="quiz-results" style="margin-bottom: 50px;">
         <div id="pdfExportArea" class="card" style="padding: 30px;">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h2 style="color: #22c55e; font-size: 32px; margin-bottom: 5px;">Quiz Completed!</h2>
@@ -202,8 +197,7 @@
             </div>
 
             <h3 style="color: white; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Detailed Review</h3>
-            <div id="reviewContainer">
-                </div>
+            <div id="reviewContainer"></div>
         </div>
 
         <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
@@ -215,7 +209,6 @@
 </div>
 
 <script>
-    // --- Sidebar Toggle ---
     function toggleSidebar() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
@@ -225,7 +218,6 @@
     }
     document.getElementById("overlay").onclick = toggleSidebar;
 
-    // --- Toast Notification System ---
     function showToast(msg) {
         let t = document.createElement('div');
         t.innerText = msg;
@@ -234,12 +226,10 @@
         setTimeout(() => t.remove(), 3000);
     }
 
-    // --- State Variables ---
     let quizData = [];
     let currentQuestionIndex = 0;
-    let userAnswers = []; // Store selected options
+    let userAnswers = [];
 
-    // --- Elements ---
     const setupEl = document.getElementById('quizSetup');
     const activeEl = document.getElementById('quizActive');
     const resultsEl = document.getElementById('quizResults');
@@ -250,11 +240,10 @@
     const nextBtn = document.getElementById('nextBtn');
     const prevBtn = document.getElementById('prevBtn');
 
-    // --- Start Quiz Flow ---
     startBtn.addEventListener('click', async () => {
         const subject = document.getElementById('quizSubject').value.trim();
         const grade = document.getElementById('quizClass').value.trim();
-        const language = document.getElementById('quizLanguage').value; // 🛑 Fetch Selected Language
+        const language = document.getElementById('quizLanguage').value;
         let count = parseInt(document.getElementById('quizCount').value);
 
         if(!subject || !grade) {
@@ -270,11 +259,10 @@
         loadBar.style.display = 'block';
         setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
 
-        // 🛑 AI PROMPT UPDATED FOR LANGUAGE AND NUMBER FIX
         const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${subject}". 
         CRITICAL RULES:
         1. The text of the quiz MUST be generated entirely in ${language}.
-        2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals (१, २, ३ etc.).
+        2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
         3. You MUST return ONLY a strictly valid JSON array.
         4. Do NOT use markdown code blocks.
         5. Array format must be exactly like this:
@@ -333,7 +321,6 @@
         }
     });
 
-    // --- Render Active Question ---
     function renderQuestion() {
         const qData = quizData[currentQuestionIndex];
         
@@ -348,7 +335,6 @@
 
         const prevAns = userAnswers[currentQuestionIndex];
 
-        // Setup Options
         qData.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
@@ -366,18 +352,15 @@
             optsContainer.appendChild(btn);
         });
 
-        // Setup Nav Buttons
         prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
         nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
 
-        // 🛑 TRIGGER MATHJAX RENDER AFTER INJECTING HTML
         if (window.MathJax) {
             MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')])
                 .catch((err) => console.log('MathJax Render Error: ', err));
         }
     }
 
-    // --- Handle Selection ---
     function handleAnswerSelect(selectedString, btnElement) {
         if (userAnswers[currentQuestionIndex] !== undefined) return;
         
@@ -392,7 +375,6 @@
         });
     }
 
-    // --- Button Actions ---
     nextBtn.addEventListener('click', () => {
         if (!userAnswers[currentQuestionIndex]) {
             showToast("⚠️ Please select an answer first!");
@@ -414,7 +396,6 @@
         }
     });
 
-    // --- Finish & Calculate ---
     function finishQuiz() {
         activeEl.classList.remove('active');
         resultsEl.classList.add('active');
@@ -459,7 +440,6 @@
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
-        // 🛑 TRIGGER MATHJAX RENDER FOR RESULTS REVIEW
         if (window.MathJax) {
             MathJax.typesetPromise([document.getElementById('reviewContainer')])
                 .catch((err) => console.log('MathJax Review Render Error: ', err));
@@ -468,7 +448,6 @@
         saveQuizToHistory(subject, grade, correctCount, total, reviewHtml);
     }
 
-    // --- Save To History ---
     function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
         try {
             let history = JSON.parse(localStorage.getItem('aiHistory') || '[]');
@@ -500,7 +479,6 @@
         }
     }
 
-    // --- Export PDF ---
     function downloadPDF() {
         const element = document.getElementById('pdfExportArea');
         const subject = document.getElementById('quizSubject').value;
