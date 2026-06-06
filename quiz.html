@@ -13,6 +13,13 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            startup: { typeset: false } // We manually trigger it when questions load
+        };
+    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
@@ -143,7 +150,6 @@
             border-color: #a855f7;
         }
         
-        /* Forces the modal list to scroll perfectly */
         .subj-scroll-container {
             display: flex;
             flex-direction: column;
@@ -178,14 +184,12 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<!-- SUBJECT SELECTION MODAL -->
 <div id="subjectModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
     <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
             <h3 style="color: white; margin: 0; font-size: 20px;">Select Subject</h3>
             <button id="closeSubjectModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
         </div>
-        <!-- Scrollable List Container -->
         <div class="subj-scroll-container">
             <button class="subj-btn">Science</button>
             <button class="subj-btn">Math</button>
@@ -200,7 +204,6 @@
 
 <div class="page active quiz-page-container" id="quizPageContainer">
     
-    <!-- SETUP STAGE -->
     <div id="quizSetup" class="card quiz-card quiz-setup active" style="padding: 30px;">
         <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 25px; text-align: center;">AI Quiz Generator</h2>
         
@@ -246,7 +249,6 @@
         <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; text-align: center; min-height: 20px;"></div>
     </div>
 
-    <!-- ACTIVE QUIZ STAGE -->
     <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
         
         <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
@@ -268,7 +270,6 @@
         </div>
     </div>
 
-    <!-- RESULTS STAGE -->
     <div id="quizResults" class="card quiz-card quiz-results" style="background: transparent; border: none; padding: 0;">
         <div id="pdfExportArea" class="card" style="padding: 30px; width: 100%; box-sizing: border-box;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -371,21 +372,24 @@
         loadBar.style.display = 'block';
         setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
 
-      const prompt = `Create a quiz with exactly ${count} questions for a Class ${grade} student on "${chosenSubject}".
-CRITICAL FORMATTING RULES:
-1. Use LaTeX for math. Fractions should be written as \\frac{numerator}{denominator} (e.g., \\frac{5}{6}). 
-2. Use caret notation for powers (e.g., 3^2).
-3. The text of the quiz MUST be generated in ${language}.
-4. Return ONLY a strictly valid JSON array. Do NOT use markdown code blocks.
-5. Example format: [{"question": "What is \\frac{1}{2} + \\frac{1}{4}?", "options": ["\\frac{3}{4}", "1", "0", "2"], "correctOption": "\\frac{3}{4}", "explanation": "Since 3^2 = 9, the answer is..."}]
-6. Array format must be exactly like this:
+        // 🛑 UPDATED MATH PROMPT 🛑
+        // Tells the AI specifically to use $...$ for inline math so MathJax reads it flawlessly
+        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${chosenSubject}". 
+        CRITICAL RULES:
+        1. The text of the quiz MUST be generated entirely in ${language}.
+        2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
+        3. Use LaTeX for ALL math, fractions, roots, and powers. Wrap all math in $ symbols (e.g., $...$). Fractions MUST be $\\frac{a}{b}$. Powers MUST be $a^b$. Roots MUST be $\\sqrt{a}$.
+        4. You MUST return ONLY a strictly valid JSON array.
+        5. Do NOT use markdown code blocks.
+        6. Array format must be exactly like this:
         [
           {
-            "question": "What is the powerhouse of the cell?",
-            "options": ["Nucleus", "Mitochondria", "Ribosome", "Endoplasmic Reticulum"],
-            "correctOption": "Mitochondria",
-            "explanation": "Mitochondria are responsible for creating ATP, which provides energy to the cell."
-          }`;
+            "question": "What is $\\frac{1}{2} + \\frac{1}{4}$?",
+            "options": ["$\\frac{3}{4}$", "1", "0", "$\\frac{1}{8}$"],
+            "correctOption": "$\\frac{3}{4}$",
+            "explanation": "Because $\\frac{2}{4} + \\frac{1}{4} = \\frac{3}{4}$."
+          }
+        ]`;
 
         try {
             const response = await fetch('/api/gemini-text', {
@@ -466,11 +470,12 @@ CRITICAL FORMATTING RULES:
         prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
         nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
 
+        // 🛑 MATHJAX TRIGGER FOR LIVE QUESTIONS 🛑
         if (window.MathJax) {
-        MathJax.typesetPromise([document.getElementById('questionText')])
-            .catch((err) => console.log('MathJax Error:', err));
+            MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')])
+                .catch((err) => console.log('MathJax Render Error: ', err));
+        }
     }
-}
 
     nextBtn.addEventListener('click', () => {
         if (!userAnswers[currentQuestionIndex]) {
@@ -536,10 +541,11 @@ CRITICAL FORMATTING RULES:
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
-      if (window.MathJax) {
-        MathJax.typesetPromise([document.getElementById('reviewContainer')])
-            .catch((err) => console.log('MathJax Error:', err));
-    }
+        // 🛑 MATHJAX TRIGGER FOR REVIEW SCREEN 🛑
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('reviewContainer')])
+                .catch((err) => console.log('MathJax Review Render Error: ', err));
+        }
 
         saveQuizToHistory(chosenSubject, grade, correctCount, total, reviewHtml);
     }
