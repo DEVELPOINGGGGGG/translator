@@ -371,21 +371,21 @@
         loadBar.style.display = 'block';
         setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
 
-        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${chosenSubject}". 
-        CRITICAL RULES:
-        1. The text of the quiz MUST be generated entirely in ${language}.
-        2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
-        3. You MUST return ONLY a strictly valid JSON array.
-        4. Do NOT use markdown code blocks.
-        5. Array format must be exactly like this:
+      const prompt = `Create a quiz with exactly ${count} questions for a Class ${grade} student on "${chosenSubject}".
+CRITICAL FORMATTING RULES:
+1. Use LaTeX for math. Fractions should be written as \\frac{numerator}{denominator} (e.g., \\frac{5}{6}). 
+2. Use caret notation for powers (e.g., 3^2).
+3. The text of the quiz MUST be generated in ${language}.
+4. Return ONLY a strictly valid JSON array. Do NOT use markdown code blocks.
+5. Example format: [{"question": "What is \\frac{1}{2} + \\frac{1}{4}?", "options": ["\\frac{3}{4}", "1", "0", "2"], "correctOption": "\\frac{3}{4}", "explanation": "Since 3^2 = 9, the answer is..."}]
+6. Array format must be exactly like this:
         [
           {
             "question": "What is the powerhouse of the cell?",
             "options": ["Nucleus", "Mitochondria", "Ribosome", "Endoplasmic Reticulum"],
             "correctOption": "Mitochondria",
             "explanation": "Mitochondria are responsible for creating ATP, which provides energy to the cell."
-          }
-        ]`;
+          }`;
 
         try {
             const response = await fetch('/api/gemini-text', {
@@ -467,10 +467,10 @@
         nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
 
         if (window.MathJax) {
-            MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')])
-                .catch((err) => console.log('MathJax Render Error: ', err));
-        }
+        MathJax.typesetPromise([document.getElementById('questionText')])
+            .catch((err) => console.log('MathJax Error:', err));
     }
+}
 
     nextBtn.addEventListener('click', () => {
         if (!userAnswers[currentQuestionIndex]) {
@@ -536,10 +536,10 @@
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
-        if (window.MathJax) {
-            MathJax.typesetPromise([document.getElementById('reviewContainer')])
-                .catch((err) => console.log('MathJax Review Render Error: ', err));
-        }
+      if (window.MathJax) {
+        MathJax.typesetPromise([document.getElementById('reviewContainer')])
+            .catch((err) => console.log('MathJax Error:', err));
+    }
 
         saveQuizToHistory(chosenSubject, grade, correctCount, total, reviewHtml);
     }
