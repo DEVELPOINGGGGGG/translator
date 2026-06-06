@@ -7,16 +7,16 @@ const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
-// 🛑 THE MASTER WATERFALL HIERARCHY (GATLING GUN) 🛑
-// Includes id property to track API numbers
+// 🛑 THE MASTER WATERFALL HIERARCHY 🛑
+// Strict Order: Gemini 1 -> 5, then Groq, then Cloudflare
 const VISION_PROVIDERS = [
     { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
     { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
-    { type: 'groq', key: process.env.GROQ_API_KEY } 
+    { type: 'groq', key: process.env.GROQ_API_KEY },
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
@@ -25,14 +25,18 @@ const TEXT_PROVIDERS = [
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
-    { type: 'groq', key: process.env.GROQ_API_KEY } 
+    { type: 'groq', key: process.env.GROQ_API_KEY },
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const SEARCH_PROVIDERS = [
+    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
+    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
+    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
+    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
+    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
     { type: 'groq', key: process.env.GROQ_API_KEY },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
-    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 }
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const publicDir = __dirname;
@@ -47,13 +51,13 @@ function readRequestBody(req) {
     }); 
 }
 
-// Global counters for Load Balancing and Usage Tracking
+// Global counters for Full Array Load Balancing
 let globalRequestCounter = 0;
-const apiUsageStats = {}; // This stores the exact count for each API
+const apiUsageStats = {}; 
 
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
-    let targetProviders = [...providers]; // Copy the array
+    let targetProviders = [...providers]; 
     
     if (override) {
         targetProviders = targetProviders.filter(p => p.type.toLowerCase() === override.toLowerCase());
@@ -61,21 +65,11 @@ async function tryProviders(providers, requestFn, override = null) {
     } else {
         if (targetProviders.length === 0) throw new Error("No operational API keys found inside server config!");
 
-        // --- ROUND ROBIN GEMINI LOAD BALANCING ---
-        const geminis = targetProviders.filter(p => p.type === 'gemini');
+        // --- FULL ROUND ROBIN LOAD BALANCING ---
+        // Shifts the entire array so the starting point cycles through every single provider
+        const rotations = globalRequestCounter % targetProviders.length;
+        targetProviders = [...targetProviders.slice(rotations), ...targetProviders.slice(0, rotations)];
         
-        if (geminis.length > 1) {
-            const rotations = globalRequestCounter % geminis.length;
-            const rotatedGeminis = [...geminis.slice(rotations), ...geminis.slice(0, rotations)];
-
-            let gIdx = 0;
-            targetProviders = targetProviders.map(p => {
-                if (p.type === 'gemini') {
-                    return rotatedGeminis[gIdx++];
-                }
-                return p;
-            });
-        }
         globalRequestCounter++;
     }
 
@@ -84,19 +78,17 @@ async function tryProviders(providers, requestFn, override = null) {
         try { 
             const textResult = await requestFn(p);
             
-            // Append the API number to the provider name (e.g., "GEMINI (API 2)")
             const providerName = p.type.toUpperCase() + (p.id ? ` (${p.id})` : "");
             
-            // --- TRACK USAGE ---
+            // TRACK USAGE
             apiUsageStats[providerName] = (apiUsageStats[providerName] || 0) + 1;
-            console.log(`✅ [SUCCESS] Handled by ${providerName}`);
+            console.log(`✅ [SUCCESS] Request handled by ${providerName}`);
             console.log(`📊 [CURRENT USAGE]`, apiUsageStats);
-            // -------------------
 
             return { text: textResult, provider: providerName }; 
         } catch (error) { 
             lastError = error; 
-            console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
+            console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next in cycle... Error: ${error.message}`); 
         } 
     }
     throw lastError;
@@ -117,7 +109,6 @@ async function handleGeminiText(req, res) {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
                 
-                // 🛑 TARGET: Gemini 2.5 Flash 🛑
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); return data.candidates[0].content.parts[0].text;
             
@@ -136,7 +127,7 @@ async function handleGeminiText(req, res) {
 }
 
 // ==========================================
-// VISION ENDPOINT (Perfect OCR)
+// VISION ENDPOINT
 // ==========================================
 async function handleGeminiVision(req, res) {
     try {
@@ -152,41 +143,22 @@ async function handleGeminiVision(req, res) {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ parts: [{ text: userText }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 
-                // 🛑 TARGET: Gemini 2.5 Flash 🛑
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); return data.candidates[0].content.parts[0].text;
             
           } else if (p.type === 'cloudflare') {
-                // 🔥 UPDATED ENDPOINT: Cloudflare's native /run/ endpoint handles the 3.2 vision model significantly better
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, { 
                     method: "POST", 
-                    headers: { 
-                        Authorization: `Bearer ${p.key}`, 
-                        "Content-Type": "application/json" 
-                    }, 
-                    body: JSON.stringify({ 
-                        messages: [{ 
-                            role: "user", 
-                            content: [
-                                { type: "text", text: userText }, 
-                                { type: "image_url", image_url: { url: formattedBase64 } }
-                            ] 
-                        }] 
-                    }) 
+                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ messages: [{ role: "user", content: [{ type: "text", text: userText }, { type: "image_url", image_url: { url: formattedBase64 } }] }] }) 
                 });
-                
                 const data = await response.json(); 
-                if (!response.ok) {
-                    throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed"); 
-                }
-                
-                // The native run endpoint returns 'result.response' instead of standard choices structure
+                if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed"); 
                 return data.result?.response || data.choices?.[0]?.message?.content || "No text detected.";
             
             } else {
-                let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
+                let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
                 let data = await response.json(); 
-                if (!response.ok) { response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) }); data = await response.json(); }
                 if (!response.ok) throw new Error(data.error?.message || "Groq Vision failed"); return data.choices[0].message.content;
             }
         }, override);
@@ -216,7 +188,6 @@ async function handleGroqSearch(req, res) {
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
                 
-                // 🛑 TARGET: Gemini 2.5 Flash 🛑
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); return data.candidates[0].content.parts[0].text;
             }
@@ -224,9 +195,7 @@ async function handleGroqSearch(req, res) {
         return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
-// ==========================================
-// YOUTUBE SEARCH ENDPOINT
-// ==========================================
+
 // ==========================================
 // YOUTUBE SEARCH ENDPOINT
 // ==========================================
@@ -236,7 +205,6 @@ async function handleYoutubeSearch(req, res) {
         if (!body.topic) return sendJson(res, 400, { error: "Topic is required" });
 
         const results = await ytSearch(body.topic);
-        // FETCH 45 VIDEOS INSTEAD OF 15 FOR GEMINI TO RANK & PAGINATE
         const videos = results.videos.slice(0, 45).map(v => ({
             videoId: v.videoId, 
             title: v.title, 
@@ -251,6 +219,7 @@ async function handleYoutubeSearch(req, res) {
         return sendJson(res, 502, { error: e.message });
     }
 }
+
 // ==========================================
 // CLOUDFLARE IMAGE GENERATION ENDPOINT
 // ==========================================
@@ -305,7 +274,7 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
     }
     
-    // 🛑 ENDPOINT FOR LIVE UI TRACKING 🛑
+    // ENDPOINT FOR LIVE UI TRACKING
     if (req.method === "GET" && req.url === "/api/usage") {
         return sendJson(res, 200, apiUsageStats);
     }
