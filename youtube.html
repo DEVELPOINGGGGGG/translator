@@ -37,6 +37,48 @@
             padding: 15px 20px; background: #000; border-bottom: 1px solid rgba(255,255,255,0.1); 
             gap: 10px; flex-wrap: wrap;
         }
+        
+        /* New: Horizontal Scrolling Tray for Player */
+        .player-more-tray {
+            height: 180px;
+            background: #050810;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 15px;
+            padding: 15px 20px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .player-more-tray::-webkit-scrollbar { height: 6px; }
+        .player-more-tray::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        
+        .tray-item {
+            min-width: 160px;
+            max-width: 160px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .tray-item:hover { transform: scale(1.05); }
+        .tray-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .tray-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-top: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
     </style>
 </head>
 <body>
@@ -69,11 +111,9 @@
             <button id="openVoiceGuiBtn" class="cam-icon-btn" style="border-radius: 12px; width: 50px; height: 50px; flex-shrink: 0; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.4);" title="Voice Search">
                 <span style="font-size: 20px;">🎤</span>
             </button>
-
             <button class="cam-icon-btn" style="border-radius: 12px; width: 50px; height: 50px; flex-shrink: 0; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4);" onclick="openCamera()" title="Scan Problem">
                 <span style="font-size: 20px;">📷</span>
             </button>
-            
             <input type="text" id="ytSearchInput" class="standard" placeholder="Enter topic to search..." style="margin-bottom: 0; font-size: 15px; border-radius: 12px; flex: 1; min-width: 200px;">
         </div>
         
@@ -81,8 +121,7 @@
         <div id="ytStatus" style="margin-top: 10px; font-size: 14px; font-weight: 600; color: #94a3b8; min-height: 20px;">Ready.</div>
     </div>
 
-    <div id="ytResults" class="yt-grid">
-        </div>
+    <div id="ytResults" class="yt-grid"></div>
 
     <button id="loadMoreBtn" class="btn blue" style="width: 100%; max-width: 400px; padding: 15px; border-radius: 30px; margin-top: 40px; display: none; font-size: 16px; font-weight: 800; box-shadow: 0 10px 30px rgba(56,189,248,0.4);">
         ⬇️ Load 15 More Videos
@@ -130,9 +169,13 @@
         </div>
         <button id="ytCloseBtn" class="closeBtn" style="position: static; margin: 0; width: 45px; height: 45px; font-size: 18px;">✕</button>
     </div>
+    
     <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px;">
         <iframe id="ytIframe" style="width: 100%; max-width: 1200px; height: 100%; border-radius: 12px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.8);" allow="autoplay; fullscreen; encrypted-media" sandbox="allow-same-origin allow-scripts allow-presentation"></iframe>
     </div>
+    
+    <div id="ytPlayerTray" class="player-more-tray">
+        </div>
 </div>
 
 <script>
@@ -178,9 +221,7 @@
             };
             history.unshift(histItem);
             localStorage.setItem('aiHistory', JSON.stringify(history));
-        } catch(e) {
-            console.error("Failed to save history", e);
-        }
+        } catch(e) { console.error("Failed to save history", e); }
     }
 
     // --- VOICE GUI LOGIC ---
@@ -192,51 +233,28 @@
     let isRecording = false;
 
     document.getElementById('openVoiceGuiBtn').addEventListener('click', () => {
-        voiceModalText.value = "";
-        voiceModal.style.display = 'flex';
+        voiceModalText.value = ""; voiceModal.style.display = 'flex';
     });
-
     document.getElementById('voiceCancelBtn').addEventListener('click', () => {
         if(isRecording && recognition) recognition.stop();
         voiceModal.style.display = 'none';
     });
-
     document.getElementById('voiceApplyBtn').addEventListener('click', () => {
         if(isRecording && recognition) recognition.stop();
-        if(voiceModalText.value.trim() !== "") {
-            searchInput.value = voiceModalText.value.trim();
-        }
+        if(voiceModalText.value.trim() !== "") { searchInput.value = voiceModalText.value.trim(); }
         voiceModal.style.display = 'none';
-        // Wait for user to manually click search!
     });
 
     if(recognition) {
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        
-        recognition.onstart = () => { 
-            isRecording = true;
-            voiceRecordBtn.classList.add('recording'); 
-            voiceModalText.placeholder = "Listening..."; 
-        };
-        recognition.onresult = (e) => { 
-            voiceModalText.value = e.results[0][0].transcript; 
-        };
-        recognition.onend = () => { 
-            isRecording = false;
-            voiceRecordBtn.classList.remove('recording'); 
-            voiceModalText.placeholder = "Tap the mic and speak. Your text will appear here..."; 
-        };
+        recognition.continuous = false; recognition.interimResults = false;
+        recognition.onstart = () => { isRecording = true; voiceRecordBtn.classList.add('recording'); voiceModalText.placeholder = "Listening..."; };
+        recognition.onresult = (e) => { voiceModalText.value = e.results[0][0].transcript; };
+        recognition.onend = () => { isRecording = false; voiceRecordBtn.classList.remove('recording'); voiceModalText.placeholder = "Tap the mic and speak. Your text will appear here..."; };
     }
 
     voiceRecordBtn.addEventListener('click', () => {
         if(!recognition) return alert("Microphone not supported on this browser.");
-        if(isRecording) {
-            recognition.stop();
-        } else {
-            recognition.lang = document.getElementById('voiceModalLang').value;
-            recognition.start();
-        }
+        if(isRecording) { recognition.stop(); } else { recognition.lang = document.getElementById('voiceModalLang').value; recognition.start(); }
     });
 
     // --- BULLETPROOF Render Engine ---
@@ -270,6 +288,7 @@
 
         currentRenderIndex += batch.length;
 
+        // If server only returned a few videos (like your screenshot), hide button
         if (currentRenderIndex >= allRankedVideos.length) {
             loadMoreBtn.style.display = 'none';
         } else {
@@ -326,8 +345,7 @@
             
             rankedIndices.forEach(idx => {
                 if(rawVideos[idx] && !addedIndices.has(idx)) {
-                    allRankedVideos.push(rawVideos[idx]);
-                    addedIndices.add(idx);
+                    allRankedVideos.push(rawVideos[idx]); addedIndices.add(idx);
                 }
             });
             
@@ -339,7 +357,6 @@
             renderVideos(15);
             statusText.innerHTML = `✅ Successfully loaded and ranked <b>${allRankedVideos.length}</b> videos!`;
             
-            // SAVE TO HISTORY!
             saveYoutubeHistory(rawTopic, allRankedVideos.length);
 
         } catch (error) {
@@ -395,18 +412,32 @@
         }
     };
 
-    // --- Video Player & Auto-Landscape Logic ---
+    // --- Video Player & Auto-Landscape & "MORE VIDEOS" Tray ---
     let currentVideoUrl = "";
     let isLandscape = true;
     const playerOverlay = document.getElementById('ytPlayerOverlay');
     const ytIframe = document.getElementById('ytIframe');
     const orientationBtn = document.getElementById('ytOrientationBtn');
+    const playerTray = document.getElementById('ytPlayerTray');
 
+    // Populates the bottom tray with videos (excluding the one currently playing)
+    function renderPlayerTray(playingVideoId) {
+        const otherVideos = allRankedVideos.filter(v => v.videoId !== playingVideoId);
+        
+        playerTray.innerHTML = otherVideos.map(v => `
+            <div class="tray-item" onclick="switchVideoInPlayer('${v.videoId}', '${v.url}')">
+                <img src="${v.thumbnail}" class="tray-thumb">
+                <div class="tray-title">${v.title}</div>
+            </div>
+        `).join('');
+    }
+
+    // Opens the player for the first time
     window.openVideoPlayer = async function(videoId, url) {
         currentVideoUrl = url;
-        
-        // ANTI-REDIRECT FIX: uses youtube-nocookie.com & playsinline=1 & modestbranding=1
         ytIframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1&modestbranding=1`;
+        
+        renderPlayerTray(videoId); // Fill the bottom tray
         
         playerOverlay.style.display = 'flex';
         document.body.style.overflow = 'hidden'; 
@@ -420,6 +451,13 @@
                 isLandscape = true; orientationBtn.innerText = '📱 Portrait Mode';
             }
         } catch (err) { console.log("Auto-landscape ignored by device: ", err); }
+    };
+
+    // Switches the video WITHOUT closing the player
+    window.switchVideoInPlayer = function(videoId, url) {
+        currentVideoUrl = url;
+        ytIframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1&modestbranding=1`;
+        renderPlayerTray(videoId); // Update tray to remove the new video and add the old one back
     };
 
     orientationBtn.addEventListener('click', async () => {
