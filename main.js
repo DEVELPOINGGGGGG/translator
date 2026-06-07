@@ -1420,6 +1420,58 @@ window.clearPdfFile = function(e) {
     const inp = document.getElementById("pdfUploadInput"); if(inp) inp.value = "";
     const chip = document.getElementById("pdfPreviewChip"); if(chip) chip.style.display = "none";
 };
+// ==========================================
+// 📤 SHARE CHAT HISTORY ENGINE
+// ==========================================
+async function shareChatHistory() {
+    const historyDiv = document.getElementById("mathChatHistory");
+    if (!historyDiv) return;
 
+    // 1. Gather all chat bubbles
+    const messages = historyDiv.querySelectorAll('.chat-msg');
+    
+    if (messages.length === 0) {
+        alert("No chat history to share yet!");
+        return;
+    }
+
+    // 2. Format the chat into clean text
+    let chatText = "📚 My Math Study Session:\n\n";
+
+    messages.forEach(msg => {
+        const isUser = msg.classList.contains('chat-user');
+        // Clean up the text by removing the "IMAGE OF SOLUTION" label for text sharing
+        let text = msg.innerText.replace("📝 IMAGE OF SOLUTION----", "").trim();
+        
+        if (isUser) {
+            chatText += `👤 Me: ${text}\n`;
+        } else {
+            chatText += `🤖 Tutor:\n${text}\n\n`;
+            chatText += `-----------------------------------\n\n`;
+        }
+    });
+
+    // 3. Trigger Native Share or Fallback to Clipboard
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Math Solution Chat',
+                text: chatText,
+            });
+            console.log('Shared successfully');
+        } catch (err) {
+            console.log('User cancelled share or error:', err);
+        }
+    } else {
+        // Fallback for browsers that don't support Web Share API (like older desktop Chrome)
+        try {
+            await navigator.clipboard.writeText(chatText);
+            alert("✅ Entire chat copied to clipboard! You can paste it in WhatsApp or Discord.");
+        } catch (err) {
+            alert("❌ Failed to copy chat.");
+            console.error(err);
+        }
+    }
+}
 // --- GLOBAL EXPORTS ---
 window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest; window.handlePdfUpload = handlePdfUpload; window.clearPdfFile = clearPdfFile;
