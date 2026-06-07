@@ -32,9 +32,10 @@
         .digital-paper-container {
             width: 100%;
             overflow-x: auto;
-            margin-top: 15px;
+            margin-top: 5px;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
         }
         
         .digital-paper {
@@ -140,15 +141,20 @@
         let historyContext = mathConversationHistory.slice(-4).join("\n");
         mathConversationHistory.push(`User: ${userText}`);
 
-        // SMART PROMPT: Understands greetings, follow-ups, and math requests.
+        // STRICT FORMATTING PROMPT
         const tutorPrompt = `You are an expert math tutor. STRICT RULES:
-1. GREETINGS: If the user says "hi", "hello", or a non-math greeting, reply normally and casually. DO NOT use the math format below.
-2. FOLLOW-UPS: If the user asks "explain this", "how did you get that", or "why", DO NOT restate the question. Just explain the previous step directly.
-3. NEW MATH QUESTIONS ONLY:
-   - First line: "प्रश्न: [Write the exact question here]"
-   - Middle: Step-by-step solution using $ for math notation.
-   - Last: "💡 Explanation:" followed by 4-8 lines for hard concepts, or 2-4 lines for easy concepts.
-4. Respond in the user's language.
+
+1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in Hindi. DO NOT use the math format. DO NOT write "प्रश्न:".
+
+2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be in Hindi except numbers and math symbols:
+
+प्रश्न: [Write the exact question here]
+
+SOLUTION:-
+[Step-by-step math solution using $ for math notation. Keep it direct.]
+
+EXPLANATION-
+[Keep this extremely short! Max 2 to 3 lines explaining the core concept.]
 
 Previous Context:
 ${historyContext}
@@ -176,7 +182,7 @@ Current Task: ${userText}`;
             mathConversationHistory.push(`AI: ${data.text}`);
             clearMathImage();
 
-            // Fire the CSS paper renderer
+            // Fire the CSS paper renderer (It will only render if it finds the math keywords)
             generateMathPaper(data.text);
 
         } catch (err) {
@@ -185,42 +191,49 @@ Current Task: ${userText}`;
         }
     }
 
-    // 🚀 CSS PAPER WITH LATEX PARSER
+    // 🚀 BULLETPROOF CSS PAPER INJECTION
     function generateMathPaper(aiResponseText) {
         try {
-            // 1. Isolate ONLY the math steps (remove the "Explanation" block at the bottom)
-            let mathTextOnly = aiResponseText.split("💡")[0].trim();
-            
-            // 2. Do not render paper for short greetings or explanations without math
-            if (mathTextOnly.length < 15 && !/\d/.test(mathTextOnly)) return;
-            if (!aiResponseText.includes("प्रश्न:")) return; // Only render for actual solutions
+            // Check if it's a math question by looking for our anchor
+            if (!aiResponseText.includes("SOLUTION:-")) return;
 
-            // 3. LaTeX Parser: Converts ugly code to natural readable text
-            mathTextOnly = mathTextOnly.replace(/[*#`]/g, ''); // Remove Markdown
-            mathTextOnly = mathTextOnly.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)'); // Fix fractions
-            mathTextOnly = mathTextOnly.replace(/\\sqrt\{([^}]+)\}/g, '√$1'); // Fix square roots
-            mathTextOnly = mathTextOnly.replace(/\^\{([^}]+)\}/g, '^$1'); // Fix powers
-            mathTextOnly = mathTextOnly.replace(/_\{([^}]+)\}/g, '_$1'); // Fix base subscripts
-            mathTextOnly = mathTextOnly.replace(/\\text\{([^}]+)\}/g, '$1'); // Fix text blocks
-            mathTextOnly = mathTextOnly.replace(/\\times/gi, '×'); // Fix multiplication
-            mathTextOnly = mathTextOnly.replace(/\\div/gi, '÷'); // Fix division
-            mathTextOnly = mathTextOnly.replace(/\\cdot/gi, '·'); // Fix dots
-            mathTextOnly = mathTextOnly.replace(/\\Rightarrow/gi, '⇒'); // Fix arrows
+            // Extract text EXACTLY between "SOLUTION:-" and "EXPLANATION-"
+            let mathTextOnly = "";
+            try {
+                let parts = aiResponseText.split("SOLUTION:-")[1];
+                mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+            } catch(e) {
+                return; // Fails safely if the AI breaks the format
+            }
+
+            // Do not render if the extracted math is suspiciously short
+            if (mathTextOnly.length < 5) return;
+
+            // Clean LaTeX for the handwriting font
+            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
+            mathTextOnly = mathTextOnly.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)');
+            mathTextOnly = mathTextOnly.replace(/\\sqrt\{([^}]+)\}/g, '√$1');
+            mathTextOnly = mathTextOnly.replace(/\^\{([^}]+)\}/g, '^$1');
+            mathTextOnly = mathTextOnly.replace(/_\{([^}]+)\}/g, '_$1');
+            mathTextOnly = mathTextOnly.replace(/\\text\{([^}]+)\}/g, '$1');
+            mathTextOnly = mathTextOnly.replace(/\\times/gi, '×');
+            mathTextOnly = mathTextOnly.replace(/\\div/gi, '÷');
+            mathTextOnly = mathTextOnly.replace(/\\cdot/gi, '·');
+            mathTextOnly = mathTextOnly.replace(/\\Rightarrow/gi, '⇒');
             mathTextOnly = mathTextOnly.replace(/\\rightarrow/gi, '→');
             mathTextOnly = mathTextOnly.replace(/\\approx/gi, '≈');
             mathTextOnly = mathTextOnly.replace(/\\pm/gi, '±');
             mathTextOnly = mathTextOnly.replace(/\\pi/gi, 'π');
             mathTextOnly = mathTextOnly.replace(/\\theta/gi, 'θ');
-            
-            // Remove $ signs, stray backslashes, and quad spacing
             mathTextOnly = mathTextOnly.replace(/\\quad/g, '  ');
             mathTextOnly = mathTextOnly.replace(/[\$\\]/g, ''); 
 
             const historyDiv = document.getElementById("mathChatHistory");
             
             historyDiv.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai">
+                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
                     <div style="width: 100%; max-width: 95%;">
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
                         <div class="digital-paper-container">
                             <div class="digital-paper">${mathTextOnly}</div>
                         </div>
