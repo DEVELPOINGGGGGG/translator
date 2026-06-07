@@ -158,28 +158,37 @@ async function handleGeminiVision(req, res) {
                 return data.candidates[0].content.parts[0].text;
             
           } else if (p.type === 'cloudflare') {
-                // Inside handleGeminiVision, in the Cloudflare block:
-// 🛑 CORRECT CLOUDFLARE STRUCTURE
-// Cloudflare doesn't use 'messages', it uses { prompt, image }
-const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, { 
-    method: "POST", 
-    headers: { 
-        Authorization: `Bearer ${p.key}`, 
-        "Content-Type": "application/json" 
-    }, 
-    body: JSON.stringify({ 
-        prompt: "agree " + userText, 
-        // 🚀 CRITICAL: Strip the "data:image/jpeg;base64," prefix. 
-        // Cloudflare only wants the raw base64 string.
-        image: formattedBase64.split(',')[1] 
-    }) 
-});
+    // 1. Convert Data URI to Uint8Array for Cloudflare
+    const base64Data = formattedBase64.split(',')[1];
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
 
-const data = await response.json(); 
-if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed"); 
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
+        method: "POST",
+        headers: { 
+            "Authorization": `Bearer ${p.key}`, 
+            "Content-Type": "application/json" 
+        },
+        body: JSON.stringify({
+            // 2. Add 'agree ' to prompt AND send image as an array of bytes
+            prompt: "agree " + userText,
+            image: Array.from(bytes) 
+        })
+    });
 
-// Cloudflare response is in data.result.response
-return data.result?.response || "No text detected.";
+    const data = await response.json();
+    if (!response.ok) {
+        // Log the specific error to your server console so we know EXACTLY what's wrong
+        console.error("Cloudflare Detailed Error:", JSON.stringify(data));
+        throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
+    }
+    
+    // Cloudflare returns results in data.result.response
+    return data.result?.response || "No text detected.";
+}
             } else {
                 let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-90b-vision-instruct", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
                 let data = await response.json(); 
