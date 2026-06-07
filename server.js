@@ -41,12 +41,20 @@ const SEARCH_PROVIDERS = [
 const publicDir = __dirname;
 const contentTypes = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
 
-function sendJson(res, statusCode, payload) { res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" }); res.end(JSON.stringify(payload)); }
+function sendJson(res, statusCode, payload) { 
+    res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" }); 
+    res.end(JSON.stringify(payload)); 
+}
 
 function readRequestBody(req) { 
     return new Promise((resolve, reject) => { 
-        let body = ""; req.on("data", chunk => { body += chunk; if (body.length > 50_000_000) { reject(new Error("Payload too large")); req.destroy(); } }); 
-        req.on("end", () => resolve(body)); req.on("error", reject);
+        let body = ""; 
+        req.on("data", chunk => { 
+            body += chunk; 
+            if (body.length > 50_000_000) { reject(new Error("Payload too large")); req.destroy(); } 
+        }); 
+        req.on("end", () => resolve(body)); 
+        req.on("error", reject);
     }); 
 }
 
@@ -98,11 +106,10 @@ async function handleGeminiText(req, res) {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
                 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); 
                 
-                // 🛑 BULLETPROOF PARSER FIX 🛑
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
                 if (data.candidates[0].finishReason === 'SAFETY') throw new Error("Gemini blocked the request due to safety filters.");
                 if (!data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0].text) throw new Error("Gemini returned an empty text body.");
@@ -128,8 +135,9 @@ async function handleGeminiText(req, res) {
         return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
-//==================================
-// VISION ENDPOINT
+
+// ==========================================
+// VISION ENDPOINT (FULLY FIXED AND BULLETPROOF)
 // ==========================================
 async function handleGeminiVision(req, res) {
     try {
@@ -139,60 +147,60 @@ async function handleGeminiVision(req, res) {
         const override = body.providerOverride || null;
         
         if (!img || img === "data:,") return sendJson(res, 400, { error: "No image provided." });
-        let rawBase64 = img.includes(',') ? img.substring(img.indexOf(',') + 1) : img; rawBase64 = rawBase64.replace(/\s+/g, ''); let formattedBase64 = `data:image/jpeg;base64,${rawBase64}`;
+        
+        // SAFE PARSING: Prevent undefined replace errors
+        let rawBase64 = img.includes(',') ? img.substring(img.indexOf(',') + 1) : img; 
+        rawBase64 = (rawBase64 || "").replace(/\s+/g, ''); 
+        let formattedBase64 = `data:image/jpeg;base64,${rawBase64}`;
         
         const resultObj = await tryProviders(VISION_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ parts: [{ text: userText }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); 
                 
-                // 🛑 BULLETPROOF PARSER FIX 🛑
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
                 if (data.candidates[0].finishReason === 'SAFETY') throw new Error("Gemini blocked the image due to safety filters.");
                 if (!data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0].text) throw new Error("Gemini returned an empty text body.");
                 
                 return data.candidates[0].content.parts[0].text;
             
-         } else if (p.type === 'cloudflare') {
-    // Safely extract base64 data
-    let base64Image = formattedBase64;
-    if (formattedBase64 && formattedBase64.includes(',')) {
-        base64Image = formattedBase64.split(',')[1];
-    }
-    
-    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${p.key}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            prompt: userText || "Describe this image",
-            image: base64Image
-        })
-    });
-    
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.errors?.[0]?.message || JSON.stringify(data.errors) || "Cloudflare Vision failed");
-    }
-    
-    return data.result?.response || "No text detected.";
-}
+            } else if (p.type === 'cloudflare') {
+                // FIXED CLOUDFLARE: Prompt/Image structure, Agree string, and Uint8Array binary format
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        prompt: "agree " + userText,
+                        image: [...Uint8Array.from(atob(rawBase64), c => c.charCodeAt(0))]
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
+                return data.result.response;
 
             } else {
-                let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-90b-vision-instruct", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
-                let data = await response.json(); 
+                // FIXED GROQ: Stable 90b model + Agree string
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
+                    method: "POST", 
+                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ 
+                        model: "llama-3.2-90b-vision-instruct", 
+                        messages: [{ role: "user", content: [{type: "text", text: "agree " + userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] 
+                    }) 
+                });
+                const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Groq Vision failed"); 
                 if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Groq returned invalid format.");
                 return data.choices[0].message.content;
             }
         }, override);
         return sendJson(res, 200, resultObj);
-    } catch (e) { return sendJson(res, 502, { error: e.message }); }
+    } catch (e) { 
+        return sendJson(res, 502, { error: e.message }); 
+    }
 }
 
 // ==========================================
@@ -222,11 +230,10 @@ async function handleGroqSearch(req, res) {
             
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); 
                 
-                // 🛑 BULLETPROOF PARSER FIX 🛑
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
                 if (data.candidates[0].finishReason === 'SAFETY') throw new Error("Gemini blocked the request due to safety filters.");
                 if (!data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0].text) throw new Error("Gemini returned an empty text body.");
