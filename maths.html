@@ -22,274 +22,307 @@
     
     <style>
         mjx-container { padding: 5px 0 !important; margin: 0 !important; }
-        .typing-indicator { display: flex; gap: 5px; padding: 10px; }
-        .typing-indicator span { width: 8px; height: 8px; background: #c084fc; border-radius: 50%; animation: pulse 1s infinite alternate; }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
         
-        /* 🚀 THE CSS DIGITAL PAPER ENGINE */
-        .digital-paper-container {
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 5px;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
+        /* Specific Math Styles for Generated Images */
+        .math-diagram-img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: 2px solid #4f46e5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: block;
         }
         
-        .digital-paper {
-            background-color: #fdfbf7; 
-            background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px);
-            line-height: 30px;
-            padding: 30px 20px 30px 65px;
-            position: relative;
-            font-family: 'Kalam', cursive; 
-            font-size: 20px;
-            color: #1e3a8a; 
-            min-width: 300px;
-            white-space: pre-wrap; 
+        .loading-diagram {
+            font-size: 13px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .digital-paper::before {
-            content: '';
-            position: absolute;
-            top: 0; bottom: 0; left: 45px;
-            width: 2px;
-            background: #fca5a5; 
+        .loader-spinner {
+            width: 18px; height: 18px;
+            border: 2px solid #4f46e5;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Base overrides to ensure perfect layout */
+        body, html { height: 100%; margin: 0; display: flex; flex-direction: column; background-color: var(--bg-base, #0f172a); }
+        
+        .math-header {
+            padding: 15px 20px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px);
+            display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 10;
+        }
+        .math-header h1 { font-size: 1.2rem; margin: 0; font-weight: 600; color: #fff; }
+        .back-btn { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; padding: 5px; }
+
+        .chat-scroll-area { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        
+        .msg-bubble { padding: 15px; border-radius: 14px; max-width: 85%; line-height: 1.6; font-size: 15px; }
+        .msg-user { background: var(--accent, #4f46e5); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg-ai { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; align-self: flex-start; border-bottom-left-radius: 4px; }
+        
+        .input-area {
+            padding: 15px 20px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 10px; align-items: center;
+        }
+        
+        .input-area input { flex-grow: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff; font-size: 15px; outline: none; }
+        .input-area input:focus { border-color: #4f46e5; }
+        
+        .btn-send { padding: 0 25px; border-radius: 10px; background: #4f46e5; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-send:hover { background: #4338ca; }
+        
+        .camera-btn { background: rgba(255,255,255,0.1); border: none; border-radius: 10px; padding: 0 15px; font-size: 1.2rem; cursor: pointer; color: white; transition: 0.2s; }
+        
+        /* Camera Modal Styles */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal video { max-width: 90%; max-height: 70vh; background: #000; border-radius: 12px; }
+        .modal-controls { display: flex; gap: 15px; margin-top: 20px; }
+        .modal-controls button { padding: 12px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        .btn-capture { background: #22c55e; } .btn-switch { background: #3b82f6; } .btn-close { background: #ef4444; }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+    <header class="math-header">
+        <button class="back-btn" onclick="window.history.back()">⬅</button>
+        <h1>📐 AI Math & Visual Solver</h1>
+    </header>
 
-<div class="topbar">
-  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">AI Pro Suite</div>
-</div>
-    <div class="apiTracker">
-        <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
-        <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
-        <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
-        <div>📝 <span id="apiText" class="api-val text">0</span></div>
+    <div class="chat-scroll-area" id="mathChatHistory">
+        <div class="msg-bubble msg-ai">
+            Welcome! Ask any math or geometry question. If you ask about an <strong>Area, Shape, or Graph</strong>, I will automatically solve it and generate an image diagram for you!
+        </div>
     </div>
 
-<div class="sidebar" id="sidebar">
-  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🧮 Math Solver</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
-  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-</div>
-
-<div class="page active chat-page-layout" id="mathsPage">
-  <div class="chat-scroll-area" id="mathScrollArea">
-    <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
-        <h1 style="font-size: 24px;">🧮 Math Solver</h1>
-        <p style="font-size: 14px; opacity: 0.9;">Give Answers Of Maths.</p>
-    </div>
-    
-    <div id="mathChatHistory"></div>
-  </div>
-  <div class="chat-input-area">
-    <div class="image-preview-chip" id="mathPreviewChip">
-        <div class="image-preview-close" id="clearMathImgBtn" onclick="clearMathImage()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; font-size:12px; cursor:pointer;">✕</div>
-    </div>
-    <div class="chat-input-wrapper">
-        <button class="chat-action-btn" id="openMathCameraBtn" onclick="openCamera()" title="Take Photo">➕</button>
-        <textarea id="mathInstructionInput" placeholder="Ask math question or attach image... (Press Enter)"></textarea>
-        <button class="chat-action-btn send" id="sendMathBtn" onclick="executeMathFlow()">↑</button>
-    </div>
-  </div>
-</div>
-
-<div id="cameraModal" class="cameraModal">
-    <video id="cameraVideo" autoplay playsinline></video>
-    <div class="camera-top-bar">
-        <button id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()">❌</button>
-    </div>
-    <div class="cameraControls">
-        <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
-        <div id="capturePhotoBtn" class="cameraCircle" onclick="captureImage()"></div>
-        <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
-    </div>
-    <canvas id="captureCanvas" style="display:none;"></canvas>
-</div>
-
-<script>
-    let currentMathImage = null;
-    let mathConversationHistory = [];
-    let videoStream = null;
-    let usingFrontCamera = false;
-
-    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
-    });
-
-    async function executeMathFlow() {
-        const inputEl = document.getElementById("mathInstructionInput");
-        const userText = inputEl.value.trim();
-        if (!userText && !currentMathImage) return;
-
-        appendMessage('user', userText || "Solve this image.", currentMathImage);
-        inputEl.value = "";
+    <div class="input-area">
+        <button class="camera-btn" onclick="document.getElementById('cameraModal').classList.add('active'); startVideoStream();">📷</button>
         
-        // Feed conversation history context
-        let historyContext = mathConversationHistory.slice(-4).join("\n");
-        mathConversationHistory.push(`User: ${userText}`);
+        <div id="mathPreviewChip" style="display:none; width: 45px; height: 45px; border-radius: 8px; background-size: cover; background-position: center; border: 2px solid #4f46e5; cursor: pointer;" onclick="clearMathImage()" title="Click to remove"></div>
+        
+        <input type="text" id="mathInput" placeholder="e.g. Find the area of a circle with radius 5..." onkeypress="if(event.key === 'Enter') executeSmartMathFlow()">
+        <button class="btn-send" onclick="executeSmartMathFlow()">Solve</button>
+    </div>
 
-        // STRICT FORMATTING PROMPT
-        const tutorPrompt = `You are an expert math tutor. STRICT RULES:
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="modal">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <canvas id="captureCanvas" style="display:none;"></canvas>
+        <div class="modal-controls">
+            <button class="btn-close" onclick="closeCamera()">Close</button>
+            <button class="btn-switch" onclick="switchCamera()">Switch</button>
+            <button class="btn-capture" onclick="captureImage()">Capture</button>
+        </div>
+    </div>
 
-1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in Hindi. DO NOT use the math format. DO NOT write "प्रश्न:".
+    <script>
+        // ==========================================
+        // 1. CAMERA LOGIC (Kept from your original snippet)
+        // ==========================================
+        let videoStream = null;
+        let usingFrontCamera = false;
+        let currentMathImage = null;
 
-2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be in Hindi except numbers and math symbols:
+        function closeCamera() { 
+            document.getElementById("cameraModal").classList.remove("active"); 
+            if (videoStream) videoStream.getTracks().forEach(t => t.stop()); 
+        }
+        
+        async function startVideoStream() {
+            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: usingFrontCamera ? "user" : "environment" } });
+                document.getElementById("cameraVideo").srcObject = videoStream;
+            } catch (err) { alert("Camera Error: " + err.message); closeCamera(); }
+        }
 
-प्रश्न: [Write the exact question here]
+        function switchCamera() { usingFrontCamera = !usingFrontCamera; startVideoStream(); }
 
-SOLUTION:-
-[Step-by-step math solution using $ for math notation. Keep it direct.]
+        function captureImage() {
+            const video = document.getElementById("cameraVideo");
+            const canvas = document.getElementById("captureCanvas");
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+            currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
+            
+            const chip = document.getElementById("mathPreviewChip");
+            chip.style.backgroundImage = `url(${currentMathImage})`;
+            chip.style.display = "block";
+            closeCamera();
+        }
 
-EXPLANATION-
-[Keep this extremely short! Max 2 to 3 lines explaining the core concept.]
+        function clearMathImage() { 
+            currentMathImage = null; 
+            document.getElementById("mathPreviewChip").style.display = "none"; 
+        }
 
-Previous Context:
-${historyContext}
 
-Current Task: ${userText}`;
+        // ==========================================
+        // 2. 🚀 SMART MATH FLOW WITH IMAGE GENERATOR 🚀
+        // ==========================================
+        async function executeSmartMathFlow() {
+            const inputEl = document.getElementById("mathInput");
+            const text = inputEl.value.trim();
+            const imagePayload = currentMathImage;
+            
+            if (!text && !imagePayload) return;
 
-        showTyping();
-
-        let endpoint = currentMathImage ? "/api/gemini-vision" : "/api/gemini-text";
-        let payload = { userPrompt: tutorPrompt };
-        if (currentMathImage) payload.imageBase64 = currentMathImage;
-
-        try {
-            const res = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            removeTyping();
-
-            if (data.error) throw new Error(data.error);
-
-            appendMessage('ai', data.text);
-            mathConversationHistory.push(`AI: ${data.text}`);
+            // Step A: Add user message to UI
+            addMsgToUI(text || "[Attached Image]", "msg-user", imagePayload);
+            inputEl.value = "";
             clearMathImage();
 
-            // Fire the CSS paper renderer (It will only render if it finds the math keywords)
-            generateMathPaper(data.text);
+            // Step B: Show Loading
+            const loadingId = "loader-" + Date.now();
+            addMsgToUI("Solving problem...", "msg-ai", null, loadingId);
 
-        } catch (err) {
-            removeTyping();
-            appendMessage('ai', "❌ Math Solver Error: " + err.message);
+            // Step C: The Magic System Prompt
+            // This forces Gemini to write a tag telling the frontend to generate a picture.
+            const sysPrompt = `
+                You are an advanced AI Math Tutor. Provide step-by-step mathematical solutions.
+                Format math formulas using standard MathJax: inline with $...$ and blocks with $$...$$.
+                
+                🔥 CRITICAL INSTRUCTION FOR IMAGES 🔥
+                If the user's question involves AREA, PERIMETER, GEOMETRY, SHAPES, or GRAPHS, you MUST generate a prompt for an AI image generator to draw it.
+                Append a tag at the very end of your response exactly like this:
+                [DRAW: <detailed description of the shape/concept on a clean white background>]
+                
+                Example: [DRAW: A clean minimalist math diagram of a right angled triangle with height 4 and base 3 on a white background, textbook style]
+                If no visual is needed, do NOT include the [DRAW] tag.
+            `;
+
+            try {
+                // Step D: Send request to server.js (Gemini Text or Vision)
+                let endpoint = imagePayload ? "/api/gemini-vision" : "/api/gemini-text";
+                let bodyData = imagePayload 
+                    ? { userPrompt: text, imageBase64: imagePayload, providerOverride: 'gemini' }
+                    : { userPrompt: text, systemPrompt: sysPrompt, providerOverride: 'gemini' };
+
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const data = await response.json();
+                document.getElementById(loadingId)?.remove(); // remove loader
+
+                if (data.error) throw new Error(data.error);
+
+                let aiText = data.text;
+                let drawPrompt = null;
+
+                // Step E: Detect if Gemini requested an image generation
+                const drawMatch = aiText.match(/\[DRAW:\s*(.*?)\]/i);
+                if (drawMatch) {
+                    drawPrompt = drawMatch[1].trim(); 
+                    aiText = aiText.replace(drawMatch[0], ""); // Remove the tag from the text the user sees
+                }
+
+                // Step F: Render the text & MathJax
+                const msgBoxId = "msg-" + Date.now();
+                addMsgToUI(aiText, "msg-ai", null, msgBoxId);
+
+                if (window.MathJax) {
+                    MathJax.typesetPromise([document.getElementById(msgBoxId)]).catch(err => console.log("MathJax Error:", err));
+                }
+
+                // Step G: If geometry was detected, trigger Cloudflare Image API
+                if (drawPrompt) {
+                    await fetchAndRenderImage(drawPrompt, msgBoxId);
+                }
+
+            } catch (err) {
+                document.getElementById(loadingId)?.remove();
+                addMsgToUI("Error: " + err.message, "msg-ai");
+            }
         }
-    }
 
-    // 🚀 BULLETPROOF CSS PAPER INJECTION
-// 🚀 BULLETPROOF CSS PAPER INJECTION
-function generateMathPaper(aiResponseText) {
-    try {
-        if (!aiResponseText.includes("SOLUTION:-")) return;
+        // ==========================================
+        // 3. IMAGE GENERATOR FETCHER
+        // ==========================================
+        async function fetchAndRenderImage(prompt, parentId) {
+            const parentEl = document.getElementById(parentId);
+            if (!parentEl) return;
 
-        // DETECT MULTIPLE QUESTIONS - अगर 1 से ज्यादा सवाल हैं, तो इमेज नहीं बनेगी
-        const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
-        if (hasMultipleQuestions) return; 
+            // Add an inner loader just for the image
+            const imgLoader = document.createElement("div");
+            imgLoader.className = "loading-diagram";
+            imgLoader.innerHTML = `<div class="loader-spinner"></div> Drawing geometrical diagram...`;
+            parentEl.appendChild(imgLoader);
+            scrollToBottom();
 
-        let parts = aiResponseText.split("SOLUTION:-")[1];
-        let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+            try {
+                // Hits your existing Cloudflare Flux-1 Image endpoint from server.js!
+                const res = await fetch("/api/cloudflare-image", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: prompt + ", math textbook diagram style, sharp lines" })
+                });
 
-        if (mathTextOnly.length < 5) return;
+                const data = await res.json();
+                imgLoader.remove();
 
-        // Clean LaTeX (सिर्फ फालतू सिंबल हटाएं, \frac और ^ को सुरक्षित रखें)
-        mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
+                if (data.error) {
+                    console.error("Image Gen Error:", data.error);
+                    return; 
+                }
 
-        const historyDiv = document.getElementById("mathChatHistory");
-        const paperId = "paper_" + Date.now();
-        
-        historyDiv.insertAdjacentHTML('beforeend', `
-            <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
-                <div style="width: 100%; max-width: 95%;">
-                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
-                    <div class="digital-paper-container">
-                        <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
-                    </div>
-                </div>
-            </div>
-        `);
-        
-        // MathJax रेंडरिंग
-        if (window.MathJax) { 
-            MathJax.typesetPromise([document.getElementById(paperId)]); 
+                // Append the generated image to the chat bubble!
+                if (data.image) {
+                    const img = document.createElement("img");
+                    img.src = data.image;
+                    img.className = "math-diagram-img";
+                    parentEl.appendChild(img);
+                    scrollToBottom();
+                }
+
+            } catch (err) {
+                imgLoader.remove();
+                console.error("Failed to generate image", err);
+            }
         }
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    } catch (e) {
-        console.error("Paper rendering failed:", e);
-    }
-}
 
-    function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
-        const historyDiv = document.getElementById("mathChatHistory");
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
-        
-        let contentHtml = `<div class="bubble">`;
-        if (imageUrl) {
-            let imgClass = isGeneratedImage ? "handwritten-img" : "bubble-img";
-            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${!isGeneratedImage ? 'max-width: 200px; border-radius: 10px; margin-bottom: 10px;' : ''}"><br>`;
+        // ==========================================
+        // 4. UI HELPERS
+        // ==========================================
+        function addMsgToUI(text, className, imgUrl = null, id = null) {
+            const container = document.getElementById("mathChatHistory");
+            const div = document.createElement("div");
+            div.className = "msg-bubble " + className;
+            if (id) div.id = id;
+
+            let content = "";
+            if (imgUrl) content += `<img src="${imgUrl}" style="max-width:200px; border-radius:8px; display:block; margin-bottom:10px;">`;
+            
+            // Basic markdown/newline formatting
+            let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, "<br>");
+            content += formattedText;
+
+            div.innerHTML = content;
+            container.appendChild(div);
+            scrollToBottom();
         }
-        
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-        contentHtml += `<div>${formattedText}</div></div>`;
-        msgDiv.innerHTML = contentHtml;
-        historyDiv.appendChild(msgDiv);
-        
-        if (window.MathJax) MathJax.typesetPromise([msgDiv]);
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    }
 
-    function showTyping() {
-        const div = document.createElement("div");
-        div.id = "mathTyping";
-        div.className = "chat-msg chat-ai";
-        div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-        document.getElementById("mathChatHistory").appendChild(div);
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    }
+        function scrollToBottom() {
+            const container = document.getElementById("mathChatHistory");
+            container.scrollTop = container.scrollHeight;
+        }
 
-    function removeTyping() { document.getElementById("mathTyping")?.remove(); }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
-    function openCamera() { document.getElementById("cameraModal").classList.add("active"); startVideoStream(); }
-    function closeCamera() { document.getElementById("cameraModal").classList.remove("active"); if (videoStream) videoStream.getTracks().forEach(t => t.stop()); }
+    </script>
     
-    async function startVideoStream() {
-        if (videoStream) videoStream.getTracks().forEach(t => t.stop());
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: usingFrontCamera ? "user" : "environment" } });
-            document.getElementById("cameraVideo").srcObject = videoStream;
-        } catch (err) { alert("Camera Error"); closeCamera(); }
-    }
-    function switchCamera() { usingFrontCamera = !usingFrontCamera; startVideoStream(); }
-    function captureImage() {
-        const video = document.getElementById("cameraVideo");
-        const canvas = document.getElementById("captureCanvas");
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-        currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
-        document.getElementById("mathPreviewChip").style.backgroundImage = `url(${currentMathImage})`;
-        document.getElementById("mathPreviewChip").style.display = "block";
-        closeCamera();
-    }
-    function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
-</script>
-
-<script src="ui-controls.js" defer></script>
-<script src="main.js" defer></script>
+    <!-- Load your global suite scripts silently in the background -->
+    <script src="ui-controls.js" defer></script>
+    <script src="main.js" defer></script>
 </body>
 </html>
