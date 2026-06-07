@@ -128,33 +128,7 @@ async function handleGeminiText(req, res) {
         return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
-async function runModel(p) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${p.key}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        prompt: "agree"
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`API Error: ${JSON.stringify(errorData)}`);
-    }
-
-    const result = await response.json();
-    return result.result; // The model's response is usually nested here
-  } catch (error) {
-    console.error("Failed to run model:", error);
-  }
-}
-// ==========================================
+==================================
 // VISION ENDPOINT
 // ==========================================
 async function handleGeminiVision(req, res) {
