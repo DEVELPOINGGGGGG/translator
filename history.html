@@ -17,6 +17,8 @@
 
     <link rel="stylesheet" href="style.css">
 
+    <script src="ui-controls.js" defer></script>
+
     <style>
         .infoModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .infoModal .card { background: #1e293b; width: 90%; max-width: 600px; padding: 20px; border-radius: 12px; max-height: 85vh; display: flex; flex-direction: column; }
@@ -24,6 +26,12 @@
         .outputBox { background: #0f172a; padding: 15px; border-radius: 8px; color: #e2e8f0; font-size: 15px; border: 1px solid #334155; margin-top: 8px; white-space: pre-wrap;}
         .closeBtn { background: transparent; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }
         .closeBtn:hover { color: #fff; }
+        
+        /* Clean list styling */
+        .hist-item { background: #1e293b; border-radius: 8px; padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .hist-title { font-weight: 600; color: #e2e8f0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .hist-date { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+        .btn-group-sm { display: flex; gap: 8px; flex-shrink: 0; }
     </style>
 </head>
 <body>
@@ -33,12 +41,6 @@
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
-</div>
-
-<div class="apiTracker">
-    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -90,11 +92,7 @@
 <script>
     window.toggleSidebar = function() {
         const sidebar = document.getElementById('sidebar');
-        if (sidebar.style.transform === 'translateX(0px)') {
-            sidebar.style.transform = 'translateX(-100%)';
-        } else {
-            sidebar.style.transform = 'translateX(0px)';
-        }
+        sidebar.style.transform = (sidebar.style.transform === 'translateX(0px)') ? 'translateX(-100%)' : 'translateX(0px)';
     };
 
     window.loadHistory = function() {
@@ -102,31 +100,26 @@
         if (!historyList) return;
         
         let savedHistory = [];
-        try {
-            savedHistory = JSON.parse(localStorage.getItem("aiHistory")) || [];
-        } catch(e) {
-            console.error("Failed to parse localStorage:", e);
-        }
+        try { savedHistory = JSON.parse(localStorage.getItem("aiHistory")) || []; } 
+        catch(e) { console.error("Failed to parse localStorage:", e); }
         
         historyList.innerHTML = "";
         
         if (savedHistory.length === 0) {
-            historyList.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 30px;"><p>No history saved yet.</p><p style="font-size: 13px; margin-top: 5px;">Your math solutions and searches will appear here.</p></div>';
+            historyList.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 30px;"><p>No history saved yet.</p></div>';
             return;
         }
 
-        // Build list safely using pure DOM
+        // Build cleanly with DOM
         for (let i = savedHistory.length - 1; i >= 0; i--) {
             const item = savedHistory[i];
+            const imgData = item.image || item.imageBase64 || item.img || item.capturedImageBase64 || null;
             
             const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = "background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155;";
+            itemDiv.className = "hist-item"; 
             
             const leftSide = document.createElement('div');
-            leftSide.style.cssText = "display: flex; align-items: center; gap: 12px; overflow: hidden;";
-
-            // 📸 GRAB THE IMAGE IF IT EXISTS
-            const imgData = item.image || item.imageBase64 || item.img || item.capturedImageBase64 || null;
+            leftSide.style.cssText = "display: flex; align-items: center; gap: 15px; overflow: hidden;";
 
             if (imgData) {
                 const thumb = document.createElement('img');
@@ -138,28 +131,49 @@
             const textDiv = document.createElement('div');
             
             const titleEl = document.createElement('div');
-            titleEl.style.cssText = "font-weight: 600; color: #e2e8f0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;";
-            titleEl.textContent = item.title || "History Item";
+            titleEl.className = "hist-title";
+            titleEl.textContent = item.title || "Math Problem";
             
             const dateEl = document.createElement('div');
-            dateEl.style.cssText = "font-size: 12px; color: #94a3b8; margin-top: 4px;";
+            dateEl.className = "hist-date";
             dateEl.textContent = item.date || new Date().toLocaleDateString();
             
             textDiv.appendChild(titleEl);
             textDiv.appendChild(dateEl);
             leftSide.appendChild(textDiv);
             
+            // Buttons Wrapper
+            const btnGroup = document.createElement('div');
+            btnGroup.className = "btn-group-sm";
+
+            // View Modal Button
             const viewBtn = document.createElement('button');
-            viewBtn.style.cssText = "background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; flex-shrink: 0;";
+            viewBtn.style.cssText = "background: #475569; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;";
             viewBtn.textContent = "View";
-            
-            // Pass the image data to the modal
             viewBtn.onclick = function() {
                 viewHistoryItem(item.title || "History Item", item.question || "", item.answer || "", imgData);
             };
+
+            // Restore Button 🚀
+            const restoreBtn = document.createElement('button');
+            restoreBtn.style.cssText = "background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;";
+            restoreBtn.textContent = "Restore ↪";
+            restoreBtn.onclick = function() {
+                // Save this exact item into a temporary holding cell
+                localStorage.setItem("pendingRestoreChat", JSON.stringify({
+                    question: item.question || "",
+                    answer: item.answer || "",
+                    image: imgData
+                }));
+                // Redirect to Math Solver
+                window.location.href = "maths.html";
+            };
             
+            btnGroup.appendChild(viewBtn);
+            btnGroup.appendChild(restoreBtn);
+
             itemDiv.appendChild(leftSide);
-            itemDiv.appendChild(viewBtn);
+            itemDiv.appendChild(btnGroup);
             
             historyList.appendChild(itemDiv);
         }
@@ -170,29 +184,18 @@
         document.getElementById("histQuestion").innerHTML = question.replace(/\n/g, '<br>');
         document.getElementById("histAnswer").innerHTML = answer.replace(/\n/g, '<br>');
         
-        // Render the image in the modal if it exists
         const imgEl = document.getElementById("histImage");
-        if (imgData) {
-            imgEl.src = imgData;
-            imgEl.style.display = "block";
-        } else {
-            imgEl.src = "";
-            imgEl.style.display = "none";
-        }
+        if (imgData) { imgEl.src = imgData; imgEl.style.display = "block"; } 
+        else { imgEl.src = ""; imgEl.style.display = "none"; }
 
         document.getElementById("historyModal").style.display = "flex";
-        
-        if (window.MathJax) {
-            MathJax.typesetPromise([document.getElementById('histAnswer')]).catch(err => console.log('MathJax Error:', err));
-        }
+        if (window.MathJax) { MathJax.typesetPromise([document.getElementById('histAnswer')]).catch(e => console.log(e)); }
     };
 
-    window.closeHistory = function() {
-        document.getElementById("historyModal").style.display = "none";
-    };
-
+    window.closeHistory = function() { document.getElementById("historyModal").style.display = "none"; };
+    
     window.clearAllHistory = function() {
-        if(confirm("Are you sure you want to delete all saved history? This cannot be undone.")) {
+        if(confirm("Are you sure you want to delete all saved history?")) {
             localStorage.removeItem("aiHistory");
             loadHistory();
         }
@@ -206,7 +209,7 @@
         const blob = new Blob([fileContent], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + ".txt";
+        link.download = "history_export.txt";
         link.click();
     };
 
@@ -220,12 +223,8 @@
         }
     };
 
-    document.addEventListener("DOMContentLoaded", function() {
-        loadHistory();
-    });
+    document.addEventListener("DOMContentLoaded", loadHistory);
 </script>
-
-<script src="ui-controls.js" defer></script>
 
 </body>
 </html>
