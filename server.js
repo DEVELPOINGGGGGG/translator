@@ -161,16 +161,7 @@ async function handleGeminiVision(req, res) {
                 // Inside handleGeminiVision, in the Cloudflare block:
 // 🛑 CORRECT CLOUDFLARE STRUCTURE
 // Cloudflare doesn't use 'messages', it uses { prompt, image }
-                await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
-    method: "POST",
-    headers: {
-        Authorization: `Bearer ${p.key}`,
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        prompt: "agree"
-    })
-});
+
 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, { 
     method: "POST", 
     headers: { 
