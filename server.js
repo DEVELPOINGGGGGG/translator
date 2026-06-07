@@ -168,20 +168,25 @@ async function handleGeminiVision(req, res) {
                 return data.candidates[0].content.parts[0].text;
             
            } else if (p.type === 'cloudflare') {
-                // 🛑 FIXED: Switched to LLaVA model to bypass Meta's "agree" block completely
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/llava-hf/llava-1.5-7b-hf`, {
+                // 🛑 NODE.JS BUFFER FIX: Perfectly converts the image without corruption
+                const imageBuffer = Buffer.from(rawBase64, 'base64');
+                const imageArray = Array.from(imageBuffer);
+
+                // 🛑 FORCE SOLVE COMMAND: Tells the AI to stop refusing
+                const cloudflarePrompt = "agree This is a handwritten math problem. Do your best to read the numbers and solve it. " + userText;
+
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
                     method: "POST",
                     headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        prompt: userText, // No more "agree " nonsense required
-                        image: [...Uint8Array.from(atob(rawBase64), c => c.charCodeAt(0))]
+                        prompt: cloudflarePrompt,
+                        image: imageArray
                     })
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
                 
-                // LLaVA uses 'description' instead of 'response'
-                return data.result.description || data.result.response || "No text detected.";
+                return data.result?.response || data.result?.description || "No text detected.";
 
             } else {
                 // FIXED GROQ: Stable 90b model + Agree string
