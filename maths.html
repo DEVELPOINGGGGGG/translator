@@ -92,7 +92,10 @@
         <h1 style="font-size: 24px;">🧮 Math Solver</h1>
         <p style="font-size: 14px; opacity: 0.9;">Give Answers Of Maths.</p>
     </div>
-    
+    <button onclick="shareChatHistory()" style="background: #3b82f6; color: white; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8m-4-6l-4-4m0 0L8 6m4-4v12"></path></svg>
+    Share
+</button>
     <div id="mathChatHistory"></div>
   </div>
   <div class="chat-input-area">
@@ -287,6 +290,59 @@ function generateMathPaper(aiResponseText) {
         closeCamera();
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
+    // ==========================================
+// 📤 SHARE CHAT HISTORY ENGINE
+// ==========================================
+async function shareChatHistory() {
+    const historyDiv = document.getElementById("mathChatHistory");
+    if (!historyDiv) return;
+
+    // 1. Gather all chat bubbles
+    const messages = historyDiv.querySelectorAll('.chat-msg');
+    
+    if (messages.length === 0) {
+        alert("No chat history to share yet!");
+        return;
+    }
+
+    // 2. Format the chat into clean text
+    let chatText = "📚 My Math Study Session:\n\n";
+
+    messages.forEach(msg => {
+        const isUser = msg.classList.contains('chat-user');
+        // Clean up the text by removing the "IMAGE OF SOLUTION" label for text sharing
+        let text = msg.innerText.replace("📝 IMAGE OF SOLUTION----", "").trim();
+        
+        if (isUser) {
+            chatText += `👤 Me: ${text}\n`;
+        } else {
+            chatText += `🤖 Tutor:\n${text}\n\n`;
+            chatText += `-----------------------------------\n\n`;
+        }
+    });
+
+    // 3. Trigger Native Share or Fallback to Clipboard
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Math Solution Chat',
+                text: chatText,
+            });
+            console.log('Shared successfully');
+        } catch (err) {
+            console.log('User cancelled share or error:', err);
+        }
+    } else {
+        // Fallback for browsers that don't support Web Share API (like older desktop Chrome)
+        try {
+            await navigator.clipboard.writeText(chatText);
+            alert("✅ Entire chat copied to clipboard! You can paste it in WhatsApp or Discord.");
+        } catch (err) {
+            alert("❌ Failed to copy chat.");
+            console.error(err);
+        }
+    }
+}
 </script>
 
 <script src="ui-controls.js" defer></script>
