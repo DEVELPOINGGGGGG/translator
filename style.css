@@ -748,3 +748,32 @@ mjx-container[display="true"]::-webkit-scrollbar-thumb, .bubble > div::-webkit-s
     50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.8); }
     100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
 }
+/* 🛑 FIX: Sidebar Scrolling Engine */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100vh; /* Force full height */
+    background: rgba(2, 6, 23, 0.95);
+    backdrop-filter: blur(20px);
+    z-index: 15001 !important;
+    transition: 0.3s ease-in-out;
+    padding-top: 100px;
+    box-shadow: 15px 0 50px rgba(0,0,0,0.8);
+    border-right: 1px solid var(--glass-border);
+    
+    /* ⚡ THE MAGIC SCROLL FIX */
+    overflow-y: auto !important; /* Allows vertical scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth momentum for mobile */
+    padding-bottom: 50px; /* Ensures the last button isn't cut off */
+}
+
+/* Custom scrollbar for the sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
