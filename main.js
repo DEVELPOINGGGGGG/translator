@@ -567,7 +567,7 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-const sysPrompt = `You are an expert math tutor. STRICT RULES:
+const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. STRICT RULES:
 
 1. SOLVE ALL QUESTIONS: You MUST solve EVERY single question the user provides. Do not skip any.
 
