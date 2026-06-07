@@ -279,10 +279,16 @@ Task: ${userText}`;
     <script>
     // This is the function that talks to the same Cloudflare model as create.js
     async function generateMathImage(aiResponseText) {
+        const historyDiv = document.getElementById("mathChatHistory");
+        
         try {
-            // Isolate math text and clean it for JSON
-            let mathTextOnly = aiResponseText.split("💡")[0].trim().substring(0, 150).replace(/[\"\\]/g, '');
-            const cfPrompt = `A high-quality photo of a piece of lined notebook paper. Written neatly on the lines in realistic blue ink handwriting is this text: "${mathTextOnly}". The text should be centered and legible.`;
+            // 1. EXTRACT ONLY THE FINAL ANSWER (e.g., "9753 + 968 = 10721")
+            // Don't try to force the AI to draw the whole explanation, it will fail.
+            const mathResult = aiResponseText.match(/\d+\s?[+\-x/]\s?\d+\s?=\s?\d+/g) || ["Math Solution"];
+            const finalMath = mathResult[0];
+
+            // 2. MUCH SIMPLER PROMPT: Tell it to treat text as a graphic, not a story
+            const cfPrompt = `A high-quality, professional photo of lined notebook paper. In the center, in clean, bold, dark blue digital font, write only this text: ${finalMath}. Ensure the text is perfectly aligned on the lines.`;
 
             const imgRes = await fetch("/api/cloudflare-image", {
                 method: "POST",
@@ -291,27 +297,13 @@ Task: ${userText}`;
             });
 
             const imgData = await imgRes.json();
-            if (!imgRes.ok) throw new Error(imgData.error || "Cloudflare API Error");
+            if (!imgRes.ok) throw new Error("Image Generation Failed");
 
             const imgUrl = imgData.image || `data:image/png;base64,${imgData.base64}`;
+            appendMessage('ai', "📝 Final Answer Preview:", imgUrl, true);
             
-            // Append the image to the chat history
-            const historyDiv = document.getElementById("mathChatHistory");
-            historyDiv.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai">
-                    <div class="bubble">
-                        <p>📝 Handwritten preview:</p>
-                        <img src="${imgUrl}" class="handwritten-img" style="max-width: 100%; border-radius: 12px; margin-top: 10px;">
-                    </div>
-                </div>
-            `);
-            document.getElementById("mathScrollArea").scrollTop = 99999;
-
         } catch (e) {
-            console.error("🖼️ Image Generation Error (Rendered in Maths):", e);
-            // Small red error message as requested
-            const historyDiv = document.getElementById("mathChatHistory");
-            historyDiv.insertAdjacentHTML('beforeend', `<div style="color: #ef4444; font-size: 11px; text-align: right; margin-right: 20px;">⚠️ Image failed: ${e.message}</div>`);
+            console.error("Image Failed:", e);
         }
     }
 </script>
