@@ -7,7 +7,10 @@
     
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f172a">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
@@ -25,33 +28,34 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
         
-        .handwritten-img {
-            max-width: 100%;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            margin-top: 10px;
-            border: 2px solid rgba(255,255,255,0.1);
-        }
-
-        .img-status-msg {
-            padding: 10px 15px;
+        /* 🚀 THE CSS DIGITAL PAPER ENGINE */
+        .digital-paper-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 15px;
             border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            align-self: center;
-            width: 90%;
-            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .img-status-msg.loading {
-            background: rgba(56, 189, 248, 0.1);
-            color: #38bdf8;
-            border: 1px solid rgba(56, 189, 248, 0.3);
+        
+        .digital-paper {
+            background-color: #fdfbf7; 
+            background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px);
+            line-height: 30px;
+            padding: 30px 20px 30px 65px;
+            position: relative;
+            font-family: 'Kalam', cursive; 
+            font-size: 20px;
+            color: #1e3a8a; 
+            min-width: 300px;
+            white-space: pre-wrap; 
         }
-        .img-status-msg.error {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.4);
+        
+        .digital-paper::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: 45px;
+            width: 2px;
+            background: #fca5a5; 
         }
     </style>
 </head>
@@ -84,7 +88,7 @@
   <div class="chat-scroll-area" id="mathScrollArea">
     <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
         <h1 style="font-size: 24px;">🧮 Math Solver</h1>
-        <p style="font-size: 14px; opacity: 0.9;">Waterfall Engine (Gemini ➔ Cloudflare ➔ Groq)</p>
+        <p style="font-size: 14px; opacity: 0.9;">Waterfall Engine (Gemini ➔ HTML Canvas)</p>
     </div>
     
     <div id="mathChatHistory"></div>
@@ -131,17 +135,25 @@
 
         appendMessage('user', userText || "Solve this image.", currentMathImage);
         inputEl.value = "";
+        
+        // Feed conversation history context
+        let historyContext = mathConversationHistory.slice(-4).join("\n");
         mathConversationHistory.push(`User: ${userText}`);
 
-        const tutorPrompt = `You are a direct math tutor. STRICT RULES:
-1. NO GREETINGS OR INTROS. Start immediately.
-2. For the question:
+        // SMART PROMPT: Understands greetings, follow-ups, and math requests.
+        const tutorPrompt = `You are an expert math tutor. STRICT RULES:
+1. GREETINGS: If the user says "hi", "hello", or a non-math greeting, reply normally and casually. DO NOT use the math format below.
+2. FOLLOW-UPS: If the user asks "explain this", "how did you get that", or "why", DO NOT restate the question. Just explain the previous step directly.
+3. NEW MATH QUESTIONS ONLY:
    - First line: "प्रश्न: [Write the exact question here]"
    - Middle: Step-by-step solution using $ for math notation.
    - Last: "💡 Explanation:" followed by 4-8 lines for hard concepts, or 2-4 lines for easy concepts.
-3. If multiple questions, format them as Q1, Q2 sequentially following the same layout.
 4. Respond in the user's language.
-Task: ${userText}`;
+
+Previous Context:
+${historyContext}
+
+Current Task: ${userText}`;
 
         showTyping();
 
@@ -164,8 +176,8 @@ Task: ${userText}`;
             mathConversationHistory.push(`AI: ${data.text}`);
             clearMathImage();
 
-            // Fire photo rendering instantly
-            generateMathImage(data.text);
+            // Fire the CSS paper renderer
+            generateMathPaper(data.text);
 
         } catch (err) {
             removeTyping();
@@ -173,52 +185,52 @@ Task: ${userText}`;
         }
     }
 
-    async function generateMathImage(aiResponseText) {
-        const historyDiv = document.getElementById("mathChatHistory");
-        const loadingId = "load-" + Date.now();
-        
+    // 🚀 CSS PAPER WITH LATEX PARSER
+    function generateMathPaper(aiResponseText) {
         try {
-            const loadingDiv = document.createElement("div");
-            loadingDiv.id = loadingId;
-            loadingDiv.className = "img-status-msg loading";
-            loadingDiv.innerText = "⏳ Rendering handwritten paper note...";
-            historyDiv.appendChild(loadingDiv);
-            document.getElementById("mathScrollArea").scrollTop = 99999;
-
-            // ISOLATE THE MATH TEXT ONLY & STRIP COMPLEX SYMBOLS
+            // 1. Isolate ONLY the math steps (remove the "Explanation" block at the bottom)
             let mathTextOnly = aiResponseText.split("💡")[0].trim();
             
-            // Clean up backslashes, math tags, dollar signs, and quotes completely
-            mathTextOnly = mathTextOnly.replace(/[\$\#\*\"\'\\\[\]\\{\}]/g, ' ');
-            mathTextOnly = mathTextOnly.replace(/\s+/g, ' '); // Clean double spacing
-            mathTextOnly = mathTextOnly.substring(0, 120); // Keep it crisp for Flux
+            // 2. Do not render paper for short greetings or explanations without math
+            if (mathTextOnly.length < 15 && !/\d/.test(mathTextOnly)) return;
+            if (!aiResponseText.includes("प्रश्न:")) return; // Only render for actual solutions
 
-            const cleanPrompt = `A flat lay photograph of a clean page of lined notebook school paper. Written directly on the lines in a natural, messy blue ink handwriting is this text: ${mathTextOnly}. Clear, sharp focus, real paper texture.`;
-
-            const imgRes = await fetch("/api/cloudflare-image", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: cleanPrompt }) // Matches backend body expectations
-            });
-
-            const imgData = await imgRes.json();
-            document.getElementById(loadingId)?.remove();
-
-            if (!imgRes.ok) throw new Error(imgData.error || "Cloudflare API Error");
-            if (!imgData.image && !imgData.base64) throw new Error("No artwork data returned.");
-
-            const imgUrl = imgData.image || `data:image/png;base64,${imgData.base64}`;
-            appendMessage('ai', "📝 Clean Handwritten Note Sheet:", imgUrl, true);
+            // 3. LaTeX Parser: Converts ugly code to natural readable text
+            mathTextOnly = mathTextOnly.replace(/[*#`]/g, ''); // Remove Markdown
+            mathTextOnly = mathTextOnly.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)'); // Fix fractions
+            mathTextOnly = mathTextOnly.replace(/\\sqrt\{([^}]+)\}/g, '√$1'); // Fix square roots
+            mathTextOnly = mathTextOnly.replace(/\^\{([^}]+)\}/g, '^$1'); // Fix powers
+            mathTextOnly = mathTextOnly.replace(/_\{([^}]+)\}/g, '_$1'); // Fix base subscripts
+            mathTextOnly = mathTextOnly.replace(/\\text\{([^}]+)\}/g, '$1'); // Fix text blocks
+            mathTextOnly = mathTextOnly.replace(/\\times/gi, '×'); // Fix multiplication
+            mathTextOnly = mathTextOnly.replace(/\\div/gi, '÷'); // Fix division
+            mathTextOnly = mathTextOnly.replace(/\\cdot/gi, '·'); // Fix dots
+            mathTextOnly = mathTextOnly.replace(/\\Rightarrow/gi, '⇒'); // Fix arrows
+            mathTextOnly = mathTextOnly.replace(/\\rightarrow/gi, '→');
+            mathTextOnly = mathTextOnly.replace(/\\approx/gi, '≈');
+            mathTextOnly = mathTextOnly.replace(/\\pm/gi, '±');
+            mathTextOnly = mathTextOnly.replace(/\\pi/gi, 'π');
+            mathTextOnly = mathTextOnly.replace(/\\theta/gi, 'θ');
             
-        } catch (e) {
-            document.getElementById(loadingId)?.remove();
-            console.error("Image Failed:", e);
+            // Remove $ signs, stray backslashes, and quad spacing
+            mathTextOnly = mathTextOnly.replace(/\\quad/g, '  ');
+            mathTextOnly = mathTextOnly.replace(/[\$\\]/g, ''); 
+
+            const historyDiv = document.getElementById("mathChatHistory");
             
-            const errDiv = document.createElement("div");
-            errDiv.className = "img-status-msg error";
-            errDiv.innerText = "⚠️ Image Render Failed: " + e.message;
-            historyDiv.appendChild(errDiv);
+            historyDiv.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai">
+                    <div style="width: 100%; max-width: 95%;">
+                        <div class="digital-paper-container">
+                            <div class="digital-paper">${mathTextOnly}</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
             document.getElementById("mathScrollArea").scrollTop = 99999;
+        } catch (e) {
+            console.error("Paper rendering failed:", e);
         }
     }
 
@@ -275,37 +287,6 @@ Task: ${userText}`;
         closeCamera();
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
-</script>
-    <script>
-    // This is the function that talks to the same Cloudflare model as create.js
-    async function generateMathImage(aiResponseText) {
-        const historyDiv = document.getElementById("mathChatHistory");
-        
-        try {
-            // 1. EXTRACT ONLY THE FINAL ANSWER (e.g., "9753 + 968 = 10721")
-            // Don't try to force the AI to draw the whole explanation, it will fail.
-            const mathResult = aiResponseText.match(/\d+\s?[+\-x/]\s?\d+\s?=\s?\d+/g) || ["Math Solution"];
-            const finalMath = mathResult[0];
-
-            // 2. MUCH SIMPLER PROMPT: Tell it to treat text as a graphic, not a story
-            const cfPrompt = `A high-quality, professional photo of lined notebook paper. In the center, in clean, bold, dark blue digital font, write only this text: ${finalMath}. Ensure the text is perfectly aligned on the lines.`;
-
-            const imgRes = await fetch("/api/cloudflare-image", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: cfPrompt })
-            });
-
-            const imgData = await imgRes.json();
-            if (!imgRes.ok) throw new Error("Image Generation Failed");
-
-            const imgUrl = imgData.image || `data:image/png;base64,${imgData.base64}`;
-            appendMessage('ai', "📝 Final Answer Preview:", imgUrl, true);
-            
-        } catch (e) {
-            console.error("Image Failed:", e);
-        }
-    }
 </script>
 
 <script src="ui-controls.js" defer></script>
