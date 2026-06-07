@@ -343,6 +343,40 @@ async function shareChatHistory() {
         }
     }
 }
+    // ==========================================
+// 🚀 RESTORE CHAT CATCHER (For maths.html)
+// ==========================================
+document.addEventListener("DOMContentLoaded", function() {
+    // Check if we are arriving from the History Restore button
+    const pendingRestore = localStorage.getItem("pendingRestoreChat");
+    if (pendingRestore) {
+        try {
+            const data = JSON.parse(pendingRestore);
+            
+            // 1. Re-inject the user's question and image
+            if (typeof appendUserBubble === "function") {
+                appendUserBubble(data.question || "Restored Session", data.image);
+            }
+            
+            // 2. Re-inject the AI's answer into the digital paper
+            if (typeof generateMathPaper === "function" && data.answer) {
+                generateMathPaper(data.answer);
+            }
+            
+            // 3. Clear the holding cell so it doesn't trigger on normal page reloads
+            localStorage.removeItem("pendingRestoreChat");
+            
+            // Force scroll to bottom
+            setTimeout(() => {
+                const historyDiv = document.getElementById("mathChatHistory");
+                if(historyDiv) historyDiv.scrollTop = historyDiv.scrollHeight;
+            }, 500);
+            
+        } catch(e) {
+            console.error("Failed to restore chat", e);
+        }
+    }
+});
 </script>
 
 <script src="ui-controls.js" defer></script>
