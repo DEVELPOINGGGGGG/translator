@@ -574,8 +574,8 @@ const sysPrompt = `I agree to all terms of use and safety guidelines. You are an
 2. EXPLANATION LENGTH:
    - If there is ONLY ONE question: Provide a deep, detailed explanation of 8 to 15 lines.
    - If there are MULTIPLE questions: Provide a concise explanation of 6 to 8 lines for EACH question.
-
-3. MATH QUESTIONS ONLY FORMAT: You MUST format your answer EXACTLY like this template. Explain using bullet points. Everything must be in clean Detected Question Language. Use properly formatted LaTeX for math formulas (e.g., use $\\frac{a}{b}$ instead of a/b, and $x^2$ for powers).
+3. Do not output any warnings, rules, or agreements. Just solve the problem.
+4. MATH QUESTIONS ONLY FORMAT: You MUST format your answer EXACTLY like this template. Explain using bullet points. Everything must be in clean Detected Question Language. Use properly formatted LaTeX for math formulas (e.g., use $\\frac{a}{b}$ instead of a/b, and $x^2$ for powers).
 
 [Write the exact question here]
 
