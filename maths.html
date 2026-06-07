@@ -192,60 +192,46 @@ Current Task: ${userText}`;
     }
 
     // 🚀 BULLETPROOF CSS PAPER INJECTION
-    function generateMathPaper(aiResponseText) {
-        try {
-            // Check if it's a math question by looking for our anchor
-            if (!aiResponseText.includes("SOLUTION:-")) return;
+// 🚀 BULLETPROOF CSS PAPER INJECTION
+function generateMathPaper(aiResponseText) {
+    try {
+        if (!aiResponseText.includes("SOLUTION:-")) return;
 
-            // Extract text EXACTLY between "SOLUTION:-" and "EXPLANATION-"
-            let mathTextOnly = "";
-            try {
-                let parts = aiResponseText.split("SOLUTION:-")[1];
-                mathTextOnly = parts.split("EXPLANATION-")[0].trim();
-            } catch(e) {
-                return; // Fails safely if the AI breaks the format
-            }
+        // DETECT MULTIPLE QUESTIONS - अगर 1 से ज्यादा सवाल हैं, तो इमेज नहीं बनेगी
+        const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
+        if (hasMultipleQuestions) return; 
 
-            // Do not render if the extracted math is suspiciously short
-            if (mathTextOnly.length < 5) return;
+        let parts = aiResponseText.split("SOLUTION:-")[1];
+        let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
 
-            // Clean LaTeX for the handwriting font
-            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
-            mathTextOnly = mathTextOnly.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)');
-            mathTextOnly = mathTextOnly.replace(/\\sqrt\{([^}]+)\}/g, '√$1');
-            mathTextOnly = mathTextOnly.replace(/\^\{([^}]+)\}/g, '^$1');
-            mathTextOnly = mathTextOnly.replace(/_\{([^}]+)\}/g, '_$1');
-            mathTextOnly = mathTextOnly.replace(/\\text\{([^}]+)\}/g, '$1');
-            mathTextOnly = mathTextOnly.replace(/\\times/gi, '×');
-            mathTextOnly = mathTextOnly.replace(/\\div/gi, '÷');
-            mathTextOnly = mathTextOnly.replace(/\\cdot/gi, '·');
-            mathTextOnly = mathTextOnly.replace(/\\Rightarrow/gi, '⇒');
-            mathTextOnly = mathTextOnly.replace(/\\rightarrow/gi, '→');
-            mathTextOnly = mathTextOnly.replace(/\\approx/gi, '≈');
-            mathTextOnly = mathTextOnly.replace(/\\pm/gi, '±');
-            mathTextOnly = mathTextOnly.replace(/\\pi/gi, 'π');
-            mathTextOnly = mathTextOnly.replace(/\\theta/gi, 'θ');
-            mathTextOnly = mathTextOnly.replace(/\\quad/g, '  ');
-            mathTextOnly = mathTextOnly.replace(/[\$\\]/g, ''); 
+        if (mathTextOnly.length < 5) return;
 
-            const historyDiv = document.getElementById("mathChatHistory");
-            
-            historyDiv.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
-                    <div style="width: 100%; max-width: 95%;">
-                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
-                        <div class="digital-paper-container">
-                            <div class="digital-paper">${mathTextOnly}</div>
-                        </div>
+        // Clean LaTeX (सिर्फ फालतू सिंबल हटाएं, \frac और ^ को सुरक्षित रखें)
+        mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
+
+        const historyDiv = document.getElementById("mathChatHistory");
+        const paperId = "paper_" + Date.now();
+        
+        historyDiv.insertAdjacentHTML('beforeend', `
+            <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
+                <div style="width: 100%; max-width: 95%;">
+                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
+                    <div class="digital-paper-container">
+                        <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
                     </div>
                 </div>
-            `);
-            
-            document.getElementById("mathScrollArea").scrollTop = 99999;
-        } catch (e) {
-            console.error("Paper rendering failed:", e);
+            </div>
+        `);
+        
+        // MathJax रेंडरिंग
+        if (window.MathJax) { 
+            MathJax.typesetPromise([document.getElementById(paperId)]); 
         }
+        document.getElementById("mathScrollArea").scrollTop = 99999;
+    } catch (e) {
+        console.error("Paper rendering failed:", e);
     }
+}
 
     function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
         const historyDiv = document.getElementById("mathChatHistory");
