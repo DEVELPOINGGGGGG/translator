@@ -569,21 +569,23 @@ async function executeMathFlow() {
     let memoryContext = getSessionContext('math');
 
     // 🚀 UPDATED EXTRA DEEP INTELLECTUAL HINDI PROMPT
-    const sysPrompt = `You are an expert math tutor. STRICT RULES:
+const sysPrompt = `You are an expert math tutor. STRICT RULES:
 
-1. NON-MATH/GREETINGS: If the user says "hi", "hello", or a casual greeting, reply normally in Hindi. DO NOT use the math format. DO NOT write "प्रश्न:".
+1. SOLVE ALL QUESTIONS: You MUST solve EVERY single question the user provides. Do not skip any.
 
-2. EXPLAIN REQUESTS: If the user explicitly asks to "explain this", "how did you get that", or "explain it" regarding a previous solution, provide a detailed, deep structural explanation strictly in Hindi that is between 10 to 15 lines long. DO NOT rewrite the full initial question setup block.
+2. EXPLANATION LENGTH:
+   - If there is ONLY ONE question: Provide a deep, detailed explanation of 10 to 15 lines.
+   - If there are MULTIPLE questions: Provide a concise explanation of 4 to 5 lines for EACH question.
 
-3. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Everything must be in clean Hindi text using Devanagari script. Do not mix English descriptive headings like "labor profit" or "labor loss"—use pure functional Hindi translation terms. Numbers and standard formulas remain in system layout variables:
+3. MATH QUESTIONS ONLY FORMAT: You MUST format your answer EXACTLY like this template. Explain using bullet points. Everything must be in clean Hindi text (Devanagari). Use properly formatted LaTeX for math formulas (e.g., use $\\frac{a}{b}$ instead of a/b, and $x^2$ for powers).
 
-प्रश्न: [Write the exact question here]
+प्रश्न: [Write the exact question(s) here]
 
 SOLUTION:-
-[Step-by-step math solution using $ for math notation. Keep it direct and mathematically flawless.]
+[Step-by-step math solution for ALL questions using $ for inline math and $$ for display math. Keep it mathematically flawless.]
 
 EXPLANATION-
-[Provide a comprehensive explanation between 10 to 15 lines detailing the underlying concepts, mathematical logic, and step transitions completely in Hindi.]`;
+[Provide the explanation in Hindi based on the length rules above. Use bullet points.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
@@ -613,55 +615,41 @@ EXPLANATION-
             if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
             window.toggleChatButton(false);
 
-            // 🚀 DETECT IF MULTIPLE QUESTIONS ARE REQUESTED
-            const hasMultipleQuestions = (cleanSol.match(/Q\d+/g) || cleanSol.match(/प्रश्न\s?\d+/g) || []).length > 1;
+           // 🚀 DETECT IF MULTIPLE QUESTIONS ARE REQUESTED
+const hasMultipleQuestions = (cleanSol.match(/Q\d+/g) || cleanSol.match(/प्रश्न\s?\d+/g) || []).length > 1;
 
-            // 🚀 ONLY RENDER A SINGLE DIGITAL PAPER PREVIEW IF IT IS NOT A MULTIPLE QUESTION PACK
-            if (cleanSol.includes("SOLUTION:-") && !hasMultipleQuestions) {
-                try {
-                    let parts = cleanSol.split("SOLUTION:-")[1];
-                    let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+// 🚀 ONLY RENDER A SINGLE DIGITAL PAPER PREVIEW IF IT IS NOT A MULTIPLE QUESTION PACK
+if (cleanSol.includes("SOLUTION:-") && !hasMultipleQuestions) {
+    try {
+        let parts = cleanSol.split("SOLUTION:-")[1];
+        let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
 
-                    if (mathTextOnly.length > 5) {
-                        // Strict parsing clean up
-                        mathTextOnly = mathTextOnly.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
-                            .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
-                            .replace(/\^\{([^}]+)\}/g, '^$1')
-                            .replace(/_\{([^}]+)\}/g, '_$1')
-                            .replace(/\\text\{([^}]+)\}/g, '$1')
-                            .replace(/\\times/gi, '×')
-                            .replace(/\\div/gi, '÷')
-                            .replace(/\\cdot/gi, '·')
-                            .replace(/\\Rightarrow/gi, '⇒')
-                            .replace(/\\rightarrow/gi, '→')
-                            .replace(/\\approx/gi, '≈')
-                            .replace(/\\quad/g, '  ')
-                            .replace(/[\$\\]/g, '');
+        if (mathTextOnly.length > 5) {
+            // FIX: हमने यहाँ से वो regex हटा दिए हैं जो \frac और ^ को खराब कर रहे थे।
+            // अब MathJax असली 'बटा' (fraction) और पावर बनाएगा।
+            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
 
-                        const historyDiv = document.getElementById("mathChatHistory");
-                        historyDiv.insertAdjacentHTML('beforeend', `
-                            <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out; width: 100%; display: flex;">
-                                <div class="bubble" style="display: flex; flex-direction: column; width: fit-content; max-width: 95%; box-sizing: border-box; padding-top: 20px;">
-                                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600;">... IMAGE OF SOLUTION----</p>
-                                    <div class="digital-paper-container">
-                                        <div class="digital-paper" style="font-family: 'Inter', -apple-system, sans-serif !important; font-weight: 500; font-size: 18px; color: #1e40af; letter-spacing: 0.3px;">${mathTextOnly}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
-                    }
-                } catch(err) { console.log("Paper block generation bypassed", err); }
+            const historyDiv = document.getElementById("mathChatHistory");
+            const paperId = "paper_" + Date.now(); // MathJax के लिए Unique ID
+            
+            historyDiv.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out; width: 100%; display: flex;">
+                    <div class="bubble" style="display: flex; flex-direction: column; width: fit-content; max-width: 95%; box-sizing: border-box; padding-top: 20px;">
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600;">📝 IMAGE OF SOLUTION----</p>
+                        <div class="digital-paper-container">
+                            <div class="digital-paper" id="${paperId}" style="font-family: 'Inter', -apple-system, sans-serif !important; font-weight: 500; font-size: 18px; color: #1e40af; letter-spacing: 0.3px;">${mathTextOnly}</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // MathJax को ट्रिगर करें ताकि वह LaTeX को रेंडर कर सके
+            if (window.MathJax) {
+                MathJax.typesetPromise([document.getElementById(paperId)]);
             }
         }
-        clearMathImage();
-        scrollToBottom("mathScrollArea");
-    } catch(e) { 
-        window.toggleChatButton(false);
-        const el = document.getElementById(lId); 
-        if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
-    }
+    } catch(err) { console.log("Paper block generation bypassed", err); }
 }
-
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); 
