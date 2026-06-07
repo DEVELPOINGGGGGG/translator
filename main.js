@@ -560,15 +560,13 @@ async function executeMathFlow() {
     
     let uiImage = capturedImage;
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
-    inp.value = ""; 
-    let lId = appendAiLoading("mathChatHistory");
+    inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
     window.toggleChatButton(true);
 
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // 🚀 UPDATED EXTRA DEEP INTELLECTUAL HINDI PROMPT
 const sysPrompt = `You are an expert math tutor. STRICT RULES:
 
 1. SOLVE ALL QUESTIONS: You MUST solve EVERY single question the user provides. Do not skip any.
@@ -588,6 +586,7 @@ EXPLANATION-
 [Provide the explanation in Hindi based on the length rules above. Use bullet points.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
+    
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
     try {
@@ -595,61 +594,18 @@ EXPLANATION-
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
-        
-        const loadingBubble = document.getElementById(lId);
-        if (loadingBubble) {
-            const bbl = loadingBubble.querySelector('.bubble');
-            window.latestMathSolution = cleanSol;
-            
-            const buttons = `
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                    <div style="display:flex; gap:10px; width:100%;">
-                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
-                        <button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button>
-                        <button class="btn" style="padding:10px; flex:0.5; font-size:13px; border-radius:20px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
-                    </div>
-                    ${getRetryButtonsHtml(lId)}
-                </div>`;
-
-            bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${resObj.provider}</div><div id="text_${lId}" style="margin-top:10px;">${cleanSol.replace(/\n/g, '<br>')}</div>${buttons}`;
-            if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
-            window.toggleChatButton(false);
-
-           // 🚀 DETECT IF MULTIPLE QUESTIONS ARE REQUESTED
-const hasMultipleQuestions = (cleanSol.match(/Q\d+/g) || cleanSol.match(/प्रश्न\s?\d+/g) || []).length > 1;
-
-// 🚀 ONLY RENDER A SINGLE DIGITAL PAPER PREVIEW IF IT IS NOT A MULTIPLE QUESTION PACK
-if (cleanSol.includes("SOLUTION:-") && !hasMultipleQuestions) {
-    try {
-        let parts = cleanSol.split("SOLUTION:-")[1];
-        let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
-
-        if (mathTextOnly.length > 5) {
-            // FIX: हमने यहाँ से वो regex हटा दिए हैं जो \frac और ^ को खराब कर रहे थे।
-            // अब MathJax असली 'बटा' (fraction) और पावर बनाएगा।
-            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
-
-            const historyDiv = document.getElementById("mathChatHistory");
-            const paperId = "paper_" + Date.now(); // MathJax के लिए Unique ID
-            
-            historyDiv.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out; width: 100%; display: flex;">
-                    <div class="bubble" style="display: flex; flex-direction: column; width: fit-content; max-width: 95%; box-sizing: border-box; padding-top: 20px;">
-                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600;">📝 IMAGE OF SOLUTION----</p>
-                        <div class="digital-paper-container">
-                            <div class="digital-paper" id="${paperId}" style="font-family: 'Inter', -apple-system, sans-serif !important; font-weight: 500; font-size: 18px; color: #1e40af; letter-spacing: 0.3px;">${mathTextOnly}</div>
-                        </div>
-                    </div>
-                </div>
-            `);
-            
-            // MathJax को ट्रिगर करें ताकि वह LaTeX को रेंडर कर सके
-            if (window.MathJax) {
-                MathJax.typesetPromise([document.getElementById(paperId)]);
-            }
+        updateAiBubble(lId, cleanSol, resObj.provider, true);
+        clearMathImage();
+    } catch(e) { 
+        window.toggleChatButton(false);
+        const el = document.getElementById(lId); 
+        if(el) {
+             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
+             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
         }
-    } catch(err) { console.log("Paper block generation bypassed", err); }
+    }
 }
+
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); 
