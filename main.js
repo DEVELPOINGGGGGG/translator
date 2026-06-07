@@ -554,73 +554,109 @@ async function retryRequest(lId, targetProvider) {
 }
 
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
+// 🛑 इस फ़ंक्शन को अपने main.js के executeMathFlow फ़ंक्शन से बदलें
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
     
     let uiImage = capturedImage;
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
-    inp.value = ""; let lId = appendAiLoading("mathChatHistory");
+    inp.value = ""; 
+    let lId = appendAiLoading("mathChatHistory");
 
     window.toggleChatButton(true);
 
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    const sysPrompt = `You are a premium, highly engaging, brilliant AI Math & Physics Tutor. Your goal is to make the student fall in love with the subject by explaining concepts beautifully.
+    // 🚀 STRICT FORMATTING PROMPT FOR GEMINI
+    const sysPrompt = `You are an expert math tutor. STRICT RULES:
 
-    CRITICAL STRUCTURE RULES (YOU MUST FOLLOW EVERY STEP IN ORDER):
-    
-    0. RESTATE THE QUESTION (प्रश्न दोहराएं):
-       - At the very beginning of your response, write exactly what question you are solving so the user knows you understood it.
-       - Format it EXACTLY like this: "प्रश्न: [Insert the question here]"
-       - Put a blank line after this.
+1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in Hindi. DO NOT use the math format. DO NOT write "प्रश्न:".
 
-    1. THE CONCEPTUAL HOOK (सरल शुरुआत): 
-       - Start with a 1-2 line simple real-world analogy or explanation of the core concept. 
-       - Explain *why* this formula exists before calculating.
+2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be in Hindi except numbers and math symbols:
 
-    2. THE STRATEGY (रणनीति):
-       - Give a quick 1-line blueprint of how we are going to crack this problem step-by-step.
+प्रश्न: [Write the exact question here]
 
-    3. EXPLAIN THE "WHY" IN EVERY STEP (गहन व्याख्या):
-       - Do not just write equations. For every mathematical change, explain the logical reason behind it in deep, clear, conceptual Hindi.
+SOLUTION:-
+[Step-by-step math solution using $ for math notation. Keep it direct.]
 
-    4. COMMON PITFALLS (सावधानियां):
-       - End with a quick warning about common calculation mistakes students make in this specific type of question.
-
-    STRICT FORMATTING CONTROLS:
-    1. YOU MUST EXPLAIN THE SOLUTION STRICTLY AND ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY).
-    2. CRITICAL MATH RULE: NEVER translate mathematical variables (x, y, u, v, a, t), formulas, or units into Hindi letters. Keep ALL math variables in the standard English alphabet inside LaTeX $ symbols. (Example: Write $u = 0$, NEVER write $उ = 0$).
-    3. DO NOT use English words written in Roman characters for normal conversational explanations.
-    4. DO NOT USE ANY MARKDOWN. NO hashtags (#), NO asterisks (*), NO bold text. Your output must be purely clean text and LaTeX.
-    5. ALWAYS format fractions as proper LaTeX fractions (e.g., $\\frac{a}{b}$) wrapped in $.
-    6. ALWAYS use the uppercase letter "X" for multiplication instead of "*".
-    7. NEVER put any conversational text or Hindi words inside the $ symbols.`;
+EXPLANATION-
+[Keep this extremely short! Max 2 to 3 lines explaining the core concept in Hindi.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
-    
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
     try {
-       let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
+        let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
-        updateAiBubble(lId, cleanSol, resObj.provider, true);
-        clearMathImage();
         
-        // 🚀 ADD THIS LINE TO TRIGGER IMAGE GENERATION
-        if (typeof generateMathImage === 'function') {
-            generateMathImage(cleanSol);
+        // 🚀 UI LAYOUT ENGINE FOR MATH & PAPERS
+        const loadingBubble = document.getElementById(lId);
+        if (loadingBubble) {
+            const bbl = loadingBubble.querySelector('.bubble');
+            window.latestMathSolution = cleanSol;
+            
+            const buttons = `
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <div style="display:flex; gap:10px; width:100%;">
+                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
+                        <button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button>
+                        <button class="btn" style="padding:10px; flex:0.5; font-size:13px; border-radius:20px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button>
+                    </div>
+                    ${getRetryButtonsHtml(lId)}
+                </div>`;
+
+            // Display text solution first
+            bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${resObj.provider}</div><div id="text_${lId}" style="margin-top:10px;">${cleanSol.replace(/\n/g, '<br>')}</div>${buttons}`;
+            if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
+            window.toggleChatButton(false);
+
+            // 🚀 RENDER THE DIGITAL PAPER ONLY IF IT IS A MATH SOLUTION
+            if (cleanSol.includes("SOLUTION:-")) {
+                try {
+                    let parts = cleanSol.split("SOLUTION:-")[1];
+                    let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+
+                    if (mathTextOnly.length > 5) {
+                        // Clean LaTeX tags for Handwriting rendering
+                        mathTextOnly = mathTextOnly.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+                            .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
+                            .replace(/\^\{([^}]+)\}/g, '^$1')
+                            .replace(/_\{([^}]+)\}/g, '_$1')
+                            .replace(/\\text\{([^}]+)\}/g, '$1')
+                            .replace(/\\times/gi, '×')
+                            .replace(/\\div/gi, '÷')
+                            .replace(/\\cdot/gi, '·')
+                            .replace(/\\Rightarrow/gi, '⇒')
+                            .replace(/\\rightarrow/gi, '→')
+                            .replace(/\\approx/gi, '≈')
+                            .replace(/\\quad/g, '  ')
+                            .replace(/[\$\\]/g, '');
+
+                        const historyDiv = document.getElementById("mathChatHistory");
+                        historyDiv.insertAdjacentHTML('beforeend', `
+                            <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out; width: 100%; display: flex;">
+                                <div class="bubble" style="display: flex; flex-direction: column; width: fit-content; max-width: 95%; box-sizing: border-box; padding-top: 20px;">
+                                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600;">📝 IMAGE OF SOLUTION----</p>
+                                    <div class="digital-paper-container">
+                                        <div class="digital-paper">${mathTextOnly}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    }
+                } catch(err) { console.log("Paper render crashed", err); }
+            }
         }
+        clearMathImage();
+        scrollToBottom("mathScrollArea");
     } catch(e) { 
         window.toggleChatButton(false);
         const el = document.getElementById(lId); 
-        if(el) {
-             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
-             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
-        }
+        if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
     }
 }
 
