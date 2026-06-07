@@ -32,6 +32,16 @@
             margin-top: 10px;
             border: 2px solid rgba(255,255,255,0.1);
         }
+
+        .img-error-msg {
+            color: #ef4444; /* Small red text */
+            font-size: 11px;
+            text-align: right;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            margin-right: 15px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -129,9 +139,6 @@ Task: ${userText}`;
         let endpoint = currentMathImage ? "/api/gemini-vision" : "/api/gemini-text";
         let payload = { userPrompt: tutorPrompt };
         if (currentMathImage) payload.imageBase64 = currentMathImage;
-        
-        // NOTE: No 'providerOverride' is used. 
-        // This allows your server.js to use the waterfall: Gemini -> Cloudflare -> Groq
 
         try {
             const res = await fetch(endpoint, {
@@ -149,8 +156,8 @@ Task: ${userText}`;
             mathConversationHistory.push(`AI: ${data.text}`);
             clearMathImage();
 
-            // 2. Silently Generate the Handwritten Image via Cloudflare
-            generateSilentMathImage(data.text);
+            // 2. Immediately Generate the Handwritten Image
+            generateMathImage(data.text);
 
         } catch (err) {
             removeTyping();
@@ -158,15 +165,15 @@ Task: ${userText}`;
         }
     }
 
-    // --- SILENT IMAGE GENERATOR ---
-    async function generateSilentMathImage(aiResponseText) {
+    // --- IMAGE GENERATOR WITH ERROR HANDLING ---
+    async function generateMathImage(aiResponseText) {
         try {
             // Extract just the math part (ignore the explanation text so the image isn't cluttered)
             let mathTextOnly = aiResponseText.split("💡")[0].trim();
             // Slice it so the prompt doesn't overload the image generator
-            mathTextOnly = mathTextOnly.substring(0, 250);
+            mathTextOnly = mathTextOnly.substring(0, 200).replace(/\n/g, ' ');
 
-            const cfPrompt = `A top-down, highly realistic, well-lit photo of a piece of lined notebook paper resting on a desk. Written neatly on the lines in realistic blue pen handwriting is the math solution: "${mathTextOnly}".`;
+            const cfPrompt = `A high-quality, clear image of a piece of lined notebook paper. On the paper, written in neat, realistic blue ink handwriting, is the following math solution: "${mathTextOnly}". The text should be centered, legible, and realistic.`;
 
             const imgRes = await fetch("/api/cloudflare-image", {
                 method: "POST",
@@ -176,14 +183,20 @@ Task: ${userText}`;
 
             const imgData = await imgRes.json();
             
-            // If successful, append the image. If not, do absolutely nothing.
+            if (!imgRes.ok) throw new Error(imgData.error || "Cloudflare API Error");
+
             if (imgData.image || imgData.base64) {
                 const imgUrl = imgData.image || `data:image/png;base64,${imgData.base64}`;
                 appendMessage('ai', "📝 Handwritten preview:", imgUrl, true);
+            } else {
+                throw new Error("No image data returned.");
             }
         } catch (e) {
-            // SILENT FAIL: No UI errors shown.
-            console.log("Silent image generation skipped.");
+            // 1. Log to Console (Render)
+            console.error("🖼️ Image Generation Error:", e);
+            
+            // 2. Add small red text at the bottom
+            appendSmallError("⚠️ Image generation failed: " + e.message);
         }
     }
 
@@ -205,6 +218,15 @@ Task: ${userText}`;
         historyDiv.appendChild(msgDiv);
         
         if (window.MathJax) MathJax.typesetPromise([msgDiv]);
+        document.getElementById("mathScrollArea").scrollTop = 99999;
+    }
+
+    function appendSmallError(errorMsg) {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const errDiv = document.createElement("div");
+        errDiv.className = "img-error-msg";
+        errDiv.innerText = errorMsg;
+        historyDiv.appendChild(errDiv);
         document.getElementById("mathScrollArea").scrollTop = 99999;
     }
 
