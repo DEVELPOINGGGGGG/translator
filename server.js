@@ -167,19 +167,21 @@ async function handleGeminiVision(req, res) {
                 
                 return data.candidates[0].content.parts[0].text;
             
-            } else if (p.type === 'cloudflare') {
-                // FIXED CLOUDFLARE: Prompt/Image structure, Agree string, and Uint8Array binary format
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
+           } else if (p.type === 'cloudflare') {
+                // 🛑 FIXED: Switched to LLaVA model to bypass Meta's "agree" block completely
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/llava-hf/llava-1.5-7b-hf`, {
                     method: "POST",
                     headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        prompt: "agree " + userText,
+                        prompt: userText, // No more "agree " nonsense required
                         image: [...Uint8Array.from(atob(rawBase64), c => c.charCodeAt(0))]
                     })
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
-                return data.result.response;
+                
+                // LLaVA uses 'description' instead of 'response'
+                return data.result.description || data.result.response || "No text detected.";
 
             } else {
                 // FIXED GROQ: Stable 90b model + Agree string
