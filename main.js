@@ -554,7 +554,6 @@ async function retryRequest(lId, targetProvider) {
 }
 
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
-// 🛑 इस फ़ंक्शन को अपने main.js के executeMathFlow फ़ंक्शन से बदलें
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
@@ -569,20 +568,22 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // 🚀 STRICT FORMATTING PROMPT FOR GEMINI
+    // 🚀 UPDATED EXTRA DEEP INTELLECTUAL HINDI PROMPT
     const sysPrompt = `You are an expert math tutor. STRICT RULES:
 
-1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in Hindi. DO NOT use the math format. DO NOT write "प्रश्न:".
+1. NON-MATH/GREETINGS: If the user says "hi", "hello", or a casual greeting, reply normally in Hindi. DO NOT use the math format. DO NOT write "प्रश्न:".
 
-2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be in Hindi except numbers and math symbols:
+2. EXPLAIN REQUESTS: If the user explicitly asks to "explain this", "how did you get that", or "explain it" regarding a previous solution, provide a detailed, deep structural explanation strictly in Hindi that is between 10 to 15 lines long. DO NOT rewrite the full initial question setup block.
+
+3. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Everything must be in clean Hindi text using Devanagari script. Do not mix English descriptive headings like "labor profit" or "labor loss"—use pure functional Hindi translation terms. Numbers and standard formulas remain in system layout variables:
 
 प्रश्न: [Write the exact question here]
 
 SOLUTION:-
-[Step-by-step math solution using $ for math notation. Keep it direct.]
+[Step-by-step math solution using $ for math notation. Keep it direct and mathematically flawless.]
 
 EXPLANATION-
-[Keep this extremely short! Max 2 to 3 lines explaining the core concept in Hindi.]`;
+[Provide a comprehensive explanation between 10 to 15 lines detailing the underlying concepts, mathematical logic, and step transitions completely in Hindi.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
@@ -593,7 +594,6 @@ EXPLANATION-
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
         
-        // 🚀 UI LAYOUT ENGINE FOR MATH & PAPERS
         const loadingBubble = document.getElementById(lId);
         if (loadingBubble) {
             const bbl = loadingBubble.querySelector('.bubble');
@@ -609,19 +609,21 @@ EXPLANATION-
                     ${getRetryButtonsHtml(lId)}
                 </div>`;
 
-            // Display text solution first
             bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${resObj.provider}</div><div id="text_${lId}" style="margin-top:10px;">${cleanSol.replace(/\n/g, '<br>')}</div>${buttons}`;
             if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
             window.toggleChatButton(false);
 
-            // 🚀 RENDER THE DIGITAL PAPER ONLY IF IT IS A MATH SOLUTION
-            if (cleanSol.includes("SOLUTION:-")) {
+            // 🚀 DETECT IF MULTIPLE QUESTIONS ARE REQUESTED
+            const hasMultipleQuestions = (cleanSol.match(/Q\d+/g) || cleanSol.match(/प्रश्न\s?\d+/g) || []).length > 1;
+
+            // 🚀 ONLY RENDER A SINGLE DIGITAL PAPER PREVIEW IF IT IS NOT A MULTIPLE QUESTION PACK
+            if (cleanSol.includes("SOLUTION:-") && !hasMultipleQuestions) {
                 try {
                     let parts = cleanSol.split("SOLUTION:-")[1];
                     let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
 
                     if (mathTextOnly.length > 5) {
-                        // Clean LaTeX tags for Handwriting rendering
+                        // Strict parsing clean up
                         mathTextOnly = mathTextOnly.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
                             .replace(/\\sqrt\{([^}]+)\}/g, '√$1')
                             .replace(/\^\{([^}]+)\}/g, '^$1')
@@ -640,15 +642,15 @@ EXPLANATION-
                         historyDiv.insertAdjacentHTML('beforeend', `
                             <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out; width: 100%; display: flex;">
                                 <div class="bubble" style="display: flex; flex-direction: column; width: fit-content; max-width: 95%; box-sizing: border-box; padding-top: 20px;">
-                                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600;">📝 IMAGE OF SOLUTION----</p>
+                                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600;">... IMAGE OF SOLUTION----</p>
                                     <div class="digital-paper-container">
-                                        <div class="digital-paper">${mathTextOnly}</div>
+                                        <div class="digital-paper" style="font-family: 'Inter', -apple-system, sans-serif !important; font-weight: 500; font-size: 18px; color: #1e40af; letter-spacing: 0.3px;">${mathTextOnly}</div>
                                     </div>
                                 </div>
                             </div>
                         `);
                     }
-                } catch(err) { console.log("Paper render crashed", err); }
+                } catch(err) { console.log("Paper block generation bypassed", err); }
             }
         }
         clearMathImage();
