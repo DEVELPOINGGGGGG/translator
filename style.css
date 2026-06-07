@@ -1,20 +1,40 @@
 /* ================================================================================
-    M A S T E R   C S S  ( GEMINI ULTRA V4 - ZERO LAG EDITION )
+    M A S T E R   C S S  ( GEMINI ULTRA V4 - SMOOTH TOUCH MOBILE EDITION )
 ================================================================================ */
-/* FORCED SCROLL FIX */
-html, body {
-    overflow: hidden !important; /* Locks background so only chat scrolls */
-    overflow-x: hidden !important;
+/* 🚀 THE FIXED SCROLL ENGINE */
+html {
     height: 100%;
+    overflow: hidden;
 }
-.chat-container, .chat-history, .chat-scroll-area {
+
+body { 
+    background-color: var(--bg-base);
+    color: var(--text); 
+    height: 100%;
+    width: 100%;
+    position: fixed; /* Prevents the whole screen from dragging up and down */
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    background-image: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1), transparent 60%);
+}
+
+/* FORCED TOUCH SCROLLABLE CONTAINERS */
+.chat-container, 
+.chat-history, 
+.chat-scroll-area, 
+.page, 
+.hist-scroll-area {
     overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important; /* ⚡ Forces smooth native touch momentum on iPhones/Android */
     scroll-behavior: smooth !important;
-    overscroll-behavior: contain;
+    overscroll-behavior: contain !important; /* Stops the pull-to-refresh glitch from freezing the screen */
 }
+
 * { 
     margin: 0; padding: 0; box-sizing: border-box; 
-    /* Changed to a clean, highly readable, premium font */
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
     -webkit-tap-highlight-color: transparent; 
 }
@@ -35,30 +55,17 @@ html, body {
 /* ==========================================================================
    1. LIVING BLURRED GRADIENT BACKGROUND (GPU OPTIMIZED)
    ========================================================================== */
-body { 
-    background-color: var(--bg-base);
-    color: var(--text); 
-    height: 100vh; height: 100dvh; 
-    overflow: hidden; 
-    position: relative;
-    /* Static background orb (No animation = no lag) */
-    background-image: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1), transparent 60%);
-}
-
-/* 🛑 THE ZERO-LAG FIX: Removed "filter: blur()" and used Native Gradients & Hardware Acceleration */
 body::before, body::after {
     content: ''; position: absolute;
-    width: 60vw; height: 60vw; /* TWEAKED: Slightly smaller to reduce lag */
+    width: 60vw; height: 60vw;
     border-radius: 50%; 
-    z-index: -1; opacity: 0.4; /* TWEAKED: Slightly less opaque */
-    pointer-events: none; /* Stops it from lagging screen taps */
-    /* TWEAKED: Removed the floatGlow animation that was melting the GPU */
+    z-index: -1; opacity: 0.4;
+    pointer-events: none; 
     will-change: transform; 
 }
 
 body::before {
     top: -10%; left: -10%;
-    /* Soft gradient simulates blur natively without melting the processor */
     background: radial-gradient(circle at center, rgba(0, 242, 254, 0.2) 0%, transparent 60%);
 }
 
@@ -83,8 +90,8 @@ body::after {
    ========================================================================== */
 .topbar { 
     height: 70px; display: flex; align-items: center; padding: 0 20px; 
-    background: rgba(2, 6, 23, 0.85); /* TWEAKED: Solidified BG */
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); /* TWEAKED: Lowered blur */
+    background: rgba(2, 6, 23, 0.85);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
     border-bottom: 1px solid var(--glass-border); 
     position: fixed; top: 0; left: 0; right: 0; z-index: 100; 
 }
@@ -100,7 +107,7 @@ body::after {
 
 .apiTracker { 
     position: fixed; top: 70px; left: 0; right: 0; height: 35px; 
-    background: rgba(15, 23, 42, 0.9); /* TWEAKED: Solidified BG */
+    background: rgba(15, 23, 42, 0.9);
     z-index: 99; display: flex; justify-content: space-evenly; align-items: center; 
     font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--glass-border); 
 }
@@ -164,8 +171,8 @@ body::after {
     position: fixed !important; bottom: 0 !important; left: 0; right: 0;
     padding: 15px 20px; 
     padding-bottom: calc(35px + env(safe-area-inset-bottom)) !important; 
-    background: rgba(2, 6, 23, 0.95); /* TWEAKED: Solidified BG */
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); /* TWEAKED: Lowered blur */
+    background: rgba(2, 6, 23, 0.95);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
     border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999 !important; 
 }
 
@@ -237,56 +244,10 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 /* ==========================================================================
    6. SIDEBAR & MODALS
    ========================================================================== */
-/* ==========================================================================
-   6. SIDEBAR & MODALS
-   ========================================================================== */
-.sidebar { 
-    position: fixed; 
-    top: 0; 
-    left: -320px; 
-    width: 300px; 
-    height: 100%; 
-    background: rgba(2, 6, 23, 0.95); 
-    backdrop-filter: blur(20px); 
-    -webkit-backdrop-filter: blur(20px); 
-    z-index: 15001 !important; 
-    transition: 0.3s ease-in-out; 
-    padding-top: 110px; 
-    padding-bottom: 50px; /* Gives space at the bottom so the last link isn't cut off */
-    box-shadow: 15px 0 50px rgba(0,0,0,0.8); 
-    border-right: 1px solid var(--glass-border); 
-    
-    /* 🛑 THIS IS THE FIX: Allows the sidebar to scroll vertically */
-    overflow-y: auto; 
-    overflow-x: hidden;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iPhones */
-}
-
-/* Custom sleek scrollbar just for the sidebar */
-.sidebar::-webkit-scrollbar { width: 4px; }
-.sidebar::-webkit-scrollbar-thumb { background: rgba(192, 132, 252, 0.5); border-radius: 10px; }
-
+.sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 15001 !important; transition: 0.3s ease-in-out; padding-top: 110px; box-shadow: 15px 0 50px rgba(0,0,0,0.8); border-right: 1px solid var(--glass-border); }
 .sidebar.active { left: 0; }
-.sidebar button { 
-    width: 100%; 
-    background: none; 
-    border: none; 
-    color: var(--text); 
-    padding: 22px 30px; 
-    font-size: 16px; 
-    font-weight: 600; 
-    text-align: left; 
-    cursor: pointer; 
-    transition: 0.2s; 
-    border-left: 0px solid transparent; 
-}
-.sidebar button:hover { 
-    background: rgba(255,255,255,0.08); 
-    padding-left: 40px; 
-    border-left: 5px solid #c084fc; 
-    color: #e9d5ff; 
-}
+.sidebar button { width: 100%; background: none; border: none; color: var(--text); padding: 22px 30px; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; transition: 0.2s; border-left: 0px solid transparent; }
+.sidebar button:hover { background: rgba(255,255,255,0.08); padding-left: 40px; border-left: 5px solid #c084fc; color: #e9d5ff; }
 
 .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: none; z-index: 15000 !important; }
 .overlay.active { display: block; animation: fadeIn 0.3s; }
@@ -419,13 +380,15 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .cam-icon-btn:active { 
     transform: scale(0.9); 
 }
+
 @media(min-width: 768px) { .page { max-width: 850px; margin: auto; left: 50%; transform: translateX(-50%); } .topbar, .apiTracker { justify-content: center; gap: 50px; } }
+
 /* ==========================================================================
    7. FLOATING TTS AUDIO PLAYER (ZERO LAG GLASSMORPHISM)
    ========================================================================== */
 .tts-mini-player {
     position: fixed; 
-    top: 85px; /* Floats perfectly under the top navigation bar */
+    top: 85px; 
     left: 50%; 
     transform: translateX(-50%) translateY(-20px);
     opacity: 0; 
@@ -471,7 +434,6 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .tts-bar:nth-child(3) { height: 10px; animation-delay: 0.4s; }
 .tts-bar:nth-child(4) { height: 16px; animation-delay: 0.6s; }
 
-/* Pauses the animation when audio is paused */
 .tts-mini-player.paused .tts-bar { animation-play-state: paused; height: 6px !important; }
 
 @keyframes soundWave { 0% { height: 6px; } 100% { height: 20px; } }
@@ -489,12 +451,11 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 .typing-dot {
     width: 8px;
     height: 8px;
-    background: #c084fc; /* Glowing Purple */
+    background: #c084fc;
     border-radius: 50%;
     animation: typingDot 1.4s infinite ease-in-out both;
 }
 
-/* Delays to make them jump one after the other */
 .typing-dot:nth-child(1) { animation-delay: -0.32s; }
 .typing-dot:nth-child(2) { animation-delay: -0.16s; }
 .typing-dot:nth-child(3) { animation-delay: 0s; }
@@ -565,13 +526,11 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 }
 
 /* ============================================================================
-   10. EXTRA DECORATION + SAFE GLOBAL FONT SIZE CONTROLS & NEW FIXES
+   10. EXTRA DECORATION + SAFE GLOBAL FONT SIZE CONTROLS
    ============================================================================ */
-
-/* Creator output image size fix */
 .creator-output-img {
     max-width: 100%;
-    max-height: 40vh; /* Keeps the image compact */
+    max-height: 40vh;
     object-fit: contain;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -579,19 +538,10 @@ textarea.standard:focus, select:focus, input[type="text"]:focus { border-color: 
 
 :root {
     --app-font-scale: 1;
-    --neon-cyan: rgba(56, 189, 248, 0.55);
-    --neon-pink: rgba(244, 114, 182, 0.45);
-    --neon-purple: rgba(192, 132, 252, 0.55);
 }
 
-body {
-    isolation: isolate;
-}
-
-body::selection {
-    background: rgba(192, 132, 252, 0.45);
-    color: #ffffff;
-}
+body { isolation: isolate; }
+body::selection { background: rgba(192, 132, 252, 0.45); color: #ffffff; }
 
 .topbar::after {
     content: '';
@@ -624,22 +574,13 @@ body::selection {
     mask-image: radial-gradient(circle at 50% 10%, black, transparent 75%);
 }
 
-.card,
-.dash-card,
-.wordItem,
-.bubble,
-.outputBox,
-.meaningBox,
-.chat-input-wrapper,
-.sidebar,
-.infoModal .card {
+.card, .dash-card, .wordItem, .bubble, .outputBox, .meaningBox, .chat-input-wrapper, .sidebar, .infoModal .card {
     min-width: 0;
     overflow-wrap: anywhere;
     word-break: break-word;
 }
 
-.card::after,
-.dash-card::after {
+.card::after, .dash-card::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -653,11 +594,7 @@ body::selection {
     opacity: 0.75;
 }
 
-.card:hover,
-.wordItem:hover,
-.outputBox:focus-within,
-.chat-input-wrapper:focus-within {
-    /* TWEAKED: Replaced 3 complex shadows with 1 clean glow and a smooth lift */
+.card:hover, .wordItem:hover, .outputBox:focus-within, .chat-input-wrapper:focus-within {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(192, 132, 252, 0.2);
     transform: translateY(-2px); 
     transition: all 0.2s ease-out;
@@ -684,65 +621,24 @@ body::selection {
     50% { transform: translateY(-6px) rotate(2deg); }
 }
 
-textarea.standard,
-.chat-input-wrapper textarea,
-select,
-input[type="text"],
-input[type="file"],
-.outputBox,
-.meaningBox,
-.bubble,
-.wordTitle,
-.wordMeaning,
-.cardSub,
-.cardTitle,
-.btn,
-.sidebar button,
-.apiTracker,
-.font-size-panel {
+textarea.standard, .chat-input-wrapper textarea, select, input[type="text"], input[type="file"], .outputBox, .meaningBox, .bubble, .wordTitle, .wordMeaning, .cardSub, .cardTitle, .btn, .sidebar button, .apiTracker, .font-size-panel {
     font-size: clamp(0.82rem, calc(0.92rem * var(--app-font-scale)), 1.45rem);
 }
 
-.cardTitle,
-h1,
-h2,
-h3,
-.dash-title,
-.appTitle {
-    overflow-wrap: anywhere;
-    line-height: 1.2;
-}
-
+.cardTitle, h1, h2, h3, .dash-title, .appTitle { overflow-wrap: anywhere; line-height: 1.2; }
 h1 { font-size: clamp(1.45rem, calc(1.75rem * var(--app-font-scale)), 2.9rem) !important; }
 .cardTitle { font-size: clamp(1.05rem, calc(1.25rem * var(--app-font-scale)), 2rem); }
 .dash-icon { font-size: clamp(2.5rem, calc(3.125rem * var(--app-font-scale)), 4rem); }
 
-.bubble,
-.outputBox,
-.meaningBox,
-.hist-scroll-area,
-.card {
-    max-width: 100%;
-    overflow-x: auto;
-}
+.bubble, .outputBox, .meaningBox, .hist-scroll-area, .card { max-width: 100%; overflow-x: auto; }
+.bubble *, .outputBox *, .meaningBox *, .hist-scroll-area * { max-width: 100%; }
 
-.bubble *,
-.outputBox *,
-.meaningBox *,
-.hist-scroll-area * {
-    max-width: 100%;
-}
-
-.btn,
-.actionBtnSmall,
-.chat-action-btn,
-.font-size-toggle,
-.font-size-option {
+.btn, .actionBtnSmall, .chat-action-btn, .font-size-toggle, .font-size-option {
     white-space: normal;
     overflow-wrap: anywhere;
 }
 
-/* UPDATED FONT DOCK: Fixed to the top so it doesn't overlap the input */
+/* FONT DOCK */
 .font-size-dock {
     position: fixed;
     right: max(16px, env(safe-area-inset-right));
@@ -756,38 +652,22 @@ h1 { font-size: clamp(1.45rem, calc(1.75rem * var(--app-font-scale)), 2.9rem) !i
 }
 
 .font-size-toggle {
-    width: 58px;
-    height: 58px;
+    width: 58px; height: 58px;
     border: 1px solid rgba(255,255,255,0.22);
-    border-radius: 22px;
-    color: #ffffff;
-    cursor: pointer;
-    background:
-        radial-gradient(circle at 20% 20%, rgba(255,255,255,.35), transparent 25%),
-        linear-gradient(135deg, #06b6d4, #8b5cf6 52%, #ec4899);
-    box-shadow:
-        0 14px 35px rgba(0,0,0,.55),
-        0 0 26px rgba(192,132,252,.45);
-    display: grid;
-    place-items: center;
+    border-radius: 22px; color: #ffffff; cursor: pointer;
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,.35), transparent 25%), linear-gradient(135deg, #06b6d4, #8b5cf6 52%, #ec4899);
+    box-shadow: 0 14px 35px rgba(0,0,0,.55), 0 0 26px rgba(192,132,252,.45);
+    display: grid; place-items: center;
     transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
 }
 
-.font-size-toggle:hover,
-.font-size-dock.active .font-size-toggle {
+.font-size-toggle:hover, .font-size-dock.active .font-size-toggle {
     transform: translateY(-3px) scale(1.04);
     filter: brightness(1.08);
-    box-shadow:
-        0 18px 45px rgba(0,0,0,.62),
-        0 0 32px rgba(56,189,248,.45),
-        0 0 44px rgba(236,72,153,.32);
+    box-shadow: 0 18px 45px rgba(0,0,0,.62), 0 0 32px rgba(56,189,248,.45), 0 0 44px rgba(236,72,153,.32);
 }
 
-.font-size-icon {
-    font-weight: 900;
-    letter-spacing: -1px;
-    text-shadow: 0 2px 10px rgba(0,0,0,.45);
-}
+.font-size-icon { font-weight: 900; letter-spacing: -1px; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
 
 .font-size-panel {
     width: min(320px, calc(100vw - 32px));
@@ -795,200 +675,66 @@ h1 { font-size: clamp(1.45rem, calc(1.75rem * var(--app-font-scale)), 2.9rem) !i
     border: 1px solid rgba(255,255,255,.16);
     border-radius: 26px;
     background: rgba(2, 6, 23, 0.9);
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
     box-shadow: 0 20px 55px rgba(0,0,0,.65), 0 0 36px rgba(139,92,246,.22);
-    transform: translateY(-10px) scale(.96); /* Adjusted animation to drop down */
-    opacity: 0;
-    pointer-events: none;
-    transition: .22s ease;
+    transform: translateY(-10px) scale(.96); 
+    opacity: 0; pointer-events: none; transition: .22s ease;
 }
 
-.font-size-dock.active .font-size-panel {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.font-size-panel-title {
-    color: #e0f2fe;
-    font-weight: 900;
-    margin: 2px 4px 12px;
-    letter-spacing: .4px;
-}
-
-.font-size-options {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
-}
+.font-size-dock.active .font-size-panel { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+.font-size-panel-title { color: #e0f2fe; font-weight: 900; margin: 2px 4px 12px; letter-spacing: .4px; }
+.font-size-options { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 
 .font-size-option {
     border: 1px solid rgba(255,255,255,.12);
-    border-radius: 16px;
-    padding: 10px 6px;
-    color: #e2e8f0;
-    background: rgba(255,255,255,.06);
-    cursor: pointer;
-    font-weight: 800;
-    min-width: 0;
-    transition: .2s ease;
+    border-radius: 16px; padding: 10px 6px;
+    color: #e2e8f0; background: rgba(255,255,255,.06);
+    cursor: pointer; font-weight: 800; min-width: 0; transition: .2s ease;
 }
 
-.font-size-option:hover,
-.font-size-option.active {
-    color: #020617;
-    background: linear-gradient(135deg, #67e8f9, #c084fc, #f9a8d4);
-    border-color: transparent;
-    box-shadow: 0 8px 20px rgba(192,132,252,.25);
+.font-size-option:hover, .font-size-option.active {
+    color: #020617; background: linear-gradient(135deg, #67e8f9, #c084fc, #f9a8d4);
+    border-color: transparent; box-shadow: 0 8px 20px rgba(192,132,252,.25);
 }
 
 @media (max-width: 520px) {
-    .font-size-dock {
-        right: 12px;
-        top: 85px;
-        bottom: auto !important;
-    }
-    .chat-input-area + .font-size-dock,
-    body:has(.chat-input-area) .font-size-dock {
-        bottom: auto !important;
-    }
-    .font-size-toggle {
-        width: 52px;
-        height: 52px;
-        border-radius: 19px;
-    }
-    .font-size-options {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+    .font-size-dock { right: 12px; top: 85px; bottom: auto !important; }
+    .chat-input-area + .font-size-dock, body:has(.chat-input-area) .font-size-dock { bottom: auto !important; }
+    .font-size-toggle { width: 52px; height: 52px; border-radius: 19px; }
+    .font-size-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
 /* ==========================================================================
    11. MATH EQUATION HORIZONTAL SCROLL FIX
    ========================================================================== */
-/* 1. Stop the main text container from stretching the bubble */
 .bubble > div[id^="text_"], 
 .bubble > div[id^="search_"], 
 .bubble > div[id^="trans_"],
 .bubble > div[id^="qa_ans_"] {
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    box-sizing: border-box !important;
+    max-width: 100% !important; overflow-x: auto !important; box-sizing: border-box !important;
 }
 
-/* 2. Force MathJax blocks to be scrollable horizontally */
 mjx-container[display="true"] {
-    display: block !important;
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    display: block !important; max-width: 100% !important;
+    overflow-x: auto !important; overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
-    padding-bottom: 10px !important;
-    margin-bottom: 5px !important;
+    padding-bottom: 10px !important; margin-bottom: 5px !important;
 }
 
-/* 3. Give the equation a sleek, tiny scrollbar so it's easy to drag */
-mjx-container[display="true"]::-webkit-scrollbar,
-.bubble > div::-webkit-scrollbar {
-    height: 5px;
-}
-mjx-container[display="true"]::-webkit-scrollbar-thumb,
-.bubble > div::-webkit-scrollbar-thumb {
-    background: rgba(192, 132, 252, 0.4); /* Glowing purple scrollbar */
-    border-radius: 10px;
-}
+mjx-container[display="true"]::-webkit-scrollbar, .bubble > div::-webkit-scrollbar { height: 5px; }
+mjx-container[display="true"]::-webkit-scrollbar-thumb, .bubble > div::-webkit-scrollbar-thumb { background: rgba(192, 132, 252, 0.4); border-radius: 10px; }
+
 /* ==========================================================================
-   9. YOUTUBE CINEMA MODE
+   12. CANCEL BUTTON & YOUTUBE STYLING
    ========================================================================== */
-.yt-results-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 15px;
-}
+.yt-results-container { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+.yt-card { display: flex; gap: 15px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; align-items: center; }
+.yt-card:active { background: #1e293b; border-color: #ef4444; }
+.yt-thumbnail { width: 110px; height: 62px; border-radius: 8px; object-fit: cover; }
+.yt-info { flex: 1; display: flex; flex-direction: column; }
+.yt-title { font-size: 14px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.yt-meta { font-size: 11px; color: #94a3b8; font-weight: 600; }
 
-.yt-card {
-    display: flex;
-    gap: 15px;
-    background: #0f172a;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 10px;
-    align-items: center;
-}
-
-.yt-card:active {
-    background: #1e293b;
-    border-color: #ef4444;
-}
-
-.yt-thumbnail {
-    width: 110px;
-    height: 62px;
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-.yt-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.yt-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #f8fafc;
-    margin-bottom: 4px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.yt-meta {
-    font-size: 11px;
-    color: #94a3b8;
-    font-weight: 600;
-}
-
-.yt-cinema-overlay {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    z-index: 999999;
-    display: none;
-    flex-direction: column;
-}
-
-.yt-cinema-overlay.active {
-    display: flex;
-}
-
-.yt-cinema-header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    padding: 20px;
-    background: linear-gradient(180deg, rgba(0,0,0,0.9), transparent);
-    display: flex;
-    justify-content: flex-end;
-    z-index: 10;
-}
-
-.yt-iframe-container {
-    flex: 1;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.yt-iframe-container iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
-/* 🛑 CANCEL BUTTON STYLING */
 .chat-action-btn.cancel-mode {
     background: rgba(239, 68, 68, 0.9) !important;
     color: white !important;
