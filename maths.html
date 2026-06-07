@@ -276,6 +276,45 @@ Task: ${userText}`;
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 </script>
+    <script>
+    // This is the function that talks to the same Cloudflare model as create.js
+    async function generateMathImage(aiResponseText) {
+        try {
+            // Isolate math text and clean it for JSON
+            let mathTextOnly = aiResponseText.split("💡")[0].trim().substring(0, 150).replace(/[\"\\]/g, '');
+            const cfPrompt = `A high-quality photo of a piece of lined notebook paper. Written neatly on the lines in realistic blue ink handwriting is this text: "${mathTextOnly}". The text should be centered and legible.`;
+
+            const imgRes = await fetch("/api/cloudflare-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: cfPrompt })
+            });
+
+            const imgData = await imgRes.json();
+            if (!imgRes.ok) throw new Error(imgData.error || "Cloudflare API Error");
+
+            const imgUrl = imgData.image || `data:image/png;base64,${imgData.base64}`;
+            
+            // Append the image to the chat history
+            const historyDiv = document.getElementById("mathChatHistory");
+            historyDiv.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai">
+                    <div class="bubble">
+                        <p>📝 Handwritten preview:</p>
+                        <img src="${imgUrl}" class="handwritten-img" style="max-width: 100%; border-radius: 12px; margin-top: 10px;">
+                    </div>
+                </div>
+            `);
+            document.getElementById("mathScrollArea").scrollTop = 99999;
+
+        } catch (e) {
+            console.error("🖼️ Image Generation Error (Rendered in Maths):", e);
+            // Small red error message as requested
+            const historyDiv = document.getElementById("mathChatHistory");
+            historyDiv.insertAdjacentHTML('beforeend', `<div style="color: #ef4444; font-size: 11px; text-align: right; margin-right: 20px;">⚠️ Image failed: ${e.message}</div>`);
+        }
+    }
+</script>
 
 <script src="ui-controls.js" defer></script>
 <script src="main.js" defer></script>
