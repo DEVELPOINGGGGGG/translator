@@ -158,16 +158,26 @@ async function handleGeminiVision(req, res) {
                 return data.candidates[0].content.parts[0].text;
             
           } else if (p.type === 'cloudflare') {
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, { 
-                    method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ messages: [{ role: "user", content: [{ type: "text", text: userText }, { type: "image_url", image_url: { url: formattedBase64 } }] }] }) 
-                });
+                // Inside handleGeminiVision, in the Cloudflare block:
+const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, { 
+    method: "POST", 
+    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
+    body: JSON.stringify({ 
+        messages: [{ 
+            role: "user", 
+            content: [
+                { type: "text", text: "agree " + userText }, // 🚀 ADDED "agree " HERE
+                { type: "image_url", image_url: { url: formattedBase64 } }
+            ] 
+        }] 
+    }) 
+})
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed"); 
                 return data.result?.response || data.choices?.[0]?.message?.content || "No text detected.";
             
             } else {
-                let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-instruct", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
+                let response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{type: "text", text: userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) });
                 let data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Groq Vision failed"); 
                 if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Groq returned invalid format.");
