@@ -68,11 +68,12 @@
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
 </div>
-<div class="apiTracker">
-    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
-</div>
+    <div class="apiTracker">
+        <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
+        <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+        <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+        <div>📝 <span id="apiText" class="api-val text">0</span></div>
+    </div>
 
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
