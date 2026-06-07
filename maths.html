@@ -18,21 +18,20 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* Extra fix for MathJax rendering inside bubbles */
-        mjx-container {
-            padding: 5px 0 !important;
-            margin: 0 !important;
-        }
-        .typing-indicator {
-            display: flex; gap: 5px; padding: 10px;
-        }
-        .typing-indicator span {
-            width: 8px; height: 8px; background: #c084fc; border-radius: 50%;
-            animation: pulse 1s infinite alternate;
-        }
+        mjx-container { padding: 5px 0 !important; margin: 0 !important; }
+        .typing-indicator { display: flex; gap: 5px; padding: 10px; }
+        .typing-indicator span { width: 8px; height: 8px; background: #c084fc; border-radius: 50%; animation: pulse 1s infinite alternate; }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
+        
+        .handwritten-img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            margin-top: 10px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -51,8 +50,8 @@
 
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='maths.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
@@ -64,7 +63,7 @@
   <div class="chat-scroll-area" id="mathScrollArea">
     <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
         <h1 style="font-size: 24px;">🧮 Math Solver</h1>
-        <p style="font-size: 14px; opacity: 0.9;">Powered by Gemini Vision.</p>
+        <p style="font-size: 14px; opacity: 0.9;">Waterfall Engine (Gemini ➔ Cloudflare ➔ Groq)</p>
     </div>
     
     <div id="mathChatHistory"></div>
@@ -83,17 +82,14 @@
 
 <div id="cameraModal" class="cameraModal">
     <video id="cameraVideo" autoplay playsinline></video>
-    
     <div class="camera-top-bar">
         <button id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()">❌</button>
     </div>
-    
     <div class="cameraControls">
         <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
         <div id="capturePhotoBtn" class="cameraCircle" onclick="captureImage()"></div>
         <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
-    
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
@@ -103,173 +99,154 @@
     let videoStream = null;
     let usingFrontCamera = false;
 
-    // Handle Enter Key for submission
+    // Handle Enter Key
     document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            executeMathFlow();
-        }
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
     });
 
-    // --- SUBMISSION LOGIC ---
-    function executeMathFlow() {
+    async function executeMathFlow() {
         const inputEl = document.getElementById("mathInstructionInput");
         const userText = inputEl.value.trim();
         if (!userText && !currentMathImage) return;
 
-        appendMessage('user', userText || "Solve the questions in this image.", currentMathImage);
+        appendMessage('user', userText || "Solve this image.", currentMathImage);
         inputEl.value = "";
         mathConversationHistory.push(`User: ${userText}`);
 
-        // THE "EXAMINER" PROMPT - Strict Formatting Rules
-        const tutorPrompt = `You are an expert, direct math and science tutor. Follow these STRICT formatting rules:
-
-1. ABSOLUTELY NO GREETINGS: Do not say "Hi", "Sure", "Here is the solution", or "Let's solve this." Start immediately with the math.
-2. NON-MATH EXCEPTION: If the user just says "Hi" or a casual greeting with no math, reply normally and briefly.
-3. SINGLE QUESTION FORMAT:
-   - First line: Write the exact question at the top (e.g., "प्रश्न: [Question]").
-   - Next: Provide the math SOULTION FIRST step line by line WITHOUT EXPLANATION.
-   - Last: Add a "💡 Explanation:" section at the end. This explanation MUST be exactly 3 to 6 lines long, explaining the core concept and math concept.
-4. MULTIPLE QUESTIONS FORMAT (If the user gives multiple questions to solve):
-   - Format EACH question exactly like this:
-     Q[Number]. [Write the Question]
-     [Step-by-step solution]
-     💡 Explanation: [If it's a hard question, explain in 4 to 8 lines. If it's an easy/casual question, explain in 2 to 4 lines].
-   - Move immediately to the next question without any filler text.
-5. MATH NOTATION: Use $ for inline math and $$ for block math equations.
-6. EXPLANATION: If user says Explain the [question] or previous question it will explain the queestion EXPLANATION MUST BE 8-12 LINES.
-7. LANGUAGE: Respond in the exact language the user used (e.g., Hindi, English, or Hinglish).
-
-Current Task: ${userText || "Solve the image."}`;
+        // THE EXAMINER PROMPT
+        const tutorPrompt = `You are a direct math tutor. STRICT RULES:
+1. NO GREETINGS OR INTROS. Start immediately.
+2. For the question:
+   - First line: "प्रश्न: [Write the exact question here]"
+   - Middle: Step-by-step solution using $ for math notation.
+   - Last: "💡 Explanation:" followed by 4-8 lines for hard concepts, or 2-4 lines for easy concepts.
+3. If multiple questions, format them as Q1, Q2 sequentially following the same layout.
+4. Respond in the user's language.
+Task: ${userText}`;
 
         showTyping();
+
+        let endpoint = currentMathImage ? "/api/gemini-vision" : "/api/gemini-text";
+        let payload = { userPrompt: tutorPrompt };
+        if (currentMathImage) payload.imageBase64 = currentMathImage;
         
-        // FORCING GEMINI 2.5 FLASH ONLY
-        fetch("/api/gemini-text", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                userPrompt: tutorPrompt,
-                providerOverride: "gemini" 
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
+        // NOTE: No 'providerOverride' is used. 
+        // This allows your server.js to use the waterfall: Gemini -> Cloudflare -> Groq
+
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
             removeTyping();
+
             if (data.error) throw new Error(data.error);
+
+            // 1. Output the Text Solution
             appendMessage('ai', data.text);
             mathConversationHistory.push(`AI: ${data.text}`);
             clearMathImage();
-        })
-        .catch(err => {
+
+            // 2. Silently Generate the Handwritten Image via Cloudflare
+            generateSilentMathImage(data.text);
+
+        } catch (err) {
             removeTyping();
-            appendMessage('ai', "❌ Error: " + err.message);
-        });
+            appendMessage('ai', "❌ Math Solver Error: " + err.message);
+        }
+    }
+
+    // --- SILENT IMAGE GENERATOR ---
+    async function generateSilentMathImage(aiResponseText) {
+        try {
+            // Extract just the math part (ignore the explanation text so the image isn't cluttered)
+            let mathTextOnly = aiResponseText.split("💡")[0].trim();
+            // Slice it so the prompt doesn't overload the image generator
+            mathTextOnly = mathTextOnly.substring(0, 250);
+
+            const cfPrompt = `A top-down, highly realistic, well-lit photo of a piece of lined notebook paper resting on a desk. Written neatly on the lines in realistic blue pen handwriting is the math solution: "${mathTextOnly}".`;
+
+            const imgRes = await fetch("/api/cloudflare-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: cfPrompt })
+            });
+
+            const imgData = await imgRes.json();
+            
+            // If successful, append the image. If not, do absolutely nothing.
+            if (imgData.image || imgData.base64) {
+                const imgUrl = imgData.image || `data:image/png;base64,${imgData.base64}`;
+                appendMessage('ai', "📝 Handwritten preview:", imgUrl, true);
+            }
+        } catch (e) {
+            // SILENT FAIL: No UI errors shown.
+            console.log("Silent image generation skipped.");
+        }
     }
 
     // --- UI HELPERS ---
-    function appendMessage(role, text, imageUrl = null) {
+    function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
         const historyDiv = document.getElementById("mathChatHistory");
         const msgDiv = document.createElement("div");
         msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
         
         let contentHtml = `<div class="bubble">`;
         if (imageUrl) {
-            contentHtml += `<img src="${imageUrl}" class="bubble-img" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
+            let imgClass = isGeneratedImage ? "handwritten-img" : "bubble-img";
+            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${!isGeneratedImage ? 'max-width: 200px; border-radius: 10px; margin-bottom: 10px;' : ''}"><br>`;
         }
         
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        formattedText = formattedText.replace(/\n/g, '<br>');
-        
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
         contentHtml += `<div>${formattedText}</div></div>`;
         msgDiv.innerHTML = contentHtml;
         historyDiv.appendChild(msgDiv);
         
-        if (window.MathJax) {
-            MathJax.typesetPromise([msgDiv]).catch(err => console.log('MathJax error:', err));
-        }
-        
+        if (window.MathJax) MathJax.typesetPromise([msgDiv]);
         document.getElementById("mathScrollArea").scrollTop = 99999;
     }
 
     function showTyping() {
-        const historyDiv = document.getElementById("mathChatHistory");
-        const typingDiv = document.createElement("div");
-        typingDiv.id = "mathTyping";
-        typingDiv.className = "chat-msg chat-ai";
-        typingDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-        historyDiv.appendChild(typingDiv);
+        const div = document.createElement("div");
+        div.id = "mathTyping";
+        div.className = "chat-msg chat-ai";
+        div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+        document.getElementById("mathChatHistory").appendChild(div);
         document.getElementById("mathScrollArea").scrollTop = 99999;
     }
 
-    function removeTyping() {
-        const typingDiv = document.getElementById("mathTyping");
-        if (typingDiv) typingDiv.remove();
-    }
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
-    }
+    function removeTyping() { document.getElementById("mathTyping")?.remove(); }
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
 
     // --- CAMERA LOGIC ---
-    function openCamera() {
-        const modal = document.getElementById("cameraModal");
-        modal.classList.add("active");
-        startVideoStream();
-    }
-
-    function closeCamera() {
-        const modal = document.getElementById("cameraModal");
-        modal.classList.remove("active");
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-        }
-    }
-
+    function openCamera() { document.getElementById("cameraModal").classList.add("active"); startVideoStream(); }
+    function closeCamera() { document.getElementById("cameraModal").classList.remove("active"); if (videoStream) videoStream.getTracks().forEach(t => t.stop()); }
+    
     async function startVideoStream() {
-        const video = document.getElementById("cameraVideo");
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-        }
+        if (videoStream) videoStream.getTracks().forEach(t => t.stop());
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: usingFrontCamera ? "user" : "environment" }
-            });
-            video.srcObject = videoStream;
-        } catch (err) {
-            alert("Camera access denied or unavailable.");
-            closeCamera();
-        }
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: usingFrontCamera ? "user" : "environment" } });
+            document.getElementById("cameraVideo").srcObject = videoStream;
+        } catch (err) { alert("Camera Error"); closeCamera(); }
     }
 
-    function switchCamera() {
-        usingFrontCamera = !usingFrontCamera;
-        startVideoStream();
-    }
+    function switchCamera() { usingFrontCamera = !usingFrontCamera; startVideoStream(); }
 
     function captureImage() {
         const video = document.getElementById("cameraVideo");
         const canvas = document.getElementById("captureCanvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
         currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
-        
         const chip = document.getElementById("mathPreviewChip");
         chip.style.backgroundImage = `url(${currentMathImage})`;
         chip.style.display = "block";
-        
         closeCamera();
     }
 
-    function clearMathImage() {
-        currentMathImage = null;
-        document.getElementById("mathPreviewChip").style.display = "none";
-    }
+    function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 </script>
 
 <script src="ui-controls.js" defer></script>
