@@ -16,6 +16,16 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Essential Modal Styling Just in case it's missing in style.css */
+        .infoModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .infoModal .card { background: #1e293b; width: 90%; max-width: 600px; padding: 20px; border-radius: 12px; max-height: 85vh; display: flex; flex-direction: column; }
+        .hist-scroll-area { overflow-y: auto; flex-grow: 1; margin: 15px 0; padding-right: 5px; }
+        .outputBox { background: #0f172a; padding: 15px; border-radius: 8px; color: #e2e8f0; font-size: 15px; border: 1px solid #334155; margin-top: 8px; white-space: pre-wrap;}
+        .closeBtn { background: transparent; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }
+        .closeBtn:hover { color: #fff; }
+    </style>
 </head>
 <body>
 
@@ -25,17 +35,11 @@
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
 </div>
+
 <div class="apiTracker">
     <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
     <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
     <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
-</div>
-
-<div id="ttsPlayer">
-  <div class="ttsIndicator">🔊 Reading</div>
-  <button class="ttsBtn" id="ttsPlayBtn">⏸️</button>
-  <button class="ttsBtn" id="ttsStopBtn">⏹️</button>
-  <button class="ttsBtn" id="ttsCloseBtn">✖️</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -53,36 +57,144 @@
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <div class="cardTitle" style="font-size: 22px; margin-bottom: 0;">🕒 Saved History</div>
-      <button class="btn red" style="width: auto; padding: 8px 15px; margin-top: 0; font-size: 13px;" onclick="clearAllHistory()">🗑️ Clear All</button>
+      <button class="btn red" style="width: auto; padding: 8px 15px; margin-top: 0; font-size: 13px; background: #ef4444; color: white; border:none; border-radius: 6px; cursor:pointer;" onclick="clearAllHistory()">🗑️ Clear All</button>
     </div>
     
-    <div id="historyList" style="margin-top: 15px;"></div>
+    <div id="historyList" style="margin-top: 20px;"></div>
   </div>
 </div>
 
 <div class="infoModal" id="historyModal">
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0;">Title</div>
-      <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0;">✕</button>
+      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0; font-weight: bold;">Title</div>
+      <button class="closeBtn" onclick="closeHistory()">✕</button>
     </div>
+    
     <div class="hist-scroll-area">
-        <div class="cardSub" style="margin-top: 5px;">Original Request:</div>
+        <div class="cardSub" style="color: #94a3b8; font-size: 14px; font-weight: 600;">Original Request:</div>
         <div class="outputBox" id="histQuestion"></div>
-        <div class="cardSub" style="margin-top: 15px;">Solution:</div>
-        <div class="outputBox" id="histAnswer"></div>
+        
+        <div class="cardSub" style="color: #94a3b8; font-size: 14px; font-weight: 600; margin-top: 15px;">Solution:</div>
+        <div class="outputBox" id="histAnswer" style="font-family: 'Inter', sans-serif; font-size: 17px; color: #60a5fa;"></div>
     </div>
-    <div class="hist-footer">
-        <div class="btn-group" style="margin-top: 0;">
-            <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button>
-            <button class="btn blue" onclick="downloadHistoryFile()">💾 Download Text</button>
-        </div>
+    
+    <div class="hist-footer" style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn green" style="background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1;" onclick="speakText('histAnswer')">🔊 Speak</button>
+        <button class="btn blue" style="background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1;" onclick="downloadHistoryFile()">💾 Download Text</button>
     </div>
   </div>
 </div>
 
-<script src="ui-controls.js" defer></script>
-<script src="main.js" defer></script>
+<script>
+    // 1. Sidebar Toggle
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar.style.transform === 'translateX(0px)') {
+            sidebar.style.transform = 'translateX(-100%)';
+        } else {
+            sidebar.style.transform = 'translateX(0px)';
+        }
+    }
+
+    // 2. Load History from Local Storage
+    function loadHistory() {
+        const historyList = document.getElementById("historyList");
+        
+        // Fetch data (Modify 'ai_pro_history' if you use a different key in your other apps)
+        let savedHistory = JSON.parse(localStorage.getItem("ai_pro_history")) || [];
+        
+        // Fallback dummy data for testing UI if localStorage is empty
+        if (savedHistory.length === 0) {
+            historyList.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 30px;">
+                <p>No history saved yet.</p>
+                <p style="font-size: 13px; margin-top: 5px;">Your math solutions and searches will appear here.</p>
+            </div>`;
+            return;
+        }
+
+        historyList.innerHTML = "";
+        
+        savedHistory.reverse().forEach((item, index) => {
+            // Clean up strings to pass safely into onclick functions
+            const safeTitle = (item.title || "History Item").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const safeQ = encodeURIComponent(item.question || "");
+            const safeA = encodeURIComponent(item.answer || "");
+            
+            historyList.insertAdjacentHTML('beforeend', `
+                <div style="background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155;">
+                    <div>
+                        <div style="font-weight: 600; color: #e2e8f0; font-size: 16px;">${safeTitle}</div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${item.date || new Date().toLocaleDateString()}</div>
+                    </div>
+                    <button style="background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;" 
+                            onclick="viewHistoryItem('${safeTitle}', decodeURIComponent('${safeQ}'), decodeURIComponent('${safeA}'))">
+                        View
+                    </button>
+                </div>
+            `);
+        });
+    }
+
+    // 3. Modal Controls
+    window.viewHistoryItem = function(title, question, answer) {
+        document.getElementById("histTitle").innerText = title;
+        document.getElementById("histQuestion").innerHTML = question.replace(/\n/g, '<br>');
+        document.getElementById("histAnswer").innerHTML = answer.replace(/\n/g, '<br>');
+        
+        document.getElementById("historyModal").style.display = "flex";
+        
+        // Force MathJax to render LaTeX fractions properly
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('histAnswer')]).catch(err => console.log('MathJax Error:', err));
+        }
+    };
+
+    window.closeHistory = function() {
+        document.getElementById("historyModal").style.display = "none";
+    };
+
+    // 4. Clear History
+    window.clearAllHistory = function() {
+        if(confirm("Are you sure you want to delete all saved history? This cannot be undone.")) {
+            localStorage.removeItem("ai_pro_history");
+            loadHistory();
+        }
+    };
+
+    // 5. Utility: Download Text
+    window.downloadHistoryFile = function() {
+        const title = document.getElementById("histTitle").innerText;
+        const q = document.getElementById("histQuestion").innerText;
+        const a = document.getElementById("histAnswer").innerText;
+        
+        const fileContent = `--- ${title} ---\n\nQUESTION:\n${q}\n\nSOLUTION:\n${a}\n\nGenerated by AI Pro Suite`;
+        const blob = new Blob([fileContent], { type: 'text/plain' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+        link.click();
+    };
+
+    // 6. Utility: Text To Speech
+    window.speakText = function(elementId) {
+        const textToRead = document.getElementById(elementId).innerText;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // Stop anything currently reading
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'hi-IN'; // Defaulting to Hindi based on your app's main use
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("Sorry, your browser does not support Text-to-Speech.");
+        }
+    };
+
+    // Initialize list when page loads
+    window.onload = function() {
+        loadHistory();
+    };
+</script>
 
 </body>
 </html>
