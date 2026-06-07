@@ -128,7 +128,7 @@ async function handleGeminiText(req, res) {
         return sendJson(res, 200, resultObj);
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
-==================================
+//==================================
 // VISION ENDPOINT
 // ==========================================
 async function handleGeminiVision(req, res) {
