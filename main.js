@@ -603,12 +603,17 @@ async function executeMathFlow() {
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
     try {
-        let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
+       let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
         updateAiBubble(lId, cleanSol, resObj.provider, true);
         clearMathImage();
+        
+        // 🚀 ADD THIS LINE TO TRIGGER IMAGE GENERATION
+        if (typeof generateMathImage === 'function') {
+            generateMathImage(cleanSol);
+        }
     } catch(e) { 
         window.toggleChatButton(false);
         const el = document.getElementById(lId); 
