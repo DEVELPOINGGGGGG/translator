@@ -17,8 +17,9 @@
 
     <link rel="stylesheet" href="style.css">
 
+    <script src="ui-controls.js" defer></script>
+
     <style>
-        /* Essential Modal Styling */
         .infoModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
         .infoModal .card { background: #1e293b; width: 90%; max-width: 600px; padding: 20px; border-radius: 12px; max-height: 85vh; display: flex; flex-direction: column; }
         .hist-scroll-area { overflow-y: auto; flex-grow: 1; margin: 15px 0; padding-right: 5px; }
@@ -86,64 +87,90 @@
   </div>
 </div>
 
-<script src="ui-controls.js" defer></script>
-
 <script>
     // 1. Sidebar Toggle
-    function toggleSidebar() {
+    window.toggleSidebar = function() {
         const sidebar = document.getElementById('sidebar');
         if (sidebar.style.transform === 'translateX(0px)') {
             sidebar.style.transform = 'translateX(-100%)';
         } else {
             sidebar.style.transform = 'translateX(0px)';
         }
-    }
+    };
 
-    // 2. Load History from Local Storage
-    function loadHistory() {
+    // 2. Load History from Local Storage (BULLETPROOF METHOD)
+    window.loadHistory = function() {
         const historyList = document.getElementById("historyList");
+        if (!historyList) return;
         
-        // 🚀 FETCHING USING YOUR EXACT KEY FROM THE CONSOLE: "aiHistory"
-        let savedHistory = JSON.parse(localStorage.getItem("aiHistory")) || [];
+        let savedHistory = [];
+        try {
+            // Using your exact key from the console
+            savedHistory = JSON.parse(localStorage.getItem("aiHistory")) || [];
+        } catch(e) {
+            console.error("Failed to parse localStorage:", e);
+        }
+        
+        // Clear loading state
+        historyList.innerHTML = "";
         
         if (savedHistory.length === 0) {
-            historyList.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 30px;">
-                <p>No history saved yet.</p>
-                <p style="font-size: 13px; margin-top: 5px;">Your math solutions and searches will appear here.</p>
-            </div>`;
+            historyList.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 30px;"><p>No history saved yet.</p><p style="font-size: 13px; margin-top: 5px;">Your math solutions and searches will appear here.</p></div>';
             return;
         }
 
-        historyList.innerHTML = "";
-        
-        savedHistory.reverse().forEach((item, index) => {
-            const safeTitle = (item.title || "History Item").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-            const safeQ = encodeURIComponent(item.question || "");
-            const safeA = encodeURIComponent(item.answer || "");
+        // Build list backwards (newest first) using safe DOM Elements instead of raw HTML strings
+        for (let i = savedHistory.length - 1; i >= 0; i--) {
+            const item = savedHistory[i];
             
-            historyList.insertAdjacentHTML('beforeend', `
-                <div style="background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155;">
-                    <div>
-                        <div style="font-weight: 600; color: #e2e8f0; font-size: 16px;">${safeTitle}</div>
-                        <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${item.date || new Date().toLocaleDateString()}</div>
-                    </div>
-                    <button style="background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;" 
-                            onclick="viewHistoryItem('${safeTitle}', decodeURIComponent('${safeQ}'), decodeURIComponent('${safeA}'))">
-                        View
-                    </button>
-                </div>
-            `);
-        });
-    }
+            // Create container div
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = "background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155;";
+            
+            // Create text container
+            const textDiv = document.createElement('div');
+            
+            // Create title
+            const titleEl = document.createElement('div');
+            titleEl.style.cssText = "font-weight: 600; color: #e2e8f0; font-size: 16px;";
+            titleEl.textContent = item.title || "History Item";
+            
+            // Create date
+            const dateEl = document.createElement('div');
+            dateEl.style.cssText = "font-size: 12px; color: #94a3b8; margin-top: 4px;";
+            dateEl.textContent = item.date || new Date().toLocaleDateString();
+            
+            textDiv.appendChild(titleEl);
+            textDiv.appendChild(dateEl);
+            
+            // Create button
+            const viewBtn = document.createElement('button');
+            viewBtn.style.cssText = "background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;";
+            viewBtn.textContent = "View";
+            
+            // 🛑 THE FIX: Attach click listener directly. No string parsing, no quote escaping.
+            viewBtn.onclick = function() {
+                viewHistoryItem(item.title || "History Item", item.question || "", item.answer || "");
+            };
+            
+            itemDiv.appendChild(textDiv);
+            itemDiv.appendChild(viewBtn);
+            
+            historyList.appendChild(itemDiv);
+        }
+    };
 
     // 3. Modal Controls
     window.viewHistoryItem = function(title, question, answer) {
+        // Set text safely
         document.getElementById("histTitle").innerText = title;
         document.getElementById("histQuestion").innerHTML = question.replace(/\n/g, '<br>');
         document.getElementById("histAnswer").innerHTML = answer.replace(/\n/g, '<br>');
         
+        // Show modal
         document.getElementById("historyModal").style.display = "flex";
         
+        // Render MathJax
         if (window.MathJax) {
             MathJax.typesetPromise([document.getElementById('histAnswer')]).catch(err => console.log('MathJax Error:', err));
         }
@@ -156,7 +183,6 @@
     // 4. Clear History
     window.clearAllHistory = function() {
         if(confirm("Are you sure you want to delete all saved history? This cannot be undone.")) {
-            // 🚀 CLEARING YOUR EXACT KEY: "aiHistory"
             localStorage.removeItem("aiHistory");
             loadHistory();
         }
@@ -168,7 +194,7 @@
         const q = document.getElementById("histQuestion").innerText;
         const a = document.getElementById("histAnswer").innerText;
         
-        const fileContent = \`--- \${title} ---\\n\\nQUESTION:\\n\${q}\\n\\nSOLUTION:\\n\${a}\\n\\nGenerated by AI Pro Suite\`;
+        const fileContent = "--- " + title + " ---\n\nQUESTION:\n" + q + "\n\nSOLUTION:\n" + a + "\n\nGenerated by AI Pro Suite";
         const blob = new Blob([fileContent], { type: 'text/plain' });
         
         const link = document.createElement('a');
