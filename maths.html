@@ -33,7 +33,6 @@
             border: 2px solid rgba(255,255,255,0.1);
         }
 
-        /* HARD VISUAL INDICATORS FOR IMAGE STATUS */
         .img-status-msg {
             padding: 10px 15px;
             border-radius: 8px;
@@ -121,7 +120,6 @@
     let videoStream = null;
     let usingFrontCamera = false;
 
-    // Handle Enter Key
     document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
     });
@@ -135,7 +133,6 @@
         inputEl.value = "";
         mathConversationHistory.push(`User: ${userText}`);
 
-        // THE EXAMINER PROMPT
         const tutorPrompt = `You are a direct math tutor. STRICT RULES:
 1. NO GREETINGS OR INTROS. Start immediately.
 2. For the question:
@@ -163,12 +160,11 @@ Task: ${userText}`;
 
             if (data.error) throw new Error(data.error);
 
-            // 1. Output the Text Solution
             appendMessage('ai', data.text);
             mathConversationHistory.push(`AI: ${data.text}`);
             clearMathImage();
 
-            // 2. Immediately Generate the Handwritten Image
+            // Fire photo rendering instantly
             generateMathImage(data.text);
 
         } catch (err) {
@@ -177,62 +173,55 @@ Task: ${userText}`;
         }
     }
 
-    // --- BULLETPROOF IMAGE GENERATOR ---
     async function generateMathImage(aiResponseText) {
         const historyDiv = document.getElementById("mathChatHistory");
         const loadingId = "load-" + Date.now();
         
         try {
-            // 1. Show loud visual loading indicator
             const loadingDiv = document.createElement("div");
             loadingDiv.id = loadingId;
             loadingDiv.className = "img-status-msg loading";
-            loadingDiv.innerText = "⏳ Requesting Cloudflare to draw handwritten notes...";
+            loadingDiv.innerText = "⏳ Rendering handwritten paper note...";
             historyDiv.appendChild(loadingDiv);
             document.getElementById("mathScrollArea").scrollTop = 99999;
 
-            // 2. EXTREME SANITIZATION: Strip all weird characters that break JSON
+            // ISOLATE THE MATH TEXT ONLY & STRIP COMPLEX SYMBOLS
             let mathTextOnly = aiResponseText.split("💡")[0].trim();
-            // Remove double quotes, backslashes, and newlines that crash JSON.stringify
-            mathTextOnly = mathTextOnly.replace(/["\\\n\r]/g, ' '); 
-            mathTextOnly = mathTextOnly.substring(0, 150); // Keep it short for the image AI
+            
+            // Clean up backslashes, math tags, dollar signs, and quotes completely
+            mathTextOnly = mathTextOnly.replace(/[\$\#\*\"\'\\\[\]\\{\}]/g, ' ');
+            mathTextOnly = mathTextOnly.replace(/\s+/g, ' '); // Clean double spacing
+            mathTextOnly = mathTextOnly.substring(0, 120); // Keep it crisp for Flux
 
-            const cfPrompt = `A high-quality photo of lined notebook paper. Written neatly on the lines in blue pen: ${mathTextOnly}.`;
+            const cleanPrompt = `A flat lay photograph of a clean page of lined notebook school paper. Written directly on the lines in a natural, messy blue ink handwriting is this text: ${mathTextOnly}. Clear, sharp focus, real paper texture.`;
 
             const imgRes = await fetch("/api/cloudflare-image", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: cfPrompt })
+                body: JSON.stringify({ prompt: cleanPrompt }) // Matches backend body expectations
             });
 
             const imgData = await imgRes.json();
-            
-            // Remove the loading indicator
             document.getElementById(loadingId)?.remove();
 
-            if (!imgRes.ok) throw new Error(imgData.error || "Cloudflare rejected the request.");
-            if (!imgData.image && !imgData.base64) throw new Error("Cloudflare returned an empty image payload.");
+            if (!imgRes.ok) throw new Error(imgData.error || "Cloudflare API Error");
+            if (!imgData.image && !imgData.base64) throw new Error("No artwork data returned.");
 
             const imgUrl = imgData.image || `data:image/png;base64,${imgData.base64}`;
-            appendMessage('ai', "📝 Handwritten preview:", imgUrl, true);
+            appendMessage('ai', "📝 Clean Handwritten Note Sheet:", imgUrl, true);
             
         } catch (e) {
-            // Ensure loading indicator is removed if it crashed hard
             document.getElementById(loadingId)?.remove();
+            console.error("Image Failed:", e);
             
-            // Log to console for Render logs
-            console.error("🖼️ Image Generation Error:", e);
-            
-            // Add loud red error box to UI
             const errDiv = document.createElement("div");
             errDiv.className = "img-status-msg error";
-            errDiv.innerText = "⚠️ Image Failed: " + e.message;
+            errDiv.innerText = "⚠️ Image Render Failed: " + e.message;
             historyDiv.appendChild(errDiv);
             document.getElementById("mathScrollArea").scrollTop = 99999;
         }
     }
 
-    // --- UI HELPERS ---
     function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
         const historyDiv = document.getElementById("mathChatHistory");
         const msgDiv = document.createElement("div");
@@ -264,8 +253,6 @@ Task: ${userText}`;
 
     function removeTyping() { document.getElementById("mathTyping")?.remove(); }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
-
-    // --- CAMERA LOGIC ---
     function openCamera() { document.getElementById("cameraModal").classList.add("active"); startVideoStream(); }
     function closeCamera() { document.getElementById("cameraModal").classList.remove("active"); if (videoStream) videoStream.getTracks().forEach(t => t.stop()); }
     
@@ -276,21 +263,17 @@ Task: ${userText}`;
             document.getElementById("cameraVideo").srcObject = videoStream;
         } catch (err) { alert("Camera Error"); closeCamera(); }
     }
-
     function switchCamera() { usingFrontCamera = !usingFrontCamera; startVideoStream(); }
-
     function captureImage() {
         const video = document.getElementById("cameraVideo");
         const canvas = document.getElementById("captureCanvas");
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
         currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
-        const chip = document.getElementById("mathPreviewChip");
-        chip.style.backgroundImage = `url(${currentMathImage})`;
-        chip.style.display = "block";
+        document.getElementById("mathPreviewChip").style.backgroundImage = `url(${currentMathImage})`;
+        document.getElementById("mathPreviewChip").style.display = "block";
         closeCamera();
     }
-
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 </script>
 
