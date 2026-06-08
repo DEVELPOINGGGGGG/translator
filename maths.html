@@ -290,55 +290,40 @@ function generateMathPaper(aiResponseText) {
         closeCamera();
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
-    // ==========================================
-// 📤 SHARE CHAT HISTORY ENGINE
+// ==========================================
+// 🔗 SHARE CHAT HISTORY (URL MODE)
 // ==========================================
 async function shareChatHistory() {
-    const historyDiv = document.getElementById("mathChatHistory");
-    if (!historyDiv) return;
+    // 1. Grab the current active session ID from your main.js cache
+    const sessionId = window.sessionCache ? window.sessionCache['math'] : null;
 
-    // 1. Gather all chat bubbles
-    const messages = historyDiv.querySelectorAll('.chat-msg');
-    
-    if (messages.length === 0) {
-        alert("No chat history to share yet!");
+    if (!sessionId) {
+        alert("⚠️ No active session to share yet! Please ask a math question first.");
         return;
     }
 
-    // 2. Format the chat into clean text
-    let chatText = "📚 My Math Study Session:\n\n";
-
-    messages.forEach(msg => {
-        const isUser = msg.classList.contains('chat-user');
-        // Clean up the text by removing the "IMAGE OF SOLUTION" label for text sharing
-        let text = msg.innerText.replace("📝 IMAGE OF SOLUTION----", "").trim();
-        
-        if (isUser) {
-            chatText += `👤 Me: ${text}\n`;
-        } else {
-            chatText += `🤖 Tutor:\n${text}\n\n`;
-            chatText += `-----------------------------------\n\n`;
-        }
-    });
+    // 2. Build the exact restore URL
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?restore=${sessionId}`;
 
     // 3. Trigger Native Share or Fallback to Clipboard
     if (navigator.share) {
         try {
             await navigator.share({
-                title: 'Math Solution Chat',
-                text: chatText,
+                title: 'Math Solution Session',
+                text: 'Check out this math solution session!',
+                url: shareUrl,
             });
-            console.log('Shared successfully');
         } catch (err) {
             console.log('User cancelled share or error:', err);
         }
     } else {
-        // Fallback for browsers that don't support Web Share API (like older desktop Chrome)
+        // Fallback for desktop browsers
         try {
-            await navigator.clipboard.writeText(chatText);
-            alert("✅ Entire chat copied to clipboard! You can paste it in WhatsApp or Discord.");
+            await navigator.clipboard.writeText(shareUrl);
+            alert("✅ URL copied to clipboard!\n\n(Note: Because your app uses Local Storage, this link will currently only load the session on this exact browser/device).");
         } catch (err) {
-            alert("❌ Failed to copy chat.");
+            alert("❌ Failed to copy link.");
             console.error(err);
         }
     }
