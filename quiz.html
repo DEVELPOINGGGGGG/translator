@@ -513,14 +513,28 @@
         saveQuizToHistory(finalTopicStr, grade, correctCount, total, reviewHtml);
     }
 
-    function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
-        try {
-            let history = JSON.parse(localStorage.getItem('aiHistory') || '[]');
-            let sessionId = Date.now();
-            let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
-            history.unshift({ id: sessionId, type: 'quiz', title: `${subject} Quiz (${correct}/${total})`, interactions: [{ question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer, provider: "AI Quiz Engine" }], provider: "AI Quiz Engine", question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer });
-            localStorage.setItem('aiHistory', JSON.stringify(history));
-        } catch(e) { console.error("Failed to save history", e); }
+   function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
+        let sessionId = Date.now();
+        let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
+        
+        let histItem = { 
+            id: sessionId, 
+            type: 'quiz', 
+            title: `${subject} Quiz (${correct}/${total})`, 
+            interactions: [{ question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer, provider: "AI Quiz Engine" }], 
+            provider: "AI Quiz Engine", 
+            question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, 
+            answer: formattedAnswer 
+        };
+
+        // Save using the new Massive Vault
+        localforage.getItem('aiHistory').then(function(history) {
+            history = history || [];
+            history.unshift(histItem);
+            localforage.setItem('aiHistory', history);
+        }).catch(function(err) {
+            console.error("Failed to save quiz history", err);
+        });
     }
 
     function downloadPDF() {
