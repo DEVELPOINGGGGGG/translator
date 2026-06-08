@@ -16,134 +16,37 @@
     
     <script>
         MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            tex: { 
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']] 
+            },
             startup: { typeset: false } 
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        .quiz-page-container {
-            width: 100% !important;
-            max-width: 600px !important;
-            margin: 70px auto 0 auto !important; 
-            display: flex !important;
-            flex-direction: column !important;
-            padding: 30px 20px 150px 20px !important;
-        }
-
-        .quiz-card {
-            width: 100% !important;
-            flex-shrink: 0 !important;
-        }
-
-        .quiz-setup, .quiz-active, .quiz-results {
-            display: none !important;
-            animation: fadeIn 0.4s ease;
-        }
-        .quiz-setup.active, .quiz-active.active, .quiz-results.active {
-            display: flex !important;
-            flex-direction: column !important;
-        }
-        
+        .quiz-page-container { width: 100% !important; max-width: 600px !important; margin: 70px auto 0 auto !important; display: flex !important; flex-direction: column !important; padding: 30px 20px 150px 20px !important; }
+        .quiz-card { width: 100% !important; flex-shrink: 0 !important; }
+        .quiz-setup, .quiz-active, .quiz-results { display: none !important; animation: fadeIn 0.4s ease; }
+        .quiz-setup.active, .quiz-active.active, .quiz-results.active { display: flex !important; flex-direction: column !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .quiz-btn {
-            background: linear-gradient(135deg, #a855f7, #7e22ce);
-            color: white;
-            padding: 16px;
-            border-radius: 30px;
-            font-size: 18px;
-            font-weight: 800;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(168,85,247,0.4);
-            margin-top: 25px;
-            transition: 0.2s;
-            text-align: center;
-        }
+        .quiz-btn { background: linear-gradient(135deg, #a855f7, #7e22ce); color: white; padding: 16px; border-radius: 30px; font-size: 18px; font-weight: 800; width: 100%; border: none; cursor: pointer; box-shadow: 0 10px 30px rgba(168,85,247,0.4); margin-top: 25px; transition: 0.2s; text-align: center; }
         .quiz-btn:active { transform: scale(0.97); }
-
-        input[type="number"].standard, select.standard {
-            width: 100%;
-            padding: 15px 20px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #f8fafc;
-            border-radius: 12px;
-            outline: none;
-            font-size: 15px;
-            box-sizing: border-box;
-            appearance: none;
-        }
-        input[type="number"].standard:focus, select.standard:focus {
-            border-color: #c084fc;
-            background: rgba(15, 23, 42, 0.9);
-        }
-
-        .option-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            color: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 16px;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 10px;
-            word-wrap: break-word; 
-        }
+        input[type="number"].standard, select.standard { width: 100%; padding: 15px 20px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; border-radius: 12px; outline: none; font-size: 15px; box-sizing: border-box; appearance: none; }
+        input[type="number"].standard:focus, select.standard:focus { border-color: #c084fc; background: rgba(15, 23, 42, 0.9); }
+        .option-btn { background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: left; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; word-wrap: break-word; }
         .option-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #38bdf8; }
-        .option-btn.selected {
-            background: rgba(56, 189, 248, 0.2) !important;
-            border-color: #38bdf8 !important;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important;
-        }
-
-        .stat-box {
-            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-            padding: 20px; border-radius: 15px; text-align: center; flex: 1;
-        }
+        .option-btn.selected { background: rgba(56, 189, 248, 0.2) !important; border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important; }
+        .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; text-align: center; flex: 1; }
         .stat-box .num { font-size: 32px; font-weight: 900; }
-        
-        .result-card {
-            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; 
-        }
-
+        .result-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; }
         @keyframes loadingSweep { 0% { left: -30%; width: 30%; } 50% { width: 50%; } 100% { left: 100%; width: 30%; } }
         @keyframes fadeToast { 0% { opacity: 0; bottom: 10px; } 10% { opacity: 1; bottom: 30px; } 90% { opacity: 1; bottom: 30px; } 100% { opacity: 0; bottom: 10px; } }
-
         select.standard option { background: #0f172a; color: white; }
-
-        /* Modal & Topic Styling */
-        .subj-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 16px;
-            text-align: center;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-        .subj-btn:hover {
-            background: rgba(168, 85, 247, 0.2);
-            border-color: #a855f7;
-        }
-        .subj-scroll-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-height: 60vh;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
+        .subj-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: center; font-weight: 600; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+        .subj-btn:hover { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; }
+        .subj-scroll-container { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 10px; }
         .subj-scroll-container::-webkit-scrollbar { width: 4px; }
         .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
     </style>
@@ -151,7 +54,6 @@
 <body>
 
 <div class="overlay" id="overlay"></div>
-
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
@@ -194,8 +96,7 @@
             <h3 style="color: white; margin: 0; font-size: 20px;">Select Topic</h3>
             <button id="closeTopicModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
         </div>
-        <div class="subj-scroll-container" id="topicListContainer">
-            </div>
+        <div class="subj-scroll-container" id="topicListContainer"></div>
     </div>
 </div>
 
@@ -211,6 +112,7 @@
                 <option value="English">English</option>
                 <option value="Hinglish">Hinglish</option>
             </select>
+            <div id="langLockMsg" style="font-size: 11px; color: #f59e0b; margin-top: 5px; display: none;">Language locked for this subject.</div>
         </div>
 
         <div style="text-align: left; margin-bottom: 18px;">
@@ -238,15 +140,16 @@
             <div style="flex: 1; text-align: left;">
                 <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Class / Grade</label>
                 <select id="quizClass" class="standard" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <option value="" disabled selected>Select Class...</option>
                     <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
                     <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
-                    <option value="7">Class 7</option><option value="8">Class 8</option><option value="9" selected>Class 9</option>
+                    <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
                     <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
                 </select>
             </div>
             <div style="flex: 1; text-align: left;">
                 <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Questions</label>
-                <input type="number" id="quizCount" class="standard" min="1" max="15" value="5">
+                <input type="number" id="quizCount" class="standard" min="1" max="30" value="5">
             </div>
         </div>
 
@@ -260,20 +163,15 @@
     </div>
 
     <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
-        
         <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
             <div id="quizProgressBar" style="height: 100%; width: 0%; background: #38bdf8; transition: width 0.3s ease;"></div>
         </div>
-
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
             <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
             <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1; max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
         </div>
-
         <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; word-wrap: break-word; white-space: normal;">Loading Question...</div>
-
         <div id="optionsContainer" style="display: flex; flex-direction: column;"></div>
-
         <div style="display: flex; gap: 15px; margin-top: 25px;">
             <button id="prevBtn" class="btn" style="flex: 1; padding: 15px; border-radius: 12px; background: #475569; color: white; display: none;">⬅️ Previous</button>
             <button id="nextBtn" class="btn blue" style="flex: 1; padding: 15px; border-radius: 12px;">Next ➡️</button>
@@ -286,23 +184,19 @@
                 <h2 style="color: #22c55e; font-size: 32px; margin-bottom: 5px;">Quiz Completed!</h2>
                 <div id="resultSubtext" style="color: #94a3b8; font-weight: 600;">Physics - 9th Grade</div>
             </div>
-
             <div style="display: flex; gap: 15px; margin-bottom: 30px;">
                 <div class="stat-box"><div class="num" id="statCorrect" style="color: #22c55e;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Correct</div></div>
                 <div class="stat-box"><div class="num" id="statWrong" style="color: #ef4444;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Incorrect</div></div>
                 <div class="stat-box"><div class="num" id="statTotal" style="color: #38bdf8;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Total</div></div>
             </div>
-
             <h3 style="color: white; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Detailed Review</h3>
             <div id="reviewContainer"></div>
         </div>
-
         <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; width: 100%;">
             <button onclick="downloadPDF()" class="btn red" style="flex: 1; padding: 15px; border-radius: 15px; min-width: 150px;">📄 Download PDF</button>
             <button onclick="location.reload()" class="btn" style="flex: 1; padding: 15px; border-radius: 15px; background: #475569; color: white; min-width: 150px;">🔄 Create New Quiz</button>
         </div>
     </div>
-
 </div>
 
 <script src="ui-controls.js" defer></script>
@@ -316,10 +210,7 @@
         sidebar.classList.toggle("active", active);
         overlay.classList.toggle("active", active);
     }
-    
-    if(document.getElementById("overlay")) {
-        document.getElementById("overlay").onclick = toggleSidebar;
-    }
+    if(document.getElementById("overlay")) document.getElementById("overlay").onclick = toggleSidebar;
 
     function showToast(msg) {
         let t = document.createElement('div');
@@ -329,71 +220,19 @@
         setTimeout(() => t.remove(), 3000);
     }
 
-    // --- TOPIC DATABASE (15+ Per Subject) ---
     const topicData = {
-        "Math": [
-            { en: "Number System", hi: "संख्या पद्धति" },
-            { en: "Algebra", hi: "बीजगणित" },
-            { en: "Geometry", hi: "ज्यामिति" },
-            { en: "Trigonometry", hi: "त्रिकोणमिति" },
-            { en: "Mensuration", hi: "क्षेत्रमिति" },
-            { en: "Statistics", hi: "सांख्यिकी" },
-            { en: "Probability", hi: "प्रायिकता" },
-            { en: "Profit & Loss", hi: "लाभ और हानि" },
-            { en: "Simple Interest", hi: "साधारण ब्याज" },
-            { en: "Compound Interest", hi: "चक्रवृद्धि ब्याज" },
-            { en: "Time & Work", hi: "समय और कार्य" },
-            { en: "Speed, Distance & Time", hi: "चाल, दूरी और समय" },
-            { en: "Percentages", hi: "प्रतिशत" },
-            { en: "Ratio & Proportion", hi: "अनुपात और समानुपात" },
-            { en: "Fractions & Decimals", hi: "भिन्न और दशमलव" },
-            { en: "Data Handling", hi: "आंकड़ों का प्रबंधन" }
-        ],
-        "Science": [
-            { en: "Physics (General)", hi: "भौतिक विज्ञान (सामान्य)" },
-            { en: "Chemistry (General)", hi: "रसायन विज्ञान (सामान्य)" },
-            { en: "Biology (General)", hi: "जीव विज्ञान (सामान्य)" },
-            { en: "Motion", hi: "गति" },
-            { en: "Force & Laws of Motion", hi: "बल और गति के नियम" },
-            { en: "Gravitation", hi: "गुरुत्वाकर्षण" },
-            { en: "Work, Energy & Power", hi: "कार्य, ऊर्जा और शक्ति" },
-            { en: "Sound", hi: "ध्वनि" },
-            { en: "Matter in our Surroundings", hi: "हमारे आस-पास के पदार्थ" },
-            { en: "Atoms & Molecules", hi: "परमाणु और अणु" },
-            { en: "Structure of the Atom", hi: "परमाणु की संरचना" },
-            { en: "The Fundamental Unit of Life (Cell)", hi: "जीवन की मौलिक इकाई (कोशिका)" },
-            { en: "Tissues", hi: "ऊतक" },
-            { en: "Diversity in Living Organisms", hi: "जीवों में विविधता" },
-            { en: "Diseases & Health", hi: "बीमारियां और स्वास्थ्य" },
-            { en: "Natural Resources", hi: "प्राकृतिक संसाधन" },
-            { en: "Light - Reflection & Refraction", hi: "प्रकाश - परावर्तन और अपवर्तन" },
-            { en: "Electricity & Magnetism", hi: "विद्युत और चुंबकत्व" }
-        ],
-        "SST": [
-            { en: "Ancient History", hi: "प्राचीन इतिहास" },
-            { en: "Medieval History", hi: "मध्यकालीन इतिहास" },
-            { en: "Modern History", hi: "आधुनिक इतिहास" },
-            { en: "Indian National Movement", hi: "भारतीय स्वतंत्रता आंदोलन" },
-            { en: "World History", hi: "विश्व इतिहास" },
-            { en: "Geography (Physical)", hi: "भौतिक भूगोल" },
-            { en: "Geography (Indian)", hi: "भारतीय भूगोल" },
-            { en: "Climate & Weather", hi: "जलवायु और मौसम" },
-            { en: "Agriculture & Resources", hi: "कृषि और संसाधन" },
-            { en: "Political Science / Civics", hi: "राजनीति विज्ञान / नागरिक शास्त्र" },
-            { en: "Indian Constitution", hi: "भारतीय संविधान" },
-            { en: "Democracy & Elections", hi: "लोकतंत्र और चुनाव" },
-            { en: "Economics (General)", hi: "अर्थशास्त्र (सामान्य)" },
-            { en: "Poverty & Employment", hi: "गरीबी और रोजगार" },
-            { en: "Money & Credit", hi: "मुद्रा और साख" },
-            { en: "Disaster Management", hi: "आपदा प्रबंधन" }
-        ]
+        "Math": [ { en: "Number System", hi: "संख्या पद्धति" }, { en: "Algebra", hi: "बीजगणित" }, { en: "Geometry", hi: "ज्यामिति" }, { en: "Trigonometry", hi: "त्रिकोणमिति" }, { en: "Mensuration", hi: "क्षेत्रमिति" }, { en: "Statistics", hi: "सांख्यिकी" }, { en: "Probability", hi: "प्रायिकता" } ],
+        "Science": [ { en: "Physics (General)", hi: "भौतिक विज्ञान (सामान्य)" }, { en: "Chemistry (General)", hi: "रसायन विज्ञान (सामान्य)" }, { en: "Biology (General)", hi: "जीव विज्ञान (सामान्य)" }, { en: "Motion", hi: "गति" }, { en: "Force & Laws of Motion", hi: "बल और गति के नियम" }, { en: "Gravitation", hi: "गुरुत्वाकर्षण" } ],
+        "SST": [ { en: "Ancient History", hi: "प्राचीन इतिहास" }, { en: "Indian National Movement", hi: "भारतीय स्वतंत्रता आंदोलन" }, { en: "Geography (Indian)", hi: "भारतीय भूगोल" }, { en: "Indian Constitution", hi: "भारतीय संविधान" } ],
+        "English Grammar": [ { en: "Tenses", hi: "Tenses" }, { en: "Nouns & Pronouns", hi: "Nouns & Pronouns" }, { en: "Active & Passive Voice", hi: "Active & Passive Voice" }, { en: "Direct & Indirect Speech", hi: "Direct & Indirect Speech" } ],
+        "Hindi Grammar": [ { en: "संज्ञा और सर्वनाम", hi: "संज्ञा और सर्वनाम" }, { en: "मुहावरे और लोकोक्तियाँ", hi: "मुहावरे और लोकोक्तियाँ" }, { en: "संधि और समास", hi: "संधि और समास" }, { en: "विलोम और पर्यायवाची", hi: "विलोम और पर्यायवाची" } ]
     };
 
     let chosenSubject = "";
     let chosenTopic = "";
-    let topicLang = "en"; // 'en' or 'hi'
+    let topicLang = "en"; 
 
-    // --- Subject Modal Logic ---
+    // --- Subject Selection & Language Locking ---
     const subjModal = document.getElementById('subjectModal');
     document.getElementById('quizSubjectSelector').addEventListener('click', () => { subjModal.style.display = 'flex'; });
     document.getElementById('closeSubjectModalBtn').addEventListener('click', () => { subjModal.style.display = 'none'; });
@@ -406,7 +245,26 @@
             textEl.style.color = "white";
             subjModal.style.display = 'none';
 
-            // Show/Hide Topic menu based on Subject
+            // 🚀 FIXED: Language Locking Logic
+            const langSelect = document.getElementById('quizLanguage');
+            const langLockMsg = document.getElementById('langLockMsg');
+            
+            if (chosenSubject === "English Grammar") {
+                langSelect.value = "English";
+                langSelect.style.pointerEvents = "none";
+                langSelect.style.opacity = "0.5";
+                langLockMsg.style.display = "block";
+            } else if (chosenSubject === "Hindi Grammar") {
+                langSelect.value = "Hindi";
+                langSelect.style.pointerEvents = "none";
+                langSelect.style.opacity = "0.5";
+                langLockMsg.style.display = "block";
+            } else {
+                langSelect.style.pointerEvents = "auto";
+                langSelect.style.opacity = "1";
+                langLockMsg.style.display = "none";
+            }
+
             if (topicData[chosenSubject]) {
                 document.getElementById('topicContainer').style.display = 'block';
                 chosenTopic = "";
@@ -420,62 +278,88 @@
         });
     });
 
-    // --- Topic Modal & Lang Toggle Logic ---
     const topicModal = document.getElementById('topicModal');
-    
     document.getElementById('topicLangToggle').addEventListener('click', () => {
         topicLang = topicLang === 'en' ? 'hi' : 'en';
         document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
         renderTopics();
-        
-        // Update selected text if a topic was already chosen
         if (chosenTopic && topicData[chosenSubject]) {
             const found = topicData[chosenSubject].find(t => t.en === chosenTopic || t.hi === chosenTopic);
-            if(found) {
-                chosenTopic = found[topicLang];
-                document.getElementById('selectedTopicText').innerText = chosenTopic;
-            }
+            if(found) { chosenTopic = found[topicLang]; document.getElementById('selectedTopicText').innerText = chosenTopic; }
         }
     });
 
-    document.getElementById('quizTopicSelector').addEventListener('click', () => {
-        if(topicData[chosenSubject]) topicModal.style.display = 'flex';
-    });
+    document.getElementById('quizTopicSelector').addEventListener('click', () => { if(topicData[chosenSubject]) topicModal.style.display = 'flex'; });
     document.getElementById('closeTopicModalBtn').addEventListener('click', () => { topicModal.style.display = 'none'; });
 
     function renderTopics() {
         const container = document.getElementById('topicListContainer');
         container.innerHTML = '';
         if(!topicData[chosenSubject]) return;
-        
         topicData[chosenSubject].forEach(t => {
             const btn = document.createElement('button');
             btn.className = 'subj-btn';
             btn.innerText = t[topicLang];
             btn.onclick = () => {
                 chosenTopic = t[topicLang];
-                const textEl = document.getElementById('selectedTopicText');
-                textEl.innerText = chosenTopic;
-                textEl.style.color = "white";
+                document.getElementById('selectedTopicText').innerText = chosenTopic;
+                document.getElementById('selectedTopicText').style.color = "white";
                 topicModal.style.display = 'none';
             };
             container.appendChild(btn);
         });
     }
 
-    // --- Quiz Engine Logic ---
     let quizData = [];
     let currentQuestionIndex = 0;
     let userAnswers = [];
 
-    const setupEl = document.getElementById('quizSetup');
-    const activeEl = document.getElementById('quizActive');
-    const resultsEl = document.getElementById('quizResults');
-    const startBtn = document.getElementById('startQuizBtn');
-    const setupStatus = document.getElementById('setupStatus');
-    const loadBar = document.getElementById('loadingBarContainer');
-    const nextBtn = document.getElementById('nextBtn');
-    const prevBtn = document.getElementById('prevBtn');
+    const setupEl = document.getElementById('quizSetup'), activeEl = document.getElementById('quizActive'), resultsEl = document.getElementById('quizResults');
+    const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadBar = document.getElementById('loadingBarContainer');
+    const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
+
+    // 🚀 FIXED: Helper function to fetch chunks from different providers
+    async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
+        // Strict prompt with MathJax backslash fix
+        const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
+        CRITICAL RULES:
+        1. The text of the quiz MUST be generated entirely in ${language}.
+        2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
+        3. Use LaTeX for ALL math, fractions, roots, and powers. Wrap inline math in $...$ and display math in $$...$$.
+        4. JSON ESCAPING (CRITICAL): You MUST double-escape ALL LaTeX backslashes to create valid JSON. Write \\\\frac instead of \\frac, \\\\sqrt instead of \\sqrt, etc.
+        5. You MUST return ONLY a strictly valid JSON array. Do NOT use markdown code blocks.
+        6. Array format must be exactly like this:
+        [
+          {
+            "question": "What is $\\\\frac{1}{2} + \\\\frac{1}{4}$?",
+            "options": ["$\\\\frac{3}{4}$", "1", "0", "$\\\\frac{1}{8}$"],
+            "correctOption": "$\\\\frac{3}{4}$",
+            "explanation": "Because $\\\\frac{2}{4} + \\\\frac{1}{4} = \\\\frac{3}{4}$."
+          }
+        ]`;
+
+        const response = await fetch('/api/gemini-text', {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                systemPrompt: "You are a strict data-only API. Output nothing except the requested JSON array.",
+                userPrompt: prompt,
+                providerOverride: providerOverride
+            })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
+
+        // Strict JSON parsing
+        let rawText = data.text;
+        let startIdx = rawText.indexOf('[');
+        let endIdx = rawText.lastIndexOf(']');
+        if (startIdx === -1 || endIdx === -1) throw new Error("AI did not return the correct array format.");
+
+        let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
+        return JSON.parse(cleanJsonString);
+    }
 
     startBtn.addEventListener('click', async () => {
         const grade = document.getElementById('quizClass').value;
@@ -484,73 +368,56 @@
 
         if(!chosenSubject) { showToast("⚠️ Please select a Subject first."); return; }
         if(topicData[chosenSubject] && !chosenTopic) { showToast("⚠️ Please select a Specific Topic."); return; }
+        if(!grade) { showToast("⚠️ Please select a Class/Grade."); return; } // Validation for missing class
         
         if(isNaN(count) || count < 1) count = 5;
-        if(count > 15) count = 15;
+        if(count > 30) count = 30; // Limit max to 30
 
         startBtn.style.display = 'none';
         loadBar.style.display = 'block';
-        setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
-
+        
         const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
-
-        const prompt = `Create a quiz with exactly ${count} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
-        CRITICAL RULES:
-        1. The text of the quiz MUST be generated entirely in ${language}.
-        2. ALL NUMBERS in the questions, options, and explanations MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
-        3. Use LaTeX for ALL math, fractions, roots, and powers. Wrap all math in $ symbols (e.g., $...$). Fractions MUST be $\\frac{a}{b}$. Powers MUST be $a^b$. Roots MUST be $\\sqrt{a}$.
-        4. You MUST return ONLY a strictly valid JSON array.
-        5. Do NOT use markdown code blocks.
-        6. Array format must be exactly like this:
-        [
-          {
-            "question": "What is $\\frac{1}{2} + \\frac{1}{4}$?",
-            "options": ["$\\frac{3}{4}$", "1", "0", "$\\frac{1}{8}$"],
-            "correctOption": "$\\frac{3}{4}$",
-            "explanation": "Because $\\frac{2}{4} + \\frac{1}{4} = \\frac{3}{4}$."
-          }
-        ]`;
+        let allFetchedQuestions = [];
 
         try {
-            const response = await fetch('/api/gemini-text', {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    systemPrompt: "You are a strict data-only API. Output nothing except the requested JSON array.",
-                    userPrompt: prompt
-                })
-            });
-            
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
+            // 🚀 FIXED: Load Balancing Logic
+            if (count <= 15) {
+                setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
+                allFetchedQuestions = await fetchQuizChunk(count, grade, finalTopicStr, language, null);
+            } else {
+                setupStatus.innerHTML = "Massive Quiz Detected! Connecting to Gemini, Cloudflare & Groq simultaneously...";
+                
+                // Divide the work: 15 to Gemini, split the rest between CF and Groq
+                let geminiCount = 15;
+                let remainder = count - 15;
+                let cfCount = Math.ceil(remainder / 2);
+                let groqCount = Math.floor(remainder / 2);
 
-            let rawText = data.text;
-            let startIdx = rawText.indexOf('[');
-            let endIdx = rawText.lastIndexOf(']');
+                const promises = [];
+                // Push to array with catch blocks so one failure doesn't crash the whole quiz
+                promises.push(fetchQuizChunk(geminiCount, grade, finalTopicStr, language, 'gemini').catch(e => []));
+                if (cfCount > 0) promises.push(fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'cloudflare').catch(e => []));
+                if (groqCount > 0) promises.push(fetchQuizChunk(groqCount, grade, finalTopicStr, language, 'groq').catch(e => []));
 
-            if (startIdx === -1 || endIdx === -1) {
-                throw new Error("AI did not return the correct array format.");
+                const results = await Promise.all(promises);
+                allFetchedQuestions = results.flat(); // Merge arrays
             }
 
-            let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
-            quizData = JSON.parse(cleanJsonString);
-            
-            if(quizData.length === 0) throw new Error("AI returned empty quiz array.");
+            if(allFetchedQuestions.length === 0) throw new Error("AI returned empty quiz array.");
 
+            quizData = allFetchedQuestions;
             currentQuestionIndex = 0;
             userAnswers = [];
             document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
             
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
-            
             renderQuestion();
 
         } catch(err) {
             console.error("Quiz Generation Failed:", err);
-            setupStatus.innerHTML = `❌ Error: AI formatting glitch.`;
-            showToast("⚠️ AI formatting error. Just click start again!");
-            
+            setupStatus.innerHTML = `❌ Error: Generation failed. Try asking for fewer questions.`;
+            showToast("⚠️ Generation error. Click start again!");
             startBtn.style.display = 'block';
             loadBar.style.display = 'none';
         }
@@ -558,32 +425,25 @@
 
     function renderQuestion() {
         const qData = quizData[currentQuestionIndex];
-        
         const progressPct = ((currentQuestionIndex) / quizData.length) * 100;
         document.getElementById('quizProgressBar').style.width = progressPct + '%';
         document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
         
-        document.getElementById('questionText').innerText = qData.question;
+        // 🚀 FIXED: Using innerHTML for math rendering safely
+        document.getElementById('questionText').innerHTML = qData.question.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         
         const optsContainer = document.getElementById('optionsContainer');
         optsContainer.innerHTML = '';
-
         const prevAns = userAnswers[currentQuestionIndex];
 
         qData.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
-            btn.innerText = opt;
+            btn.innerHTML = opt.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // Safe innerHTML
             
-            if (prevAns && opt === prevAns) {
-                btn.classList.add('selected'); 
-            }
+            if (prevAns && opt === prevAns) btn.classList.add('selected'); 
             
-            btn.onclick = () => {
-                userAnswers[currentQuestionIndex] = opt;
-                renderQuestion(); 
-            };
-            
+            btn.onclick = () => { userAnswers[currentQuestionIndex] = opt; renderQuestion(); };
             optsContainer.appendChild(btn);
         });
 
@@ -597,25 +457,12 @@
     }
 
     nextBtn.addEventListener('click', () => {
-        if (!userAnswers[currentQuestionIndex]) {
-            showToast("⚠️ Please select an answer first!");
-            return;
-        }
-
+        if (!userAnswers[currentQuestionIndex]) return showToast("⚠️ Please select an answer first!");
         currentQuestionIndex++;
-        if (currentQuestionIndex >= quizData.length) {
-            finishQuiz();
-        } else {
-            renderQuestion();
-        }
+        if (currentQuestionIndex >= quizData.length) finishQuiz(); else renderQuestion();
     });
 
-    prevBtn.addEventListener('click', () => {
-        if (currentQuestionIndex > 0) {
-            currentQuestionIndex--;
-            renderQuestion();
-        }
-    });
+    prevBtn.addEventListener('click', () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuestion(); } });
 
     function finishQuiz() {
         activeEl.classList.remove('active');
@@ -631,22 +478,23 @@
 
             const statusIcon = isCorrect ? '✅' : '❌';
             const colorClass = isCorrect ? '#22c55e' : '#ef4444';
+            
+            const safeQ = q.question.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeU = userAns.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeC = q.correctOption.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeE = q.explanation.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
             reviewHtml += `
             <div class="result-card">
-                <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">
-                    ${index + 1}. ${q.question}
-                </div>
+                <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">${index + 1}. ${safeQ}</div>
                 <div style="font-size: 13px; margin-bottom: 5px;">
-                    <span style="color: #94a3b8;">Your Answer:</span> 
-                    <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${userAns}</span>
+                    <span style="color: #94a3b8;">Your Answer:</span> <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${safeU}</span>
                 </div>
                 <div style="font-size: 13px; margin-bottom: 10px;">
-                    <span style="color: #94a3b8;">Correct Answer:</span> 
-                    <span style="color: #22c55e; font-weight: 600;">${q.correctOption}</span>
+                    <span style="color: #94a3b8;">Correct Answer:</span> <span style="color: #22c55e; font-weight: 600;">${safeC}</span>
                 </div>
                 <div style="font-size: 13px; color: #cbd5e1; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 3px solid #a855f7;">
-                    <b>Why?</b> ${q.explanation}
+                    <b>Why?</b> ${safeE}
                 </div>
             </div>`;
         });
@@ -661,11 +509,7 @@
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
-        if (window.MathJax) {
-            MathJax.typesetPromise([document.getElementById('reviewContainer')])
-                .catch((err) => console.log('MathJax Review Render Error: ', err));
-        }
-
+        if (window.MathJax) MathJax.typesetPromise([document.getElementById('reviewContainer')]).catch((err) => console.log('MathJax Review Render Error: ', err));
         saveQuizToHistory(finalTopicStr, grade, correctCount, total, reviewHtml);
     }
 
@@ -673,47 +517,16 @@
         try {
             let history = JSON.parse(localStorage.getItem('aiHistory') || '[]');
             let sessionId = Date.now();
-            
-            let formattedAnswer = `
-                <div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div>
-                <hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">
-                ${htmlDetails}
-            `;
-
-            let histItem = {
-                id: sessionId,
-                type: 'quiz',
-                title: `${subject} Quiz (${correct}/${total})`,
-                interactions: [{
-                    question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`,
-                    answer: formattedAnswer,
-                    provider: "Gemini Quiz Engine"
-                }],
-                provider: "Gemini Quiz Engine",
-                question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`,
-                answer: formattedAnswer
-            };
-            history.unshift(histItem);
+            let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
+            history.unshift({ id: sessionId, type: 'quiz', title: `${subject} Quiz (${correct}/${total})`, interactions: [{ question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer, provider: "AI Quiz Engine" }], provider: "AI Quiz Engine", question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer });
             localStorage.setItem('aiHistory', JSON.stringify(history));
-        } catch(e) { 
-            console.error("Failed to save history", e); 
-        }
+        } catch(e) { console.error("Failed to save history", e); }
     }
 
     function downloadPDF() {
         const element = document.getElementById('pdfExportArea');
         const finalTopicStr = chosenTopic ? `${chosenSubject}_${chosenTopic}` : chosenSubject;
-        const opt = {
-            margin:       10,
-            filename:     `AI_Quiz_Result_${finalTopicStr.replace(/\s+/g, '_')}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save().then(() => {
-            showToast("✅ PDF Downloaded!");
-        });
+        html2pdf().set({ margin: 10, filename: `AI_Quiz_Result_${finalTopicStr.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => showToast("✅ PDF Downloaded!"));
     }
 </script>
 </body>
