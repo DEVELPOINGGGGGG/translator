@@ -175,15 +175,15 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     }
 
-    // PACIFIC TIME & GOOGLE SHEETS RESET ENGINE
 // 🛑 BULLETPROOF PACIFIC TIME & GOOGLE SHEETS RESET ENGINE 🛑
     setInterval(() => {
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
         const laTime = new Date(laTimeStr);
         
-        // 1. Get the current calendar date in PT (e.g., "6/6/2026")
+        // 1. Get the current calendar date in PT
         const currentPtDate = laTime.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles" });
+        
         // 2. Check the last recorded reset date
         const lastResetDate = localStorage.getItem('lastApiResetDatePT');
         
@@ -197,8 +197,13 @@ document.addEventListener("DOMContentLoaded", () => {
         let s = Math.floor((diffMs % (1000 * 60)) / 1000);
         const pad = (num) => num.toString().padStart(2, '0');
         
-        // 3. THE TRIGGER: If the PT date has changed, FIRE THE RESET!
-        if (currentPtDate !== lastResetDate) { 
+        // 3. THE TRIGGER LOGIC
+        if (!lastResetDate) {
+            // It is the very first time running the app on this browser.
+            // Just set the baseline date so it doesn't instantly wipe.
+            localStorage.setItem('lastApiResetDatePT', currentPtDate); 
+        } else if (currentPtDate !== lastResetDate) { 
+            // An ACTUAL day change happened!
             console.log("🕛 Pacific Time Midnight Hit! Wiping Database...");
             
             // Reset local quotas
