@@ -8,14 +8,15 @@ const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
 // 🛑 THE MASTER WATERFALL HIERARCHY 🛑
+// Order is strict: Gemini -> Cloudflare -> Groq
 const VISION_PROVIDERS = [
     { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
     { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'groq', key: process.env.GROQ_API_KEY },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
+    { type: 'groq', key: process.env.GROQ_API_KEY }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
@@ -24,8 +25,8 @@ const TEXT_PROVIDERS = [
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'groq', key: process.env.GROQ_API_KEY },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
+    { type: 'groq', key: process.env.GROQ_API_KEY }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const SEARCH_PROVIDERS = [
@@ -34,8 +35,8 @@ const SEARCH_PROVIDERS = [
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'groq', key: process.env.GROQ_API_KEY },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId },
+    { type: 'groq', key: process.env.GROQ_API_KEY }
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const publicDir = __dirname;
@@ -63,16 +64,28 @@ const apiUsageStats = {};
 
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
-    let targetProviders = [...providers]; 
+    let targetProviders = []; 
     
     if (override) {
-        targetProviders = targetProviders.filter(p => p.type.toLowerCase() === override.toLowerCase());
+        targetProviders = providers.filter(p => p.type.toLowerCase() === override.toLowerCase());
         if(targetProviders.length === 0) throw new Error(`Model ${override} is not configured on the server.`);
     } else {
+        // 🛑 SMART LOAD BALANCING 🛑
+        // 1. Separate Gemini keys from fallback keys
+        let geminis = providers.filter(p => p.type === 'gemini');
+        let fallbacks = providers.filter(p => p.type !== 'gemini');
+
+        // 2. Round-Robin ONLY the Gemini keys to distribute the load and prevent 429 Rate Limits
+        if (geminis.length > 0) {
+            const rotations = globalRequestCounter % geminis.length;
+            geminis = [...geminis.slice(rotations), ...geminis.slice(0, rotations)];
+            globalRequestCounter++;
+        }
+        
+        // 3. Recombine: Try all 5 Geminis first, THEN Cloudflare, THEN Groq
+        targetProviders = [...geminis, ...fallbacks];
+        
         if (targetProviders.length === 0) throw new Error("No operational API keys found inside server config!");
-        const rotations = globalRequestCounter % targetProviders.length;
-        targetProviders = [...targetProviders.slice(rotations), ...targetProviders.slice(0, rotations)];
-        globalRequestCounter++;
     }
 
     for (const p of targetProviders) { 
@@ -85,7 +98,9 @@ async function tryProviders(providers, requestFn, override = null) {
             return { text: textResult, provider: providerName }; 
         } catch (error) { 
             lastError = error; 
-            console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
+            // Clean up the error message so it doesn't spam the entire console
+            const cleanError = error.message.split('\n')[0];
+            console.log(`⚠️ [Failover] ${p.type.toUpperCase()}${p.id ? ' ' + p.id : ''} failed (${cleanError}). Moving to next...`); 
         } 
     }
     throw lastError;
@@ -137,7 +152,7 @@ async function handleGeminiText(req, res) {
 }
 
 // ==========================================
-// VISION ENDPOINT (FULLY FIXED AND BULLETPROOF)
+// VISION ENDPOINT
 // ==========================================
 async function handleGeminiVision(req, res) {
     try {
@@ -148,7 +163,6 @@ async function handleGeminiVision(req, res) {
         
         if (!img || img === "data:,") return sendJson(res, 400, { error: "No image provided." });
         
-        // SAFE PARSING: Prevent undefined replace errors
         let rawBase64 = img.includes(',') ? img.substring(img.indexOf(',') + 1) : img; 
         rawBase64 = (rawBase64 || "").replace(/\s+/g, ''); 
         let formattedBase64 = `data:image/jpeg;base64,${rawBase64}`;
@@ -168,20 +182,14 @@ async function handleGeminiVision(req, res) {
                 return data.candidates[0].content.parts[0].text;
             
            } else if (p.type === 'cloudflare') {
-                // 🛑 NODE.JS BUFFER FIX: Perfectly converts the image without corruption
                 const imageBuffer = Buffer.from(rawBase64, 'base64');
                 const imageArray = Array.from(imageBuffer);
-
-                // 🛑 FORCE SOLVE COMMAND: Tells the AI to stop refusing
                 const cloudflarePrompt = "agree This is a handwritten math problem. Do your best to read the numbers and solve it. " + userText;
 
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
                     method: "POST",
                     headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        prompt: cloudflarePrompt,
-                        image: imageArray
-                    })
+                    body: JSON.stringify({ prompt: cloudflarePrompt, image: imageArray })
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
@@ -189,7 +197,6 @@ async function handleGeminiVision(req, res) {
                 return data.result?.response || data.result?.description || "No text detected.";
 
             } else {
-                // FIXED GROQ: Stable 90b model + Agree string
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
                     method: "POST", 
                     headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
