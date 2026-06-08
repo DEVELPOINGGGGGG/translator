@@ -377,28 +377,49 @@
 
         try {
             if (count <= 15) {
-                setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
-                allFetchedQuestions = await fetchQuizChunk(count, grade, finalTopicStr, language, null);
+                setupStatus.innerHTML = "Connecting to Gemini... Building your custom quiz.";
+                allFetchedQuestions = await fetchQuizChunk(count, grade, finalTopicStr, language, 'gemini');
             } else {
-                setupStatus.innerHTML = "Massive Quiz Detected! Dividing requests between AI Models...";
+                setupStatus.innerHTML = "Massive Quiz Detected! Balancing load to prevent errors...";
                 
-                let geminiCount = 15;
-                let remainder = count - 15;
+                // 🛑 THE HEAVY-DUTY FALLBACK ENGINE 🛑
+                let geminiCount = 16;
+                let remainder = count - 16;
                 let cfCount = Math.ceil(remainder / 2);
                 let groqCount = Math.floor(remainder / 2);
 
-                const promises = [];
-                promises.push(fetchQuizChunk(geminiCount, grade, finalTopicStr, language, 'gemini').catch(e => []));
-                if (cfCount > 0) promises.push(fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'cloudflare').catch(e => []));
-                if (groqCount > 0) promises.push(fetchQuizChunk(groqCount, grade, finalTopicStr, language, 'groq').catch(e => []));
+                // Chunk 1: Send directly to Gemini
+                const geminiTask = fetchQuizChunk(geminiCount, grade, finalTopicStr, language, 'gemini')
+                    .catch(e => { console.error("Gemini base chunk failed:", e); return []; });
 
-                const results = await Promise.all(promises);
+                // Chunk 2: Ask Cloudflare -> Fallback Groq -> Fallback Gemini
+                const cfTask = fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'cloudflare')
+                    .catch(e => {
+                        console.warn("Cloudflare failed, routing to Groq...");
+                        return fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'groq');
+                    })
+                    .catch(e => {
+                        console.warn("Groq fallback failed, routing to Gemini...");
+                        return fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'gemini');
+                    })
+                    .catch(e => { console.error("All CF fallbacks failed."); return []; });
+
+                // Chunk 3: Ask Groq -> Fallback Gemini
+                const groqTask = fetchQuizChunk(groqCount, grade, finalTopicStr, language, 'groq')
+                    .catch(e => {
+                        console.warn("Groq failed, routing to Gemini...");
+                        return fetchQuizChunk(groqCount, grade, finalTopicStr, language, 'gemini');
+                    })
+                    .catch(e => { console.error("All Groq fallbacks failed."); return []; });
+
+                // Wait for all 3 chunks to finish (no matter which model ultimately succeeded)
+                const results = await Promise.all([geminiTask, cfTask, groqTask]);
                 allFetchedQuestions = results.flat();
             }
 
             if(allFetchedQuestions.length === 0) throw new Error("AI returned empty quiz array. Please try again.");
 
-            quizData = allFetchedQuestions.slice(0, count); // Ensure we don't accidentally exceed the requested count
+            quizData = allFetchedQuestions.slice(0, count); // Ensure exact count
             currentQuestionIndex = 0;
             userAnswers = [];
             document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
