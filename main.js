@@ -1198,17 +1198,38 @@ async function generateTitleWithGroq(sessionId) {
     } catch(e) { console.log("Groq title generation failed"); }
 }
 
-function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
+// ==========================================
+// 🧠 UPGRADED MEMORY & SAVE ENGINE 
+// ==========================================
 
-function persistHistoryOnChatClose(reason = "page-close") {
-    try { saveHistorySafe(); localStorage.setItem('aiHistoryLastCloseReason', reason); localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString()); } 
-    catch(e) { console.log("Close-safe history save failed", e); }
+function saveHistorySafe() { 
+    try { 
+        localStorage.setItem('aiHistory', JSON.stringify(appHistory)); 
+    } catch(e) { 
+        // 🚨 5MB LIMIT REACHED! Panic Mode.
+        console.warn("Storage full! Stripping heavy images from old chats to save space...");
+        
+        // 1. Aggressively strip base64 images from all interactions except the active one
+        appHistory.forEach((item, index) => {
+            if (index > 0 && item.interactions) {
+                item.interactions.forEach(inter => inter.image = null);
+                item.image = null;
+            }
+        });
+
+        try {
+            // Try saving again without the heavy images
+            localStorage.setItem('aiHistory', JSON.stringify(appHistory));
+        } catch (e2) {
+            // 2. If it STILL fails, start deleting the absolute oldest chats
+            appHistory.pop(); 
+            if (appHistory.length > 0) saveHistorySafe(); 
+        }
+    } 
 }
 
-window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'));
-window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeunload'));
-
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
+    // Ping your Google Sheets webhook
     fetch(GOOGLE_SHEETS_WEBHOOK, {
         method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
@@ -1218,17 +1239,37 @@ function saveToHistory(type, q, a, img = null, provider = "AI") {
     let histItem = appHistory.find(i => i.id === sessionId);
 
     if (!histItem) {
-        sessionId = Date.now(); sessionCache[type] = sessionId; 
-        histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
+        sessionId = Date.now(); 
+        sessionCache[type] = sessionId; 
+        histItem = { 
+            id: sessionId, 
+            type: type, 
+            title: q.substring(0,25) + '...', 
+            interactions: [{ question: q, answer: a, image: img, provider: provider }], 
+            provider: provider, 
+            question: q, 
+            answer: a 
+        };
         appHistory.unshift(histItem);
     } else {
         histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
-        histItem.question = q; histItem.answer = a; 
+        histItem.question = q; 
+        histItem.answer = a; 
+
+        // 🛑 NEW: Chat length limiter to prevent 5MB crashes
+        // If a single chat gets longer than 25 interactions, start trimming the middle
+        if (histItem.interactions.length > 25) {
+            // We keep the FIRST message (for context) and the LAST 24 messages
+            histItem.interactions = [
+                histItem.interactions[0],
+                ...histItem.interactions.slice(histItem.interactions.length - 24)
+            ];
+        }
     }
     
-    saveHistorySafe(); generateTitleWithGroq(sessionId); 
+    saveHistorySafe(); 
+    generateTitleWithGroq(sessionId); 
 }
-
 window.viewHistory = function(id) {
     const item = appHistory.find(i => i.id === id); if(!item) return;
     document.getElementById('histTitle').innerText = item.title;
