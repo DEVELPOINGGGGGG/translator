@@ -1,10 +1,25 @@
 /* =======================================================
    AI PRO SUITE - THE ULTIMATE BUILD (V62 - MASTER EDITION)
-   Includes Synchronized Video Typewriter, Deep Search, Context Memory & PDF Support
 ======================================================= */
 
 let appHistory = [];
-try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
+
+// 🛑 INITIALIZE THE MASSIVE INDEXED-DB VAULT 🛑
+localforage.config({
+    name: 'AI_Pro_Suite',
+    storeName: 'massive_chat_history'
+});
+
+// Load the massive history asynchronously when the app starts
+localforage.getItem('aiHistory').then(function(savedData) {
+    if (savedData) {
+        appHistory = savedData;
+        // If we are on the history page, render it now that data is loaded
+        if (document.getElementById('historyList')) renderHistory();
+    }
+}).catch(function(err) {
+    console.log("Error loading massive history:", err);
+});
 
 let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
 let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
@@ -1199,37 +1214,25 @@ async function generateTitleWithGroq(sessionId) {
 }
 
 // ==========================================
-// 🧠 UPGRADED MEMORY & SAVE ENGINE 
+// 🧠 MASSIVE STORAGE MEMORY ENGINE (INDEXED-DB)
 // ==========================================
 
 function saveHistorySafe() { 
-    try { 
-        localStorage.setItem('aiHistory', JSON.stringify(appHistory)); 
-    } catch(e) { 
-        // 🚨 5MB LIMIT REACHED! Panic Mode.
-        console.warn("Storage full! Stripping heavy images from old chats to save space...");
-        
-        // 1. Aggressively strip base64 images from all interactions except the active one
-        appHistory.forEach((item, index) => {
-            if (index > 0 && item.interactions) {
-                item.interactions.forEach(inter => inter.image = null);
-                item.image = null;
-            }
-        });
-
-        try {
-            // Try saving again without the heavy images
-            localStorage.setItem('aiHistory', JSON.stringify(appHistory));
-        } catch (e2) {
-            // 2. If it STILL fails, start deleting the absolute oldest chats
-            appHistory.pop(); 
-            if (appHistory.length > 0) saveHistorySafe(); 
+    // localforage automatically handles massive Base64 images without hitting 5MB limits!
+    localforage.setItem('aiHistory', appHistory).then(function() {
+        console.log("✅ Chat safely locked in massive storage vault!");
+    }).catch(function(e) {
+        console.error("Massive storage failed! Device might be completely out of space.", e);
+        // Absolute worst-case scenario fallback
+        if (appHistory.length > 50) {
+            appHistory.pop();
+            saveHistorySafe();
         }
-    } 
+    });
 }
 
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
-    // Ping your Google Sheets webhook
+    // Ping your Google Sheets webhook (Kept exactly as you had it)
     fetch(GOOGLE_SHEETS_WEBHOOK, {
         method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
@@ -1255,16 +1258,6 @@ function saveToHistory(type, q, a, img = null, provider = "AI") {
         histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
         histItem.question = q; 
         histItem.answer = a; 
-
-        // 🛑 NEW: Chat length limiter to prevent 5MB crashes
-        // If a single chat gets longer than 25 interactions, start trimming the middle
-        if (histItem.interactions.length > 25) {
-            // We keep the FIRST message (for context) and the LAST 24 messages
-            histItem.interactions = [
-                histItem.interactions[0],
-                ...histItem.interactions.slice(histItem.interactions.length - 24)
-            ];
-        }
     }
     
     saveHistorySafe(); 
