@@ -1,48 +1,49 @@
 /* =======================================================
    AI PRO SUITE - THE ULTIMATE BUILD (V62 - MASTER EDITION)
+   Includes Synchronized Video Typewriter, Deep Search, Context Memory & PDF Support
 ======================================================= */
 
 let appHistory = [];
 
-// 🛑 INITIALIZE VAULT & MERGE OLD DATA 🛑
-// 🛑 INITIALIZE VAULT & MERGE OLD DATA 🛑
-localforage.config({
-    name: 'AI_Pro_Suite',
-    storeName: 'massive_chat_history'
-});
+// 🛑 INDESTRUCTIBLE VAULT LOADER 🛑
+if (typeof localforage !== 'undefined') {
+    localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
+    localforage.getItem('aiHistory').then(function(savedData) {
+        let mergedHistory = savedData ? savedData : [];
+        let oldHistory = [];
+        try { let oldData = localStorage.getItem('aiHistory'); if (oldData) oldHistory = JSON.parse(oldData); } catch(e) {}
 
-localforage.getItem('aiHistory').then(function(savedData) {
-    let mergedHistory = savedData ? savedData : [];
+        if (oldHistory.length > 0) {
+            let existingIds = new Set(mergedHistory.map(item => item.id));
+            oldHistory.forEach(item => { if (!existingIds.has(item.id)) mergedHistory.push(item); });
+            mergedHistory.sort((a, b) => b.id - a.id);
+            localforage.setItem('aiHistory', mergedHistory);
+        }
 
-    let oldHistory = [];
-    try { 
-        let oldData = localStorage.getItem('aiHistory');
-        if (oldData) oldHistory = JSON.parse(oldData);
-    } catch(e) {}
+        appHistory = mergedHistory;
+        if (document.getElementById('historyList')) renderHistory();
 
-    if (oldHistory.length > 0) {
-        let existingIds = new Set(mergedHistory.map(item => item.id));
-        oldHistory.forEach(item => {
-            if (!existingIds.has(item.id)) mergedHistory.push(item);
-        });
-        mergedHistory.sort((a, b) => b.id - a.id);
-        localforage.setItem('aiHistory', mergedHistory);
-    }
+        // 🚀 DELAYED RESTORE FIX: Waits for vault to unlock before restoring chat!
+        const urlParams = new URLSearchParams(window.location.search);
+        const restoreId = urlParams.get('restore');
+        if (restoreId) {
+            setTimeout(() => restoreSession(null, restoreId), 150);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }).catch(e => console.log("Vault error:", e));
+} else {
+    console.warn("⚠️ LocalForage is missing from your HTML! Falling back to 5MB limits to prevent a crash.");
+    try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
+    setTimeout(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const restoreId = urlParams.get('restore');
+        if (restoreId) {
+            setTimeout(() => restoreSession(null, restoreId), 400);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, 100);
+}
 
-    appHistory = mergedHistory;
-    if (document.getElementById('historyList')) renderHistory();
-
-    // 🚀 THE RESTORE FIX: Only try to load the chat AFTER the vault is open!
-    const urlParams = new URLSearchParams(window.location.search);
-    const restoreId = urlParams.get('restore');
-    if (restoreId) {
-        setTimeout(() => restoreSession(null, restoreId), 100);
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
-}).catch(function(err) {
-    console.log("Error loading massive history:", err);
-});
 let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
 let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
 window.latestMathSolution = "";
@@ -147,7 +148,6 @@ window.speechSynthesis.onvoiceschanged = loadVoices;
 document.addEventListener("DOMContentLoaded", () => {
     loadVoices();
     
-    // 🛑 INJECT TTS MINI PLAYER
     const ttsDiv = document.createElement('div');
     ttsDiv.id = 'ttsMiniPlayer';
     ttsDiv.className = 'tts-mini-player';
@@ -171,19 +171,13 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     }
 
-// 🛑 BULLETPROOF PACIFIC TIME & GOOGLE SHEETS RESET ENGINE 🛑
     setInterval(() => {
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
         const laTime = new Date(laTimeStr);
-        
-        // 1. Get the current calendar date in PT
         const currentPtDate = laTime.toLocaleDateString("en-US", { timeZone: "America/Los_Angeles" });
-        
-        // 2. Check the last recorded reset date
         const lastResetDate = localStorage.getItem('lastApiResetDatePT');
         
-        // Calculate time until next PT Midnight for the UI timer
         const nextMidnight = new Date(laTime);
         nextMidnight.setHours(24, 0, 0, 0);
         
@@ -193,24 +187,14 @@ document.addEventListener("DOMContentLoaded", () => {
         let s = Math.floor((diffMs % (1000 * 60)) / 1000);
         const pad = (num) => num.toString().padStart(2, '0');
         
-        // 3. THE TRIGGER LOGIC
         if (!lastResetDate) {
-            // It is the very first time running the app on this browser.
-            // Just set the baseline date so it doesn't instantly wipe.
             localStorage.setItem('lastApiResetDatePT', currentPtDate); 
         } else if (currentPtDate !== lastResetDate) { 
-            // An ACTUAL day change happened!
             console.log("🕛 Pacific Time Midnight Hit! Wiping Database...");
-            
-            // Reset local quotas
             visionReqs = 0; textReqs = 0; 
             localStorage.setItem('visionReqs', '0'); 
             localStorage.setItem('textReqs', '0'); 
-            
-            // Save the new date so it doesn't loop
             localStorage.setItem('lastApiResetDatePT', currentPtDate); 
-            
-            // Nuke the Google Sheet
             fetch(GOOGLE_SHEETS_WEBHOOK, {
                 method: "POST", mode: "no-cors",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -218,14 +202,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }).catch(e => console.log("Failed to wipe DB", e));
         }
         
-        // 4. Update the UI trackers perfectly in sync
         const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
-        
         const total = visionReqs + textReqs;
         const elTotal = document.getElementById('apiTotal'); if(elTotal) elTotal.innerText = total;
         const elVis = document.getElementById('apiVision'); if(elVis) elVis.innerText = visionReqs;
         const elTxt = document.getElementById('apiText'); if(elTxt) elTxt.innerText = textReqs;
-        
         const txtInput = document.getElementById('inputText');
         if(txtInput && document.getElementById('charCount')) document.getElementById('charCount').innerText = txtInput.value.length + " chars";
     }, 1000);
@@ -236,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const buttons = [ {id: "sendMathBtn", fn: executeMathFlow}, {id: "sendSearchBtn", fn: runGroqSearch} ];
     buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
 
-    if (document.getElementById('historyList')) renderHistory();
+    if (document.getElementById('historyList') && typeof localforage === 'undefined') renderHistory();
 });
 
 // --- UI FEATURES ---
@@ -300,7 +281,7 @@ function appendUserBubble(txt, img, cid) {
 function appendAiLoading(cid) {
     const c = getActiveChatContainer(cid); if(!c) return null;
     
-    // 🚀 THE ID FIX: Added random math so 12 messages don't share the exact same millisecond ID!
+    // 🚀 MULTIPLE BUBBLE FIX: Random IDs prevent 12 messages from squashing together
     const id = "loading_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
     
     c.insertAdjacentHTML('beforeend', `
@@ -330,7 +311,6 @@ function getRetryButtonsHtml(lId) {
     </div>`;
 }
 
-// 🛑 THE DYNAMIC SPEED TYPEWRITER ENGINE 🛑
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
     const txtEl = document.getElementById(contentId);
@@ -355,7 +335,7 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
             if (onComplete) onComplete();
             
-            window.toggleChatButton(false); // Done typing, revert button
+            window.toggleChatButton(false);
         }
     }, tickRate);
 }
@@ -381,15 +361,14 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     else {
         bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px;">${answer.replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
-        window.toggleChatButton(false); // Ensure button resets if no typing animation
+        window.toggleChatButton(false);
     }
 }
 
-// --- 🛑 SAFE API FETCHERS WITH ABORT CONTROLLER 🛑 ---
 async function checkHtmlError(r) {
     const contentType = r.headers.get("content-type");
     if (contentType && contentType.includes("text/html")) {
-        throw new Error("⚠️ Server Connection Error: Your backend server is either asleep or restarting. Please wait 30 seconds for it to wake up, then try again!");
+        throw new Error("⚠️ Server Connection Error: Your backend server is asleep. Wait 30s and try again!");
     }
     return await r.json();
 }
@@ -1235,26 +1214,23 @@ async function generateTitleWithGroq(sessionId) {
     } catch(e) { console.log("Groq title generation failed"); }
 }
 
-// ==========================================
-// 🧠 MASSIVE STORAGE MEMORY ENGINE (INDEXED-DB)
-// ==========================================
-
 function saveHistorySafe() { 
-    // localforage automatically handles massive Base64 images without hitting 5MB limits!
-    localforage.setItem('aiHistory', appHistory).then(function() {
-        console.log("✅ Chat safely locked in massive storage vault!");
-    }).catch(function(e) {
-        console.error("Massive storage failed! Device might be completely out of space.", e);
-        // Absolute worst-case scenario fallback
-        if (appHistory.length > 50) {
-            appHistory.pop();
-            saveHistorySafe();
-        }
-    });
+    if (typeof localforage !== 'undefined') {
+        localforage.setItem('aiHistory', appHistory).catch(e => console.error("Vault save failed:", e));
+    } else {
+        try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); }
+    }
 }
 
+function persistHistoryOnChatClose(reason = "page-close") {
+    try { saveHistorySafe(); localStorage.setItem('aiHistoryLastCloseReason', reason); localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString()); } 
+    catch(e) { console.log("Close-safe history save failed", e); }
+}
+
+window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'));
+window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeunload'));
+
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
-    // Ping your Google Sheets webhook (Kept exactly as you had it)
     fetch(GOOGLE_SHEETS_WEBHOOK, {
         method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
@@ -1264,27 +1240,17 @@ function saveToHistory(type, q, a, img = null, provider = "AI") {
     let histItem = appHistory.find(i => i.id === sessionId);
 
     if (!histItem) {
-        sessionId = Date.now(); 
-        sessionCache[type] = sessionId; 
-        histItem = { 
-            id: sessionId, 
-            type: type, 
-            title: q.substring(0,25) + '...', 
-            interactions: [{ question: q, answer: a, image: img, provider: provider }], 
-            provider: provider, 
-            question: q, 
-            answer: a 
-        };
+        sessionId = Date.now(); sessionCache[type] = sessionId; 
+        histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
         appHistory.unshift(histItem);
     } else {
         histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
-        histItem.question = q; 
-        histItem.answer = a; 
+        histItem.question = q; histItem.answer = a; 
     }
     
-    saveHistorySafe(); 
-    generateTitleWithGroq(sessionId); 
+    saveHistorySafe(); generateTitleWithGroq(sessionId); 
 }
+
 window.viewHistory = function(id) {
     const item = appHistory.find(i => i.id === id); if(!item) return;
     document.getElementById('histTitle').innerText = item.title;
@@ -1325,20 +1291,11 @@ function renderHistory() {
     }).join(''); 
 }
 
-// ==========================================
-// 🗑️ DUAL-VAULT DELETION ENGINE
-// ==========================================
-
 function clearAllHistory() { 
     if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) { 
         appHistory = []; 
-        
-        // Wipe the 50MB+ Vault
-        localforage.removeItem('aiHistory'); 
-        
-        // Wipe the 5MB Vault
+        if (typeof localforage !== 'undefined') localforage.removeItem('aiHistory'); 
         localStorage.removeItem('aiHistory'); 
-        
         renderHistory(); 
         showToast("🗑️ All history has been cleared!"); 
     } 
@@ -1347,20 +1304,16 @@ function clearAllHistory() {
 function deleteHistoryItem(e, id) { 
     e.stopPropagation(); 
     appHistory = appHistory.filter(i => i.id !== id); 
-    
-    // Save updated list to 50MB+ Vault
     saveHistorySafe(); 
-    
-    // Also remove it from the old 5MB Vault so it doesn't come back as a ghost
     try {
         let old = JSON.parse(localStorage.getItem('aiHistory') || '[]');
         old = old.filter(i => i.id !== id);
         localStorage.setItem('aiHistory', JSON.stringify(old));
     } catch(err) {}
-    
     renderHistory(); 
     showToast("Deleted successfully."); 
 }
+
 function cleanLatexForDownload(text) { return text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)').replace(/\\times/g, 'x').replace(/\\%/g, '%').replace(/[\$\\]/g, '').replace(/&nbsp;/g, ' ').replace(/<br>/g, '\n'); }
 
 function quickDownload(e, id) { e.stopPropagation(); const item = appHistory.find(i => i.id === id); if(item) triggerFileDownload(item); }
@@ -1510,6 +1463,7 @@ window.clearPdfFile = function(e) {
     const inp = document.getElementById("pdfUploadInput"); if(inp) inp.value = "";
     const chip = document.getElementById("pdfPreviewChip"); if(chip) chip.style.display = "none";
 };
+
 // ==========================================
 // 📤 SHARE CHAT HISTORY ENGINE
 // ==========================================
@@ -1553,7 +1507,6 @@ async function shareChatHistory() {
             console.log('User cancelled share or error:', err);
         }
     } else {
-        // Fallback for browsers that don't support Web Share API (like older desktop Chrome)
         try {
             await navigator.clipboard.writeText(chatText);
             alert("✅ Entire chat copied to clipboard! You can paste it in WhatsApp or Discord.");
