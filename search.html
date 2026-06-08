@@ -3,555 +3,538 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Search</title>
+    <title>AI Pro Suite - Smart Quiz</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        MathJax = {
+            tex: { 
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']] 
+            },
+            startup: { typeset: false } 
+        };
     </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
-        /* JS ANIMATION UTILITIES ONLY */
-        .ripple {
-            position: absolute; border-radius: 50%; transform: scale(0);
-            animation: ripple-anim 0.6s linear; background-color: rgba(255, 255, 255, 0.4); pointer-events: none;
-        }
-        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
-        .btn-relative { position: relative; overflow: hidden; }
-        
-        .api-badge {
-            position: absolute; top: 12px; right: 16px; font-size: 9px; color: #c084fc; 
-            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-            background: rgba(192, 132, 252, 0.1); padding: 4px 8px; border-radius: 10px;
-            border: 1px solid rgba(192, 132, 252, 0.3); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* Player Animation */
-        @keyframes slideDownPlayer {
-            0% { transform: translate(-50%, -50px); opacity: 0; }
-            100% { transform: translate(-50%, 0); opacity: 1; }
-        }
-
-        /* Mic Recording Pulse Animation */
-        @keyframes pulse-red {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        .recording-mic {
-            animation: pulse-red 1.5s infinite;
-            background: rgba(239, 68, 68, 0.2) !important;
-            border: 1px solid #ef4444 !important;
-            color: white !important;
-        }
+        .quiz-page-container { width: 100% !important; max-width: 600px !important; margin: 70px auto 0 auto !important; display: flex !important; flex-direction: column !important; padding: 30px 20px 150px 20px !important; }
+        .quiz-card { width: 100% !important; flex-shrink: 0 !important; }
+        .quiz-setup, .quiz-active, .quiz-results { display: none !important; animation: fadeIn 0.4s ease; }
+        .quiz-setup.active, .quiz-active.active, .quiz-results.active { display: flex !important; flex-direction: column !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .quiz-btn { background: linear-gradient(135deg, #a855f7, #7e22ce); color: white; padding: 16px; border-radius: 30px; font-size: 18px; font-weight: 800; width: 100%; border: none; cursor: pointer; box-shadow: 0 10px 30px rgba(168,85,247,0.4); margin-top: 25px; transition: 0.2s; text-align: center; }
+        .quiz-btn:active { transform: scale(0.97); }
+        input[type="number"].standard, select.standard { width: 100%; padding: 15px 20px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; border-radius: 12px; outline: none; font-size: 15px; box-sizing: border-box; appearance: none; }
+        input[type="number"].standard:focus, select.standard:focus { border-color: #c084fc; background: rgba(15, 23, 42, 0.9); }
+        .option-btn { background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: left; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; word-wrap: break-word; }
+        .option-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #38bdf8; }
+        .option-btn.selected { background: rgba(56, 189, 248, 0.2) !important; border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important; }
+        .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; text-align: center; flex: 1; }
+        .stat-box .num { font-size: 32px; font-weight: 900; }
+        .result-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; }
+        @keyframes loadingSweep { 0% { left: -30%; width: 30%; } 50% { width: 50%; } 100% { left: 100%; width: 30%; } }
+        @keyframes fadeToast { 0% { opacity: 0; bottom: 10px; } 10% { opacity: 1; bottom: 30px; } 90% { opacity: 1; bottom: 30px; } 100% { opacity: 0; bottom: 10px; } }
+        select.standard option { background: #0f172a; color: white; }
+        .subj-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: center; font-weight: 600; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+        .subj-btn:hover { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; }
+        .subj-scroll-container { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 10px; }
+        .subj-scroll-container::-webkit-scrollbar { width: 4px; }
+        .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
     </style>
 </head>
-<body class="chat-page-layout">
+<body>
 
-    <div id="micLangModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10002; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
-        <div style="background:rgba(15,23,42,0.95); border:1px solid #38bdf8; border-radius:20px; padding:20px; width:80%; max-width:300px; box-shadow:0 10px 30px rgba(0,0,0,0.8); text-align:center; animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-            <h3 style="color:white; margin-top:0; margin-bottom:20px; font-size:16px;">Speak In Which Language?</h3>
-            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('hi-IN')" style="width:100%; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:white; padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:10px; cursor:pointer;">🇮🇳 Hindi</button>
-            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('en-US')" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:white; padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:15px; cursor:pointer;">🇺🇸 English</button>
-            <button class="btn-relative" onclick="createRipple(event); closeMicModal()" style="width:100%; background:transparent; border:none; color:var(--muted); font-size:14px; cursor:pointer; text-decoration:underline;">Cancel</button>
+<div class="overlay" id="overlay"></div>
+<div class="topbar">
+  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+  <div class="appTitle">AI Pro Suite</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
+  <button onclick="window.location.href='youtube.html'">🎬 YouTube Learning</button>
+  <button style="border-left: 4px solid #a855f7; color: #e9d5ff; background: rgba(168,85,247,0.1);">📝 Smart Quiz</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
+  <button onclick="window.location.href='create.html'">✨ Image Creator</button>
+  <button onclick="window.location.href='history.html'">🕒 History</button>
+</div>
+
+<div id="subjectModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
+            <h3 style="color: white; margin: 0; font-size: 20px;">Select Subject</h3>
+            <button id="closeSubjectModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
+        </div>
+        <div class="subj-scroll-container">
+            <button class="subj-btn main-subj">Science</button>
+            <button class="subj-btn main-subj">Math</button>
+            <button class="subj-btn main-subj">Computer</button>
+            <button class="subj-btn main-subj">English Grammar</button>
+            <button class="subj-btn main-subj">Hindi Grammar</button>
+            <button class="subj-btn main-subj">SST</button>
+            <button class="subj-btn main-subj">GK</button>
         </div>
     </div>
+</div>
 
-    <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); border:1px solid #38bdf8; border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px); animation:slideDownPlayer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-        <div style="color:#38bdf8; font-size:22px; filter: drop-shadow(0 0 5px #38bdf8);">🎧</div>
-        
-        <button class="btn-relative" id="ttsPlayPauseBtn" onclick="createRipple(event); toggleTts()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border-radius:50%;">⏸️</button>
-        
-        <button class="btn-relative" id="ttsBracketBtn" onclick="createRipple(event); toggleBracketReading()" style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:white; padding:6px 12px; border-radius:15px; cursor:pointer; font-size:12px; font-weight:bold; transition:all 0.3s;">[x] Read Brackets</button>
-        
-        <button class="btn-relative" onclick="createRipple(event); closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(225,29,72,0.5);">✕</button>
-    </div>
-
-    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-    <div class="sidebar" id="sidebar">
-        <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-        <button onclick="window.location.href='search.html'" style="border-left: 5px solid #c084fc; background: rgba(255,255,255,0.08); color: #e9d5ff; padding-left: 40px;">🔍 Deep Search</button>
-        <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-        <button onclick="window.location.href='image.html'">📸 Image Chat</button>
-        <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-        <button onclick="window.location.href='translator.html'">🌍 Translator</button>
-        <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
-        <button onclick="window.location.href='history.html'">🕰️ History</button>
-    </div>
-
-    <div class="topbar">
-        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-        <div class="appTitle">Deep Search</div>
-        <div class="menuBtn btn-relative" style="margin-left: auto; font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
-    </div>
-
-    <div class="apiTracker">
-        <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
-        <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
-        <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
-        <div>📝 <span id="apiText" class="api-val text">0</span></div>
-    </div>
-
-    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 105px; padding-bottom: 120px;"></div>
-
-    <div class="chat-input-area" style="flex-direction: column;">
-        
-        <div class="image-preview-chip" id="mathPreviewChip" style="display:none; position:absolute; top:-85px; left:20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
-            <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px;" onclick="clearSearchImage(event)">✕</div>
+<div id="topicModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100001; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
+            <h3 style="color: white; margin: 0; font-size: 20px;">Select Topic</h3>
+            <button id="closeTopicModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
         </div>
-        
-        <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; position:absolute; top:-85px; left:100px; background:var(--glass-panel); border-color:#38bdf8; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
-            <div style="font-size:24px; margin-bottom:2px;">📄</div>
-            <div id="pdfName" style="font-size:10px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center; padding: 0 4px;">doc.pdf</div>
-            <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48;" onclick="clearPdfFile(event)">✕</div>
-        </div>
+        <div class="subj-scroll-container" id="topicListContainer"></div>
+    </div>
+</div>
 
-        <div style="display: flex; justify-content: flex-start; padding-left: 5px; margin-bottom: 8px; width: 100%;">
-            <select id="modelSelector" style="background: rgba(15,23,42,0.95); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 15px; padding: 5px 12px; outline: none; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
-                <option value="gemini">✨ Model: Gemini</option>
-                <option value="groq">⚡ Model: Groq</option>
-                <option value="cloudflare">☁️ Model: Cloudflare</option>
+<div class="page active quiz-page-container" id="quizPageContainer">
+    
+    <div id="quizSetup" class="card quiz-card quiz-setup active" style="padding: 30px;">
+        <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 25px; text-align: center;">AI Quiz Generator</h2>
+        
+        <div style="text-align: left; margin-bottom: 18px;">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Quiz Generation Language</label>
+            <select id="quizLanguage" class="standard" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                <option value="Hindi">Hindi (हिंदी)</option>
+                <option value="English">English</option>
+                <option value="Hinglish">Hinglish</option>
             </select>
+            <div id="langLockMsg" style="font-size: 11px; color: #f59e0b; margin-top: 5px; display: none;">Language locked for this subject.</div>
         </div>
 
-        <div class="chat-input-wrapper" style="width: 100%;">
-            <div style="position:relative;">
-                <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
-                
-                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:rgba(15,23,42,0.95); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
-                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
-                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
-                </div>
+        <div style="text-align: left; margin-bottom: 18px;">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject</label>
+            <div id="quizSubjectSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+                <span id="selectedSubjectText">Select Subject...</span>
+                <span style="font-size: 12px;">▼</span>
             </div>
-            
-            <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
-            <textarea id="searchInput" placeholder="Search web, ask a question..." rows="1"></textarea>
-            
-            <button class="chat-action-btn btn-relative" id="micBtn" onclick="createRipple(event); openMicModal();" title="Voice Input" style="font-size: 20px; transition: 0.3s;">🎙️</button>
-            <button class="chat-action-btn send btn-relative" id="sendSearchBtn" onclick="createRipple(event); runStandaloneSearch();" title="Send">🚀</button>
+        </div>
+
+        <div id="topicContainer" style="display: none; text-align: left; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin: 0;">Specific Topic</label>
+                <button id="topicLangToggle" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; border-radius: 15px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s;">
+                    <span style="font-size: 15px;">🌐</span> English
+                </button>
+            </div>
+            <div id="quizTopicSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+                <span id="selectedTopicText">Select Topic...</span>
+                <span style="font-size: 12px;">▼</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+            <div style="flex: 1; text-align: left;">
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Class / Grade</label>
+                <select id="quizClass" class="standard" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <option value="" disabled selected>Select Class...</option>
+                    <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
+                    <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
+                    <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
+                    <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+                </select>
+            </div>
+            <div style="flex: 1; text-align: left;">
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Questions</label>
+                <input type="number" id="quizCount" class="standard" min="1" max="30" value="5">
+            </div>
+        </div>
+
+        <button id="startQuizBtn" class="quiz-btn">🚀 Generate & Start Quiz!</button>
+        
+        <div id="loadingBarContainer" style="display:none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 25px; overflow: hidden; position: relative;">
+            <div style="height: 100%; width: 30%; background: #a855f7; position: absolute; animation: loadingSweep 1.5s infinite ease-in-out;"></div>
+        </div>
+        
+        <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; text-align: center; min-height: 20px;"></div>
+    </div>
+
+    <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
+        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
+            <div id="quizProgressBar" style="height: 100%; width: 0%; background: #38bdf8; transition: width 0.3s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+            <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
+            <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1; max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+        </div>
+        <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; word-wrap: break-word; white-space: normal;">Loading Question...</div>
+        <div id="optionsContainer" style="display: flex; flex-direction: column;"></div>
+        <div style="display: flex; gap: 15px; margin-top: 25px;">
+            <button id="prevBtn" class="btn" style="flex: 1; padding: 15px; border-radius: 12px; background: #475569; color: white; display: none;">⬅️ Previous</button>
+            <button id="nextBtn" class="btn blue" style="flex: 1; padding: 15px; border-radius: 12px;">Next ➡️</button>
         </div>
     </div>
 
-    <div id="standaloneCameraModal" class="cameraModal">
-        <button onclick="closeStandaloneCamera()" class="closeBtn btn-relative" style="position:absolute; top:30px; left:20px; z-index:1000;">✕</button>
-        <video id="standaloneVideo" autoplay playsinline style="flex:1; width:100%; height:100%; object-fit:cover;"></video>
-        <canvas id="standaloneCanvas" style="display:none;"></canvas>
-        <div class="cameraControls">
-            <button class="closeBtn btn-relative" id="standaloneFlashBtn" onclick="createRipple(event); toggleStandaloneFlash();" style="width:60px; height:60px; font-size:24px;">🔦</button>
-            <div class="cameraCircle btn-relative" onclick="createRipple(event); captureStandalonePhoto();" title="Capture"></div>
-            <button class="closeBtn btn-relative" onclick="createRipple(event); switchStandaloneCamera();" style="width:60px; height:60px; font-size:24px;">🔄</button>
+    <div id="quizResults" class="card quiz-card quiz-results" style="background: transparent; border: none; padding: 0;">
+        <div id="pdfExportArea" class="card" style="padding: 30px; width: 100%; box-sizing: border-box;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #22c55e; font-size: 32px; margin-bottom: 5px;">Quiz Completed!</h2>
+                <div id="resultSubtext" style="color: #94a3b8; font-weight: 600;">Physics - 9th Grade</div>
+            </div>
+            <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+                <div class="stat-box"><div class="num" id="statCorrect" style="color: #22c55e;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Correct</div></div>
+                <div class="stat-box"><div class="num" id="statWrong" style="color: #ef4444;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Incorrect</div></div>
+                <div class="stat-box"><div class="num" id="statTotal" style="color: #38bdf8;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Total</div></div>
+            </div>
+            <h3 style="color: white; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Detailed Review</h3>
+            <div id="reviewContainer"></div>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; width: 100%;">
+            <button onclick="downloadPDF()" class="btn red" style="flex: 1; padding: 15px; border-radius: 15px; min-width: 150px;">📄 Download PDF</button>
+            <button onclick="location.reload()" class="btn" style="flex: 1; padding: 15px; border-radius: 15px; background: #475569; color: white; min-width: 150px;">🔄 Create New Quiz</button>
         </div>
     </div>
+</div>
 
+<script src="ui-controls.js" defer></script>
+<script src="main.js" defer></script>
 
-    <script>
-        // --- 1. STATE VARIABLES, WEBHOOK & HISTORY ---
-        const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
-        
-        let appHistory = [];
-        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
-        let sessionCache = { search: null }; 
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("overlay");
+        const active = !sidebar.classList.contains("active");
+        sidebar.classList.toggle("active", active);
+        overlay.classList.toggle("active", active);
+    }
+    if(document.getElementById("overlay")) document.getElementById("overlay").onclick = toggleSidebar;
 
-        let standaloneCapturedImage = null;
-        let persistentPdfMemory = "";
-        let sessionMessages = [];
-        let isProcessing = false;
-        
-        let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
-        let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
-        let hasResetToday = false;
+    function showToast(msg) {
+        let t = document.createElement('div');
+        t.innerText = msg;
+        t.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #ef4444, #b91c1c); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:100000; font-weight:600; font-size: 14px; text-align:center; animation:fadeToast 3s forwards; pointer-events: none;";
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
 
-        // --- 2. LOCALSTORAGE DB LOGIC & COPY FUNCTION ---
-        function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
-        function persistHistoryOnChatClose(reason = "page-close") {
-            try {
-                saveHistorySafe();
-                localStorage.setItem('aiHistoryLastCloseReason', reason);
-                localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString());
-            } catch(e) { console.log("Close-safe history save failed", e); }
-        }
-        window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'));
-        window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeunload'));
-        function saveToHistory(type, q, a, img = null, provider = "AI") {
-            let sessionId = sessionCache[type];
-            let histItem = appHistory.find(i => i.id === sessionId);
-            if (!histItem) {
-                sessionId = Date.now(); sessionCache[type] = sessionId; 
-                histItem = { id: sessionId, type: type, title: (q || "Image/PDF Search").substring(0, 25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
-                appHistory.unshift(histItem);
+    const topicData = {
+        "Math": [ { en: "Number System", hi: "संख्या पद्धति" }, { en: "Algebra", hi: "बीजगणित" }, { en: "Geometry", hi: "ज्यामिति" }, { en: "Trigonometry", hi: "त्रिकोणमिति" }, { en: "Mensuration", hi: "क्षेत्रमिति" }, { en: "Statistics", hi: "सांख्यिकी" }, { en: "Probability", hi: "प्रायिकता" } ],
+        "Science": [ { en: "Physics (General)", hi: "भौतिक विज्ञान (सामान्य)" }, { en: "Chemistry (General)", hi: "रसायन विज्ञान (सामान्य)" }, { en: "Biology (General)", hi: "जीव विज्ञान (सामान्य)" }, { en: "Motion", hi: "गति" }, { en: "Force & Laws of Motion", hi: "बल और गति के नियम" }, { en: "Gravitation", hi: "गुरुत्वाकर्षण" } ],
+        "SST": [ { en: "Ancient History", hi: "प्राचीन इतिहास" }, { en: "Indian National Movement", hi: "भारतीय स्वतंत्रता आंदोलन" }, { en: "Geography (Indian)", hi: "भारतीय भूगोल" }, { en: "Indian Constitution", hi: "भारतीय संविधान" } ],
+        "English Grammar": [ { en: "Tenses", hi: "Tenses" }, { en: "Nouns & Pronouns", hi: "Nouns & Pronouns" }, { en: "Active & Passive Voice", hi: "Active & Passive Voice" }, { en: "Direct & Indirect Speech", hi: "Direct & Indirect Speech" } ],
+        "Hindi Grammar": [ { en: "संज्ञा और सर्वनाम", hi: "संज्ञा और सर्वनाम" }, { en: "मुहावरे और लोकोक्तियाँ", hi: "मुहावरे और लोकोक्तियाँ" }, { en: "संधि और समास", hi: "संधि और समास" }, { en: "विलोम और पर्यायवाची", hi: "विलोम और पर्यायवाची" } ]
+    };
+
+    let chosenSubject = "";
+    let chosenTopic = "";
+    let topicLang = "en"; 
+
+    const subjModal = document.getElementById('subjectModal');
+    document.getElementById('quizSubjectSelector').addEventListener('click', () => { subjModal.style.display = 'flex'; });
+    document.getElementById('closeSubjectModalBtn').addEventListener('click', () => { subjModal.style.display = 'none'; });
+
+    document.querySelectorAll('.main-subj').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            chosenSubject = e.target.innerText;
+            const textEl = document.getElementById('selectedSubjectText');
+            textEl.innerText = chosenSubject;
+            textEl.style.color = "white";
+            subjModal.style.display = 'none';
+
+            const langSelect = document.getElementById('quizLanguage');
+            const langLockMsg = document.getElementById('langLockMsg');
+            
+            if (chosenSubject === "English Grammar") {
+                langSelect.value = "English";
+                langSelect.style.pointerEvents = "none";
+                langSelect.style.opacity = "0.5";
+                langLockMsg.style.display = "block";
+            } else if (chosenSubject === "Hindi Grammar") {
+                langSelect.value = "Hindi";
+                langSelect.style.pointerEvents = "none";
+                langSelect.style.opacity = "0.5";
+                langLockMsg.style.display = "block";
             } else {
-                histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
-                histItem.question = q; histItem.answer = a; 
+                langSelect.style.pointerEvents = "auto";
+                langSelect.style.opacity = "1";
+                langLockMsg.style.display = "none";
             }
-            saveHistorySafe();
-        }
 
-        // 📋 THE MISSING COPY TO CLIPBOARD FUNCTION RESTORED!
-        function copyToClipboard(textId) { 
-            navigator.clipboard.writeText(document.getElementById(textId).innerText).then(() => showStandaloneToast("✅ Copied to clipboard!")); 
-        }
-
-
-        // --- 3. JS ANIMATION FACTORY ---
-        function createRipple(event) {
-            const button = event.currentTarget;
-            const circle = document.createElement("span");
-            const diameter = Math.max(button.clientWidth, button.clientHeight);
-            const radius = diameter / 2;
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
-            circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
-            circle.classList.add("ripple");
-            const ripple = button.getElementsByClassName("ripple")[0];
-            if (ripple) ripple.remove();
-            button.appendChild(circle);
-        }
-
-        function fireParticles(element) {
-            const rect = element.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-            for(let i=0; i<30; i++) {
-                let p = document.createElement('div');
-                p.style.position = 'fixed'; p.style.left = x+'px'; p.style.top = y+'px';
-                p.style.width = Math.random() * 8 + 4 + 'px'; p.style.height = p.style.width;
-                p.style.background = ['#38bdf8', '#c084fc', '#f472b6', '#34d399', '#facc15'][Math.floor(Math.random()*5)];
-                p.style.borderRadius = '50%'; p.style.pointerEvents = 'none'; p.style.zIndex = 99999;
-                document.body.appendChild(p);
-                let angle = Math.random() * Math.PI * 2;
-                let velocity = 2 + Math.random() * 8;
-                let dx = Math.cos(angle) * velocity; let dy = Math.sin(angle) * velocity;
-                let opacity = 1;
-                function animateParticle() {
-                    let currentX = parseFloat(p.style.left); let currentY = parseFloat(p.style.top);
-                    p.style.left = (currentX + dx) + 'px'; p.style.top = (currentY + dy) + 'px';
-                    opacity -= 0.02; p.style.opacity = opacity; dy += 0.2; 
-                    if(opacity > 0) requestAnimationFrame(animateParticle); else p.remove();
-                }
-                requestAnimationFrame(animateParticle);
+            if (topicData[chosenSubject]) {
+                document.getElementById('topicContainer').style.display = 'block';
+                chosenTopic = "";
+                document.getElementById('selectedTopicText').innerText = "Select Topic...";
+                document.getElementById('selectedTopicText').style.color = "#94a3b8";
+                renderTopics();
+            } else {
+                document.getElementById('topicContainer').style.display = 'none';
+                chosenTopic = "";
             }
+        });
+    });
+
+    const topicModal = document.getElementById('topicModal');
+    document.getElementById('topicLangToggle').addEventListener('click', () => {
+        topicLang = topicLang === 'en' ? 'hi' : 'en';
+        document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
+        renderTopics();
+        if (chosenTopic && topicData[chosenSubject]) {
+            const found = topicData[chosenSubject].find(t => t.en === chosenTopic || t.hi === chosenTopic);
+            if(found) { chosenTopic = found[topicLang]; document.getElementById('selectedTopicText').innerText = chosenTopic; }
         }
+    });
 
-        function typeWriterEffect(element, text) {
-            element.innerHTML = ""; let i = 0;
-            const maxDurationMs = 10000; let tickRate = 20; 
-            let totalTicksAllowed = maxDurationMs / tickRate; let charsPerTick = 1;
-            if (text.length > totalTicksAllowed) { charsPerTick = Math.ceil(text.length / totalTicksAllowed); } else if (text.length < 150) { tickRate = 35; }
-            let timer = setInterval(() => {
-                if (i < text.length) {
-                    let chunk = text.substr(i, charsPerTick);
-                    for(let c of chunk) {
-                        if(c === '\n') { element.appendChild(document.createElement('br')); } else { element.appendChild(document.createTextNode(c)); }
-                    }
-                    i += charsPerTick;
-                } else { clearInterval(timer); }
-            }, tickRate);
-        }
+    document.getElementById('quizTopicSelector').addEventListener('click', () => { if(topicData[chosenSubject]) topicModal.style.display = 'flex'; });
+    document.getElementById('closeTopicModalBtn').addEventListener('click', () => { topicModal.style.display = 'none'; });
 
-        // --- 4. SPEECH RECOGNITION (MIC) ENGINE ---
-        let speechRecog = null; let isRecording = false;
-
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            speechRecog = new SpeechRecognition(); speechRecog.continuous = false; speechRecog.interimResults = true;
-            speechRecog.onstart = () => { isRecording = true; const mic = document.getElementById("micBtn"); if (mic) mic.classList.add("recording-mic"); };
-            speechRecog.onresult = (e) => {
-                let transcript = ""; for (let i = 0; i < e.results.length; i++) { transcript += e.results[i][0].transcript; }
-                const inp = document.getElementById("searchInput"); if (inp) inp.value = transcript;
+    function renderTopics() {
+        const container = document.getElementById('topicListContainer');
+        container.innerHTML = '';
+        if(!topicData[chosenSubject]) return;
+        topicData[chosenSubject].forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'subj-btn';
+            btn.innerText = t[topicLang];
+            btn.onclick = () => {
+                chosenTopic = t[topicLang];
+                document.getElementById('selectedTopicText').innerText = chosenTopic;
+                document.getElementById('selectedTopicText').style.color = "white";
+                topicModal.style.display = 'none';
             };
-            speechRecog.onerror = (e) => { stopVoiceRecognition(); };
-            speechRecog.onend = () => { stopVoiceRecognition(); };
-        }
+            container.appendChild(btn);
+        });
+    }
 
-        window.openMicModal = function() {
-            if (!speechRecog) return showStandaloneToast("⚠️ Voice recognition not supported.");
-            if (isRecording) { stopVoiceRecognition(); } else { document.getElementById("micLangModal").style.display = "flex"; }
-        }
-        window.closeMicModal = function() { document.getElementById("micLangModal").style.display = "none"; }
-        window.startVoiceRecognition = function(lang) {
-            closeMicModal();
-            if (speechRecog) {
-                speechRecog.lang = lang; const inp = document.getElementById("searchInput");
-                if(inp && !inp.value) inp.value = "Listening..."; speechRecog.start();
-            }
-        }
-        window.stopVoiceRecognition = function() {
-            isRecording = false; if (speechRecog) speechRecog.stop();
-            const mic = document.getElementById("micBtn"); if (mic) mic.classList.remove("recording-mic");
-            const inp = document.getElementById("searchInput"); if (inp && inp.value === "Listening...") inp.value = "";
-        }
+    let quizData = [];
+    let currentQuestionIndex = 0;
+    let userAnswers = [];
 
+    const setupEl = document.getElementById('quizSetup'), activeEl = document.getElementById('quizActive'), resultsEl = document.getElementById('quizResults');
+    const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadBar = document.getElementById('loadingBarContainer');
+    const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
 
-        // --- 5. SMART TTS PLAYER ENGINE (SENTENCE CHUNKING) ---
-        let ttsSentences = [];
-        let currentSentenceIndex = 0;
-        let isBracketReadingEnabled = true;
-        let isCancelingForToggle = false;
+    async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
+        const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
+        CRITICAL RULES:
+        1. The text of the quiz MUST be generated entirely in ${language}.
+        2. ALL NUMBERS MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
+        3. Use LaTeX for ALL math. Wrap inline math in $...$ and display math in $$...$$.
+        4. JSON ESCAPING (CRITICAL): You MUST double-escape ALL LaTeX backslashes to create valid JSON. Write \\\\frac instead of \\frac, \\\\sqrt instead of \\sqrt, etc.
+        5. You MUST return ONLY a strictly valid JSON array. Do NOT use markdown code blocks.
+        6. Format exactly like this:
+        [
+          {
+            "question": "What is $\\\\frac{1}{2} + \\\\frac{1}{4}$?",
+            "options": ["$\\\\frac{3}{4}$", "1", "0", "$\\\\frac{1}{8}$"],
+            "correctOption": "$\\\\frac{3}{4}$",
+            "explanation": "Because $\\\\frac{2}{4} + \\\\frac{1}{4} = \\\\frac{3}{4}$."
+          }
+        ]`;
 
-        window.speechSynthesis.onvoiceschanged = () => {};
+        const response = await fetch('/api/gemini-text', {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                systemPrompt: "You are a strict data-only API. Output nothing except the requested JSON array.",
+                userPrompt: prompt,
+                providerOverride: providerOverride
+            })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
 
-        window.startTts = function(elementId) {
-            const el = document.getElementById(elementId);
-            if (!el) return;
-            let fullText = el.innerText || el.textContent;
-            
-            ttsSentences = fullText.match(/[^.!?।\n]+[.!?।\n]*/g) || [fullText];
-            currentSentenceIndex = 0;
-            
-            document.getElementById("ttsPlayer").style.display = "flex";
-            document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
-            
-            window.speechSynthesis.cancel(); 
-            setTimeout(playNextSentence, 50);
-        };
+        let rawText = data.text;
+        let startIdx = rawText.indexOf('[');
+        let endIdx = rawText.lastIndexOf(']');
+        if (startIdx === -1 || endIdx === -1) throw new Error("AI did not return the correct array format.");
 
-        function playNextSentence() {
-            if (currentSentenceIndex >= ttsSentences.length) {
-                document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
-                return;
-            }
-            let originalSentence = ttsSentences[currentSentenceIndex];
-            if (!originalSentence || !originalSentence.trim()) {
-                currentSentenceIndex++; playNextSentence(); return;
-            }
+        let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
+        return JSON.parse(cleanJsonString);
+    }
 
-            let processedText = originalSentence;
-            if (isBracketReadingEnabled) {
-                processedText = processedText
-                    .replace(/-/g, " ghatav ")
-                    .replace(/\+/g, " jor ")
-                    .replace(/%/g, " pratishat ")
-                    .replace(/\(/g, " bracket ")
-                    .replace(/\)/g, " bracket ")
-                    .replace(/\{/g, " madhyam kosthak ")
-                    .replace(/\}/g, " madhyam kosthak ")
-                    .replace(/\[/g, " bara kosthak ")
-                    .replace(/\]/g, " bara kosthak ");
+    startBtn.addEventListener('click', async () => {
+        const grade = document.getElementById('quizClass').value;
+        const language = document.getElementById('quizLanguage').value;
+        let count = parseInt(document.getElementById('quizCount').value);
+
+        if(!chosenSubject) { showToast("⚠️ Please select a Subject first."); return; }
+        if(topicData[chosenSubject] && !chosenTopic) { showToast("⚠️ Please select a Specific Topic."); return; }
+        if(!grade) { showToast("⚠️ Please select a Class/Grade."); return; }
+        
+        if(isNaN(count) || count < 1) count = 5;
+        if(count > 30) count = 30;
+
+        startBtn.style.display = 'none';
+        loadBar.style.display = 'block';
+        
+        const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
+        let allFetchedQuestions = [];
+
+        try {
+            if (count <= 15) {
+                setupStatus.innerHTML = "Connecting to AI... Building your custom quiz.";
+                allFetchedQuestions = await fetchQuizChunk(count, grade, finalTopicStr, language, null);
             } else {
-                processedText = processedText.replace(/\([^)]*\)/g, " ").replace(/\[[^\]]*\]/g, " ").replace(/\{[^}]*\}/g, " ");
-            }
-            processedText = processedText.replace(/[\*#]/g, "");
+                setupStatus.innerHTML = "Massive Quiz Detected! Dividing requests between AI Models...";
+                
+                let geminiCount = 15;
+                let remainder = count - 15;
+                let cfCount = Math.ceil(remainder / 2);
+                let groqCount = Math.floor(remainder / 2);
 
-            let ttsUtterance = new SpeechSynthesisUtterance(processedText);
-            ttsUtterance.lang = 'hi-IN'; ttsUtterance.rate = 0.9;
+                const promises = [];
+                promises.push(fetchQuizChunk(geminiCount, grade, finalTopicStr, language, 'gemini').catch(e => []));
+                if (cfCount > 0) promises.push(fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'cloudflare').catch(e => []));
+                if (groqCount > 0) promises.push(fetchQuizChunk(groqCount, grade, finalTopicStr, language, 'groq').catch(e => []));
+
+                const results = await Promise.all(promises);
+                allFetchedQuestions = results.flat();
+            }
+
+            if(allFetchedQuestions.length === 0) throw new Error("AI returned empty quiz array. Please try again.");
+
+            quizData = allFetchedQuestions.slice(0, count); // Ensure we don't accidentally exceed the requested count
+            currentQuestionIndex = 0;
+            userAnswers = [];
+            document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
             
-            let voices = window.speechSynthesis.getVoices();
-            let hindiVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || voices.find(v => v.lang.includes('hi')) || voices[0];
-            if (hindiVoice) ttsUtterance.voice = hindiVoice;
+            setupEl.classList.remove('active');
+            activeEl.classList.add('active');
+            renderQuestion();
 
-            ttsUtterance.onend = () => { if (isCancelingForToggle) return; currentSentenceIndex++; playNextSentence(); };
-            ttsUtterance.onerror = (e) => { if (isCancelingForToggle) return; if(e.error !== 'canceled') document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; };
-
-            window.speechSynthesis.speak(ttsUtterance);
-            document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
+        } catch(err) {
+            console.error("Quiz Generation Failed:", err);
+            setupStatus.innerHTML = `❌ Error: Generation failed. Try asking for fewer questions.`;
+            showToast("⚠️ Generation error. Click start again!");
+            startBtn.style.display = 'block';
+            loadBar.style.display = 'none';
         }
+    });
 
-        window.toggleTts = function() {
-            if (window.speechSynthesis.paused) {
-                window.speechSynthesis.resume(); document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
-            } else if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.pause(); document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
-            } else {
-                if(currentSentenceIndex >= ttsSentences.length) currentSentenceIndex = 0; playNextSentence();
-            }
-        };
+    function renderQuestion() {
+        const qData = quizData[currentQuestionIndex];
+        const progressPct = ((currentQuestionIndex) / quizData.length) * 100;
+        document.getElementById('quizProgressBar').style.width = progressPct + '%';
+        document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+        
+        document.getElementById('questionText').innerHTML = qData.question.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        const optsContainer = document.getElementById('optionsContainer');
+        optsContainer.innerHTML = '';
+        const prevAns = userAnswers[currentQuestionIndex];
 
-        window.toggleBracketReading = function() {
-            isBracketReadingEnabled = !isBracketReadingEnabled;
-            const btn = document.getElementById("ttsBracketBtn");
-            if (isBracketReadingEnabled) {
-                btn.innerText = "[x] Read Brackets"; btn.style.background = "rgba(56,189,248,0.2)"; btn.style.borderColor = "#38bdf8";
-            } else {
-                btn.innerText = "[ ] Skip Brackets"; btn.style.background = "rgba(255,255,255,0.1)"; btn.style.borderColor = "rgba(255,255,255,0.2)";
-            }
-            if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
-                isCancelingForToggle = true; window.speechSynthesis.cancel();
-                setTimeout(() => { isCancelingForToggle = false; playNextSentence(); }, 100);
-            }
-        };
-
-        window.closeTts = function() {
-            window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none";
-            ttsSentences = []; currentSentenceIndex = 0;
-        };
-
-
-        // --- 6. BACKGROUND WEBHOOK LOGGING ---
-        function syncToSheets(question, answer, provider) {
-            fetch(GOOGLE_SHEETS_WEBHOOK, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "log", type: "search", question: question, answer: answer.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini" }) }).catch(e => console.log("Google Sheets sync failed."));
-        }
-
-        // --- 7. INITIALIZATION ---
-        document.addEventListener("DOMContentLoaded", () => {
-            const chatContainer = document.getElementById("searchChatHistory");
-            chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai">
-                    <div class="bubble">
-                        👋 <b>Welcome to Deep Search!</b><br><br>
-                        1. <b>➕ Button:</b> Attach a PDF or use the Camera.<br>
-                        2. <b>Model:</b> Choose Gemini, Groq, or Cloudflare.<br>
-                        3. <b>Search:</b> Type any question; I will answer it.<br>
-                        <br><i style="color: var(--muted); font-size: 13px;">Note: I will remember your PDF and conversation during our chat!</i>
-                    </div>
-                </div>
-            `);
-
-            const inp = document.getElementById("searchInput");
-            inp.addEventListener("keypress", function(e) { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runStandaloneSearch(); } });
-            startApiTracker();
+        qData.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = opt.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
+            if (prevAns && opt === prevAns) btn.classList.add('selected'); 
+            
+            btn.onclick = () => { userAnswers[currentQuestionIndex] = opt; renderQuestion(); };
+            optsContainer.appendChild(btn);
         });
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const overlay = document.getElementById("overlay");
-            const active = !sidebar.classList.contains("active");
-            sidebar.classList.toggle("active", active);
-            overlay.classList.toggle("active", active);
-            document.body.classList.toggle("sidebar-open", active);
+        prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+        nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
+
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')])
+                .catch((err) => console.log('MathJax Render Error: ', err));
         }
-        function toggleAttachmentMenu() { const menu = document.getElementById('attachmentMenu'); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; }
-        function scrollToBottom() {
-            const c = document.getElementById("searchChatHistory");
-            if (!c) return;
-            requestAnimationFrame(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }));
-            setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }), 80);
-        }
+    }
+
+    nextBtn.addEventListener('click', () => {
+        if (!userAnswers[currentQuestionIndex]) return showToast("⚠️ Please select an answer first!");
+        currentQuestionIndex++;
+        if (currentQuestionIndex >= quizData.length) finishQuiz(); else renderQuestion();
+    });
+
+    prevBtn.addEventListener('click', () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuestion(); } });
+
+    function finishQuiz() {
+        activeEl.classList.remove('active');
+        resultsEl.classList.add('active');
         
-        function clearSearchChat() {
-            if(confirm("Are you sure you want to clear this chat and memory?")) {
-                document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat and memory cleared. How can I help you next?</div></div>`;
-                persistHistoryOnChatClose('manual-clear'); clearSearchImage(); clearPdfFile(); persistentPdfMemory = ""; sessionMessages = []; sessionCache['search'] = null; closeTts();
-            }
-        }
+        let correctCount = 0;
+        let reviewHtml = '';
 
-        function showStandaloneToast(msg) {
-            let t = document.createElement('div'); t.innerText = msg;
-            t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background: var(--gemini-grad); color:black; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,242,254,0.4); z-index:10000; font-weight:800; font-size: 14px; text-align:center; animation: slideUp 0.3s ease-out;";
-            document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
-        }
+        quizData.forEach((q, index) => {
+            const userAns = userAnswers[index] || "Unanswered";
+            const isCorrect = userAns === q.correctOption;
+            if(isCorrect) correctCount++;
 
-        function updateTrackerDisplay() { document.getElementById('apiTotal').innerText = visionReqs + textReqs; document.getElementById('apiVision').innerText = visionReqs; document.getElementById('apiText').innerText = textReqs; }
-        function trackAPI(type) { if(type === 'v') { visionReqs++; localStorage.setItem('visionReqs', visionReqs); } else { textReqs++; localStorage.setItem('textReqs', textReqs); } updateTrackerDisplay(); }
-
-        function startApiTracker() {
-            updateTrackerDisplay();
-            setInterval(() => {
-                const now = new Date(); const laTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })); const nextMidnight = new Date(laTime); nextMidnight.setHours(24, 0, 0, 0);
-                let diffMs = nextMidnight - laTime; let h = Math.floor(diffMs / (1000 * 60 * 60)), m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((diffMs % (1000 * 60)) / 1000);
-                if (h === 24) { h = 0; m = 0; s = 0; } const pad = (num) => num.toString().padStart(2, '0');
-                if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); hasResetToday = true; updateTrackerDisplay(); } else if (laTime.getHours() !== 0) { hasResetToday = false; }
-                const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
-            }, 1000);
-        }
-
-        // --- 8. PERSISTENT PDF MEMORY ---
-        async function handlePdfUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            if (file.type !== "application/pdf") return showStandaloneToast("⚠️ Only PDF files are supported!");
-            showStandaloneToast("📄 Reading PDF..."); const fileReader = new FileReader();
-            fileReader.onload = async function() {
-                const typedarray = new Uint8Array(this.result);
-                try {
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = `DOCUMENT NAME: ${file.name}\n`;
-                    for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += `\n--- Page ${i} ---\n` + textContent.items.map(item => item.str).join(' '); }
-                    persistentPdfMemory = fullText; const chip = document.getElementById("pdfPreviewChip");
-                    chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name; showStandaloneToast(`✅ PDF Attached!`);
-                } catch(e) { showStandaloneToast("❌ Error reading PDF."); }
-            }; fileReader.readAsArrayBuffer(file);
-        }
-        function clearPdfFile(e) { if(e) e.stopPropagation(); persistentPdfMemory = ""; document.getElementById("pdfUploadInput").value = ""; document.getElementById("pdfPreviewChip").style.display = "none"; }
-
-        // --- 9. PRO CAMERA ENGINE ---
-        let standaloneStream = null; let standaloneFacingMode = "environment"; let isStandaloneFlashOn = false;
-        async function startCameraTrack() {
-            if (standaloneStream) { standaloneStream.getTracks().forEach(t => t.stop()); }
-            try {
-                standaloneStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: standaloneFacingMode, width: {ideal: 1920}, height: {ideal: 1080} } });
-                document.getElementById("standaloneVideo").srcObject = standaloneStream;
-                setTimeout(async () => { if (standaloneFacingMode === "environment") { const track = standaloneStream.getVideoTracks()[0]; try { const cap = track.getCapabilities(); if (cap.torch) { isStandaloneFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } } catch(err) {} } }, 500);
-            } catch(e) { showStandaloneToast("⚠️ Camera Error."); }
-        }
-        async function openStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.add("active"); await startCameraTrack(); }
-        function closeStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.remove("active"); if (standaloneStream) { const track = standaloneStream.getVideoTracks()[0]; try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; } isStandaloneFlashOn = false; updateFlashUI(); }
-        async function switchStandaloneCamera() { standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment"; await startCameraTrack(); }
-        async function toggleStandaloneFlash() { if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isStandaloneFlashOn = !isStandaloneFlashOn; await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] }); updateFlashUI(); } } catch(err){} }
-        function updateFlashUI() { const btn = document.getElementById("standaloneFlashBtn"); if (btn) { btn.innerText = isStandaloneFlashOn ? "💡" : "🔦"; btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)"; } }
-        function captureStandalonePhoto() {
-            const v = document.getElementById("standaloneVideo"); const c = document.getElementById("standaloneCanvas");
-            let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-            standaloneCapturedImage = c.toDataURL("image/jpeg", 0.7); const chip = document.getElementById("mathPreviewChip"); chip.style.display = "block"; chip.style.backgroundImage = `url(${standaloneCapturedImage})`; closeStandaloneCamera();
-        }
-        function clearSearchImage(e) { if(e) e.stopPropagation(); standaloneCapturedImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
-
-        // --- 10. CORE SEARCH LOGIC & API CALLS ---
-        async function runStandaloneSearch() {
-            const inp = document.getElementById("searchInput"); const q = inp.value.trim(); 
-            if(!q && !standaloneCapturedImage && !persistentPdfMemory) return; if(isProcessing) return; isProcessing = true;
-
-            const chatContainer = document.getElementById("searchChatHistory");
-            const selectedModel = document.getElementById("modelSelector").value;
+            const statusIcon = isCorrect ? '✅' : '❌';
+            const colorClass = isCorrect ? '#22c55e' : '#ef4444';
             
-            let displayQ = q || "Analyze this document."; let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${imgHtml}<div>${displayQ.replace(/\n/g, '<br>')}</div></div></div>`);
-            inp.value = ""; scrollToBottom(); 
+            const safeQ = q.question.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeU = userAns.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeC = q.correctOption.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeE = q.explanation.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-            const loadId = "load_" + Date.now();
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">AI is thinking...</span></div></div>`);
-            scrollToBottom();
+            reviewHtml += `
+            <div class="result-card">
+                <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">${index + 1}. ${safeQ}</div>
+                <div style="font-size: 13px; margin-bottom: 5px;">
+                    <span style="color: #94a3b8;">Your Answer:</span> <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${safeU}</span>
+                </div>
+                <div style="font-size: 13px; margin-bottom: 10px;">
+                    <span style="color: #94a3b8;">Correct Answer:</span> <span style="color: #22c55e; font-weight: 600;">${safeC}</span>
+                </div>
+                <div style="font-size: 13px; color: #cbd5e1; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 3px solid #a855f7;">
+                    <b>Why?</b> ${safeE}
+                </div>
+            </div>`;
+        });
 
-            let memoryContextString = "";
-            if (sessionMessages.length > 0) {
-                memoryContextString = "--- PREVIOUS CHAT HISTORY ---\n";
-                let recent = sessionMessages.slice(-6); recent.forEach(msg => { memoryContextString += `User: ${msg.q}\nAI: ${msg.a}\n\n`; });
-                memoryContextString += "--- CURRENT QUESTION ---\n";
-            }
+        const grade = document.getElementById('quizClass').value;
+        const total = quizData.length;
+        const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
 
-            let sysPrompt = `You are an expert AI Assistant and Guide. 
-            CRITICAL RULES:
-            1. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.
-            2. If the user provides a document and asks "how to fill it", DO NOT say the document lacks instructions. 
-            3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.
-            4. ALWAYS remember the user's previous context from the Chat History.`;
+        document.getElementById('resultSubtext').innerText = `${finalTopicStr} - Class ${grade}`;
+        document.getElementById('statCorrect').innerText = correctCount;
+        document.getElementById('statWrong').innerText = total - correctCount;
+        document.getElementById('statTotal').innerText = total;
+        document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
-            let finalPrompt = memoryContextString + `User Question: ${q || 'Please help me with this document.'}\n\n`;
-            if (persistentPdfMemory) finalPrompt += `[BACKGROUND DOCUMENT CONTEXT]:\n${persistentPdfMemory}`;
+        if (window.MathJax) MathJax.typesetPromise([document.getElementById('reviewContainer')]).catch((err) => console.log('MathJax Review Render Error: ', err));
+        saveQuizToHistory(finalTopicStr, grade, correctCount, total, reviewHtml);
+    }
 
-            try {
-                let endpoint = standaloneCapturedImage ? "/api/gemini-vision" : "/api/gemini-text";
-                let bodyData = standaloneCapturedImage ? { imageBase64: standaloneCapturedImage, userPrompt: `${sysPrompt}\n\n${finalPrompt}`, providerOverride: selectedModel } : { systemPrompt: sysPrompt, userPrompt: finalPrompt, providerOverride: selectedModel };
+    function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
+        if (typeof localforage !== 'undefined') {
+            let sessionId = Date.now();
+            let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
+            
+            let histItem = { 
+                id: sessionId, 
+                type: 'quiz', 
+                title: `${subject} Quiz (${correct}/${total})`, 
+                interactions: [{ question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer, provider: "AI Quiz Engine" }], 
+                provider: "AI Quiz Engine", 
+                question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, 
+                answer: formattedAnswer 
+            };
 
-                const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData) });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || "Server Error");
-
-                let cleanAns = data.text.replace(/[\*&#_]/g, ''); let apiProvider = data.provider || selectedModel.toUpperCase(); 
-                
-                trackAPI(standaloneCapturedImage ? 'v' : 't');
-                syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider);
-                sessionMessages.push({ q: q || "[Image/PDF Upload]", a: cleanAns });
-                saveToHistory('search', q || "[Document/Image Analysis]", cleanAns, standaloneCapturedImage, apiProvider);
-                
-                clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
-                
-                const finalBubble = document.getElementById(loadId).querySelector('.bubble');
-                
-                // 📋 THE COPY BUTTON IS BACK IN ACTION!
-                finalBubble.innerHTML = `
-                    <div class="api-badge">✨ BY ${apiProvider}</div>
-                    <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
-                    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; display:flex; gap: 10px;">
-                        <button class="btn-relative" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); startTts('text_${loadId}')">🔊 Listen</button>
-                        <button class="btn-relative" style="background:rgba(255,255,255,0.05); color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); copyToClipboard('text_${loadId}')">📋 Copy</button>
-                    </div>
-                `;
-                
-                fireParticles(finalBubble); typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns);
-
-            } catch (error) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; } finally { isProcessing = false; }
+            localforage.getItem('aiHistory').then(function(history) {
+                history = history || [];
+                history.unshift(histItem);
+                localforage.setItem('aiHistory', history);
+            }).catch(function(err) {
+                console.error("Failed to save quiz history", err);
+            });
         }
-    </script>
-<script src="ui-controls.js" defer></script>
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('pdfExportArea');
+        const finalTopicStr = chosenTopic ? `${chosenSubject}_${chosenTopic}` : chosenSubject;
+        html2pdf().set({ margin: 10, filename: `AI_Quiz_Result_${finalTopicStr.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => showToast("✅ PDF Downloaded!"));
+    }
+</script>
 </body>
 </html>
