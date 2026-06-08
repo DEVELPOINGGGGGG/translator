@@ -4,19 +4,45 @@
 
 let appHistory = [];
 
-// 🛑 INITIALIZE THE MASSIVE INDEXED-DB VAULT 🛑
+// 🛑 INITIALIZE VAULT & MERGE OLD DATA 🛑
 localforage.config({
     name: 'AI_Pro_Suite',
     storeName: 'massive_chat_history'
 });
 
-// Load the massive history asynchronously when the app starts
 localforage.getItem('aiHistory').then(function(savedData) {
-    if (savedData) {
-        appHistory = savedData;
-        // If we are on the history page, render it now that data is loaded
-        if (document.getElementById('historyList')) renderHistory();
+    let mergedHistory = savedData ? savedData : [];
+
+    // 1. Grab old history from the 5MB LocalStorage
+    let oldHistory = [];
+    try { 
+        let oldData = localStorage.getItem('aiHistory');
+        if (oldData) oldHistory = JSON.parse(oldData);
+    } catch(e) {}
+
+    // 2. If old history exists, merge it into the new vault seamlessly
+    if (oldHistory.length > 0) {
+        let existingIds = new Set(mergedHistory.map(item => item.id));
+        
+        oldHistory.forEach(item => {
+            // Only add if it's not already in the massive vault
+            if (!existingIds.has(item.id)) {
+                mergedHistory.push(item);
+            }
+        });
+
+        // Sort so the newest chats always appear at the top
+        mergedHistory.sort((a, b) => b.id - a.id);
+
+        // Save the perfectly merged list back to the massive vault
+        localforage.setItem('aiHistory', mergedHistory);
     }
+
+    appHistory = mergedHistory;
+    
+    // 3. Render history if we are currently on history.html
+    if (document.getElementById('historyList')) renderHistory();
+    
 }).catch(function(err) {
     console.log("Error loading massive history:", err);
 });
@@ -1303,8 +1329,42 @@ function renderHistory() {
     }).join(''); 
 }
 
-function clearAllHistory() { if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) { appHistory = []; saveHistorySafe(); renderHistory(); showToast("🗑️ All history has been cleared!"); } }
-function deleteHistoryItem(e, id) { e.stopPropagation(); appHistory = appHistory.filter(i => i.id !== id); saveHistorySafe(); renderHistory(); showToast("Deleted successfully."); }
+function // ==========================================
+// 🗑️ DUAL-VAULT DELETION ENGINE
+// ==========================================
+
+function clearAllHistory() { 
+    if(confirm("⚠️ Are you sure you want to delete ALL saved history? This cannot be undone.")) { 
+        appHistory = []; 
+        
+        // Wipe the 50MB+ Vault
+        localforage.removeItem('aiHistory'); 
+        
+        // Wipe the 5MB Vault
+        localStorage.removeItem('aiHistory'); 
+        
+        renderHistory(); 
+        showToast("🗑️ All history has been cleared!"); 
+    } 
+}
+
+function deleteHistoryItem(e, id) { 
+    e.stopPropagation(); 
+    appHistory = appHistory.filter(i => i.id !== id); 
+    
+    // Save updated list to 50MB+ Vault
+    saveHistorySafe(); 
+    
+    // Also remove it from the old 5MB Vault so it doesn't come back as a ghost
+    try {
+        let old = JSON.parse(localStorage.getItem('aiHistory') || '[]');
+        old = old.filter(i => i.id !== id);
+        localStorage.setItem('aiHistory', JSON.stringify(old));
+    } catch(err) {}
+    
+    renderHistory(); 
+    showToast("Deleted successfully."); 
+}
 function cleanLatexForDownload(text) { return text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)').replace(/\\times/g, 'x').replace(/\\%/g, '%').replace(/[\$\\]/g, '').replace(/&nbsp;/g, ' ').replace(/<br>/g, '\n'); }
 
 function quickDownload(e, id) { e.stopPropagation(); const item = appHistory.find(i => i.id === id); if(item) triggerFileDownload(item); }
