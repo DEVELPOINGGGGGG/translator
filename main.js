@@ -5,6 +5,7 @@
 let appHistory = [];
 
 // 🛑 INITIALIZE VAULT & MERGE OLD DATA 🛑
+// 🛑 INITIALIZE VAULT & MERGE OLD DATA 🛑
 localforage.config({
     name: 'AI_Pro_Suite',
     storeName: 'massive_chat_history'
@@ -13,40 +14,35 @@ localforage.config({
 localforage.getItem('aiHistory').then(function(savedData) {
     let mergedHistory = savedData ? savedData : [];
 
-    // 1. Grab old history from the 5MB LocalStorage
     let oldHistory = [];
     try { 
         let oldData = localStorage.getItem('aiHistory');
         if (oldData) oldHistory = JSON.parse(oldData);
     } catch(e) {}
 
-    // 2. If old history exists, merge it into the new vault seamlessly
     if (oldHistory.length > 0) {
         let existingIds = new Set(mergedHistory.map(item => item.id));
-        
         oldHistory.forEach(item => {
-            // Only add if it's not already in the massive vault
-            if (!existingIds.has(item.id)) {
-                mergedHistory.push(item);
-            }
+            if (!existingIds.has(item.id)) mergedHistory.push(item);
         });
-
-        // Sort so the newest chats always appear at the top
         mergedHistory.sort((a, b) => b.id - a.id);
-
-        // Save the perfectly merged list back to the massive vault
         localforage.setItem('aiHistory', mergedHistory);
     }
 
     appHistory = mergedHistory;
-    
-    // 3. Render history if we are currently on history.html
     if (document.getElementById('historyList')) renderHistory();
+
+    // 🚀 THE RESTORE FIX: Only try to load the chat AFTER the vault is open!
+    const urlParams = new URLSearchParams(window.location.search);
+    const restoreId = urlParams.get('restore');
+    if (restoreId) {
+        setTimeout(() => restoreSession(null, restoreId), 100);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
     
 }).catch(function(err) {
     console.log("Error loading massive history:", err);
 });
-
 let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
 let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
 window.latestMathSolution = "";
@@ -241,13 +237,6 @@ document.addEventListener("DOMContentLoaded", () => {
     buttons.forEach(b => { const btn = document.getElementById(b.id); if(btn) btn.onclick = b.fn; });
 
     if (document.getElementById('historyList')) renderHistory();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const restoreId = urlParams.get('restore');
-    if (restoreId) {
-        setTimeout(() => restoreSession(null, restoreId), 400);
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
 });
 
 // --- UI FEATURES ---
@@ -310,7 +299,9 @@ function appendUserBubble(txt, img, cid) {
 
 function appendAiLoading(cid) {
     const c = getActiveChatContainer(cid); if(!c) return null;
-    const id = "loading_" + Date.now();
+    
+    // 🚀 THE ID FIX: Added random math so 12 messages don't share the exact same millisecond ID!
+    const id = "loading_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
     
     c.insertAdjacentHTML('beforeend', `
         <div class="chat-msg chat-ai" id="${id}">
