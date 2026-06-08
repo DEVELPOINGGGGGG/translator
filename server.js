@@ -181,10 +181,13 @@ async function handleGeminiVision(req, res) {
                 
                 return data.candidates[0].content.parts[0].text;
             
-           } else if (p.type === 'cloudflare') {
+         } else if (p.type === 'cloudflare') {
                 const imageBuffer = Buffer.from(rawBase64, 'base64');
                 const imageArray = Array.from(imageBuffer);
-                const cloudflarePrompt = "agree This is a handwritten math problem. Do your best to read the numbers and solve it. " + userText;
+                
+                // 🛑 REMOVED the "handwritten" hardcode. 
+                // Now it just forces it to act as an OCR scanner.
+                const cloudflarePrompt = "Analyze this image carefully. Extract and translate the text or solve the math problem visible in the image. " + userText;
 
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
                     method: "POST",
@@ -195,7 +198,6 @@ async function handleGeminiVision(req, res) {
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
                 
                 return data.result?.response || data.result?.description || "No text detected.";
-
             } else {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
                     method: "POST", 
