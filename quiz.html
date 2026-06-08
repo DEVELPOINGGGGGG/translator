@@ -154,6 +154,20 @@
             </div>
         </div>
 
+        <div style="text-align: left; margin-bottom: 18px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">AI Engine Priority</label>
+            <select id="modelPriority" class="standard" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 10px;">
+                <option value="groq,cloudflare,gemini" selected>⚡ Groq → Cloudflare → Gemini (Default)</option>
+                <option value="gemini,cloudflare,groq">💎 Gemini → Cloudflare → Groq</option>
+                <option value="cloudflare,gemini,groq">☁️ Cloudflare → Gemini → Groq</option>
+            </select>
+            
+            <label style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 14px; cursor: pointer; font-weight: 500;">
+                <input type="checkbox" id="divideMode" style="width: 18px; height: 18px; accent-color: #a855f7; cursor: pointer;">
+                Divide Questions to Model (Simultaneous)
+            </label>
+        </div>
+
         <button id="startQuizBtn" class="quiz-btn">🚀 Generate & Start Quiz!</button>
         
         <div id="loadingBarContainer" style="display:none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 25px; overflow: hidden; position: relative;">
@@ -317,6 +331,7 @@
     const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadBar = document.getElementById('loadingBarContainer');
     const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
 
+    // Fetch chunk function (does ONE request)
     async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
@@ -357,10 +372,28 @@
         return JSON.parse(cleanJsonString);
     }
 
+    // Advanced Fallback Function
+    async function robustFetchChunk(chunkCount, grade, topicStr, language, modelQueue) {
+        for (let i = 0; i < modelQueue.length; i++) {
+            let currentModel = modelQueue[i];
+            try {
+                console.log(`Trying ${chunkCount} questions with ${currentModel}`);
+                return await fetchQuizChunk(chunkCount, grade, topicStr, language, currentModel);
+            } catch (e) {
+                console.warn(`[Fallback Triggered] ${currentModel} failed:`, e);
+                // The loop automatically moves to the next model in the queue
+            }
+        }
+        throw new Error("All models in the queue failed for this chunk.");
+    }
+
     startBtn.addEventListener('click', async () => {
         const grade = document.getElementById('quizClass').value;
         const language = document.getElementById('quizLanguage').value;
         let count = parseInt(document.getElementById('quizCount').value);
+        
+        const modelPriorityStr = document.getElementById('modelPriority').value;
+        const isDivideMode = document.getElementById('divideMode').checked;
 
         if(!chosenSubject) { showToast("⚠️ Please select a Subject first."); return; }
         if(topicData[chosenSubject] && !chosenTopic) { showToast("⚠️ Please select a Specific Topic."); return; }
@@ -373,48 +406,57 @@
         loadBar.style.display = 'block';
         
         const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
-        let allFetchedQuestions = [];
+        const baseModelOrder = modelPriorityStr.split(','); // e.g. ['groq', 'cloudflare', 'gemini']
 
         try {
-            if (count <= 15) {
-                setupStatus.innerHTML = "Connecting to Gemini... Building your custom quiz.";
-                allFetchedQuestions = await fetchQuizChunk(count, grade, finalTopicStr, language, 'gemini');
-            } else {
-                setupStatus.innerHTML = "Massive Quiz Detected! Balancing load to prevent errors...";
+            let allFetchedQuestions = [];
+
+            if (isDivideMode) {
+                // Checkbox ON: Divide Questions to Models
+                setupStatus.innerHTML = "Dividing workload across AI Models simultaneously...";
                 
-                // 🛑 THE HEAVY-DUTY FALLBACK ENGINE 🛑
-                let geminiCount = 16;
-                let remainder = count - 16;
-                let cfCount = Math.ceil(remainder / 2);
-                let groqCount = Math.floor(remainder / 2);
+                let chunk1 = Math.ceil(count / 3);
+                let chunk2 = Math.ceil((count - chunk1) / 2);
+                let chunk3 = count - chunk1 - chunk2;
 
-                // Chunk 1: Send directly to Gemini
-                const geminiTask = fetchQuizChunk(geminiCount, grade, finalTopicStr, language, 'gemini')
-                    .catch(e => { console.error("Gemini base chunk failed:", e); return []; });
+                const promises = [];
 
-                // Chunk 2: Ask Cloudflare -> Fallback Groq -> Fallback Gemini
-                const cfTask = fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'cloudflare')
-                    .catch(e => {
-                        console.warn("Cloudflare failed, routing to Groq...");
-                        return fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'groq');
-                    })
-                    .catch(e => {
-                        console.warn("Groq fallback failed, routing to Gemini...");
-                        return fetchQuizChunk(cfCount, grade, finalTopicStr, language, 'gemini');
-                    })
-                    .catch(e => { console.error("All CF fallbacks failed."); return []; });
+                if (chunk1 > 0) {
+                    // Try Model 0, fallback Model 1, fallback Model 2
+                    let order1 = [baseModelOrder[0], baseModelOrder[1], baseModelOrder[2]];
+                    promises.push(robustFetchChunk(chunk1, grade, finalTopicStr, language, order1));
+                }
+                if (chunk2 > 0) {
+                    // Try Model 1, fallback Model 2, fallback Model 0
+                    let order2 = [baseModelOrder[1], baseModelOrder[2], baseModelOrder[0]];
+                    promises.push(robustFetchChunk(chunk2, grade, finalTopicStr, language, order2));
+                }
+                if (chunk3 > 0) {
+                    // Try Model 2, fallback Model 0, fallback Model 1
+                    let order3 = [baseModelOrder[2], baseModelOrder[0], baseModelOrder[1]];
+                    promises.push(robustFetchChunk(chunk3, grade, finalTopicStr, language, order3));
+                }
 
-                // Chunk 3: Ask Groq -> Fallback Gemini
-                const groqTask = fetchQuizChunk(groqCount, grade, finalTopicStr, language, 'groq')
-                    .catch(e => {
-                        console.warn("Groq failed, routing to Gemini...");
-                        return fetchQuizChunk(groqCount, grade, finalTopicStr, language, 'gemini');
-                    })
-                    .catch(e => { console.error("All Groq fallbacks failed."); return []; });
-
-                // Wait for all 3 chunks to finish (no matter which model ultimately succeeded)
-                const results = await Promise.all([geminiTask, cfTask, groqTask]);
+                const results = await Promise.all(promises);
                 allFetchedQuestions = results.flat();
+            } else {
+                // Checkbox OFF: Single AI Mode
+                setupStatus.innerHTML = `Connecting to ${baseModelOrder[0].toUpperCase()}...`;
+                
+                // Still break into max 15 q chunks internally to prevent context limits, 
+                // but route them ALL through the primary model order.
+                let chunks = [];
+                let remaining = count;
+                while(remaining > 0) {
+                    let c = Math.min(remaining, 15);
+                    chunks.push(c);
+                    remaining -= c;
+                }
+
+                for (let c of chunks) {
+                    let result = await robustFetchChunk(c, grade, finalTopicStr, language, baseModelOrder);
+                    allFetchedQuestions = allFetchedQuestions.concat(result);
+                }
             }
 
             if(allFetchedQuestions.length === 0) throw new Error("AI returned empty quiz array. Please try again.");
