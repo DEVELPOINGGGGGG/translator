@@ -247,6 +247,13 @@
     let chosenTopic = "";
     let topicLang = "en"; 
 
+    // 🚀 FIXED: Auto-Sync Topic language with selected Quiz Language so AI doesn't get confused
+    document.getElementById('quizLanguage').addEventListener('change', (e) => {
+        topicLang = (e.target.value === 'Hindi') ? 'hi' : 'en';
+        document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
+        if(chosenSubject) renderTopics();
+    });
+
     const subjModal = document.getElementById('subjectModal');
     document.getElementById('quizSubjectSelector').addEventListener('click', () => { subjModal.style.display = 'flex'; });
     document.getElementById('closeSubjectModalBtn').addEventListener('click', () => { subjModal.style.display = 'none'; });
@@ -277,6 +284,9 @@
                 langSelect.style.opacity = "1";
                 langLockMsg.style.display = "none";
             }
+
+            topicLang = (langSelect.value === 'Hindi') ? 'hi' : 'en';
+            document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
 
             if (topicData[chosenSubject]) {
                 document.getElementById('topicContainer').style.display = 'block';
@@ -331,16 +341,17 @@
     const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadBar = document.getElementById('loadingBarContainer');
     const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
 
-    // Fetch chunk function (does ONE request)
+    // Fetch chunk function
     async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
-        1. The text of the quiz MUST be generated entirely in ${language}.
-        2. ALL NUMBERS MUST be standard English Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9). DO NOT use Hindi numerals.
+        1. LANGUAGE: The ENTIRE quiz (questions, options, and explanations) MUST be strictly in ${language.toUpperCase()}. Even if the topic name is English, write everything in ${language}.
+        2. ALL NUMBERS MUST be standard English Arabic numerals (0-9). DO NOT use Hindi numerals.
         3. Use LaTeX for ALL math. Wrap inline math in $...$ and display math in $$...$$.
-        4. JSON ESCAPING (CRITICAL): You MUST double-escape ALL LaTeX backslashes to create valid JSON. Write \\\\frac instead of \\frac, \\\\sqrt instead of \\sqrt, etc.
-        5. You MUST return ONLY a strictly valid JSON array. Do NOT use markdown code blocks.
-        6. Format exactly like this:
+        4. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
+        5. Return ONLY a valid JSON array. NO markdown code blocks.
+        6. The keys MUST be exactly: "question", "options", "correctOption", "explanation".
+        Format exactly like this:
         [
           {
             "question": "What is $\\\\frac{1}{2} + \\\\frac{1}{4}$?",
@@ -369,10 +380,18 @@
         if (startIdx === -1 || endIdx === -1) throw new Error("AI did not return the correct array format.");
 
         let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
-        return JSON.parse(cleanJsonString);
+        let parsedArray = JSON.parse(cleanJsonString);
+
+        // 🚀 THE ANTI-CRASH NORMALIZER 🚀
+        // Cloudflare and Groq constantly change the JSON keys. This forces them to be standard so the results page doesn't crash!
+        return parsedArray.map(item => ({
+            question: item.question || item.q || "Question text missing",
+            options: item.options || item.choices || ["A", "B", "C", "D"],
+            correctOption: item.correctOption || item.correct_option || item.answer || item.correctAnswer || item.correct || "",
+            explanation: item.explanation || item.reason || item.reasoning || item.desc || "No explanation provided."
+        }));
     }
 
-    // Advanced Fallback Function
     async function robustFetchChunk(chunkCount, grade, topicStr, language, modelQueue) {
         for (let i = 0; i < modelQueue.length; i++) {
             let currentModel = modelQueue[i];
@@ -381,7 +400,6 @@
                 return await fetchQuizChunk(chunkCount, grade, topicStr, language, currentModel);
             } catch (e) {
                 console.warn(`[Fallback Triggered] ${currentModel} failed:`, e);
-                // The loop automatically moves to the next model in the queue
             }
         }
         throw new Error("All models in the queue failed for this chunk.");
@@ -406,13 +424,12 @@
         loadBar.style.display = 'block';
         
         const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
-        const baseModelOrder = modelPriorityStr.split(','); // e.g. ['groq', 'cloudflare', 'gemini']
+        const baseModelOrder = modelPriorityStr.split(','); 
 
         try {
             let allFetchedQuestions = [];
 
             if (isDivideMode) {
-                // Checkbox ON: Divide Questions to Models
                 setupStatus.innerHTML = "Dividing workload across AI Models simultaneously...";
                 
                 let chunk1 = Math.ceil(count / 3);
@@ -422,17 +439,14 @@
                 const promises = [];
 
                 if (chunk1 > 0) {
-                    // Try Model 0, fallback Model 1, fallback Model 2
                     let order1 = [baseModelOrder[0], baseModelOrder[1], baseModelOrder[2]];
                     promises.push(robustFetchChunk(chunk1, grade, finalTopicStr, language, order1));
                 }
                 if (chunk2 > 0) {
-                    // Try Model 1, fallback Model 2, fallback Model 0
                     let order2 = [baseModelOrder[1], baseModelOrder[2], baseModelOrder[0]];
                     promises.push(robustFetchChunk(chunk2, grade, finalTopicStr, language, order2));
                 }
                 if (chunk3 > 0) {
-                    // Try Model 2, fallback Model 0, fallback Model 1
                     let order3 = [baseModelOrder[2], baseModelOrder[0], baseModelOrder[1]];
                     promises.push(robustFetchChunk(chunk3, grade, finalTopicStr, language, order3));
                 }
@@ -440,11 +454,8 @@
                 const results = await Promise.all(promises);
                 allFetchedQuestions = results.flat();
             } else {
-                // Checkbox OFF: Single AI Mode
                 setupStatus.innerHTML = `Connecting to ${baseModelOrder[0].toUpperCase()}...`;
                 
-                // Still break into max 15 q chunks internally to prevent context limits, 
-                // but route them ALL through the primary model order.
                 let chunks = [];
                 let remaining = count;
                 while(remaining > 0) {
@@ -461,7 +472,7 @@
 
             if(allFetchedQuestions.length === 0) throw new Error("AI returned empty quiz array. Please try again.");
 
-            quizData = allFetchedQuestions.slice(0, count); // Ensure exact count
+            quizData = allFetchedQuestions.slice(0, count); 
             currentQuestionIndex = 0;
             userAnswers = [];
             document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
@@ -485,7 +496,7 @@
         document.getElementById('quizProgressBar').style.width = progressPct + '%';
         document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
         
-        document.getElementById('questionText').innerHTML = qData.question.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        document.getElementById('questionText').innerHTML = String(qData.question).replace(/</g, "&lt;").replace(/>/g, "&gt;");
         
         const optsContainer = document.getElementById('optionsContainer');
         optsContainer.innerHTML = '';
@@ -494,7 +505,7 @@
         qData.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
-            btn.innerHTML = opt.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            btn.innerHTML = String(opt).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             
             if (prevAns && opt === prevAns) btn.classList.add('selected'); 
             
@@ -528,16 +539,18 @@
 
         quizData.forEach((q, index) => {
             const userAns = userAnswers[index] || "Unanswered";
-            const isCorrect = userAns === q.correctOption;
+            
+            // 🚀 Bulleproof check to prevent the UI from crashing if JSON was slightly malformed
+            const isCorrect = String(userAns).trim() === String(q.correctOption).trim();
             if(isCorrect) correctCount++;
 
             const statusIcon = isCorrect ? '✅' : '❌';
             const colorClass = isCorrect ? '#22c55e' : '#ef4444';
             
-            const safeQ = q.question.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const safeU = userAns.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const safeC = q.correctOption.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const safeE = q.explanation.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeQ = String(q.question).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeU = String(userAns).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeC = String(q.correctOption).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeE = String(q.explanation).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
             reviewHtml += `
             <div class="result-card">
