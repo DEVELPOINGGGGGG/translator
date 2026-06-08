@@ -374,19 +374,39 @@ async function checkHtmlError(r) {
 }
 
 async function callGeminiText(sysText, usrText, override = null) {
-  if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('t');
+  if (isProcessing) throw new Error("Processing..."); 
+  isProcessing = true; 
+  track('t');
   window.currentAbortController = new AbortController();
+  
   try { 
       const r = await fetch("/api/gemini-text", { 
-          method: "POST", headers: {"Content-Type":"application/json"}, 
-          body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText, providerOverride: override }),
+          method: "POST", 
+          headers: {"Content-Type":"application/json"}, 
+          body: JSON.stringify({ 
+              systemPrompt: sysText, 
+              userPrompt: usrText, 
+              providerOverride: override 
+          }),
           signal: window.currentAbortController.signal
       }); 
-      const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
-      isProcessing = false; window.currentAbortController = null; return d; 
-  } catch(e) { isProcessing = false; window.currentAbortController = null; throw e; }
+      
+      const d = await checkHtmlError(r); 
+      if(!r.ok) {
+          // If the server returned an error, the tryProviders loop in server.js 
+          // has already exhausted all 5 keys before sending this error back.
+          throw new Error(d.error || "All API keys failed."); 
+      }
+      
+      isProcessing = false; 
+      window.currentAbortController = null; 
+      return d; 
+  } catch(e) { 
+      isProcessing = false; 
+      window.currentAbortController = null; 
+      throw e; // This will trigger the red "Error" bubble in search.html
+  }
 }
-
 async function callGeminiVision(imgData, aiQuery, override = null) {
   if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('v');
   window.currentAbortController = new AbortController();
