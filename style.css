@@ -248,7 +248,9 @@ input:focus, textarea:focus, select:focus {
     font-size: 14px; font-weight: bold; cursor: pointer; border: 2px solid white; z-index: 106;
 }
 
-/* --- 10. LIGHTWEIGHT CHAT BUBBLES --- */
+/* ==========================================================================
+   10. 🔥 CHAT BUBBLE & MATH SOLVER ALIGNMENT FIX 🔥
+   ========================================================================== */
 .chat-msg { display: flex; width: 100%; margin-bottom: 20px; animation: fadeInPage 0.3s ease-out; }
 .chat-user { justify-content: flex-end; }
 .chat-ai { justify-content: flex-start; }
@@ -262,7 +264,27 @@ input:focus, textarea:focus, select:focus {
     background: var(--bg-surface);
     border: 1px solid var(--border-light); color: var(--text-main); 
     border-bottom-left-radius: 4px; 
+    
+    /* 🛑 THIS FORCES TEXT AND BUTTONS TO STACK VERTICALLY 🛑 */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px;
 }
+
+/* Ensure child elements inside the bubble take full width so they don't squish */
+.chat-ai .bubble > div {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: auto !important;
+}
+
+/* Makes sure the injected action buttons wrap onto a new line safely */
+.chat-ai .bubble div[style*="display: flex"], 
+.chat-ai .bubble div[style*="display:flex"] {
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+}
+
 .bubble-img { max-width: 100%; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border-light); }
 
 /* --- 11. CHAT INPUT AREA --- */
@@ -313,15 +335,11 @@ input:focus, textarea:focus, select:focus {
 @keyframes springUpPanel { 0% { opacity: 0; transform: scale(0.8) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 
 /* ==========================================================================
-   13. 🛑 QUIZ & Q&A OVERRIDES (FIXES THE INVISIBLE BUG) 🛑 
+   13. QUIZ & Q&A OVERRIDES (FIXES THE INVISIBLE BUG)
    ========================================================================== */
-
-/* Overrides any inline "color: white" added directly in your HTML */
 #questionText, h3[style*="color: white"], div[style*="color: white"], .result-card { 
     color: var(--text-main) !important; 
 }
-
-/* Fixes the invisible boxes & selectors in Quiz App */
 #quizSubjectSelector, #quizTopicSelector { 
     background: var(--input-bg) !important; 
     color: var(--text-main) !important; 
@@ -330,8 +348,6 @@ input:focus, textarea:focus, select:focus {
 #selectedSubjectText, #selectedTopicText { 
     color: var(--text-main) !important; 
 }
-
-/* Fixes the invisible multiple choice Options */
 .option-btn { 
     background: var(--input-bg) !important; 
     color: var(--text-main) !important; 
@@ -344,8 +360,6 @@ input:focus, textarea:focus, select:focus {
     background: var(--primary-glow) !important; 
     border-color: var(--primary) !important; 
 }
-
-/* Fixes the Topic Buttons in the Modal */
 .subj-btn { 
     background: var(--input-bg) !important; 
     color: var(--text-main) !important; 
@@ -355,8 +369,6 @@ input:focus, textarea:focus, select:focus {
     background: var(--primary-glow) !important; 
     border-color: var(--primary) !important; 
 }
-
-/* Fixes Output & Stat Boxes in Results */
 .stat-box, .result-card, .outputBox { 
     background: var(--input-bg) !important; 
     border: 1px solid var(--border-light) !important; 
