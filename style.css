@@ -225,9 +225,7 @@ input:focus, textarea:focus, select:focus {
     font-size: 14px; font-weight: bold; cursor: pointer; border: 2px solid white; z-index: 106;
 }
 
-/* ==========================================================================
-   10. CHAT BUBBLE & MATH SOLVER ALIGNMENT FIX
-   ========================================================================== */
+/* --- 10. CHAT BUBBLE ALIGNMENT FIX --- */
 .chat-msg { display: flex; width: 100%; margin-bottom: 20px; animation: fadeInPage 0.3s ease-out; }
 .chat-user { justify-content: flex-end; }
 .chat-ai { justify-content: flex-start; }
@@ -293,11 +291,12 @@ input:focus, textarea:focus, select:focus {
 .stat-box, .result-card, .outputBox { background: var(--input-bg) !important; border: 1px solid var(--border-light) !important; color: var(--text-main) !important; }
 
 /* ==========================================================================
-   14. 🔥 YOUTUBE & HISTORY DECORATION (THE ULTIMATE UPGRADE) 🔥
+   14. 🔥 YOUTUBE & HISTORY DECORATION FIX 🔥
    ========================================================================== */
 
-/* YOUTUBE: Force all inline white/hardcoded text to match System Theme (Black in Light, White in Dark) */
+/* YOUTUBE: Target the exact hardcoded hex code (#f8fafc) and force it to System Theme */
 div[style*="color: white"], div[style*="color: #fff"], div[style*="color:#fff"], 
+div[style*="color: #f8fafc"], div[style*="color:#f8fafc"], 
 span[style*="color: white"], span[style*="color: #fff"],
 b[style*="color: white"], strong[style*="color: white"] {
     color: var(--text-main) !important;
@@ -316,7 +315,7 @@ b[style*="color: white"], strong[style*="color: white"] {
 #historyList > div {
     background: var(--input-bg) !important;
     border: 1px solid var(--border-light) !important;
-    border-left: 5px solid var(--primary) !important; /* Beautiful side accent */
+    border-left: 5px solid var(--primary) !important; 
     border-radius: 16px !important;
     padding: 20px !important;
     margin-bottom: 15px !important;
