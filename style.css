@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AI PRO SUITE - ZERO LAG & INVISIBLE BUG FIX ENGINE
+   AI PRO SUITE - ZERO LAG & ULTIMATE UI UPGRADE
    ========================================================================== */
 
 /* --- 1. SYSTEM DEFAULT THEME VARIABLES --- */
@@ -165,24 +165,16 @@ input:focus, textarea:focus, select:focus {
     border-color: var(--primary) !important; 
 }
 
-/* --- 7. FONT SIZE DOCK (MOVED UP TO FIX OVERLAP) --- */
+/* --- 7. FONT SIZE DOCK --- */
 .font-size-dock {
-    position: fixed; 
-    right: 15px; 
-    bottom: 130px; 
-    top: auto; 
-    z-index: 9998; 
-    display: flex; 
-    flex-direction: column-reverse; 
-    align-items: flex-end; 
-    gap: 15px;
+    position: fixed; right: 15px; bottom: 130px; top: auto; z-index: 9998; 
+    display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 15px;
 }
 .font-size-toggle {
     width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--bg-surface);
     background: linear-gradient(135deg, var(--secondary), var(--primary)); 
     color: white; font-weight: 900; font-size: 20px; cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
-    transition: transform 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s ease;
 }
 .font-size-toggle:hover { transform: scale(1.1); }
 
@@ -190,8 +182,7 @@ input:focus, textarea:focus, select:focus {
     width: 320px; background: var(--bg-surface); 
     border: 2px solid var(--primary); border-radius: 16px; padding: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; 
-    transform-origin: bottom right; 
-    animation: springUpPanel 0.3s ease-out;
+    transform-origin: bottom right; animation: springUpPanel 0.3s ease-out;
 }
 .font-size-dock.active .font-size-panel { display: block; }
 .font-size-options { display: flex; gap: 8px; }
@@ -200,23 +191,13 @@ input:focus, textarea:focus, select:focus {
     background: var(--input-bg); color: var(--text-main); font-weight: 800; cursor: pointer; 
     transition: background 0.2s, border-color 0.2s; font-size: 13px;
 }
-.font-size-option.active, .font-size-option:hover { 
-    background: var(--primary); border-color: var(--primary); color: white;
-}
+.font-size-option.active, .font-size-option:hover { background: var(--primary); border-color: var(--primary); color: white; }
 
 /* --- 8. CAMERA MODAL & FIXED X BUTTON --- */
-.cameraModal {
-    position: fixed; inset: 0; background: #000; 
-    z-index: 999999 !important; 
-    display: none; flex-direction: column;
-}
+.cameraModal { position: fixed; inset: 0; background: #000; z-index: 999999 !important; display: none; flex-direction: column; }
 .cameraModal.active { display: flex; animation: fadeInPage 0.2s; }
 #cameraVideo, #standaloneVideo { width: 100%; height: 100%; object-fit: cover; }
-.cameraControls { 
-    position: absolute; bottom: 0; left: 0; right: 0; height: 140px; 
-    background: linear-gradient(transparent, rgba(0,0,0,0.9)); 
-    display: flex; justify-content: space-evenly; align-items: center; padding-bottom: 20px;
-}
+.cameraControls { position: absolute; bottom: 0; left: 0; right: 0; height: 140px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); display: flex; justify-content: space-evenly; align-items: center; padding-bottom: 20px; }
 .cameraCircle { width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; cursor: pointer; }
 .cameraCircle:active { transform: scale(0.8); background: rgba(255,255,255,0.5); }
 
@@ -225,21 +206,17 @@ input:focus, textarea:focus, select:focus {
     z-index: 9999999 !important; pointer-events: auto !important;
     background: #ef4444 !important; border: 2px solid white !important;
 }
-
 .closeBtn, .cam-icon-btn { 
-    width: 60px; height: 60px; border-radius: 50%; 
-    background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.4); 
+    width: 60px; height: 60px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.4); 
     color: white; font-size: 24px; cursor: pointer; display: grid; place-items: center; 
 }
 .closeBtn:hover, .cam-icon-btn:hover { background: var(--accent); }
 
 /* --- 9. STYLED IMAGE PREVIEW & FIXED BUG --- */
 .image-preview-chip {
-    display: none; 
-    width: 80px; height: 80px; border-radius: 12px;
+    display: none; width: 80px; height: 80px; border-radius: 12px;
     background-size: cover; background-position: center; border: 3px solid var(--primary);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    position: absolute; top: -95px; left: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: absolute; top: -95px; left: 20px;
     animation: popInCard 0.3s ease-out; z-index: 105;
 }
 .image-preview-chip .closeBtn, .image-preview-close {
@@ -249,60 +226,35 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ==========================================================================
-   10. 🔥 CHAT BUBBLE & MATH SOLVER ALIGNMENT FIX 🔥
+   10. CHAT BUBBLE & MATH SOLVER ALIGNMENT FIX
    ========================================================================== */
 .chat-msg { display: flex; width: 100%; margin-bottom: 20px; animation: fadeInPage 0.3s ease-out; }
 .chat-user { justify-content: flex-end; }
 .chat-ai { justify-content: flex-start; }
 .bubble { max-width: 85%; padding: 16px 20px; border-radius: 16px; line-height: 1.6; position: relative; overflow: hidden; }
 
-.chat-user .bubble { 
-    background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-    color: white; border-bottom-right-radius: 4px; 
-}
+.chat-user .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 4px; }
 .chat-ai .bubble { 
-    background: var(--bg-surface);
-    border: 1px solid var(--border-light); color: var(--text-main); 
-    border-bottom-left-radius: 4px; 
-    
-    /* 🛑 THIS FORCES TEXT AND BUTTONS TO STACK VERTICALLY 🛑 */
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px;
+    background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); border-bottom-left-radius: 4px; 
+    display: flex !important; flex-direction: column !important; gap: 12px;
 }
-
-/* Ensure child elements inside the bubble take full width so they don't squish */
-.chat-ai .bubble > div {
-    width: 100% !important;
-    box-sizing: border-box !important;
-    overflow-x: auto !important;
-}
-
-/* Makes sure the injected action buttons wrap onto a new line safely */
-.chat-ai .bubble div[style*="display: flex"], 
-.chat-ai .bubble div[style*="display:flex"] {
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important;
-}
-
+.chat-ai .bubble > div { width: 100% !important; box-sizing: border-box !important; overflow-x: auto !important; }
+.chat-ai .bubble div[style*="display: flex"], .chat-ai .bubble div[style*="display:flex"] { flex-wrap: wrap !important; justify-content: flex-start !important; }
 .bubble-img { max-width: 100%; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border-light); }
 
 /* --- 11. CHAT INPUT AREA --- */
 .chat-input-area {
-    position: fixed; bottom: 0; left: 0; right: 0; padding: 15px;
-    background: var(--bg-surface);
+    position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: var(--bg-surface);
     border-top: 1px solid var(--border-light); z-index: 100; display: flex; gap: 10px; flex-direction: column;
 }
 .chat-input-wrapper { 
-    display: flex; align-items: flex-end; width: 100%; gap: 10px; 
-    background: var(--input-bg); border-radius: 20px; padding: 6px; 
+    display: flex; align-items: flex-end; width: 100%; gap: 10px; background: var(--input-bg); border-radius: 20px; padding: 6px; 
     border: 1px solid var(--border-light); transition: border-color 0.2s ease;
 }
 .chat-input-wrapper:focus-within { border-color: var(--primary); }
 .chat-input-wrapper textarea { border: none; background: transparent; box-shadow: none; resize: none; min-height: 40px; padding: 10px; margin: 0; font-weight: 500; color: var(--text-main); }
 .chat-action-btn { 
-    width: 45px; height: 45px; border-radius: 50%; border: none; 
-    background: var(--border-light); color: var(--text-main); font-size: 18px; 
+    width: 45px; height: 45px; border-radius: 50%; border: none; background: var(--border-light); color: var(--text-main); font-size: 18px; 
     cursor: pointer; flex-shrink: 0; transition: transform 0.2s;
 }
 .chat-action-btn.send { background: linear-gradient(135deg, var(--secondary), var(--primary)); color: white;}
@@ -310,23 +262,16 @@ input:focus, textarea:focus, select:focus {
 
 /* --- 12. SIDEBAR --- */
 .sidebar {
-    position: fixed; top: 0; left: -100%; 
-    width: 280px; height: 100dvh;
-    background: var(--bg-surface);
+    position: fixed; top: 0; left: -100%; width: 280px; height: 100dvh; background: var(--bg-surface);
     border-right: 1px solid var(--border-light); z-index: 1000; padding: 20px; padding-top: 80px; 
-    display: flex; flex-direction: column; gap: 10px; transition: left 0.3s ease; 
-    box-shadow: 5px 0 25px rgba(0,0,0,0.5); overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px; transition: left 0.3s ease; box-shadow: 5px 0 25px rgba(0,0,0,0.5); overflow-y: auto;
 }
 .sidebar.active { left: 0; }
 .sidebar button {
-    background: transparent; color: var(--text-muted); border: none; 
-    padding: 15px; border-radius: 12px; font-weight: 600; 
-    display: flex; align-items: center; gap: 12px; cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    background: transparent; color: var(--text-muted); border: none; padding: 15px; border-radius: 12px; font-weight: 600; 
+    display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s, color 0.2s;
 }
-.sidebar button:hover, .sidebar button.active { 
-    background: var(--border-light); color: var(--text-main); 
-}
+.sidebar button:hover, .sidebar button.active { background: var(--border-light); color: var(--text-main); }
 
 /* --- LIGHTWEIGHT ENTRY ANIMATIONS ONLY --- */
 @keyframes fadeInPage { from { opacity: 0; } to { opacity: 1; } }
@@ -335,42 +280,94 @@ input:focus, textarea:focus, select:focus {
 @keyframes springUpPanel { 0% { opacity: 0; transform: scale(0.8) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
 
 /* ==========================================================================
-   13. QUIZ & Q&A OVERRIDES (FIXES THE INVISIBLE BUG)
+   13. QUIZ & Q&A OVERRIDES
    ========================================================================== */
-#questionText, h3[style*="color: white"], div[style*="color: white"], .result-card { 
-    color: var(--text-main) !important; 
+#questionText, h3[style*="color: white"], div[style*="color: white"], .result-card { color: var(--text-main) !important; }
+#quizSubjectSelector, #quizTopicSelector { background: var(--input-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-light) !important; }
+#selectedSubjectText, #selectedTopicText { color: var(--text-main) !important; }
+.option-btn { background: var(--input-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-light) !important; }
+.option-btn:hover { border-color: var(--primary) !important; }
+.option-btn.selected { background: var(--primary-glow) !important; border-color: var(--primary) !important; }
+.subj-btn { background: var(--input-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-light) !important; }
+.subj-btn:hover { background: var(--primary-glow) !important; border-color: var(--primary) !important; }
+.stat-box, .result-card, .outputBox { background: var(--input-bg) !important; border: 1px solid var(--border-light) !important; color: var(--text-main) !important; }
+
+/* ==========================================================================
+   14. 🔥 YOUTUBE & HISTORY DECORATION (THE ULTIMATE UPGRADE) 🔥
+   ========================================================================== */
+
+/* YOUTUBE: Force all inline white/hardcoded text to match System Theme (Black in Light, White in Dark) */
+div[style*="color: white"], div[style*="color: #fff"], div[style*="color:#fff"], 
+span[style*="color: white"], span[style*="color: #fff"],
+b[style*="color: white"], strong[style*="color: white"] {
+    color: var(--text-main) !important;
 }
-#quizSubjectSelector, #quizTopicSelector { 
-    background: var(--input-bg) !important; 
-    color: var(--text-main) !important; 
-    border: 1px solid var(--border-light) !important; 
+
+/* YOUTUBE: Make the Author text bold and colorful */
+.yt-meta, .yt-author {
+    font-weight: 900 !important;
+    color: var(--secondary) !important;
+    font-size: 13px !important;
+    margin-top: 5px !important;
+    display: block !important;
 }
-#selectedSubjectText, #selectedTopicText { 
-    color: var(--text-main) !important; 
+
+/* HISTORY DECORATION: Premium Animated Glass Cards */
+#historyList > div {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-light) !important;
+    border-left: 5px solid var(--primary) !important; /* Beautiful side accent */
+    border-radius: 16px !important;
+    padding: 20px !important;
+    margin-bottom: 15px !important;
+    box-shadow: var(--glass-shadow) !important;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s !important;
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }
-.option-btn { 
-    background: var(--input-bg) !important; 
-    color: var(--text-main) !important; 
-    border: 1px solid var(--border-light) !important; 
+
+#historyList > div:hover {
+    transform: translateY(-5px) scale(1.02) !important;
+    box-shadow: 0 12px 30px var(--primary-glow) !important;
+    border-color: var(--primary) !important;
 }
-.option-btn:hover { 
-    border-color: var(--primary) !important; 
+
+/* History Card Title */
+#historyList > div strong {
+    color: var(--primary) !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+    display: block !important;
+    margin-bottom: 8px !important;
+    letter-spacing: 0.5px !important;
 }
-.option-btn.selected { 
-    background: var(--primary-glow) !important; 
-    border-color: var(--primary) !important; 
+
+/* History Card Text Body */
+#historyList > div small, #historyList > div span {
+    color: var(--text-muted) !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
 }
-.subj-btn { 
-    background: var(--input-bg) !important; 
-    color: var(--text-main) !important; 
-    border: 1px solid var(--border-light) !important; 
+
+/* History Action Buttons (View, Delete) */
+#historyList > div button {
+    background: var(--bg-surface) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-light) !important;
+    padding: 10px 18px !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    margin-top: 15px !important;
+    margin-right: 10px !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    cursor: pointer !important;
 }
-.subj-btn:hover { 
-    background: var(--primary-glow) !important; 
-    border-color: var(--primary) !important; 
-}
-.stat-box, .result-card, .outputBox { 
-    background: var(--input-bg) !important; 
-    border: 1px solid var(--border-light) !important; 
-    color: var(--text-main) !important; 
+
+#historyList > div button:hover {
+    background: linear-gradient(135deg, var(--secondary), var(--primary)) !important;
+    color: white !important;
+    border-color: transparent !important;
+    transform: translateY(-3px) scale(1.05) !important;
+    box-shadow: 0 5px 15px var(--primary-glow) !important;
 }
