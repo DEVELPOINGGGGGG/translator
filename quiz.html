@@ -614,5 +614,156 @@
         html2pdf().set({ margin: 10, filename: `AI_Quiz_Result_${finalTopicStr.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => showToast("✅ PDF Downloaded!"));
     }
 </script>
+    <script>
+    // Global State Container
+    let quizData = {
+        currentQuestionIndex: 0,
+        score: 0,
+        questions: [],
+        userAnswers: [],
+        savedId: null
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setupSubjectListeners();
+        checkForHistoryRestore();
+    });
+
+    // 1. Check URL Parameters for Session Restoration
+    function checkForHistoryRestore() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const restoreId = urlParams.get('restore');
+        
+        if (restoreId) {
+            try {
+                let history = [];
+                try { history = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
+                
+                // Fallback check if using localForage structure or standard schema
+                let item = history.find(i => i.id == restoreId);
+                if (item && item.interactions && item.interactions.length > 0) {
+                    executeQuizRestoration(item.interactions[0].answer, item.title || "Restored Quiz Review");
+                }
+            } catch (err) {
+                console.error("Quiz session restoration failed:", err);
+            }
+        }
+    }
+
+    // 2. Execute UI Switches and Inject Historical Data
+    function executeQuizRestoration(savedHtmlTable, quizTitle) {
+        // Toggle view containers cleanly
+        const setupView = document.getElementById('quizSetup');
+        const activeView = document.getElementById('quizActive');
+        const resultsView = document.getElementById('quizResults');
+        
+        if (setupView) setupView.classList.remove('active');
+        if (activeView) activeView.classList.remove('active');
+        if (resultsView) resultsView.classList.add('active');
+        
+        // Target container divs inside quiz.html result section
+        const reviewContainer = document.getElementById('reviewContainer');
+        const subtextHeader = document.getElementById('resultSubtext');
+        
+        if (reviewContainer) {
+            reviewContainer.innerHTML = savedHtmlTable;
+            
+            // Re-render LaTeX symbols inside the injected historical table safely
+            if (window.MathJax) {
+                MathJax.typesetPromise([reviewContainer]).catch(e => console.log("MathJax error:", e));
+            }
+        }
+        if (subtextHeader) {
+            subtextHeader.innerText = quizTitle;
+        }
+
+        // Dynamically compute stat card values from the saved HTML table string
+        let scoreMatch = savedHtmlTable.match(/Score:\s*(\d+)\s*out\s*of\s*(\d+)/i);
+        if (scoreMatch) {
+            const correctCount = parseInt(scoreMatch[1]);
+            const totalCount = parseInt(scoreMatch[2]);
+            
+            const elCorrect = document.getElementById('statCorrect');
+            const elTotal = document.getElementById('statTotal');
+            const elWrong = document.getElementById('statWrong');
+            
+            if (elCorrect) elCorrect.innerText = correctCount;
+            if (elTotal) elTotal.innerText = totalCount;
+            if (elWrong) elWrong.innerText = totalCount - correctCount;
+        }
+        
+        if (typeof showToast === "function") {
+            showToast("🔄 Quiz Session Restored");
+        }
+    }
+
+    // 3. Set Up Listeners for Manual Quiz Creation
+    function setupSubjectListeners() {
+        // Handle selecting subject categories manually (Physics, Chemistry, etc.)
+        const selectors = document.querySelectorAll('.subj-btn, .topic-btn');
+        selectors.forEach(btn => {
+            btn.addEventListener('click', () => {
+                resetVideoActivity(); // Keep UI interactions fresh
+            });
+        });
+    }
+
+    // 4. Sample Runtime Navigation Functions for Active Quiz Mode
+    window.selectQuizOption = function(optionIndex) {
+        quizData.userAnswers[quizData.currentQuestionIndex] = optionIndex;
+        const options = document.querySelectorAll('.option-btn');
+        options.forEach((btn, idx) => {
+            if (idx === optionIndex) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    };
+
+    window.nextQuizQuestion = function() {
+        if (quizData.currentQuestionIndex < quizData.questions.length - 1) {
+            quizData.currentQuestionIndex++;
+            renderActiveQuestion();
+        } else {
+            compileAndShowResults();
+        }
+    };
+
+    function renderActiveQuestion() {
+        const qText = document.getElementById('questionText');
+        if (!qText || quizData.questions.length === 0) return;
+        
+        let curQ = quizData.questions[quizData.currentQuestionIndex];
+        qText.innerHTML = `<h3>${curQ.question}</h3>`;
+        
+        // Safe LaTeX pass over text nodes
+        if (window.MathJax) {
+            MathJax.typesetPromise([qText]).catch(e => console.log(e));
+        }
+    }
+
+    function compileAndShowResults() {
+        // Build score table format to comply with your app's global save schema
+        let resultHtmlTable = `
+            <div class="result-card" style="padding:15px; background:var(--input-bg); border-radius:12px; color:var(--text-main);">
+                <h3 style="margin-bottom:10px; color:var(--primary);">Quiz Complete Summary</h3>
+                <p style="font-weight:bold; margin-bottom:15px;">Final Score: ${quizData.score} out of ${quizData.questions.length}</p>
+            </div>
+        `;
+        
+        // Execute UI displays switch
+        document.getElementById('quizActive').classList.remove('active');
+        document.getElementById('quizResults').classList.add('active');
+        document.getElementById('reviewContainer').innerHTML = resultHtmlTable;
+    }
+
+    // Utility function override to reset animation logs safely
+    function resetVideoActivity() {
+        if (typeof window.resetVideoActivity === "function") {
+            window.resetVideoActivity();
+        }
+    }
+</script>
 </body>
 </html>
