@@ -374,3 +374,40 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary) !import
 
 div[style*="color: white"], div[style*="color: #fff"], div[style*="color:#fff"], div[style*="color: #f8fafc"], div[style*="color:#f8fafc"], span[style*="color: white"], span[style*="color: #fff"], b[style*="color: white"], strong[style*="color: white"] { color: var(--text-main) !important; }
 .yt-meta, .yt-author { font-weight: 900 !important; color: var(--secondary) !important; font-size: 13px !important; margin-top: 5px !important; display: block !important; }
+/* ==========================================================================
+   16. 🔥 DASHBOARD LOADING SCREEN 🔥
+   ========================================================================== */
+#appLoader {
+    position: fixed; inset: 0; background: var(--bg-base); z-index: 99999999; /* Highest priority */
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0.6s;
+}
+
+#appLoader.hidden {
+    opacity: 0; visibility: hidden; pointer-events: none;
+}
+
+.loader-logo {
+    font-size: 32px; font-weight: 900; letter-spacing: 1px; margin-bottom: 40px;
+    background: linear-gradient(90deg, var(--secondary), var(--primary), var(--accent)); 
+    background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+    animation: gradientShine 2s linear infinite;
+}
+
+.loader-bar-container {
+    width: 250px; height: 6px; background: var(--input-bg); 
+    border-radius: 10px; overflow: hidden; border: 1px solid var(--border-light); 
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); position: relative;
+}
+
+.loader-bar {
+    width: 0%; height: 100%; border-radius: 10px;
+    background: linear-gradient(90deg, var(--secondary), var(--primary)); 
+    transition: width 0.3s ease-out; box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.loader-text {
+    margin-top: 25px; font-size: 13px; font-weight: 800; color: var(--text-muted); 
+    text-transform: uppercase; letter-spacing: 1px; min-height: 20px; 
+    animation: heartbeat 1.5s infinite;
+}
