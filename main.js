@@ -1354,32 +1354,54 @@ function triggerFileDownload(item) {
 }
 
 function restoreSession(e, id) { 
-    if(e) e.stopPropagation(); const item = appHistory.find(i => i.id == id); if(!item) return; 
+    if(e) e.stopPropagation(); 
+    const item = appHistory.find(i => i.id == id); 
+    if(!item) return; 
+    
     let targetPage = ''; 
-    if(item.type === 'math') targetPage = 'maths.html'; else if(item.type === 'search') targetPage = 'search.html'; else if(item.type === 'translation') targetPage = 'translator.html'; else if(item.type === 'image_translation') targetPage = 'image.html'; else if(item.type === 'qa') targetPage = 'qa.html'; else if(item.type === 'create') targetPage = 'create.html';
+    if(item.type === 'math') targetPage = 'maths.html'; 
+    else if(item.type === 'search') targetPage = 'search.html'; 
+    else if(item.type === 'translation') targetPage = 'translator.html'; 
+    else if(item.type === 'image_translation') targetPage = 'image.html'; 
+    else if(item.type === 'qa') targetPage = 'qa.html'; 
+    else if(item.type === 'quiz') targetPage = 'quiz.html';
+    else if(item.type === 'youtube') targetPage = 'youtube.html';
     
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    if (currentPage !== targetPage && targetPage !== '') { window.location.href = `${targetPage}?restore=${id}`; return; }
+    if (currentPage !== targetPage && targetPage !== '') { 
+        window.location.href = `${targetPage}?restore=${id}`; 
+        return; 
+    }
     
     sessionCache[item.type] = item.id;
     const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
 
+    // 🧮 1. RESTORE MATH SOLVER
     if(item.type === 'math') { 
-        let containerId = "mathChatHistory"; document.getElementById(containerId).innerHTML = ''; 
-        interactionsToRestore.forEach(inter => {
-            appendUserBubble(inter.question, inter.image, containerId); 
-            let lId = appendAiLoading(containerId); updateAiBubble(lId, inter.answer, inter.provider || "AI", false);
-        });
+        let containerId = "mathChatHistory"; 
+        const container = document.getElementById(containerId);
+        if(container) {
+            container.innerHTML = ''; 
+            interactionsToRestore.forEach(inter => {
+                appendUserBubble(inter.question, inter.image, containerId); 
+                let lId = appendAiLoading(containerId); 
+                updateAiBubble(lId, inter.answer, inter.provider || "AI", false);
+            });
+            scrollToBottom("mathScrollArea");
+        }
     } 
+    // 🔍 2. RESTORE DEEP SEARCH (TRUE CHATHISTORY CONTAINER ID)
     else if (item.type === 'search') {
-        let containerId = "searchChatHistory"; document.getElementById(containerId).innerHTML = ''; 
-        interactionsToRestore.forEach(inter => {
-            appendUserBubble(inter.question, inter.image, containerId); 
-            let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
-            if (inter.answer.includes('<div')) { bbl.innerHTML = inter.answer; } 
-            else {
+        let containerId = "chatHistory"; 
+        const container = document.getElementById(containerId);
+        if(container) {
+            container.innerHTML = ''; 
+            interactionsToRestore.forEach(inter => {
+                appendUserBubble(inter.question, inter.image, containerId); 
+                let lId = appendAiLoading(containerId); 
+                const bbl = document.getElementById(lId).querySelector('.bubble');
                 bbl.innerHTML = `
-                    <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${inter.provider || "AI"}</div>
+                    <div class="api-badge">✨ BY ${inter.provider || "AI"}</div>
                     <div id="search_${lId}" style="margin-top:10px;">${inter.answer.replace(/\n/g, '<br>')}</div>
                     <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
                         <div style="display:flex; gap:10px; width:100%;">
@@ -1388,22 +1410,51 @@ function restoreSession(e, id) {
                         </div>
                         ${getRetryButtonsHtml(lId)}
                     </div>`;
+            });
+            scrollToBottom("chatScrollArea");
+        }
+    } 
+    // 🎙️ 3. RESTORE TEXT TRANSLATOR
+    else if (item.type === 'translation') {
+        const inputField = document.getElementById("inputText");
+        const outputBox = document.getElementById("translatedText");
+        if(inputField && outputBox) {
+            inputField.value = item.question || "";
+            outputBox.innerHTML = item.answer || "";
+            let parts = item.answer.split("Hard Words:");
+            if(parts[1] && document.getElementById("hardWords")) {
+                document.getElementById("hardWords").innerHTML = parts[1].trim();
             }
-        });
-    } 
-    else if (item.type === 'image_translation' && document.getElementById("imageChatHistory")) {
-        let containerId = "imageChatHistory"; document.getElementById(containerId).innerHTML = ''; 
-        interactionsToRestore.forEach(inter => {
-            appendUserBubble(inter.question, inter.image, containerId); 
-            let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble');
-            if (inter.answer.includes('<div')) { bbl.innerHTML = inter.answer; } else { bbl.innerHTML = `<div id="trans_${lId}">${inter.answer.replace(/\n/g, '<br>')}</div>`; }
-        });
-    } 
-    else if (item.type === 'qa' && document.getElementById("qaAnswerBox")) {
-        const lastInter = interactionsToRestore[interactionsToRestore.length - 1];
-        document.getElementById("qaAnswerBox").innerHTML = lastInter.answer; document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "Restored from History";
+        }
     }
-    showToast("🔄 Session Restored");
+    // 🖼️ 4. RESTORE IMAGE TRANSLATOR
+    else if (item.type === 'image_translation') {
+        let containerId = "imageChatHistory"; 
+        const container = document.getElementById(containerId);
+        if(container) {
+            container.innerHTML = ''; 
+            interactionsToRestore.forEach(inter => {
+                appendUserBubble(inter.question, inter.image, containerId); 
+                let lId = appendAiLoading(containerId); 
+                const bbl = document.getElementById(lId).querySelector('.bubble');
+                bbl.innerHTML = inter.answer;
+            });
+            scrollToBottom("imageScrollArea");
+        }
+    } 
+    // 📄 5. RESTORE DOCUMENT Q&A
+    else if (item.type === 'qa') {
+        const outBox = document.getElementById("qaAnswerBox");
+        const statusTxt = document.getElementById("qaStatusText");
+        const pBar = document.getElementById("qaProgressBar");
+        if(outBox) {
+            const lastInter = interactionsToRestore[interactionsToRestore.length - 1];
+            outBox.innerHTML = lastInter.answer; 
+            if(pBar) pBar.style.width = "100%"; 
+            if(statusTxt) statusTxt.innerText = "Restored from History";
+        }
+    }
+    showToast("🔄 Session Restored Successfully");
 }
 
 let currentStream = null, currentFacing = "environment";
