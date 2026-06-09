@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AI PRO SUITE - ZERO LAG & ULTIMATE UI UPGRADE
+   AI PRO SUITE - ZERO LAG & ULTIMATE UI UPGRADE (ALL BUGS FIXED)
    ========================================================================== */
 
 /* --- 1. SYSTEM DEFAULT THEME VARIABLES --- */
@@ -104,11 +104,7 @@ html, body {
 }
 
 /* --- 5. DASHBOARD CARDS (BIG ICONS) --- */
-.dashboard-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-    gap: 20px; 
-}
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
 
 .card, .dashboard-grid > div {
     background: var(--bg-surface); 
@@ -125,16 +121,8 @@ html, body {
 .dashboard-grid > div:nth-child(5) { animation-delay: 0.25s; }
 .dashboard-grid > div:nth-child(6) { animation-delay: 0.3s; }
 
-.card:hover { 
-    transform: translateY(-5px); 
-    border-color: var(--primary); 
-}
-
-.dash-icon {
-    font-size: calc(75px * var(--app-font-scale)); 
-    margin-bottom: 15px; display: inline-block; 
-    transition: transform 0.3s ease;
-}
+.card:hover { transform: translateY(-5px); border-color: var(--primary); }
+.dash-icon { font-size: calc(75px * var(--app-font-scale)); margin-bottom: 15px; display: inline-block; transition: transform 0.3s ease; }
 .card:hover .dash-icon { transform: scale(1.15) rotate(5deg); }
 
 /* --- 6. BUTTONS & INPUTS --- */
@@ -147,7 +135,6 @@ html, body {
 .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
 .btn:active { transform: scale(0.95); }
 
-/* ALL BUTTON COLORS RESTORED */
 .btn.blue { background: linear-gradient(135deg, #0ea5e9, #2563eb) !important; }
 .btn.red { background: linear-gradient(135deg, #ef4444, #b91c1c) !important; }
 .btn.green { background: linear-gradient(135deg, #10b981, #047857) !important; }
@@ -155,15 +142,10 @@ html, body {
 .btn.purple { background: linear-gradient(135deg, #a855f7, #7e22ce) !important; }
 
 input, textarea, select, .standard {
-    width: 100%; 
-    background: var(--input-bg) !important; 
-    border: 1px solid var(--border-light) !important;
-    border-radius: 14px; color: var(--text-main) !important; padding: 16px; 
-    outline: none; transition: border-color 0.2s ease;
+    width: 100%; background: var(--input-bg) !important; border: 1px solid var(--border-light) !important;
+    border-radius: 14px; color: var(--text-main) !important; padding: 16px; outline: none; transition: border-color 0.2s ease;
 }
-input:focus, textarea:focus, select:focus { 
-    border-color: var(--primary) !important; 
-}
+input:focus, textarea:focus, select:focus { border-color: var(--primary) !important; }
 
 /* --- 7. FONT SIZE DOCK --- */
 .font-size-dock {
@@ -179,10 +161,8 @@ input:focus, textarea:focus, select:focus {
 .font-size-toggle:hover { transform: scale(1.1); }
 
 .font-size-panel {
-    width: 320px; background: var(--bg-surface); 
-    border: 2px solid var(--primary); border-radius: 16px; padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; 
-    transform-origin: bottom right; animation: springUpPanel 0.3s ease-out;
+    width: 320px; background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 16px; padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; transform-origin: bottom right; animation: springUpPanel 0.3s ease-out;
 }
 .font-size-dock.active .font-size-panel { display: block; }
 .font-size-options { display: flex; gap: 8px; }
@@ -203,8 +183,7 @@ input:focus, textarea:focus, select:focus {
 
 .cameraModal .closeBtn, .camera-top-bar .closeBtn {
     position: absolute !important; top: 30px !important; left: 20px !important;
-    z-index: 9999999 !important; pointer-events: auto !important;
-    background: #ef4444 !important; border: 2px solid white !important;
+    z-index: 9999999 !important; pointer-events: auto !important; background: #ef4444 !important; border: 2px solid white !important;
 }
 .closeBtn, .cam-icon-btn { 
     width: 60px; height: 60px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.4); 
@@ -212,7 +191,7 @@ input:focus, textarea:focus, select:focus {
 }
 .closeBtn:hover, .cam-icon-btn:hover { background: var(--accent); }
 
-/* --- 9. STYLED IMAGE PREVIEW & FIXED BUG --- */
+/* --- 9. STYLED IMAGE PREVIEW --- */
 .image-preview-chip {
     display: none; width: 80px; height: 80px; border-radius: 12px;
     background-size: cover; background-position: center; border: 3px solid var(--primary);
@@ -225,7 +204,9 @@ input:focus, textarea:focus, select:focus {
     font-size: 14px; font-weight: bold; cursor: pointer; border: 2px solid white; z-index: 106;
 }
 
-/* --- 10. CHAT BUBBLE ALIGNMENT FIX --- */
+/* ==========================================================================
+   10. 🔥 CHAT BUBBLE FIXES: TEXT SQUISHING & INVISIBLE ACTION BUTTONS 🔥
+   ========================================================================== */
 .chat-msg { display: flex; width: 100%; margin-bottom: 20px; animation: fadeInPage 0.3s ease-out; }
 .chat-user { justify-content: flex-end; }
 .chat-ai { justify-content: flex-start; }
@@ -236,8 +217,66 @@ input:focus, textarea:focus, select:focus {
     background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); border-bottom-left-radius: 4px; 
     display: flex !important; flex-direction: column !important; gap: 12px;
 }
-.chat-ai .bubble > div { width: 100% !important; box-sizing: border-box !important; overflow-x: auto !important; }
-.chat-ai .bubble div[style*="display: flex"], .chat-ai .bubble div[style*="display:flex"] { flex-wrap: wrap !important; justify-content: flex-start !important; }
+
+/* FIX: Stop the BY GEMINI badge from squishing the text */
+.api-badge {
+    position: absolute !important;
+    top: 15px !important;
+    right: 15px !important;
+    background: var(--input-bg) !important;
+    border: 1px solid var(--primary) !important;
+    color: var(--primary) !important;
+    padding: 4px 10px !important;
+    border-radius: 12px !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    box-shadow: var(--glass-shadow) !important;
+}
+
+/* Pushes the actual answer text safely below the badge */
+.chat-ai .bubble div[id^="text_"] {
+    margin-top: 35px !important;
+    width: 100% !important; 
+    box-sizing: border-box !important; 
+    overflow-x: auto !important;
+}
+
+/* FIX: Forces all Action Buttons (Copy, Listen, Retry) to be 100% visible and wrapped safely */
+.chat-ai .bubble div[style*="border-top"] {
+    display: flex !important; 
+    flex-wrap: wrap !important; 
+    gap: 8px !important;
+    justify-content: flex-start !important;
+    margin-top: 15px !important;
+    padding-top: 15px !important;
+    border-top: 1px solid var(--border-light) !important;
+    width: 100% !important;
+}
+
+/* Overrides the invisible inline styles on the buttons */
+.chat-ai .bubble div[style*="border-top"] button, .btn-relative {
+    background: var(--input-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-light) !important;
+    padding: 8px 16px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    flex: 1 1 auto !important; /* Allows them to shrink/grow and wrap cleanly */
+    text-align: center !important;
+    box-shadow: var(--glass-shadow) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+}
+
+.chat-ai .bubble div[style*="border-top"] button:hover, .btn-relative:hover {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+}
+
 .bubble-img { max-width: 100%; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border-light); }
 
 /* --- 11. CHAT INPUT AREA --- */
@@ -258,7 +297,7 @@ input:focus, textarea:focus, select:focus {
 .chat-action-btn.send { background: linear-gradient(135deg, var(--secondary), var(--primary)); color: white;}
 .chat-action-btn.send:active { transform: scale(0.9); }
 
-/* --- 12. SIDEBAR --- */
+/* --- 12. SIDEBAR & THE NEW X BUTTON --- */
 .sidebar {
     position: fixed; top: 0; left: -100%; width: 280px; height: 100dvh; background: var(--bg-surface);
     border-right: 1px solid var(--border-light); z-index: 1000; padding: 20px; padding-top: 80px; 
@@ -270,6 +309,21 @@ input:focus, textarea:focus, select:focus {
     display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s, color 0.2s;
 }
 .sidebar button:hover, .sidebar button.active { background: var(--border-light); color: var(--text-main); }
+
+/* Sidebar Close X Button Fix */
+.sidebar-close-btn {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    margin-bottom: 20px !important;
+    justify-content: center !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+}
+.sidebar-close-btn:hover {
+    background: #ef4444 !important;
+    color: white !important;
+}
 
 /* --- LIGHTWEIGHT ENTRY ANIMATIONS ONLY --- */
 @keyframes fadeInPage { from { opacity: 0; } to { opacity: 1; } }
@@ -291,82 +345,45 @@ input:focus, textarea:focus, select:focus {
 .stat-box, .result-card, .outputBox { background: var(--input-bg) !important; border: 1px solid var(--border-light) !important; color: var(--text-main) !important; }
 
 /* ==========================================================================
-   14. 🔥 YOUTUBE & HISTORY DECORATION FIX 🔥
+   14. 🔥 YOUTUBE & HISTORY DECORATION (CLEANED UP) 🔥
    ========================================================================== */
 
-/* YOUTUBE: Target the exact hardcoded hex code (#f8fafc) and force it to System Theme */
 div[style*="color: white"], div[style*="color: #fff"], div[style*="color:#fff"], 
 div[style*="color: #f8fafc"], div[style*="color:#f8fafc"], 
 span[style*="color: white"], span[style*="color: #fff"],
-b[style*="color: white"], strong[style*="color: white"] {
-    color: var(--text-main) !important;
-}
+b[style*="color: white"], strong[style*="color: white"] { color: var(--text-main) !important; }
 
-/* YOUTUBE: Make the Author text bold and colorful */
-.yt-meta, .yt-author {
-    font-weight: 900 !important;
-    color: var(--secondary) !important;
-    font-size: 13px !important;
-    margin-top: 5px !important;
-    display: block !important;
-}
+.yt-meta, .yt-author { font-weight: 900 !important; color: var(--secondary) !important; font-size: 13px !important; margin-top: 5px !important; display: block !important; }
 
-/* HISTORY DECORATION: Premium Animated Glass Cards */
+/* FIX: Clean, standard History Layout */
 #historyList > div {
-    background: var(--input-bg) !important;
+    background: var(--bg-surface) !important;
     border: 1px solid var(--border-light) !important;
-    border-left: 5px solid var(--primary) !important; 
-    border-radius: 16px !important;
-    padding: 20px !important;
-    margin-bottom: 15px !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
     box-shadow: var(--glass-shadow) !important;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s !important;
+    transition: transform 0.2s ease, border-color 0.2s ease !important;
     position: relative;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
 }
 
 #historyList > div:hover {
-    transform: translateY(-5px) scale(1.02) !important;
-    box-shadow: 0 12px 30px var(--primary-glow) !important;
+    transform: translateY(-2px) !important;
     border-color: var(--primary) !important;
 }
 
-/* History Card Title */
 #historyList > div strong {
-    color: var(--primary) !important;
-    font-size: 18px !important;
-    font-weight: 900 !important;
-    display: block !important;
-    margin-bottom: 8px !important;
-    letter-spacing: 0.5px !important;
-}
-
-/* History Card Text Body */
-#historyList > div small, #historyList > div span {
-    color: var(--text-muted) !important;
-    font-size: 14px !important;
-    line-height: 1.6 !important;
-}
-
-/* History Action Buttons (View, Delete) */
-#historyList > div button {
-    background: var(--bg-surface) !important;
     color: var(--text-main) !important;
-    border: 1px solid var(--border-light) !important;
-    padding: 10px 18px !important;
-    border-radius: 12px !important;
+    font-size: 16px !important;
     font-weight: 800 !important;
-    margin-top: 15px !important;
-    margin-right: 10px !important;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-    cursor: pointer !important;
+    display: block !important;
+    margin-bottom: 6px !important;
 }
 
-#historyList > div button:hover {
-    background: linear-gradient(135deg, var(--secondary), var(--primary)) !important;
-    color: white !important;
-    border-color: transparent !important;
-    transform: translateY(-3px) scale(1.05) !important;
-    box-shadow: 0 5px 15px var(--primary-glow) !important;
+#historyList > div span {
+    color: var(--text-muted) !important;
+    font-size: 12px !important;
 }
