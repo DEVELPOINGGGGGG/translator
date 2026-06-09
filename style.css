@@ -242,3 +242,45 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary) !import
 .stat-box, .result-card, .outputBox { background: var(--input-bg) !important; border: 2px solid var(--border-light) !important; color: var(--text-main) !important; }
 div[style*="color: white"], div[style*="color: #fff"], span[style*="color: white"], b[style*="color: white"], strong[style*="color: white"] { color: var(--text-main) !important; }
 .yt-meta, .yt-author { font-weight: 900 !important; color: var(--secondary) !important; font-size: 13px !important; margin-top: 5px !important; display: block !important; }
+/* ==========================================================================
+   🔥 16. IMAGE PREVIEW CHIP (CAMERA FIX) 🔥
+   ========================================================================== */
+.image-preview-chip {
+    display: none; 
+    width: 75px; 
+    height: 75px; 
+    border-radius: 14px; 
+    background-size: cover; 
+    background-position: center; 
+    position: relative; 
+    margin-left: 15px; 
+    margin-bottom: 10px; 
+    border: 2px solid var(--primary); 
+    box-shadow: 0 5px 15px var(--primary-glow); 
+    animation: bounceInBubble 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 101;
+}
+
+.image-preview-close {
+    position: absolute; 
+    top: -10px; 
+    right: -10px; 
+    background: #ef4444 !important; 
+    color: white !important; 
+    border-radius: 50%; 
+    width: 26px; 
+    height: 26px; 
+    display: flex !important; 
+    justify-content: center !important; 
+    align-items: center !important; 
+    font-size: 12px !important; 
+    font-weight: 900 !important; 
+    cursor: pointer !important; 
+    border: 2px solid var(--bg-surface) !important; 
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.5) !important; 
+    transition: transform 0.3s ease !important;
+}
+
+.image-preview-close:hover {
+    transform: scale(1.2) rotate(90deg) !important;
+}
