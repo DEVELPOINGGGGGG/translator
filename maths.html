@@ -87,19 +87,20 @@
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-
 </div>
 
 <div class="page active chat-page-layout" id="mathsPage">
   <div class="chat-scroll-area" id="mathScrollArea">
     <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
-        <h1 style="font-size: 24px;">🧮 Math Solver</h1>
-        <p style="font-size: 14px; opacity: 0.9;">Give Answers Of Maths.</p>
+        <h1 style="font-size: 24px; color: white;">🧮 Math Solver</h1>
+        <p style="font-size: 14px; opacity: 0.9; color: white;">Give Answers Of Maths.</p>
     </div>
-    <button onclick="shareChatHistory()" style="background: #3b82f6; color: white; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8m-4-6l-4-4m0 0L8 6m4-4v12"></path></svg>
-    Share
-</button>
+    
+    <button onclick="openWhatsAppModal()" style="background: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.384 0 12.031c0 2.115.548 4.183 1.587 6.008L.063 24l6.104-1.6c1.782.946 3.791 1.446 5.864 1.446 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm3.843 17.202c-.173.486-.998.922-1.428.983-.393.056-1.155.155-3.327-.743-2.618-1.082-4.296-3.75-4.425-3.924-.131-.173-1.056-1.408-1.056-2.684 0-1.277.663-1.905.897-2.164.234-.258.508-.323.679-.323.173 0 .344.004.498.01.161.008.384-.064.602.46.223.535.753 1.84.819 1.968.066.13.111.28.024.453-.087.172-.132.28-.264.432-.131.153-.277.327-.393.454-.123.134-.254.281-.107.535.147.255.653 1.081 1.402 1.748.966.86 1.763 1.132 2.015 1.261.253.13.4.111.55-.064.148-.174.636-.74.808-.992.172-.254.344-.213.576-.126.232.087 1.468.692 1.721.821.253.129.423.193.484.301.062.107.062.624-.11 1.111z"/></svg>
+        Share via WhatsApp
+    </button>
+
     <div id="mathChatHistory"></div>
   </div>
   <div class="chat-input-area">
@@ -125,6 +126,18 @@
         <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
     <canvas id="captureCanvas" style="display:none;"></canvas>
+</div>
+
+<div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
+    <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 400px; width: 90%; text-align: center; position:relative;">
+        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share via WhatsApp</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the authorized mobile number to send this solution.</p>
+        <input type="number" id="waNumberInput" placeholder="e.g. 919876543210" style="width: 100%; padding: 15px; border-radius: 16px; border: 2px solid var(--border-light); background: var(--input-bg); color: var(--text-main); margin-bottom: 25px; font-weight: bold; text-align: center; font-size: 18px;">
+        <div style="display: flex; gap: 10px;">
+            <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="submitWhatsAppNumber(event)">🚀 Send</button>
+            <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px; background: #ef4444; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="closeWhatsAppModal()">✖ Cancel</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -190,7 +203,7 @@ Current Task: ${userText}`;
             mathConversationHistory.push(`AI: ${data.text}`);
             clearMathImage();
 
-            // Fire the CSS paper renderer (It will only render if it finds the math keywords)
+            // Fire the CSS paper renderer
             generateMathPaper(data.text);
 
         } catch (err) {
@@ -200,46 +213,45 @@ Current Task: ${userText}`;
     }
 
     // 🚀 BULLETPROOF CSS PAPER INJECTION
-// 🚀 BULLETPROOF CSS PAPER INJECTION
-function generateMathPaper(aiResponseText) {
-    try {
-        if (!aiResponseText.includes("SOLUTION:-")) return;
+    function generateMathPaper(aiResponseText) {
+        try {
+            if (!aiResponseText.includes("SOLUTION:-")) return;
 
-        // DETECT MULTIPLE QUESTIONS - अगर 1 से ज्यादा सवाल हैं, तो इमेज नहीं बनेगी
-        const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
-        if (hasMultipleQuestions) return; 
+            // DETECT MULTIPLE QUESTIONS
+            const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
+            if (hasMultipleQuestions) return; 
 
-        let parts = aiResponseText.split("SOLUTION:-")[1];
-        let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+            let parts = aiResponseText.split("SOLUTION:-")[1];
+            let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
 
-        if (mathTextOnly.length < 5) return;
+            if (mathTextOnly.length < 5) return;
 
-        // Clean LaTeX (सिर्फ फालतू सिंबल हटाएं, \frac और ^ को सुरक्षित रखें)
-        mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
+            // Clean LaTeX
+            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
 
-        const historyDiv = document.getElementById("mathChatHistory");
-        const paperId = "paper_" + Date.now();
-        
-        historyDiv.insertAdjacentHTML('beforeend', `
-            <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
-                <div style="width: 100%; max-width: 95%;">
-                    <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
-                    <div class="digital-paper-container">
-                        <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
+            const historyDiv = document.getElementById("mathChatHistory");
+            const paperId = "paper_" + Date.now();
+            
+            historyDiv.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
+                    <div style="width: 100%; max-width: 95%;">
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
+                        <div class="digital-paper-container">
+                            <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `);
-        
-        // MathJax रेंडरिंग
-        if (window.MathJax) { 
-            MathJax.typesetPromise([document.getElementById(paperId)]); 
+            `);
+            
+            // MathJax rendering
+            if (window.MathJax) { 
+                MathJax.typesetPromise([document.getElementById(paperId)]); 
+            }
+            document.getElementById("mathScrollArea").scrollTop = 99999;
+        } catch (e) {
+            console.error("Paper rendering failed:", e);
         }
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    } catch (e) {
-        console.error("Paper rendering failed:", e);
     }
-}
 
     function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
         const historyDiv = document.getElementById("mathChatHistory");
@@ -294,44 +306,71 @@ function generateMathPaper(aiResponseText) {
         closeCamera();
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
-// ==========================================
-// 🔗 SHARE CHAT HISTORY (URL MODE)
-// ==========================================
-async function shareChatHistory() {
-    // 1. Grab the current active session ID from your main.js cache
-    const sessionId = window.sessionCache ? window.sessionCache['math'] : null;
 
-    if (!sessionId) {
-        alert("⚠️ No active session to share yet! Please ask a math question first.");
-        return;
-    }
+    // ==========================================
+    // 🔗 SECURE WHATSAPP SHARE ENGINE
+    // ==========================================
+    window.openWhatsAppModal = function() {
+        // 1. Get the last AI answer from conversation history
+        const aiMessages = mathConversationHistory.filter(m => m.startsWith("AI: "));
+        
+        if (aiMessages.length === 0) {
+            alert("⚠️ No solution available to share yet! Please ask a math question first.");
+            return;
+        }
+        
+        // Open the modal
+        document.getElementById('whatsappModal').style.display = 'flex';
+        document.getElementById('waNumberInput').focus();
+    };
 
-    // 2. Build the exact restore URL
-    const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}?restore=${sessionId}`;
+    window.closeWhatsAppModal = function() {
+        document.getElementById('whatsappModal').style.display = 'none';
+        document.getElementById('waNumberInput').value = '';
+    };
 
-    // 3. Trigger Native Share or Fallback to Clipboard
-    if (navigator.share) {
+    window.submitWhatsAppNumber = async function(event) {
+        const number = document.getElementById('waNumberInput').value.trim();
+        if (!number) return alert("Please enter a mobile number.");
+
+        // Grab the most recent AI answer
+        const aiMessages = mathConversationHistory.filter(m => m.startsWith("AI: "));
+        let messageText = aiMessages[aiMessages.length - 1].replace("AI: ", "");
+        
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ Sending...";
+        btn.style.opacity = "0.7";
+        btn.disabled = true;
+
         try {
-            await navigator.share({
-                title: 'Math Solution Session',
-                text: 'Check out this math solution session!',
-                url: shareUrl,
+            // 🛑 THIS POINTS TO YOUR SECURE RENDER BACKEND 🛑
+            // Ensure you update this to your actual Render URL when deployed
+            const response = await fetch("https://your-app-name.onrender.com/secure-whatsapp", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    number: number,
+                    message: "AI Pro Suite Solution:\n\n" + messageText
+                })
             });
-        } catch (err) {
-            console.log('User cancelled share or error:', err);
+
+            if (response.status === 403) {
+                alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
+            } else if (response.ok) {
+                alert("✅ Sent successfully to authorized device!");
+                closeWhatsAppModal();
+            } else {
+                alert("❌ Failed to send. Server responded with an error.");
+            }
+        } catch (e) {
+            alert("❌ Connection error. Is your Render server running?");
         }
-    } else {
-        // Fallback for desktop browsers
-        try {
-            await navigator.clipboard.writeText(shareUrl);
-            alert("✅ URL copied to clipboard!\n\n(Note: Because your app uses Local Storage, this link will currently only load the session on this exact browser/device).");
-        } catch (err) {
-            alert("❌ Failed to copy link.");
-            console.error(err);
-        }
-    }
-}
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = "1";
+        btn.disabled = false;
+    };
 </script>
 
 <script src="ui-controls.js" defer></script>
