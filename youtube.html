@@ -47,17 +47,19 @@
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
 </div>
-
 <div class="sidebar" id="sidebar">
+  <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
-  <button style="border-left: 4px solid #ef4444; color: #ffb4b4; background: rgba(239,68,68,0.1);">🎬 YouTube Learning</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
+  <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-  <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
-  <button onclick="window.location.href='create.html'">✨ Image Creator</button>
-  <button onclick="window.location.href='history.html'">🕒 History</button>
+  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+
 </div>
 
 <div class="page active" style="top: 70px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; padding-bottom: 150px;">
