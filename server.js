@@ -7,15 +7,15 @@ const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
-// 🛑 THE MASTER WATERFALL HIERARCHY 🛑
+// 🛑 STRICT MASTER WATERFALL HIERARCHY (GEMINI -> CLOUDFLARE -> GROQ) 🛑
 const VISION_PROVIDERS = [
     { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
     { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'groq', key: process.env.GROQ_API_KEY },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
+    { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
@@ -24,8 +24,8 @@ const TEXT_PROVIDERS = [
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'groq', key: process.env.GROQ_API_KEY },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
+    { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const SEARCH_PROVIDERS = [
@@ -34,8 +34,8 @@ const SEARCH_PROVIDERS = [
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
     { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
-    { type: 'groq', key: process.env.GROQ_API_KEY },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }
+    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
+    { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const publicDir = __dirname;
@@ -58,21 +58,20 @@ function readRequestBody(req) {
     }); 
 }
 
-let globalRequestCounter = 0;
 const apiUsageStats = {}; 
 
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
     let targetProviders = [...providers]; 
     
+    // 🛑 USER OVERRIDE LOGIC 🛑
+    // If the frontend explicitly asks for a model (like "groq" or "gemini"), filter the list to only use that model.
     if (override) {
         targetProviders = targetProviders.filter(p => p.type.toLowerCase() === override.toLowerCase());
-        if(targetProviders.length === 0) throw new Error(`Model ${override} is not configured on the server.`);
+        if(targetProviders.length === 0) throw new Error(`Model '${override}' is not configured on the server.`);
     } else {
         if (targetProviders.length === 0) throw new Error("No operational API keys found inside server config!");
-        const rotations = globalRequestCounter % targetProviders.length;
-        targetProviders = [...targetProviders.slice(rotations), ...targetProviders.slice(0, rotations)];
-        globalRequestCounter++;
+        // We removed the Round-Robin here. It will always start at index 0 (Gemini API 1)
     }
 
     for (const p of targetProviders) { 
@@ -99,7 +98,8 @@ async function handleGeminiText(req, res) {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Explain this."; 
         const sysText = body.systemPrompt || "";
-        const override = body.providerOverride || null;
+        // Accepts 'providerOverride' or 'model' from the frontend
+        const override = body.providerOverride || body.model || null;
 
         const resultObj = await tryProviders(TEXT_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
@@ -144,7 +144,7 @@ async function handleGeminiVision(req, res) {
         const body = JSON.parse(await readRequestBody(req));
         const img = body.imageBase64;
         const userText = body.userPrompt || body.prompt || body.text || "Solve this.";
-        const override = body.providerOverride || null;
+        const override = body.providerOverride || body.model || null;
         
         if (!img || img === "data:,") return sendJson(res, 400, { error: "No image provided." });
         
@@ -197,7 +197,7 @@ async function handleGroqSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Search";
-        const override = body.providerOverride || null;
+        const override = body.providerOverride || body.model || null;
         const sysText = "You are an advanced Internet Search Engine. Search your knowledge base to provide factual, comprehensive, and up-to-date web search results.";
 
         const resultObj = await tryProviders(SEARCH_PROVIDERS, async (p) => {
@@ -262,8 +262,7 @@ async function handleCloudflareImage(req, res) {
 // ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
-// 🛡️ DYNAMIC AUTHORIZED NUMBERS FROM RENDER
-// This grabs your comma-separated list, splits it up, and cleans out any accidental spaces.
+// This pulls your authorized comma-separated numbers dynamically from Render
 const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "")
     .split(',')
     .map(num => num.trim())
@@ -275,12 +274,10 @@ async function handleSecureWhatsapp(req, res) {
         const number = body.number;
         const message = body.message;
 
-        // 🛡️ THE UNAUTHORIZED CHECK
         if (!AUTHORIZED_NUMBERS.includes(number)) {
             return sendJson(res, 403, { error: "ERROR - 324 (UNAUTHORIZED PROTECTION)" });
         }
 
-        // GRAB TOKENS FROM RENDER ENVIRONMENT VARIABLES
         const idInstance = process.env.ID_INSTANCE || "";
         const apiToken = process.env.API_TOKEN || "";
 
@@ -329,7 +326,7 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/groq-search") return handleGroqSearch(req, res);
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
-        if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res); // 👈 WHATSAPP ADDED HERE
+        if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
     }
     
     if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
