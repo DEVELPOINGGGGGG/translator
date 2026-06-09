@@ -307,19 +307,19 @@ Current Task: ${userText}`;
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-    // ==========================================
-    // 🔗 SECURE WHATSAPP SHARE ENGINE
+// ==========================================
+    // 🔗 SECURE WHATSAPP SHARE ENGINE (BULLETPROOF)
     // ==========================================
     window.openWhatsAppModal = function() {
-        // 1. Get the last AI answer from conversation history
-        const aiMessages = mathConversationHistory.filter(m => m.startsWith("AI: "));
+        // Scrape directly from the screen instead of a hidden array
+        const historyDiv = document.getElementById("mathChatHistory");
+        const aiMessages = historyDiv.querySelectorAll(".chat-ai .bubble");
         
         if (aiMessages.length === 0) {
             alert("⚠️ No solution available to share yet! Please ask a math question first.");
             return;
         }
         
-        // Open the modal
         document.getElementById('whatsappModal').style.display = 'flex';
         document.getElementById('waNumberInput').focus();
     };
@@ -333,9 +333,19 @@ Current Task: ${userText}`;
         const number = document.getElementById('waNumberInput').value.trim();
         if (!number) return alert("Please enter a mobile number.");
 
-        // Grab the most recent AI answer
-        const aiMessages = mathConversationHistory.filter(m => m.startsWith("AI: "));
-        let messageText = aiMessages[aiMessages.length - 1].replace("AI: ", "");
+        // Grab the most recent AI bubble text straight from the HTML
+        const historyDiv = document.getElementById("mathChatHistory");
+        const aiMessages = historyDiv.querySelectorAll(".chat-ai .bubble");
+        
+        let clone = aiMessages[aiMessages.length - 1].cloneNode(true);
+        
+        // Clean out the buttons and badges so they don't get sent in the text message
+        let actionContainer = clone.querySelector('.action-buttons-container');
+        if (actionContainer) clone.removeChild(actionContainer);
+        let badge = clone.querySelector('.api-badge');
+        if (badge) clone.removeChild(badge);
+        
+        let messageText = clone.innerText.trim();
         
         const btn = event.target;
         const originalText = btn.innerHTML;
@@ -344,9 +354,8 @@ Current Task: ${userText}`;
         btn.disabled = true;
 
         try {
-            // 🛑 THIS POINTS TO YOUR SECURE RENDER BACKEND 🛑
-            // Ensure you update this to your actual Render URL when deployed
-            const response = await fetch("https://your-app-name.onrender.com/secure-whatsapp", {
+            // Points directly to your internal Render server
+            const response = await fetch("/api/secure-whatsapp", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
