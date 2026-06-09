@@ -178,7 +178,63 @@
     
     document.addEventListener("DOMContentLoaded", fetchApiUsage);
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // 1. The exact texts you requested
+        const loadingTexts = [
+            "solve math question...",
+            "search using ai...",
+            "search youtube...",
+            "get quiz...",
+            "solve answers..."
+        ];
+        
+        let textIndex = 0;
+        const loaderText = document.getElementById("loaderText");
+        const loaderBar = document.getElementById("loaderBar");
+        const appLoader = document.getElementById("appLoader");
 
+        // 2. Start the text loop (Changes every 2 seconds)
+        loaderText.innerText = loadingTexts[0];
+        const textInterval = setInterval(() => {
+            textIndex = (textIndex + 1) % loadingTexts.length;
+            loaderText.innerText = loadingTexts[textIndex];
+        }, 2000);
+
+        // 3. Fake a smooth progress bar while the browser thinks
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            // Cap at 90% so it doesn't finish until the actual window.onload fires
+            if (progress > 90) progress = 90; 
+            loaderBar.style.width = progress + "%";
+        }, 250);
+
+        // 4. Wait for ALL styles, scripts, and images to finish loading
+        window.addEventListener('load', () => {
+            // Force it to show for at least a minimum of 2.5 seconds so it looks premium
+            // even if the page loads instantly from browser cache.
+            const timeElapsed = performance.now();
+            const minLoadTime = 2500; 
+            const remainingDelay = Math.max(0, minLoadTime - timeElapsed);
+
+            setTimeout(() => {
+                clearInterval(textInterval);
+                clearInterval(progressInterval);
+                
+                // Snap progress to 100% and say Ready
+                loaderBar.style.width = "100%";
+                loaderText.innerText = "system ready.";
+                
+                // Wait 0.4s for the user to see 100%, then fade it out smoothly
+                setTimeout(() => {
+                    appLoader.classList.add("hidden");
+                }, 400);
+
+            }, remainingDelay);
+        });
+    });
+</script>
 <script src="ui-controls.js" defer></script>
 </body>
 </html>
