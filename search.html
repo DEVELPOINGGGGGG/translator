@@ -71,15 +71,19 @@
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
-        <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-        <button onclick="window.location.href='search.html'" style="border-left: 5px solid #c084fc; background: rgba(255,255,255,0.08); color: #e9d5ff; padding-left: 40px;">🔍 Deep Search</button>
-        <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-        <button onclick="window.location.href='image.html'">📸 Image Chat</button>
-        <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-        <button onclick="window.location.href='translator.html'">🌍 Translator</button>
-        <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
-        <button onclick="window.location.href='history.html'">🕰️ History</button>
-    </div>
+  <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
+  <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+
+</div>
 
     <div class="topbar">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
