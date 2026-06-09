@@ -58,34 +58,34 @@
 </div>
 
 <div class="infoModal" id="historyModal">
-  <div class="card" style="display: flex; flex-direction: column; max-height: 90vh; text-align: left; position: relative;">
+  <div class="card">
+    
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 15px; margin-bottom: 15px;">
-      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: var(--primary); margin: 0;">Title</div>
-      <button class="closeBtn" onclick="closeHistoryEngine()" style="position: static; flex-shrink: 0; width: 40px; height: 40px; font-size: 16px; background: #ef4444; border-radius: 50%; color: white; display: grid; place-items: center; border: none; cursor: pointer;">✕</button>
+      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: var(--primary); margin: 0; font-weight: 900;">Title</div>
+      <button class="closeBtn" onclick="closeHistoryEngine()" style="flex-shrink: 0; width: 40px; height: 40px; font-size: 20px; background: #ef4444; border-radius: 50%; color: white; display: grid; place-items: center; border: 2px solid white; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.5);">✕</button>
     </div>
     
-    <div style="flex: 1; overflow-y: auto; padding-right: 5px;">
-        <div style="color: var(--text-muted); font-weight: 700; margin-bottom: 5px; font-size: 13px;">Original Request:</div>
-        <div class="outputBox" id="histQuestion" style="margin-top: 0; margin-bottom: 20px; padding: 12px; background: var(--input-bg); border-radius: 12px;"></div>
+    <div>
+        <div style="color: var(--primary); font-weight: 800; margin-bottom: 8px; font-size: 14px; text-transform: uppercase;">Original Request:</div>
+        <div class="outputBox" id="histQuestion"></div>
         
-        <div style="color: var(--text-muted); font-weight: 700; margin-bottom: 5px; font-size: 13px;">Response / Output:</div>
-        <div class="outputBox" id="histAnswer" style="margin-top: 0; padding: 12px; background: var(--input-bg); border-radius: 12px;"></div>
+        <div style="color: var(--secondary); font-weight: 800; margin-bottom: 8px; font-size: 14px; text-transform: uppercase;">Response / Output:</div>
+        <div class="outputBox" id="histAnswer"></div>
     </div>
     
-    <div id="histFooter" style="margin-top: 15px; border-top: 1px solid var(--border-light); padding-top: 15px;"></div>
+    <div id="histFooter" style="margin-top: 15px; border-top: 1px solid var(--border-light); padding-top: 20px;"></div>
+    
   </div>
 </div>
 
 <script>
     let localHistoryArray = [];
 
-    // Initialize Database Connections on Startup Loading Events
     document.addEventListener('DOMContentLoaded', () => {
         initializeDatabaseEngine();
         runClockTracker();
     });
 
-    // 1. Sidebar Menu Layout Toggles Handler
     function toggleSidebarEngine() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
@@ -96,13 +96,11 @@
     }
     document.getElementById("overlay").onclick = toggleSidebarEngine;
 
-    // 2. LocalForage + LocalStorage Safe Sync Framework Loader
     function initializeDatabaseEngine() {
         if (typeof localforage !== 'undefined') {
             localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
             localforage.getItem('aiHistory').then(savedData => {
                 localHistoryArray = savedData ? savedData : [];
-                // Fallback layer to grab older local storage indexes if array returns clear
                 if (localHistoryArray.length === 0) {
                     try { localHistoryArray = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
                 }
@@ -120,13 +118,13 @@
         renderHistoryCards();
     }
 
-    // 3. Render High Decoration Glass Cards Inside the History Stack
+    // 🔥 RENDER CARDS WITH EXPLICIT VIEW & DELETE BUTTONS 🔥
     function renderHistoryCards() {
         const list = document.getElementById("historyList");
         if (!list) return;
 
         if (localHistoryArray.length === 0) {
-            list.innerHTML = "<div style='text-align:center; padding:30px; font-weight:600; color:var(--text-muted);'>No saved elements found in memory database.</div>";
+            list.innerHTML = "<div style='text-align:center; padding:30px; font-weight:600; color:var(--text-muted);'>No saved elements found.</div>";
             return;
         }
 
@@ -143,50 +141,54 @@
             if(item.type === 'quiz') icon = "🏆";
 
             html += `
-            <div onclick="openSmartHistoryModal(${item.id})" class="history-item-card" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)) !important; border: 1px solid var(--border-light) !important; border-left: 8px solid var(--primary) !important; border-radius: 20px !important; padding: 24px !important; margin-bottom: 15px !important; box-shadow: var(--glass-shadow) !important; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; position: relative; cursor: pointer;">
-                <strong style="color: var(--text-main) !important; font-size: 20px !important; font-weight: 900 !important; display: block !important; margin-bottom: 8px !important;">${icon} ${item.title || item.type.toUpperCase()}</strong>
-                <span style="display: inline-block !important; background: var(--border-light) !important; color: var(--text-muted) !important; padding: 6px 12px !important; border-radius: 12px !important; font-size: 12px !important; font-weight: 700 !important;">📅 Logged: ${new Date(item.id).toLocaleString()}</span>
+            <div>
+                <strong>${icon} ${item.title || item.type.toUpperCase()}</strong>
+                <span style="display: inline-block; margin-bottom: 15px;">📅 Logged: ${new Date(item.id).toLocaleString()}</span>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn blue" style="padding: 10px 18px; font-size: 13px; flex: 1;" onclick="openSmartHistoryModal(${item.id})">👁️ View Message</button>
+                    <button class="btn red" style="padding: 10px 18px; font-size: 13px; flex: 1;" onclick="deleteSingleItemEngine(${item.id})">🗑️ Delete</button>
+                </div>
             </div>`;
         });
         list.innerHTML = html;
     }
 
-    // 4. GUI Viewer Engine - Handles Strings, Custom Arrays, and Nested Objects Dynamically
+    // 🔥 OPENS THE GUI MODAL WITHOUT REDIRECTING 🔥
     window.openSmartHistoryModal = function(id) {
         let item = localHistoryArray.find(i => i.id === id);
         if (!item) return;
 
-        document.getElementById('histTitle').innerText = item.title || "Saved Configuration Log";
+        document.getElementById('histTitle').innerText = item.title || "Saved Message";
         
         let q = item.question || "";
         let a = item.answer || "";
         let imgHtml = "";
 
-        // Unpack nested conversation sequences if saved under multi-turn system keys
         if (item.interactions && item.interactions.length > 0) {
             let last = item.interactions[item.interactions.length - 1];
-            if (!q) q = last.question || "No prompt parameters recorded.";
-            if (!a) a = last.answer || "No text payload generated.";
+            if (!q) q = last.question || "No prompt recorded.";
+            if (!a) a = last.answer || "No response recorded.";
             if (last.image) {
-                imgHtml = `<br><img src="${last.image}" style="max-width:100%; border-radius:12px; margin-top:15px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">`;
+                imgHtml = `<br><br><img src="${last.image}" style="max-width:100%; border-radius:12px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">`;
             }
         }
         if(item.image && !imgHtml) {
-            imgHtml = `<br><img src="${item.image}" style="max-width:100%; border-radius:12px; margin-top:15px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">`;
+            imgHtml = `<br><br><img src="${item.image}" style="max-width:100%; border-radius:12px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">`;
         }
 
         document.getElementById('histQuestion').innerHTML = q + imgHtml;
         document.getElementById('histAnswer').innerHTML = a;
 
-        // Force-Inject clean action button parameters into the footer frame views
+        // Injects Restore & Delete buttons into the GUI popup
         document.getElementById('histFooter').innerHTML = `
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="btn blue" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="triggerSessionRestoreEngine('${item.type}', ${item.id})">🚀 Restore</button>
-                <button class="btn green" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="speakOutputTextEngine()">🔊 Speak</button>
-                <button class="btn red" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="deleteSingleItemEngine(${item.id})">🗑️ Delete</button>
+                <button class="btn blue" style="flex: 1; padding: 14px; font-size: 15px;" onclick="triggerSessionRestoreEngine('${item.type}', ${item.id})">🚀 Restore to App</button>
+                <button class="btn red" style="flex: 1; padding: 14px; font-size: 15px;" onclick="deleteSingleItemEngine(${item.id})">🗑️ Delete Permanently</button>
             </div>
         `;
 
+        // 🔥 ACTUALLY SHOWS THE MODAL 🔥
         document.getElementById('historyModal').classList.add('active');
         
         if (window.MathJax) {
@@ -194,7 +196,6 @@
         }
     };
 
-    // 5. THE bulletproof RESTORATION AND REDIRECTION ROUTING ENGINE
     window.triggerSessionRestoreEngine = function(type, id) {
         const subRoutes = {
             'math': 'maths.html',
@@ -207,41 +208,23 @@
             'quiz': 'quiz.html'
         };
         const destFile = subRoutes[type] || 'index.html';
-        
-        // Save an emergency runtime variable pointer inside the local storage cache
-        localStorage.setItem('activeRestoreIdPointer', id);
-        
-        // Pass via search string query configurations to wake up module event loops
         window.location.href = `${destFile}?restore=${id}`;
     };
 
-    // 6. Text To Speech Speech Engine
-    window.speakOutputTextEngine = function() {
-        let cleanText = document.getElementById('histAnswer').innerText;
-        window.speechSynthesis.cancel(); // Terminate existing processes
-        let utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = 'hi-IN'; // Default speech profile parameters
-        window.speechSynthesis.speak(utterance);
-    };
-
-    // 7. Delete Operations Processing Loops
     window.deleteSingleItemEngine = function(id) {
-        if (confirm("Permanently wipe this configuration log item from database vaults?")) {
+        if (confirm("Permanently wipe this message?")) {
             localHistoryArray = localHistoryArray.filter(i => i.id !== id);
-            
-            // Push arrays back to localforage vaults and localstorage keys concurrently
             if (typeof localforage !== 'undefined') {
                 localforage.setItem('aiHistory', localHistoryArray);
             }
             localStorage.setItem('aiHistory', JSON.stringify(localHistoryArray));
-            
             closeHistoryEngine();
             renderHistoryCards();
         }
     };
 
     window.clearAllHistoryEngine = function() {
-        if (confirm("Are you absolutely sure you want to completely wipe out ALL storage history data logs? This cannot be undone!")) {
+        if (confirm("Are you absolutely sure you want to completely wipe ALL messages? This cannot be undone!")) {
             localHistoryArray = [];
             if (typeof localforage !== 'undefined') { localforage.setItem('aiHistory', []); }
             localStorage.setItem('aiHistory', '[]');
@@ -251,10 +234,8 @@
 
     window.closeHistoryEngine = function() {
         document.getElementById('historyModal').classList.remove('active');
-        window.speechSynthesis.cancel();
     };
 
-    // 8. Background Clock Synchronization Thread loops
     function runClockTracker() {
         setInterval(() => {
             const now = new Date();
