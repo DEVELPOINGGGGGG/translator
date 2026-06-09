@@ -1376,43 +1376,45 @@ function restoreSession(e, id) {
     sessionCache[item.type] = item.id;
     const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
 
+    // 🛑 BULLETPROOF CONTAINER FINDER 🛑
+    // This dynamically finds your chat area no matter what you named it in your HTML files!
+    let container = document.querySelector('.chat-scroll-area') || 
+                    document.getElementById('chatHistory') || 
+                    document.getElementById('searchChatHistory') || 
+                    document.getElementById('mathChatHistory') || 
+                    document.getElementById('mathsChatHistory') ||
+                    document.getElementById('imageChatHistory');
+    
+    let containerId = container ? (container.id || "chatContainerFallback") : "";
+    if (container && !container.id) container.id = containerId; // Assign fallback ID if missing
+
     // 🧮 1. RESTORE MATH SOLVER
-    if(item.type === 'math') { 
-        let containerId = "mathChatHistory"; 
-        const container = document.getElementById(containerId);
-        if(container) {
-            container.innerHTML = ''; 
-            interactionsToRestore.forEach(inter => {
-                appendUserBubble(inter.question, inter.image, containerId); 
-                let lId = appendAiLoading(containerId); 
-                updateAiBubble(lId, inter.answer, inter.provider || "AI", false);
-            });
-            scrollToBottom("mathScrollArea");
-        }
+    if(item.type === 'math' && container) { 
+        container.innerHTML = ''; 
+        interactionsToRestore.forEach(inter => {
+            appendUserBubble(inter.question, inter.image, containerId); 
+            let lId = appendAiLoading(containerId); 
+            updateAiBubble(lId, inter.answer, inter.provider || "AI", false);
+        });
+        scrollToBottom(containerId);
     } 
-    // 🔍 2. RESTORE DEEP SEARCH (TRUE CHATHISTORY CONTAINER ID)
-    else if (item.type === 'search') {
-        let containerId = "chatHistory"; 
-        const container = document.getElementById(containerId);
-        if(container) {
-            container.innerHTML = ''; 
-            interactionsToRestore.forEach(inter => {
-                appendUserBubble(inter.question, inter.image, containerId); 
-                let lId = appendAiLoading(containerId); 
-                const bbl = document.getElementById(lId).querySelector('.bubble');
-                bbl.innerHTML = `
-                    <div class="api-badge">✨ BY ${inter.provider || "AI"}</div>
-                    <div id="search_${lId}" style="margin-top:10px;">${inter.answer.replace(/\n/g, '<br>')}</div>
-                    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                        <div style="display:flex; gap:10px; width:100%;">
-                            <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                            <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
-                        </div>
-                        ${getRetryButtonsHtml(lId)}
-                    </div>`;
-            });
-            scrollToBottom("chatScrollArea");
-        }
+    // 🔍 2. RESTORE DEEP SEARCH
+    else if (item.type === 'search' && container) {
+        container.innerHTML = ''; 
+        interactionsToRestore.forEach(inter => {
+            appendUserBubble(inter.question, inter.image, containerId); 
+            let lId = appendAiLoading(containerId); 
+            const bbl = document.getElementById(lId).querySelector('.bubble');
+            bbl.innerHTML = `
+                <div class="api-badge">✨ BY ${inter.provider || "AI"}</div>
+                <div id="search_${lId}" style="margin-top:10px;">${inter.answer.replace(/\n/g, '<br>')}</div>
+                <div class="action-buttons-container">
+                    <button class="btn green" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
+                    <button class="btn" style="background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
+                    ${getRetryButtonsHtml(lId)}
+                </div>`;
+        });
+        scrollToBottom(containerId);
     } 
     // 🎙️ 3. RESTORE TEXT TRANSLATOR
     else if (item.type === 'translation') {
@@ -1428,23 +1430,19 @@ function restoreSession(e, id) {
         }
     }
     // 🖼️ 4. RESTORE IMAGE TRANSLATOR
-    else if (item.type === 'image_translation') {
-        let containerId = "imageChatHistory"; 
-        const container = document.getElementById(containerId);
-        if(container) {
-            container.innerHTML = ''; 
-            interactionsToRestore.forEach(inter => {
-                appendUserBubble(inter.question, inter.image, containerId); 
-                let lId = appendAiLoading(containerId); 
-                const bbl = document.getElementById(lId).querySelector('.bubble');
-                bbl.innerHTML = inter.answer;
-            });
-            scrollToBottom("imageScrollArea");
-        }
+    else if (item.type === 'image_translation' && container) {
+        container.innerHTML = ''; 
+        interactionsToRestore.forEach(inter => {
+            appendUserBubble(inter.question, inter.image, containerId); 
+            let lId = appendAiLoading(containerId); 
+            const bbl = document.getElementById(lId).querySelector('.bubble');
+            bbl.innerHTML = inter.answer;
+        });
+        scrollToBottom(containerId);
     } 
     // 📄 5. RESTORE DOCUMENT Q&A
     else if (item.type === 'qa') {
-        const outBox = document.getElementById("qaAnswerBox");
+        const outBox = document.getElementById("qaAnswerBox") || document.getElementById("qaResult");
         const statusTxt = document.getElementById("qaStatusText");
         const pBar = document.getElementById("qaProgressBar");
         if(outBox) {
@@ -1452,8 +1450,50 @@ function restoreSession(e, id) {
             outBox.innerHTML = lastInter.answer; 
             if(pBar) pBar.style.width = "100%"; 
             if(statusTxt) statusTxt.innerText = "Restored from History";
+        } else if (container) { 
+            // Fallback just in case you use a chat UI for QA
+            container.innerHTML = ''; 
+            interactionsToRestore.forEach(inter => {
+                appendUserBubble(inter.question, inter.image, containerId); 
+                let lId = appendAiLoading(containerId); 
+                document.getElementById(lId).querySelector('.bubble').innerHTML = inter.answer;
+            });
+            scrollToBottom(containerId);
         }
     }
+    // 🎬 6. RESTORE YOUTUBE
+    else if (item.type === 'youtube') {
+        let ytInput = document.getElementById('ytSearchInput') || document.getElementById('searchInput');
+        let ytBtn = document.getElementById('ytSearchBtn') || document.getElementById('searchBtn');
+        if (ytInput && ytBtn && interactionsToRestore.length > 0) {
+            ytInput.value = interactionsToRestore[0].question.replace("YouTube Search: ", "");
+            let status = document.getElementById('ytStatus');
+            if (status) status.innerHTML = `⏳ Loaded from history. Re-triggering search ranking...`;
+            ytBtn.click(); // Auto-clicks the search button to pull the videos
+        }
+    }
+    // 🏆 7. RESTORE QUIZ
+    else if (item.type === 'quiz') {
+        let reviewContainer = document.getElementById('reviewContainer');
+        if (reviewContainer) {
+            let setup = document.getElementById('quizSetup'); if(setup) setup.classList.remove('active');
+            let active = document.getElementById('quizActive'); if(active) active.classList.remove('active');
+            let results = document.getElementById('quizResults'); if(results) results.classList.add('active');
+            
+            reviewContainer.innerHTML = interactionsToRestore[0].answer;
+            let subText = document.getElementById('resultSubtext');
+            if (subText) subText.innerText = item.title || "Restored Quiz";
+
+            let scoreMatch = interactionsToRestore[0].answer.match(/Score:\s*(\d+)\s*out\s*of\s*(\d+)/i);
+            if(scoreMatch) {
+                let elC = document.getElementById('statCorrect'); if(elC) elC.innerText = scoreMatch[1];
+                let elT = document.getElementById('statTotal'); if(elT) elT.innerText = scoreMatch[2];
+                let elW = document.getElementById('statWrong'); if(elW) elW.innerText = parseInt(scoreMatch[2]) - parseInt(scoreMatch[1]);
+            }
+            if (window.MathJax) MathJax.typesetPromise([reviewContainer]).catch(e=>console.log(e));
+        }
+    }
+    
     showToast("🔄 Session Restored Successfully");
 }
 
