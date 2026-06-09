@@ -8,7 +8,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
     </script>
@@ -25,6 +25,7 @@
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
 </div>
+
 <div class="apiTracker">
     <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
     <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
@@ -40,13 +41,13 @@
 
 <div class="sidebar" id="sidebar">
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: #111827;">🕒 History & Downloads</button>
+  <button onclick="window.location.href='history.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: var(--border-light);">🕒 History & Downloads</button>
 </div>
 
 <div class="page active" id="historyPage">
@@ -56,34 +57,36 @@
       <button class="btn red" style="width: auto; padding: 8px 15px; margin-top: 0; font-size: 13px;" onclick="clearAllHistory()">🗑️ Clear All</button>
     </div>
     
-    <div id="historyList" style="margin-top: 15px;"></div>
+    <div id="historyList" style="margin-top: 20px;"></div>
   </div>
 </div>
 
+<!-- History GUI Modal -->
 <div class="infoModal" id="historyModal">
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: #60a5fa; margin: 0;">Title</div>
-      <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0;">✕</button>
+  <div class="card" style="display: flex; flex-direction: column; max-height: 90vh;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 15px; margin-bottom: 15px;">
+      <div class="cardTitle" id="histTitle" style="font-size: 20px; color: var(--primary); margin: 0;">Title</div>
+      <button class="closeBtn" onclick="closeHistory()" style="position: static; flex-shrink: 0; width: 40px; height: 40px; font-size: 16px;">✕</button>
     </div>
-    <div class="hist-scroll-area">
-        <div class="cardSub" style="margin-top: 5px;">Original Request:</div>
-        <div class="outputBox" id="histQuestion"></div>
-        <div class="cardSub" style="margin-top: 15px;">Solution:</div>
-        <div class="outputBox" id="histAnswer"></div>
+    
+    <div class="hist-scroll-area" style="flex: 1; overflow-y: auto; padding-right: 5px;">
+        <div style="color: var(--text-muted); font-weight: 700; margin-bottom: 5px; font-size: 13px;">Original Request:</div>
+        <div class="outputBox" id="histQuestion" style="margin-top: 0; margin-bottom: 20px;"></div>
+        
+        <div style="color: var(--text-muted); font-weight: 700; margin-bottom: 5px; font-size: 13px;">Response / Output:</div>
+        <div class="outputBox" id="histAnswer" style="margin-top: 0;"></div>
     </div>
-    <div class="hist-footer">
-        <div class="btn-group" style="margin-top: 0;">
-            <button class="btn green" onclick="speakText('histAnswer')">🔊 Speak</button>
-            <button class="btn blue" onclick="downloadHistoryFile()">💾 Download Text</button>
-        </div>
+    
+    <!-- Dynamic Buttons will be injected here -->
+    <div class="hist-footer" id="histFooter" style="margin-top: 15px; border-top: 1px solid var(--border-light); padding-top: 15px;">
     </div>
   </div>
 </div>
 
 <script src="ui-controls.js" defer></script>
 <script src="main.js" defer></script>
-<!-- 🚀 UNIVERSAL SMART HISTORY ENGINE (OVERRIDES MAIN.JS) 🚀 -->
+
+<!-- 🚀 UNIVERSAL SMART HISTORY ENGINE 🚀 -->
 <script>
     function renderAllHistory() {
         const list = document.getElementById("historyList");
@@ -99,7 +102,6 @@
 
         let html = "";
         historyData.forEach(item => {
-            // Assign the correct icon based on the app
             let icon = "📝";
             if(item.type === 'math') icon = "🧮";
             if(item.type === 'search') icon = "🔍";
@@ -109,20 +111,17 @@
             if(item.type === 'qa') icon = "📚";
             if(item.type === 'quiz') icon = "🏆";
 
+            // Clean, clickable card
             html += `
-            <div style="background: var(--input-bg); border: 1px solid var(--border-light); border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: var(--glass-shadow); transition: transform 0.3s;">
+            <div onclick="viewSmartHistory(${item.id})" style="background: var(--input-bg); border: 1px solid var(--border-light); border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: var(--glass-shadow); transition: transform 0.2s; cursor: pointer;">
                 <strong style="color: var(--primary); font-size: 18px; font-weight: 900; display: block; margin-bottom: 5px;">${icon} ${item.title || item.type.toUpperCase()}</strong>
-                <span style="color: var(--text-muted); font-size: 13px; display:block; margin-bottom:15px;">💾 Saved: ${new Date(item.id).toLocaleString()}</span>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button onclick="viewSmartHistory(${item.id})" class="btn blue" style="padding: 8px 18px; font-size: 13px; border-radius: 10px; margin:0; width:auto; text-transform:none; letter-spacing:0;">👁️ View</button>
-                    <button onclick="deleteSmartHistory(${item.id})" class="btn red" style="padding: 8px 18px; font-size: 13px; border-radius: 10px; margin:0; width:auto; text-transform:none; letter-spacing:0;">🗑️ Delete</button>
-                </div>
+                <span style="color: var(--text-muted); font-size: 13px; display:block;">💾 Saved: ${new Date(item.id).toLocaleString()}</span>
             </div>`;
         });
         list.innerHTML = html;
     }
 
-    // Smart Viewer that handles Images, HTML, and Text dynamically
+    // Opens GUI and injects text & dynamic buttons
     window.viewSmartHistory = function(id) {
         let historyData = JSON.parse(localStorage.getItem('aiHistory') || '[]');
         let item = historyData.find(i => i.id === id);
@@ -134,7 +133,6 @@
         let a = item.answer || "";
         let imgHtml = "";
 
-        // Safely extract data if it is buried inside the "interactions" array (Create, Quiz, YouTube use this)
         if (item.interactions && item.interactions.length > 0) {
             let last = item.interactions[item.interactions.length - 1];
             if (!q) q = last.question || "No prompt recorded.";
@@ -144,44 +142,76 @@
             }
         }
 
-        // Inject the content into the modal
         document.getElementById('histQuestion').innerHTML = q + imgHtml;
         document.getElementById('histAnswer').innerHTML = a;
 
+        // INJECT RESTORE, SPEAK, AND DELETE BUTTONS
+        document.getElementById('histFooter').innerHTML = `
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn blue" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="restoreApp('${item.type}')">🚀 Restore</button>
+                <button class="btn green" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="speakHistoryText()">🔊 Speak</button>
+                <button class="btn red" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="deleteAndCloseHistory(${item.id})">🗑️ Delete</button>
+            </div>
+        `;
+
         document.getElementById('historyModal').classList.add('active');
         
-        // Re-render LaTeX math formulas if they exist
         if (window.MathJax) {
             MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]).catch(e => console.log("MathJax Error:", e));
         }
     };
 
-    // Fix the Close Button
-    window.closeHistory = function() { 
-        document.getElementById('historyModal').classList.remove('active'); 
+    // Navigates to the app url
+    window.restoreApp = function(type) {
+        const routes = {
+            'math': 'maths.html',
+            'search': 'search.html',
+            'youtube': 'youtube.html',
+            'create': 'create.html',
+            'translate': 'translator.html',
+            'qa': 'qa.html',
+            'quiz': 'quiz.html'
+        };
+        const url = routes[type] || 'index.html';
+        window.location.href = url; // Opens the URL
     };
 
-    // Fix the Delete Button
-    window.deleteSmartHistory = function(id) {
+    // Speaks the text
+    window.speakHistoryText = function() {
+        if(window.speakText) {
+            window.speakText('histAnswer'); // If main.js has this function
+        } else {
+            let text = document.getElementById('histAnswer').innerText;
+            let utterance = new SpeechSynthesisUtterance(text);
+            speechSynthesis.speak(utterance);
+        }
+    };
+
+    // Deletes the item and closes the modal
+    window.deleteAndCloseHistory = function(id) {
         if(confirm("Delete this saved item?")) {
             let historyData = JSON.parse(localStorage.getItem('aiHistory') || '[]');
             historyData = historyData.filter(i => i.id !== id);
             localStorage.setItem('aiHistory', JSON.stringify(historyData));
-            renderAllHistory(); // Instantly refresh UI
+            closeHistory();
+            renderAllHistory(); 
         }
     };
 
-    // Fix the Clear All Button
+    window.closeHistory = function() { 
+        document.getElementById('historyModal').classList.remove('active'); 
+        window.speechSynthesis.cancel(); // Stops speech if GUI is closed
+    };
+
     window.clearAllHistory = function() {
         if(confirm("Are you sure you want to clear ALL history? This cannot be undone.")) {
             localStorage.setItem('aiHistory', '[]');
-            renderAllHistory(); // Instantly refresh UI
+            renderAllHistory(); 
         }
     };
 
-    // Force the new engine to run when the page loads
     document.addEventListener('DOMContentLoaded', renderAllHistory);
 </script>
-    
+
 </body>
 </html>
