@@ -83,6 +83,105 @@
 
 <script src="ui-controls.js" defer></script>
 <script src="main.js" defer></script>
+<!-- 🚀 UNIVERSAL SMART HISTORY ENGINE (OVERRIDES MAIN.JS) 🚀 -->
+<script>
+    function renderAllHistory() {
+        const list = document.getElementById("historyList");
+        if (!list) return;
 
+        let historyData = [];
+        try { historyData = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
+
+        if (historyData.length === 0) {
+            list.innerHTML = "<div style='text-align:center; padding:30px; font-weight:600; color:var(--text-muted);'>No history saved yet.</div>";
+            return;
+        }
+
+        let html = "";
+        historyData.forEach(item => {
+            // Assign the correct icon based on the app
+            let icon = "📝";
+            if(item.type === 'math') icon = "🧮";
+            if(item.type === 'search') icon = "🔍";
+            if(item.type === 'youtube') icon = "🎬";
+            if(item.type === 'create') icon = "🎨";
+            if(item.type === 'translate') icon = "🌍";
+            if(item.type === 'qa') icon = "📚";
+            if(item.type === 'quiz') icon = "🏆";
+
+            html += `
+            <div style="background: var(--input-bg); border: 1px solid var(--border-light); border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: var(--glass-shadow); transition: transform 0.3s;">
+                <strong style="color: var(--primary); font-size: 18px; font-weight: 900; display: block; margin-bottom: 5px;">${icon} ${item.title || item.type.toUpperCase()}</strong>
+                <span style="color: var(--text-muted); font-size: 13px; display:block; margin-bottom:15px;">💾 Saved: ${new Date(item.id).toLocaleString()}</span>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="viewSmartHistory(${item.id})" class="btn blue" style="padding: 8px 18px; font-size: 13px; border-radius: 10px; margin:0; width:auto; text-transform:none; letter-spacing:0;">👁️ View</button>
+                    <button onclick="deleteSmartHistory(${item.id})" class="btn red" style="padding: 8px 18px; font-size: 13px; border-radius: 10px; margin:0; width:auto; text-transform:none; letter-spacing:0;">🗑️ Delete</button>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }
+
+    // Smart Viewer that handles Images, HTML, and Text dynamically
+    window.viewSmartHistory = function(id) {
+        let historyData = JSON.parse(localStorage.getItem('aiHistory') || '[]');
+        let item = historyData.find(i => i.id === id);
+        if (!item) return;
+
+        document.getElementById('histTitle').innerText = item.title || "Saved Log";
+        
+        let q = item.question || "";
+        let a = item.answer || "";
+        let imgHtml = "";
+
+        // Safely extract data if it is buried inside the "interactions" array (Create, Quiz, YouTube use this)
+        if (item.interactions && item.interactions.length > 0) {
+            let last = item.interactions[item.interactions.length - 1];
+            if (!q) q = last.question || "No prompt recorded.";
+            if (!a) a = last.answer || "No response recorded.";
+            if (last.image) {
+                imgHtml = `<br><img src="${last.image}" style="max-width:100%; border-radius:12px; margin-top:15px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">`;
+            }
+        }
+
+        // Inject the content into the modal
+        document.getElementById('histQuestion').innerHTML = q + imgHtml;
+        document.getElementById('histAnswer').innerHTML = a;
+
+        document.getElementById('historyModal').classList.add('active');
+        
+        // Re-render LaTeX math formulas if they exist
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('histQuestion'), document.getElementById('histAnswer')]).catch(e => console.log("MathJax Error:", e));
+        }
+    };
+
+    // Fix the Close Button
+    window.closeHistory = function() { 
+        document.getElementById('historyModal').classList.remove('active'); 
+    };
+
+    // Fix the Delete Button
+    window.deleteSmartHistory = function(id) {
+        if(confirm("Delete this saved item?")) {
+            let historyData = JSON.parse(localStorage.getItem('aiHistory') || '[]');
+            historyData = historyData.filter(i => i.id !== id);
+            localStorage.setItem('aiHistory', JSON.stringify(historyData));
+            renderAllHistory(); // Instantly refresh UI
+        }
+    };
+
+    // Fix the Clear All Button
+    window.clearAllHistory = function() {
+        if(confirm("Are you sure you want to clear ALL history? This cannot be undone.")) {
+            localStorage.setItem('aiHistory', '[]');
+            renderAllHistory(); // Instantly refresh UI
+        }
+    };
+
+    // Force the new engine to run when the page loads
+    document.addEventListener('DOMContentLoaded', renderAllHistory);
+</script>
+    
 </body>
 </html>
