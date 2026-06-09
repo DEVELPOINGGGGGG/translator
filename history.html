@@ -47,7 +47,7 @@
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'" style="border-left: 4px solid #3b82f6; color: #60a5fa; background: var(--border-light);">🕒 History & Downloads</button>
+  <button onclick="window.location.href='history.html'" style="border-left: 4px solid var(--primary); color: var(--primary); background: var(--border-light);">🕒 History & Downloads</button>
 </div>
 
 <div class="page active" id="historyPage">
@@ -61,7 +61,6 @@
   </div>
 </div>
 
-<!-- History GUI Modal -->
 <div class="infoModal" id="historyModal">
   <div class="card" style="display: flex; flex-direction: column; max-height: 90vh;">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 15px; margin-bottom: 15px;">
@@ -77,7 +76,6 @@
         <div class="outputBox" id="histAnswer" style="margin-top: 0;"></div>
     </div>
     
-    <!-- Dynamic Buttons will be injected here -->
     <div class="hist-footer" id="histFooter" style="margin-top: 15px; border-top: 1px solid var(--border-light); padding-top: 15px;">
     </div>
   </div>
@@ -86,7 +84,6 @@
 <script src="ui-controls.js" defer></script>
 <script src="main.js" defer></script>
 
-<!-- 🚀 UNIVERSAL SMART HISTORY ENGINE 🚀 -->
 <script>
     function renderAllHistory() {
         const list = document.getElementById("historyList");
@@ -111,17 +108,16 @@
             if(item.type === 'qa') icon = "📚";
             if(item.type === 'quiz') icon = "🏆";
 
-            // Clean, clickable card
             html += `
-            <div onclick="viewSmartHistory(${item.id})" style="background: var(--input-bg); border: 1px solid var(--border-light); border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: var(--glass-shadow); transition: transform 0.2s; cursor: pointer;">
-                <strong style="color: var(--primary); font-size: 18px; font-weight: 900; display: block; margin-bottom: 5px;">${icon} ${item.title || item.type.toUpperCase()}</strong>
+            <div onclick="viewSmartHistory(${item.id})" style="background: var(--input-bg); border: 1px solid var(--border-light); border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: var(--glass-shadow); transition: transform 0.2s; cursor: pointer; position: relative;">
+                <strong style="color: var(--primary); font-size: 18px; font-weight: 900; display: block; margin-bottom: 5px; padding-right: 40px;">${icon} ${item.title || item.type.toUpperCase()}</strong>
                 <span style="color: var(--text-muted); font-size: 13px; display:block;">💾 Saved: ${new Date(item.id).toLocaleString()}</span>
+                <button onclick="event.stopPropagation(); deleteSmartHistory(${item.id})" class="btn red" style="position: absolute; right: 15px; top: 15px; padding: 8px 12px; font-size: 14px; border-radius: 10px; margin:0; width:auto; box-shadow: none;">🗑️</button>
             </div>`;
         });
         list.innerHTML = html;
     }
 
-    // Opens GUI and injects text & dynamic buttons
     window.viewSmartHistory = function(id) {
         let historyData = JSON.parse(localStorage.getItem('aiHistory') || '[]');
         let item = historyData.find(i => i.id === id);
@@ -145,10 +141,10 @@
         document.getElementById('histQuestion').innerHTML = q + imgHtml;
         document.getElementById('histAnswer').innerHTML = a;
 
-        // INJECT RESTORE, SPEAK, AND DELETE BUTTONS
+        // INJECT BUTTONS WITH ID PASSING
         document.getElementById('histFooter').innerHTML = `
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="btn blue" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="restoreApp('${item.type}')">🚀 Restore</button>
+                <button class="btn blue" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="restoreApp('${item.type}', ${item.id})">🚀 Restore</button>
                 <button class="btn green" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="speakHistoryText()">🔊 Speak</button>
                 <button class="btn red" style="flex: 1; padding: 12px; font-size: 14px; min-width: 100px;" onclick="deleteAndCloseHistory(${item.id})">🗑️ Delete</button>
             </div>
@@ -161,8 +157,7 @@
         }
     };
 
-    // Navigates to the app url
-    window.restoreApp = function(type) {
+    window.restoreApp = function(type, id) {
         const routes = {
             'math': 'maths.html',
             'search': 'search.html',
@@ -173,34 +168,32 @@
             'quiz': 'quiz.html'
         };
         const url = routes[type] || 'index.html';
-        window.location.href = url; // Opens the URL
+        window.location.href = `${url}?restoreId=${id}`; 
     };
 
-    // Speaks the text
     window.speakHistoryText = function() {
-        if(window.speakText) {
-            window.speakText('histAnswer'); // If main.js has this function
-        } else {
-            let text = document.getElementById('histAnswer').innerText;
-            let utterance = new SpeechSynthesisUtterance(text);
-            speechSynthesis.speak(utterance);
-        }
+        let text = document.getElementById('histAnswer').innerText;
+        let utterance = new SpeechSynthesisUtterance(text);
+        speechSynthesis.speak(utterance);
     };
 
-    // Deletes the item and closes the modal
-    window.deleteAndCloseHistory = function(id) {
+    window.deleteSmartHistory = function(id) {
         if(confirm("Delete this saved item?")) {
             let historyData = JSON.parse(localStorage.getItem('aiHistory') || '[]');
             historyData = historyData.filter(i => i.id !== id);
             localStorage.setItem('aiHistory', JSON.stringify(historyData));
-            closeHistory();
             renderAllHistory(); 
         }
     };
 
+    window.deleteAndCloseHistory = function(id) {
+        window.deleteSmartHistory(id);
+        closeHistory();
+    };
+
     window.closeHistory = function() { 
         document.getElementById('historyModal').classList.remove('active'); 
-        window.speechSynthesis.cancel(); // Stops speech if GUI is closed
+        window.speechSynthesis.cancel(); 
     };
 
     window.clearAllHistory = function() {
