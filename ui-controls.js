@@ -22,7 +22,33 @@
       button.classList.toggle('active', button.dataset.scale === value);
     });
   }
+// 🚨 12:30 PACIFIC TIME RESET ANIMATION ENGINE 🚨
+setInterval(() => {
+    // Get current time in Los Angeles (Pacific Time)
+    const ptDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+    const hours = ptDate.getHours();
+    const minutes = ptDate.getMinutes();
+    const seconds = ptDate.getSeconds();
+    
+    const tracker = document.querySelector('.apiTracker');
+    if (!tracker) return;
 
+    // Trigger exactly at 12:30 AM (or PM) for 30 seconds
+    if ((hours === 0 || hours === 12) && minutes === 30 && seconds < 30) {
+        if (!tracker.classList.contains('resetting')) {
+            tracker.classList.add('resetting');
+            // Hide the normal text so the sweeping animation can take over
+            Array.from(tracker.children).forEach(child => child.style.display = 'none');
+        }
+    } else {
+        if (tracker.classList.contains('resetting')) {
+            tracker.classList.remove('resetting');
+            // Bring the normal counters back
+            Array.from(tracker.children).forEach(child => child.style.display = '');
+        }
+    }
+}, 1000);
+  
   function injectFontDock() {
     if (document.getElementById('fontSizeDock')) return;
 
