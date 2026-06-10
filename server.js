@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const ytSearch = require('yt-search');
+const Tesseract = require('tesseract.js'); // 👈 Added Tesseract OCR
 const port = process.env.PORT || 10000;
 
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
@@ -64,14 +65,19 @@ async function tryProviders(providers, requestFn, override = null) {
     let lastError;
     let targetProviders = [...providers]; 
     
-    // 🛑 USER OVERRIDE LOGIC 🛑
-    // If the frontend explicitly asks for a model (like "groq" or "gemini"), filter the list to only use that model.
+    // 🛑 THE FALLBACK OVERRIDE FIX 🛑
     if (override) {
-        targetProviders = targetProviders.filter(p => p.type.toLowerCase() === override.toLowerCase());
-        if(targetProviders.length === 0) throw new Error(`Model '${override}' is not configured on the server.`);
+        // Instead of deleting backup models, this simply pushes your chosen model to the very front.
+        // If it fails, the server will now seamlessly drop down to Cloudflare and Groq!
+        targetProviders.sort((a, b) => {
+            const isA = a.type.toLowerCase() === override.toLowerCase();
+            const isB = b.type.toLowerCase() === override.toLowerCase();
+            if (isA && !isB) return -1;
+            if (!isA && isB) return 1;
+            return 0;
+        });
     } else {
         if (targetProviders.length === 0) throw new Error("No operational API keys found inside server config!");
-        // We removed the Round-Robin here. It will always start at index 0 (Gemini API 1)
     }
 
     for (const p of targetProviders) { 
@@ -98,7 +104,6 @@ async function handleGeminiText(req, res) {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Explain this."; 
         const sysText = body.systemPrompt || "";
-        // Accepts 'providerOverride' or 'model' from the frontend
         const override = body.providerOverride || body.model || null;
 
         const resultObj = await tryProviders(TEXT_PROVIDERS, async (p) => {
@@ -176,12 +181,26 @@ async function handleGeminiVision(req, res) {
                 return data.result?.response || data.result?.description || "No text detected.";
 
             } else {
+                // 🛑 TESSERACT OCR FALLBACK FOR GROQ 🛑
+                console.log("🔍 Running Tesseract OCR for Groq fallback...");
+                
+                // 1. Tesseract extracts the text from the image
+                const ocrResult = await Tesseract.recognize(formattedBase64, 'eng');
+                const extractedText = ocrResult.data.text || "No text could be extracted.";
+                
+                // 2. We combine the extracted text with your question and send it to Groq Text
+                const groqPrompt = `The user provided an image. The OCR extracted this text from the image:\n\n"${extractedText}"\n\nUser Question: ${userText}\n\nPlease solve or answer the user's question based on the extracted text.`;
+                
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
-                    method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ model: "llama-3.2-90b-vision-instruct", messages: [{ role: "user", content: [{type: "text", text: "agree " + userText}, {type: "image_url", image_url: {url: formattedBase64}}] }] }) 
+                    method: "POST", 
+                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ 
+                        model: "llama-3.3-70b-versatile", 
+                        messages: [{ role: "user", content: groqPrompt }] 
+                    }) 
                 });
                 const data = await response.json(); 
-                if (!response.ok) throw new Error(data.error?.message || "Groq Vision failed"); 
+                if (!response.ok) throw new Error(data.error?.message || "Groq (Tesseract OCR) failed"); 
                 if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Groq returned invalid format.");
                 return data.choices[0].message.content;
             }
@@ -262,7 +281,6 @@ async function handleCloudflareImage(req, res) {
 // ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
-// This pulls your authorized comma-separated numbers dynamically from Render
 const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "")
     .split(',')
     .map(num => num.trim())
