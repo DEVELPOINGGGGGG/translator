@@ -2,11 +2,16 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const ytSearch = require('yt-search');
-const Tesseract = require('tesseract.js'); // 👈 Added Tesseract OCR
+const Tesseract = require('tesseract.js'); 
 const port = process.env.PORT || 10000;
 
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
+
+// 🛑 GLOBAL AI INSTRUCTIONS (FIXES CHINESE/JAPANESE BUGS & HINDI BRAND NAMES) 🛑
+const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
+1. NO FOREIGN GARBAGE: Never output Chinese, Japanese, Korean, or random unreadable symbols. If the image or text has illegible noise, completely ignore it.
+2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Do NOT transliterate them into Hindi. Keep sentences natural but preserve English nouns.`;
 
 // 🛑 STRICT MASTER WATERFALL HIERARCHY (GEMINI -> CLOUDFLARE -> GROQ) 🛑
 const VISION_PROVIDERS = [
@@ -65,10 +70,7 @@ async function tryProviders(providers, requestFn, override = null) {
     let lastError;
     let targetProviders = [...providers]; 
     
-    // 🛑 THE FALLBACK OVERRIDE FIX 🛑
     if (override) {
-        // Instead of deleting backup models, this simply pushes your chosen model to the very front.
-        // If it fails, the server will now seamlessly drop down to Cloudflare and Groq!
         targetProviders.sort((a, b) => {
             const isA = a.type.toLowerCase() === override.toLowerCase();
             const isB = b.type.toLowerCase() === override.toLowerCase();
@@ -103,7 +105,8 @@ async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Explain this."; 
-        const sysText = body.systemPrompt || "";
+        // 🚀 INJECTED RULES HERE
+        const sysText = (body.systemPrompt || "") + MASTER_RULES;
         const override = body.providerOverride || body.model || null;
 
         const resultObj = await tryProviders(TEXT_PROVIDERS, async (p) => {
@@ -122,7 +125,7 @@ async function handleGeminiText(req, res) {
                 return data.candidates[0].content.parts[0].text;
             
             } else if (p.type === 'cloudflare') {
-                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.1-70b-instruct", messages: [ { role: "system", content: sysText || "You are a helpful study assistant." }, { role: "user", content: userText } ] }) });
+                const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.1-70b-instruct", messages: [ { role: "system", content: sysText || "You are a helpful assistant." }, { role: "user", content: userText } ] }) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Text Engine failed"); 
                 if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Cloudflare returned invalid format.");
@@ -159,7 +162,8 @@ async function handleGeminiVision(req, res) {
         
         const resultObj = await tryProviders(VISION_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
-                const payload = { contents: [{ parts: [{ text: userText }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
+                // 🚀 INJECTED RULES HERE
+                const payload = { contents: [{ parts: [{ text: userText + MASTER_RULES }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); 
@@ -171,7 +175,8 @@ async function handleGeminiVision(req, res) {
            } else if (p.type === 'cloudflare') {
                 const imageBuffer = Buffer.from(rawBase64, 'base64');
                 const imageArray = Array.from(imageBuffer);
-                const cloudflarePrompt = "agree This is a handwritten math problem. Do your best to read the numbers and solve it. " + userText;
+                // 🚀 INJECTED RULES HERE
+                const cloudflarePrompt = "agree Do your best to read and solve it. " + userText + MASTER_RULES;
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
                     method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ prompt: cloudflarePrompt, image: imageArray })
@@ -181,15 +186,12 @@ async function handleGeminiVision(req, res) {
                 return data.result?.response || data.result?.description || "No text detected.";
 
             } else {
-                // 🛑 TESSERACT OCR FALLBACK FOR GROQ 🛑
                 console.log("🔍 Running Tesseract OCR for Groq fallback...");
-                
-                // 1. Tesseract extracts the text from the image
                 const ocrResult = await Tesseract.recognize(formattedBase64, 'eng');
-                const extractedText = ocrResult.data.text || "No text could be extracted.";
+                const extractedText = ocrResult.data.text || "No legible text found.";
                 
-                // 2. We combine the extracted text with your question and send it to Groq Text
-                const groqPrompt = `The user provided an image. The OCR extracted this text from the image:\n\n"${extractedText}"\n\nUser Question: ${userText}\n\nPlease solve or answer the user's question based on the extracted text.`;
+                // 🚀 INJECTED RULES HERE
+                const groqPrompt = `OCR extracted this text:\n"${extractedText}"\n\nUser Question: ${userText}\n${MASTER_RULES}`;
                 
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
                     method: "POST", 
@@ -200,7 +202,7 @@ async function handleGeminiVision(req, res) {
                     }) 
                 });
                 const data = await response.json(); 
-                if (!response.ok) throw new Error(data.error?.message || "Groq (Tesseract OCR) failed"); 
+                if (!response.ok) throw new Error(data.error?.message || "Groq (Tesseract) failed"); 
                 if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Groq returned invalid format.");
                 return data.choices[0].message.content;
             }
@@ -217,7 +219,8 @@ async function handleGroqSearch(req, res) {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Search";
         const override = body.providerOverride || body.model || null;
-        const sysText = "You are an advanced Internet Search Engine. Search your knowledge base to provide factual, comprehensive, and up-to-date web search results.";
+        // 🚀 INJECTED RULES HERE
+        const sysText = "You are an advanced Internet Search Engine. Search your knowledge base to provide factual, comprehensive, and up-to-date web search results." + MASTER_RULES;
 
         const resultObj = await tryProviders(SEARCH_PROVIDERS, async (p) => {
             if (p.type === 'groq') {
