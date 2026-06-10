@@ -329,24 +329,39 @@ Current Task: ${userText}`;
         document.getElementById('waNumberInput').value = '';
     };
 
-window.submitWhatsAppNumber = async function(event) {
+    window.submitWhatsAppNumber = async function(event) {
         const number = document.getElementById('waNumberInput').value.trim();
         if (!number) return alert("Please enter a mobile number.");
 
         const historyDiv = document.getElementById("mathChatHistory");
         const aiMessages = historyDiv.querySelectorAll(".chat-ai .bubble");
         
+        if (aiMessages.length === 0) {
+            alert("⚠️ No solution to share.");
+            return;
+        }
+
         let clone = aiMessages[aiMessages.length - 1].cloneNode(true);
         
-        let actionContainer = clone.querySelector('.action-buttons-container');
-        if (actionContainer) clone.removeChild(actionContainer);
-        let badge = clone.querySelector('.api-badge');
-        if (badge) clone.removeChild(badge);
+        // 🛑 1. ANNIHILATE ALL BUTTONS, BADGES, AND DROPDOWNS 🛑
+        // This aggressively hunts down and deletes every UI element from the cloned bubble
+        const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"]');
+        garbageElements.forEach(el => el.remove());
         
-        let messageText = clone.innerText.trim();
+        // 🛑 2. PRESERVE PERFECT LINE BREAKS 🛑
+        // Converts HTML breaks into real WhatsApp newlines before scraping the text
+        let htmlStr = clone.innerHTML;
+        htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n'); // Turn <br> into newlines
+        htmlStr = htmlStr.replace(/<\/div>/gi, '\n');      // Turn div ends into newlines
+        htmlStr = htmlStr.replace(/<\/p>/gi, '\n\n');      // Turn paragraphs into double newlines
+        
+        clone.innerHTML = htmlStr;
+        let messageText = clone.textContent || clone.innerText || "";
 
-        // 🌟 THE UNICODE MATH TRANSLATOR (REAL POWERS & CLEAN FRACTIONS) 🌟
-        // This dictionary maps standard characters to their tiny superscript versions
+        // Clean up any weird triple-spacing left behind
+        messageText = messageText.replace(/\n\s*\n/g, '\n\n').trim();
+
+        // 🌟 3. THE UNICODE MATH TRANSLATOR 🌟
         const superscripts = {
             '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹',
             '+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'
@@ -354,22 +369,23 @@ window.submitWhatsAppNumber = async function(event) {
         const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
 
         messageText = messageText
-            .replace(/\$\$/g, '') // Remove $$ tags
-            .replace(/\$/g, '')   // Remove $ tags
-            .replace(/\\\(/g, '') // Remove \( tags
-            .replace(/\\\)/g, '') // Remove \) tags
-            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2') // \frac{1}{2} becomes 1/2
-            .replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)) // ^{2x} becomes ²ˣ
-            .replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)) // ^2 becomes ²
-            .replace(/\\sqrt{([^}]+)}/g, '√$1') // \sqrt{9} becomes √9
-            .replace(/\\times/g, '×') // Real multiplication symbol
-            .replace(/\\cdot/g, '·')  // Real dot product symbol
-            .replace(/\\pi/g, 'π')    // Real Pi symbol
-            .replace(/\\theta/g, 'θ') // Real Theta symbol
-            .replace(/\\left/g, '')   // Clean up bracket sizing
+            .replace(/\$\$/g, '') 
+            .replace(/\$/g, '')   
+            .replace(/\\\(/g, '') 
+            .replace(/\\\)/g, '') 
+            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2') 
+            .replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)) 
+            .replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)) 
+            .replace(/\\sqrt{([^}]+)}/g, '√$1') 
+            .replace(/\\times/g, '×') 
+            .replace(/\\cdot/g, '·')  
+            .replace(/\\pi/g, 'π')    
+            .replace(/\\theta/g, 'θ') 
+            .replace(/\\left/g, '')   
             .replace(/\\right/g, '')
-            .replace(/\\/g, '');      // Wipe out any remaining rogue slashes
+            .replace(/\\/g, '');      
 
+        // 🚀 4. SEND TO BACKEND 🚀
         const btn = event.target;
         const originalText = btn.innerHTML;
         btn.innerHTML = "⏳ Sending...";
@@ -402,6 +418,7 @@ window.submitWhatsAppNumber = async function(event) {
         btn.style.opacity = "1";
         btn.disabled = false;
     };
+
 </script>
 
 <script src="ui-controls.js" defer></script>
