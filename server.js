@@ -18,8 +18,8 @@ const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 const VISION_PROVIDERS = [
     { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
     { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
     { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
@@ -28,8 +28,8 @@ const VISION_PROVIDERS = [
 const TEXT_PROVIDERS = [
     { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
     { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
     { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
@@ -38,8 +38,8 @@ const TEXT_PROVIDERS = [
 const SEARCH_PROVIDERS = [
     { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
     { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
     { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
