@@ -14,32 +14,32 @@ const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Do NOT transliterate them into Hindi. Keep sentences natural but preserve English nouns.`;
 
 // 🛑 STRICT MASTER WATERFALL HIERARCHY 🛑
-// ORDER: 3.5 Flash -> 3.5 Flash -> 2.5 Pro -> 2.5 Pro -> 3.5 Pro -> Cloudflare -> Groq
+// ORDER: 3x 3.1 Flash Lite -> 2x 3.5 Pro -> Cloudflare -> Groq
 const VISION_PROVIDERS = [
-    { type: 'gemini', id: 'API 1 (3.5 Flash)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 2 (3.5 Flash)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 3 (2.5 Pro)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-pro' },
-    { type: 'gemini', id: 'API 4 (2.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
     { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
-    { type: 'gemini', id: 'API 1 (3.5 Flash)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 2 (3.5 Flash)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 3 (2.5 Pro)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-pro' },
-    { type: 'gemini', id: 'API 4 (2.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
     { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const SEARCH_PROVIDERS = [
-    { type: 'gemini', id: 'API 1 (3.5 Flash)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 2 (3.5 Flash)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 3 (2.5 Pro)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-pro' },
-    { type: 'gemini', id: 'API 4 (2.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-pro' },
     { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
@@ -95,7 +95,7 @@ async function tryProviders(providers, requestFn, override = null) {
             lastError = error; 
             console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
             
-            // 🛡️ Added a small delay to prevent 503 Overload chaining
+            // 🛡️ Delay to prevent 503 Overload chaining (kept at 800ms)
             await new Promise(resolve => setTimeout(resolve, 800));
         } 
     }
@@ -117,7 +117,6 @@ async function handleGeminiText(req, res) {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
                 
-                // Dynamically uses the specific model assigned to this key
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); 
@@ -168,7 +167,6 @@ async function handleGeminiVision(req, res) {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ parts: [{ text: userText + MASTER_RULES }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 
-                // Dynamically uses the specific model assigned to this key
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); 
@@ -238,7 +236,6 @@ async function handleGroqSearch(req, res) {
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
                 
-                // Dynamically uses the specific model assigned to this key
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); 
