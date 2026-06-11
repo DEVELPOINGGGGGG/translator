@@ -13,33 +13,34 @@ const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 1. NO FOREIGN GARBAGE: Never output Chinese, Japanese, Korean, or random unreadable symbols. If the image or text has illegible noise, completely ignore it.
 2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Do NOT transliterate them into Hindi. Keep sentences natural but preserve English nouns.`;
 
-// 🛑 STRICT MASTER WATERFALL HIERARCHY (GEMINI -> CLOUDFLARE -> GROQ) 🛑
+// 🛑 STRICT MASTER WATERFALL HIERARCHY 🛑
+// ORDER: 3.5 Flash -> 3.5 Flash -> 2.5 Pro -> 2.5 Pro -> 3.5 Pro -> Cloudflare -> Groq
 const VISION_PROVIDERS = [
-    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
-    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
-    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
-    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
-    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
+    { type: 'gemini', id: 'API 1 (3.5 Flash)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 2 (3.5 Flash)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 3 (2.5 Pro)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-2.5-pro' },
+    { type: 'gemini', id: 'API 4 (2.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-2.5-pro' },
+    { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-flash' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
-    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
-    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
-    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
-    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
-    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
+    { type: 'gemini', id: 'API 1 (3.5 Flash)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 2 (3.5 Flash)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 3 (2.5 Pro)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-2.5-pro' },
+    { type: 'gemini', id: 'API 4 (2.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-2.5-pro' },
+    { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-flash' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const SEARCH_PROVIDERS = [
-    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1 },
-    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2 },
-    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3 },
-    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4 },
-    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5 },
+    { type: 'gemini', id: 'API 1 (3.5 Flash)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 2 (3.5 Flash)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 3 (2.5 Pro)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-2.5-pro' },
+    { type: 'gemini', id: 'API 4 (2.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-2.5-pro' },
+    { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-flash' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
@@ -93,6 +94,9 @@ async function tryProviders(providers, requestFn, override = null) {
         } catch (error) { 
             lastError = error; 
             console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
+            
+            // 🛡️ Added a small delay to prevent 503 Overload chaining
+            await new Promise(resolve => setTimeout(resolve, 800));
         } 
     }
     throw lastError;
@@ -105,7 +109,6 @@ async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Explain this."; 
-        // 🚀 INJECTED RULES HERE
         const sysText = (body.systemPrompt || "") + MASTER_RULES;
         const override = body.providerOverride || body.model || null;
 
@@ -114,8 +117,8 @@ async function handleGeminiText(req, res) {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
                 
-                // UPDATED MODEL ENDPOINT HERE
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // Dynamically uses the specific model assigned to this key
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); 
                 
@@ -163,11 +166,10 @@ async function handleGeminiVision(req, res) {
         
         const resultObj = await tryProviders(VISION_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
-                // 🚀 INJECTED RULES HERE
                 const payload = { contents: [{ parts: [{ text: userText + MASTER_RULES }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
                 
-                // UPDATED MODEL ENDPOINT HERE
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // Dynamically uses the specific model assigned to this key
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); 
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
@@ -178,7 +180,6 @@ async function handleGeminiVision(req, res) {
            } else if (p.type === 'cloudflare') {
                 const imageBuffer = Buffer.from(rawBase64, 'base64');
                 const imageArray = Array.from(imageBuffer);
-                // 🚀 INJECTED RULES HERE
                 const cloudflarePrompt = "agree Do your best to read and solve it. " + userText + MASTER_RULES;
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
                     method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
@@ -193,7 +194,6 @@ async function handleGeminiVision(req, res) {
                 const ocrResult = await Tesseract.recognize(formattedBase64, 'eng');
                 const extractedText = ocrResult.data.text || "No legible text found.";
                 
-                // 🚀 INJECTED RULES HERE
                 const groqPrompt = `OCR extracted this text:\n"${extractedText}"\n\nUser Question: ${userText}\n${MASTER_RULES}`;
                 
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
@@ -222,7 +222,6 @@ async function handleGroqSearch(req, res) {
         const body = JSON.parse(await readRequestBody(req));
         const userText = body.userPrompt || body.prompt || body.text || "Search";
         const override = body.providerOverride || body.model || null;
-        // 🚀 INJECTED RULES HERE
         const sysText = "You are an advanced Internet Search Engine. Search your knowledge base to provide factual, comprehensive, and up-to-date web search results." + MASTER_RULES;
 
         const resultObj = await tryProviders(SEARCH_PROVIDERS, async (p) => {
@@ -239,8 +238,8 @@ async function handleGroqSearch(req, res) {
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
                 
-                // UPDATED MODEL ENDPOINT HERE
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // Dynamically uses the specific model assigned to this key
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); 
                 return data.candidates[0].content.parts[0].text;
