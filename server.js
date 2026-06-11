@@ -114,7 +114,8 @@ async function handleGeminiText(req, res) {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
                 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                // UPDATED MODEL ENDPOINT HERE
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); 
                 
@@ -164,7 +165,9 @@ async function handleGeminiVision(req, res) {
             if (p.type === 'gemini') {
                 // 🚀 INJECTED RULES HERE
                 const payload = { contents: [{ parts: [{ text: userText + MASTER_RULES }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                
+                // UPDATED MODEL ENDPOINT HERE
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); 
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
@@ -235,7 +238,9 @@ async function handleGroqSearch(req, res) {
                 return data.choices[0].message.content;
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                
+                // UPDATED MODEL ENDPOINT HERE
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); 
                 return data.candidates[0].content.parts[0].text;
