@@ -284,3 +284,24 @@ div[style*="color: white"], div[style*="color: #fff"], span[style*="color: white
 .image-preview-close:hover {
     transform: scale(1.2) rotate(90deg) !important;
 }
+/* Make long MathJax equations scrollable horizontally */
+mjx-container[display="true"] {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-width: 100% !important;
+    
+    /* Adds a tiny bit of space so the scrollbar doesn't cover the bottom of the equation */
+    padding-bottom: 8px !important; 
+    padding-top: 5px !important;
+}
+
+/* Ensure inline equations can break properly if needed */
+mjx-container:not([display="true"]) {
+    white-space: normal;
+}
+
+/* Ensure the chat bubble itself doesn't stretch past the screen */
+.bubble {
+    max-width: 100%;
+    overflow-x: hidden;
+}
