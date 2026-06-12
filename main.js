@@ -284,37 +284,36 @@ function getRetryButtonsHtml(lId) {
 
 // 🚀 FIXED: SPEED & HTML RENDERER ENGINE
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
-    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px; color:#e2e8f0;"></div>`;
+    // 🔥 TEXT COLOR FIX: Forced pure white text (#ffffff)
+    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px; color:#ffffff !important; font-size: 15px;"></div>`;
     const txtEl = document.getElementById(contentId);
     
-    let tickRate = 20; // Medium-fast speed
-    let charsPerTick = rawText.length > 800 ? 4 : 2; // Type faster if the text is very long
+    let tickRate = 20; 
+    let charsPerTick = rawText.length > 800 ? 4 : 2; 
     
     let i = 0; 
     window.currentTypingTimer = setInterval(() => {
         if (i <= rawText.length) {
             let currentText = rawText.substring(0, i);
-            // This safely renders bold markdown **bold** and new lines \n during typing without breaking LaTeX
             txtEl.innerHTML = currentText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
             i += charsPerTick;
-            scrollToBottom("mathChatHistory", false);
+            // 🛑 SCROLL BUG FIX: Removed aggressive scrollToBottom from here! Let the user read!
         } else {
             clearInterval(window.currentTypingTimer);
             window.currentTypingTimer = null;
             
-            // Ensure exact final text is set
             txtEl.innerHTML = rawText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
             
-            // 🔥 LATEX CONVERSION HAPPENS HERE AT THE VERY END 🔥
             if (isMath && window.MathJax) { 
                 MathJax.typesetClear([containerEl]); 
-                MathJax.typesetPromise([containerEl]).catch(err => console.log("MathJax error: ", err)); 
+                MathJax.typesetPromise([containerEl]).catch(err => console.log(err)); 
             }
             
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
             if (onComplete) onComplete();
             
-            scrollToBottom("mathChatHistory");
+            // Scroll ONLY ONCE when the typing is completely finished
+            scrollToBottom("mathChatHistory", true);
             window.toggleChatButton(false);
         }
     }, tickRate);
@@ -341,7 +340,8 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
         typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true); 
     } 
     else {
-        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px; color:#e2e8f0;">${answer.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>${buttons}`;
+        // 🔥 TEXT COLOR FIX
+        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px; color:#ffffff !important; font-size: 15px;">${answer.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
         window.toggleChatButton(false);
     }
@@ -559,25 +559,26 @@ EXPLANATION-
     
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
-    try {
+try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let aiText = resObj.text; 
         let mathImageUrl = null;
 
-        // 1. [MATH] टैग्स से कोड निकालें और CodeCogs के लिए साफ करें
+        // 1. [MATH] टैग्स से कोड निकालें
         if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
             let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
-            mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); 
-            mathCode = mathCode.replace(/\n/g, ' \\\\ '); 
             
-            const encodedMath = encodeURIComponent(mathCode);
+            // CodeCogs के लिए साफ करें
+            let cleanMathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); 
+            cleanMathCode = cleanMathCode.replace(/\n/g, ' \\\\ '); 
+            
+            const encodedMath = encodeURIComponent(cleanMathCode);
             mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
             
-            // केवल टैग्स को हटाएं ताकि डिजिटल पेपर इसे पढ़ सके, मैथ को डिलीट न करें!
-            aiText = aiText.replace(/\[MATH\]\s*/g, '').replace(/\s*\[\/MATH\]/g, '');
+            // 🛑 RAW TEXT FIX: Replace [MATH] with $$ so MathJax knows to render it beautifully!
+            aiText = aiText.replace('[MATH]', '$$').replace('[/MATH]', '$$');
         }
 
-        // 🚀 FIXED: No longer aggressively removing _ and & from LaTeX
         let cleanSol = aiText;
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
@@ -635,6 +636,7 @@ EXPLANATION-
 }
 
 // 🚀 UPDATED APPEND MESSAGE
+// 🚀 UPDATED APPEND MESSAGE (WITH WHITE TEXT FIX)
 function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
     const c = getActiveChatContainer("mathChatHistory"); if(!c) return;
     const msgDiv = document.createElement("div");
@@ -652,12 +654,15 @@ function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
     }
     
     let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-    contentHtml += `<div style="color:#e2e8f0;">${formattedText}</div></div>`;
+    
+    // 🔥 यहीं पर WHITE TEXT और FONT SIZE का फिक्स लगाया है 🔥
+    contentHtml += `<div style="color:#ffffff !important; font-size: 15px;">${formattedText}</div></div>`;
+    
     msgDiv.innerHTML = contentHtml;
     c.appendChild(msgDiv);
     
     if (window.MathJax) MathJax.typesetPromise([msgDiv]);
-    scrollToBottom("mathChatHistory");
+    scrollToBottom("mathChatHistory", true);
 }
 
 
