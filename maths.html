@@ -98,7 +98,7 @@
   <div class="chat-scroll-area" id="mathScrollArea">
     <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
         <h1 style="font-size: 24px; color: white;">🧮 Math Solver</h1>
-        <p style="font-size: 14px; opacity: 0.9; color: white;">Give Answers Of Maths.</p>
+        <p style="font-size: 14px; opacity: 0.9; color: white;">Get AI Text & Image Solutions For Math.</p>
     </div>
     
     <button onclick="openWhatsAppModal()" style="background: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
@@ -178,11 +178,10 @@
         appendMessage('user', userText || "Solve this image.", currentMathImage);
         inputEl.value = "";
         
-        // Feed conversation history context
         let historyContext = mathConversationHistory.slice(-4).join("\n");
         mathConversationHistory.push(`User: ${userText}`);
 
-        // STRICT FORMATTING PROMPT
+        // 🚀 NEW PROMPT: Forces Gemini to put equations inside [MATH] tags
         const tutorPrompt = `You are an expert math tutor. STRICT RULES:
 
 1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in ${currentMathLang}. DO NOT use the math format. 
@@ -192,7 +191,9 @@
 ${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
 
 SOLUTION:-
-[Step-by-step math solution using $ for math notation. Keep it direct.]
+[MATH]
+[Step-by-step math solution using proper LaTeX notation here. Do not write regular text here, only formulas.]
+[/MATH]
 
 EXPLANATION-
 [Keep this extremely short! Max 2 to 3 lines explaining the core concept in ${currentMathLang}.]
@@ -219,12 +220,26 @@ Current Task: ${userText}`;
 
             if (data.error) throw new Error(data.error);
 
-            appendMessage('ai', data.text);
+            let aiText = data.text;
+            let mathImageUrl = null;
+
+            // 🚀 NEW IMAGE EXTRACTOR: Looks for the [MATH] tags
+            if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
+                const mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
+                
+                // Replace the ugly tags with a clean title
+                aiText = aiText.replace(/\[MATH\]([\s\S]*?)\[\/MATH\]/, "<br>👇 <strong>Mathematical Solution Image:</strong><br>");
+                
+                // Use CodeCogs API to turn the math code into a high-res image
+                const encodedMath = encodeURIComponent(mathCode);
+                mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
+            }
+
+            // Append the message, passing the new Math Image URL if it exists
+            appendMessage('ai', aiText, mathImageUrl, true);
+            
             mathConversationHistory.push(`AI: ${data.text}`);
             clearMathImage();
-
-            // Fire the CSS paper renderer
-            generateMathPaper(data.text);
 
         } catch (err) {
             removeTyping();
@@ -232,47 +247,7 @@ Current Task: ${userText}`;
         }
     }
 
-    // 🚀 BULLETPROOF CSS PAPER INJECTION
-    function generateMathPaper(aiResponseText) {
-        try {
-            if (!aiResponseText.includes("SOLUTION:-")) return;
-
-            // DETECT MULTIPLE QUESTIONS
-            const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
-            if (hasMultipleQuestions) return; 
-
-            let parts = aiResponseText.split("SOLUTION:-")[1];
-            let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
-
-            if (mathTextOnly.length < 5) return;
-
-            // Clean LaTeX
-            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
-
-            const historyDiv = document.getElementById("mathChatHistory");
-            const paperId = "paper_" + Date.now();
-            
-            historyDiv.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
-                    <div style="width: 100%; max-width: 95%;">
-                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
-                        <div class="digital-paper-container">
-                            <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
-                        </div>
-                    </div>
-                </div>
-            `);
-            
-            // MathJax rendering
-            if (window.MathJax) { 
-                MathJax.typesetPromise([document.getElementById(paperId)]); 
-            }
-            document.getElementById("mathScrollArea").scrollTop = 99999;
-        } catch (e) {
-            console.error("Paper rendering failed:", e);
-        }
-    }
-
+    // 🚀 UPDATED APPEND MESSAGE TO HANDLE GENERATED IMAGES STYLING
     function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
         const historyDiv = document.getElementById("mathChatHistory");
         const msgDiv = document.createElement("div");
@@ -280,8 +255,13 @@ Current Task: ${userText}`;
         
         let contentHtml = `<div class="bubble">`;
         if (imageUrl) {
-            let imgClass = isGeneratedImage ? "handwritten-img" : "bubble-img";
-            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${!isGeneratedImage ? 'max-width: 200px; border-radius: 10px; margin-bottom: 10px;' : ''}"><br>`;
+            let imgClass = isGeneratedImage ? "generated-math-img" : "bubble-img";
+            // Make the AI math image look crisp and professional with a white background
+            let imgStyle = isGeneratedImage 
+                ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-top: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
+                : "max-width: 200px; border-radius: 10px; margin-bottom: 10px;";
+                
+            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${imgStyle}"><br>`;
         }
         
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
