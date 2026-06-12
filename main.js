@@ -524,6 +524,9 @@ function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; co
 // ==========================================
 // 🚀 THE FIXED MATH FLOW (SPEED, IMAGE POS, & LATEX)
 // ==========================================
+// ==========================================
+// 🚀 THE FIXED MATH FLOW (NO MORE BOTTOM IMAGES!)
+// ==========================================
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
@@ -537,6 +540,7 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
+    // 🛑 PROMPT FIX: Removed [MATH] tags completely so no images are generated
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI. STRICT RULES:
 
 1. SOLVE ALL QUESTIONS: You MUST solve EVERY single question as USER PROVIDES in HINDI LANGUAGE. Do not skip any question.
@@ -546,9 +550,7 @@ async function executeMathFlow() {
 प्रश्न: [Write the exact question here]
 
 SOLUTION:-
-[MATH]
-[Write the step-by-step math solution here using PURE LaTeX notation. DO NOT use $ or $$ signs inside these tags. Use proper spacing.]
-[/MATH]
+[Write the step-by-step math solution here using standard LaTeX notation. Use proper spacing.]
 
 EXPLANATION-
 [Provide the explanation in HINDI language. Max 6 to 8 lines.]`;
@@ -557,68 +559,34 @@ EXPLANATION-
     
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
-try {
+    try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
-        let aiText = resObj.text; 
-        let mathImageUrl = null;
-
-        // 1. [MATH] टैग्स से कोड निकालें
-        if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
-            let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
-            
-            // CodeCogs के लिए साफ करें
-            let cleanMathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); 
-            cleanMathCode = cleanMathCode.replace(/\n/g, ' \\\\ '); 
-            
-            const encodedMath = encodeURIComponent(cleanMathCode);
-            mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
-            
-            // 🛑 RAW TEXT FIX: Replace [MATH] with $$ so MathJax knows to render it beautifully!
-            aiText = aiText.replace('[MATH]', '$$').replace('[/MATH]', '$$');
-        }
-
-        let cleanSol = aiText;
+        
+        let cleanSol = resObj.text;
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
         
-        // 2. लोडिंग बबल को हटाएं
+        // 1. लोडिंग बबल को हटाएं
         const loadingBubble = document.getElementById(lId);
         if(loadingBubble) loadingBubble.remove();
         
-        // 3. पहले डिजिटल पेपर रेंडर करें
+        // 2. पहले डिजिटल पेपर रेंडर करें
         if (typeof generateMathPaper === "function") {
-            // पेपर के लिए केवल बोल्डनेस साफ़ करें, LaTeX नहीं
             generateMathPaper(cleanSol.replace(/\*\*(.*?)\*\*/g, '$1'));
         }
 
-        // 4. टाइपिंग एनीमेशन के साथ AI का रिस्पॉन्स अपेंड करें
-        // (मैथ इमेज एनीमेशन पूरा होने के बाद अपने आप बटन एरिया के ऊपर आ जाएगी!)
+        // 3. टाइपिंग एनीमेशन के साथ AI का रिस्पॉन्स अपेंड करें (यहाँ से इमेज का कोड हमेशा के लिए हटा दिया गया है)
         const c = getActiveChatContainer("mathChatHistory"); 
         if(c) {
             const msgDiv = document.createElement("div");
             msgDiv.className = `chat-msg chat-ai`;
-            msgDiv.id = lId; // Keep the ID so updateAiBubble can find it
+            msgDiv.id = lId; 
             
             let contentHtml = `<div class="bubble"></div>`;
             msgDiv.innerHTML = contentHtml;
             c.appendChild(msgDiv);
             
             updateAiBubble(lId, cleanSol, resObj.provider, true);
-            
-            // अगर इमेज जनरेट हुई है, तो उसे टाइपिंग के बाद सबसे नीचे (Bottom) जोड़ें
-            if (mathImageUrl) {
-                // टाइपिंग खत्म होने का अंदाज़ा लगा कर (लगभग 2 सेकंड) इमेज चिपकाएं
-                setTimeout(() => {
-                    const bbl = document.getElementById(lId)?.querySelector('.bubble');
-                    if (bbl) {
-                        const imgHtml = `<br>👇 <strong>Mathematical Solution Image:</strong><br><img src="${mathImageUrl}" class="generated-math-img" style="max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-top: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"><br>`;
-                        const btnArea = bbl.querySelector('div[style*="border-top"]');
-                        if (btnArea) { btnArea.insertAdjacentHTML('beforebegin', imgHtml); } 
-                        else { bbl.insertAdjacentHTML('beforeend', imgHtml); }
-                        scrollToBottom("mathChatHistory");
-                    }
-                }, Math.min(cleanSol.length * 5 + 500, 4000)); // Dynamic timeout based on text length
-            }
         }
         
         clearMathImage();
