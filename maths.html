@@ -58,67 +58,6 @@
             width: 2px;
             background: #fca5a5; 
         }
-
-        /* 📸 FULLSCREEN IMAGE VIEWER GUI STYLES */
-        .photo-viewer-overlay {
-            display: none; 
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 9999999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            backdrop-filter: blur(10px);
-        }
-        .photo-viewer-overlay.active {
-            display: flex;
-            animation: fadeIn 0.3s ease-out;
-        }
-        .photo-viewer-toolbar {
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            display: flex;
-            gap: 15px;
-            z-index: 10;
-        }
-        .photo-icon-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            transition: all 0.2s;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .photo-icon-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-        }
-        .photo-icon-btn.close-btn {
-            background: rgba(239, 68, 68, 0.6);
-            border-color: #ef4444;
-        }
-        .photo-icon-btn.close-btn:hover {
-            background: rgba(239, 68, 68, 0.9);
-        }
-        #previewImage {
-            max-width: 95vw;
-            max-height: 85vh;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            object-fit: contain;
-            user-select: none;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -194,14 +133,6 @@
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
-<div id="photoViewer" class="photo-viewer-overlay">
-    <div class="photo-viewer-toolbar">
-        <button class="photo-icon-btn" onclick="downloadFullscreenImage()" title="Download Image">⬇️ Download</button>
-        <button class="photo-icon-btn close-btn" onclick="closePhotoViewer()" title="Close Viewer">❌</button>
-    </div>
-    <img id="previewImage" src="" alt="Fullscreen Preview">
-</div>
-
 <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
     <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 400px; width: 90%; text-align: center; position:relative;">
         <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Full Chat</h3>
@@ -215,35 +146,11 @@
 </div>
 
 <script>
-    // =======================================================
-    // 📸 PHOTO VIEWER & DOWNLOAD LOGIC
-    // =======================================================
+    let currentMathImage = null;
+    let mathConversationHistory = [];
+    let videoStream = null;
+    let usingFrontCamera = false;
     
-    function closePhotoViewer() {
-        document.getElementById('photoViewer').classList.remove('active');
-    }
-
-    function downloadFullscreenImage() {
-        const imgElement = document.getElementById('previewImage');
-        if (!imgElement || !imgElement.src) return;
-        
-        const downloadLink = document.createElement('a');
-        downloadLink.href = imgElement.src;
-        downloadLink.download = 'AI_Math_Solution_' + Date.now() + '.png';
-        
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        
-        if (typeof showToast === 'function') {
-            showToast("📥 Image Download Started!");
-        }
-    }
-
-    // =======================================================
-    // MATHS & WHATSAPP LOGIC
-    // =======================================================
-
     let currentMathLang = "Hindi"; // Default language
 
     window.toggleMathLanguage = function() {
@@ -259,6 +166,194 @@
         }
     };
 
+    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
+    });
+
+    async function executeMathFlow() {
+        const inputEl = document.getElementById("mathInstructionInput");
+        const userText = inputEl.value.trim();
+        if (!userText && !currentMathImage) return;
+
+        appendMessage('user', userText || "Solve this image.", currentMathImage);
+        inputEl.value = "";
+        
+        let historyContext = mathConversationHistory.slice(-4).join("\n");
+        mathConversationHistory.push(`User: ${userText}`);
+
+        // 🚀 PROMPT FIX: Force Gemini to put pure LaTeX in the tags so the image API doesn't crash
+        const tutorPrompt = `You are an expert math tutor. STRICT RULES:
+
+1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in ${currentMathLang}. DO NOT use the math format. 
+
+2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate:
+
+${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
+
+SOLUTION:-
+[MATH]
+[Write the step-by-step math solution here using PURE LaTeX notation. DO NOT use $ or $$ signs inside these tags.]
+[/MATH]
+
+EXPLANATION-
+[Keep this extremely short! Max 2 to 3 lines explaining the core concept in ${currentMathLang}.]
+
+Previous Context:
+${historyContext}
+
+Current Task: ${userText}`;
+
+        showTyping();
+
+        let endpoint = currentMathImage ? "/api/gemini-vision" : "/api/gemini-text";
+        let payload = { userPrompt: tutorPrompt };
+        if (currentMathImage) payload.imageBase64 = currentMathImage;
+
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            removeTyping();
+
+            if (data.error) throw new Error(data.error);
+
+            let aiText = data.text;
+            let mathImageUrl = null;
+
+            // 🚀 IMAGE FIX: Safely extract and clean the math for CodeCogs
+            if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
+                let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
+                
+                // CRITICAL FIX: CodeCogs crashes if there are $ signs or raw line breaks. We must clean them!
+                mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); // Remove all $
+                mathCode = mathCode.replace(/\n/g, ' \\\\ '); // Convert raw 'Enter' spaces into LaTeX newlines
+                
+                const encodedMath = encodeURIComponent(mathCode);
+                
+                // Generate the HD image URL using CodeCogs
+                mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
+                
+                // CRITICAL FIX: Only delete the TAGS from the text, leave the actual formula so the Digital Paper can still read it!
+                aiText = aiText.replace(/\[MATH\]\s*/g, '').replace(/\s*\[\/MATH\]/g, '');
+            }
+
+            // Append the message (passing the Image URL if it successfully generated)
+            appendMessage('ai', aiText, mathImageUrl, true);
+            mathConversationHistory.push(`AI: ${aiText}`);
+            clearMathImage();
+
+            // Fire the CSS Digital Paper renderer with the text!
+            generateMathPaper(aiText);
+
+        } catch (err) {
+            removeTyping();
+            appendMessage('ai', "❌ Math Solver Error: " + err.message);
+        }
+    }
+
+    // 🚀 YOUR CSS PAPER INJECTION
+    function generateMathPaper(aiResponseText) {
+        try {
+            if (!aiResponseText.includes("SOLUTION:-")) return;
+
+            const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
+            if (hasMultipleQuestions) return; 
+
+            let parts = aiResponseText.split("SOLUTION:-")[1];
+            let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+
+            if (mathTextOnly.length < 5) return;
+
+            // Clean markdown bolding from the math paper
+            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
+
+            const historyDiv = document.getElementById("mathChatHistory");
+            const paperId = "paper_" + Date.now();
+            
+            historyDiv.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
+                    <div style="width: 100%; max-width: 95%;">
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 DIGITAL PAPER SOLUTION----</p>
+                        <div class="digital-paper-container">
+                            <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            if (window.MathJax) { 
+                MathJax.typesetPromise([document.getElementById(paperId)]); 
+            }
+            document.getElementById("mathScrollArea").scrollTop = 99999;
+        } catch (e) {
+            console.error("Paper rendering failed:", e);
+        }
+    }
+
+    function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
+        
+        let contentHtml = `<div class="bubble">`;
+        if (imageUrl) {
+            let imgClass = isGeneratedImage ? "generated-math-img" : "bubble-img";
+            let imgStyle = isGeneratedImage 
+                ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
+                : "max-width: 200px; border-radius: 10px; margin-bottom: 10px;";
+                
+            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${imgStyle}"><br>`;
+        }
+        
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        contentHtml += `<div>${formattedText}</div></div>`;
+        msgDiv.innerHTML = contentHtml;
+        historyDiv.appendChild(msgDiv);
+        
+        if (window.MathJax) MathJax.typesetPromise([msgDiv]);
+        document.getElementById("mathScrollArea").scrollTop = 99999;
+    }
+
+    function showTyping() {
+        const div = document.createElement("div");
+        div.id = "mathTyping";
+        div.className = "chat-msg chat-ai";
+        div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+        document.getElementById("mathChatHistory").appendChild(div);
+        document.getElementById("mathScrollArea").scrollTop = 99999;
+    }
+
+    function removeTyping() { document.getElementById("mathTyping")?.remove(); }
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+    function openCamera() { document.getElementById("cameraModal").classList.add("active"); startVideoStream(); }
+    function closeCamera() { document.getElementById("cameraModal").classList.remove("active"); if (videoStream) videoStream.getTracks().forEach(t => t.stop()); }
+    
+    async function startVideoStream() {
+        if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: usingFrontCamera ? "user" : "environment" } });
+            document.getElementById("cameraVideo").srcObject = videoStream;
+        } catch (err) { alert("Camera Error"); closeCamera(); }
+    }
+    function switchCamera() { usingFrontCamera = !usingFrontCamera; startVideoStream(); }
+    function captureImage() {
+        const video = document.getElementById("cameraVideo");
+        const canvas = document.getElementById("captureCanvas");
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
+        document.getElementById("mathPreviewChip").style.backgroundImage = `url(${currentMathImage})`;
+        document.getElementById("mathPreviewChip").style.display = "block";
+        closeCamera();
+    }
+    function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
+
+    // =======================================================
+    // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE
+    // =======================================================
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
         const messages = historyDiv.querySelectorAll(".chat-msg");
