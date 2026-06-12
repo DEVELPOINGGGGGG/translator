@@ -181,18 +181,18 @@
         let historyContext = mathConversationHistory.slice(-4).join("\n");
         mathConversationHistory.push(`User: ${userText}`);
 
-        // 🚀 NEW PROMPT: Forces Gemini to put equations inside [MATH] tags
+        // 🚀 PROMPT FIX: Force Gemini to put pure LaTeX in the tags so the image API doesn't crash
         const tutorPrompt = `You are an expert math tutor. STRICT RULES:
 
 1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in ${currentMathLang}. DO NOT use the math format. 
 
-2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be strictly written in ${currentMathLang} except numbers and math symbols:
+2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate:
 
 ${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
 
 SOLUTION:-
 [MATH]
-[Step-by-step math solution using proper LaTeX notation here. Do not write regular text here, only formulas.]
+[Write the step-by-step math solution here using PURE LaTeX notation. DO NOT use $ or $$ signs inside these tags.]
 [/MATH]
 
 EXPLANATION-
@@ -223,23 +223,30 @@ Current Task: ${userText}`;
             let aiText = data.text;
             let mathImageUrl = null;
 
-            // 🚀 NEW IMAGE EXTRACTOR: Looks for the [MATH] tags
+            // 🚀 IMAGE FIX: Safely extract and clean the math for CodeCogs
             if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
-                const mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
+                let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
                 
-                // Replace the ugly tags with a clean title
-                aiText = aiText.replace(/\[MATH\]([\s\S]*?)\[\/MATH\]/, "<br>👇 <strong>Mathematical Solution Image:</strong><br>");
+                // CRITICAL FIX: CodeCogs crashes if there are $ signs or raw line breaks. We must clean them!
+                mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); // Remove all $
+                mathCode = mathCode.replace(/\n/g, ' \\\\ '); // Convert raw 'Enter' spaces into LaTeX newlines
                 
-                // Use CodeCogs API to turn the math code into a high-res image
                 const encodedMath = encodeURIComponent(mathCode);
+                
+                // Generate the HD image URL using CodeCogs
                 mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
+                
+                // CRITICAL FIX: Only delete the TAGS from the text, leave the actual formula so the Digital Paper can still read it!
+                aiText = aiText.replace(/\[MATH\]\s*/g, '').replace(/\s*\[\/MATH\]/g, '');
             }
 
-            // Append the message, passing the new Math Image URL if it exists
+            // Append the message (passing the Image URL if it successfully generated)
             appendMessage('ai', aiText, mathImageUrl, true);
-            
-            mathConversationHistory.push(`AI: ${data.text}`);
+            mathConversationHistory.push(`AI: ${aiText}`);
             clearMathImage();
+
+            // Fire the CSS Digital Paper renderer with the text!
+            generateMathPaper(aiText);
 
         } catch (err) {
             removeTyping();
@@ -247,7 +254,45 @@ Current Task: ${userText}`;
         }
     }
 
-    // 🚀 UPDATED APPEND MESSAGE TO HANDLE GENERATED IMAGES STYLING
+    // 🚀 YOUR CSS PAPER INJECTION
+    function generateMathPaper(aiResponseText) {
+        try {
+            if (!aiResponseText.includes("SOLUTION:-")) return;
+
+            const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
+            if (hasMultipleQuestions) return; 
+
+            let parts = aiResponseText.split("SOLUTION:-")[1];
+            let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+
+            if (mathTextOnly.length < 5) return;
+
+            // Clean markdown bolding from the math paper
+            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
+
+            const historyDiv = document.getElementById("mathChatHistory");
+            const paperId = "paper_" + Date.now();
+            
+            historyDiv.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
+                    <div style="width: 100%; max-width: 95%;">
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 DIGITAL PAPER SOLUTION----</p>
+                        <div class="digital-paper-container">
+                            <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            if (window.MathJax) { 
+                MathJax.typesetPromise([document.getElementById(paperId)]); 
+            }
+            document.getElementById("mathScrollArea").scrollTop = 99999;
+        } catch (e) {
+            console.error("Paper rendering failed:", e);
+        }
+    }
+
     function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
         const historyDiv = document.getElementById("mathChatHistory");
         const msgDiv = document.createElement("div");
@@ -256,9 +301,8 @@ Current Task: ${userText}`;
         let contentHtml = `<div class="bubble">`;
         if (imageUrl) {
             let imgClass = isGeneratedImage ? "generated-math-img" : "bubble-img";
-            // Make the AI math image look crisp and professional with a white background
             let imgStyle = isGeneratedImage 
-                ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-top: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
+                ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
                 : "max-width: 200px; border-radius: 10px; margin-bottom: 10px;";
                 
             contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${imgStyle}"><br>`;
@@ -308,7 +352,7 @@ Current Task: ${userText}`;
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
     // =======================================================
-    // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE (UPDATED)
+    // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE
     // =======================================================
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
@@ -342,17 +386,13 @@ Current Task: ${userText}`;
 
         let fullChatText = "";
 
-        // Loop through all messages in chronological order
         messages.forEach(msg => {
             const isUser = msg.classList.contains("chat-user");
             const bubble = msg.querySelector(".bubble");
             if (!bubble) return;
 
-            // Clone to avoid breaking live display interface
             let clone = bubble.cloneNode(true);
-            
-            // Wipe clean buttons, extra badges, layouts from the scraped packet
-            const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"]');
+            const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"], img');
             garbageElements.forEach(el => el.remove());
             
             let htmlStr = clone.innerHTML;
@@ -373,7 +413,6 @@ Current Task: ${userText}`;
             }
         });
 
-        // 🌟 THE UNICODE MATH TRANSLATOR FOR CLEAN WHATSAPP SYSTEM TEXT 🌟
         const superscripts = {
             '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹',
             '+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'
@@ -397,7 +436,6 @@ Current Task: ${userText}`;
             .replace(/\\right/g, '')
             .replace(/\\/g, '');      
 
-        // 🚀 ROUTE OUTPUT DIRECTLY TO BACKEND GATEWAY 🚀
         const btn = event.target;
         const originalText = btn.innerHTML;
         btn.innerHTML = "⏳ Sending Full Chat...";
@@ -430,7 +468,6 @@ Current Task: ${userText}`;
         btn.style.opacity = "1";
         btn.disabled = false;
     };
-
 </script>
 
 <script src="ui-controls.js" defer></script>
