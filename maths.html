@@ -248,8 +248,8 @@
             <h3 id="histTitle" style="color:var(--primary);">History</h3>
             <button onclick="closeHistory()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:5px 10px; border-radius:8px; cursor:pointer;">✕</button>
         </div>
-        <div id="histQuestion" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:15px; font-size:14px; color:#94a3b8;"></div>
-        <div id="histAnswer" style="background:rgba(59,130,246,0.1); padding:15px; border-radius:8px; font-size:14px; color:#f8fafc; border:1px solid rgba(59,130,246,0.3);"></div>
+        <div id="histQuestion" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:15px; font-size:14px; color:var(--text-main, #94a3b8);"></div>
+        <div id="histAnswer" style="background:rgba(59,130,246,0.1); padding:15px; border-radius:8px; font-size:14px; color:var(--text-main, #f8fafc); border:1px solid rgba(59,130,246,0.3);"></div>
     </div>
 </div>
 
@@ -260,12 +260,6 @@
     let appHistory = [];
     let sessionCache = { math: null };
     const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
-    
-    // Core OCR Prompt (Just in case needed by legacy APIs)
-    const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
-    CRITICAL INSTRUCTIONS:
-    1. Extract ALL text from the image EXACTLY as it is written in its original language.
-    2. Output ONLY the raw transcribed text. If no text is visible, output exactly "NO_TEXT_FOUND".`;
 
     if (typeof localforage !== 'undefined') {
         localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
@@ -297,7 +291,7 @@
     function saveToHistory(type, q, a, img = null, provider = "AI") { 
         fetch(GOOGLE_SHEETS_WEBHOOK, {
             method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-            body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
+            body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini" })
         }).catch(e => console.log("Google Sheets sync failed."));
 
         let sessionId = sessionCache[type];
@@ -346,7 +340,7 @@
     };
 
     /* =======================================================
-       🧮 2. MATH SOLVER ENGINE (SINGLE IMAGE, NO CSS PAPER)
+       🧮 2. MATH SOLVER ENGINE (SINGLE IMAGE, ADAPTIVE THEME)
     ======================================================= */
     let currentMathImage = null;
     let isProcessing = false;
@@ -463,7 +457,8 @@
         msgDiv.className = `chat-msg chat-user`;
         let contentHtml = `<div class="bubble">`;
         if (imageUrl) contentHtml += `<img src="${imageUrl}" class="bubble-img" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
-        contentHtml += `<div>${text.replace(/\n/g, '<br>')}</div></div>`;
+        // Note: Using color: inherit ensures it adapts to the theme instead of being forced white
+        contentHtml += `<div style="color: inherit;">${text.replace(/\n/g, '<br>')}</div></div>`;
         msgDiv.innerHTML = contentHtml;
         historyDiv.appendChild(msgDiv);
         scrollToBottom();
@@ -484,7 +479,7 @@
         return id;
     }
 
-    function updateAiBubbleWithContent(lId, text, mathImageUrl = null) {
+    function updateAiBubbleWithContent(lId, text, provider, mathImageUrl = null) {
         const loadingBubble = document.getElementById(lId);
         if (!loadingBubble) return;
         const bbl = loadingBubble.querySelector('.bubble');
@@ -494,8 +489,13 @@
             imgHtml = `<div style="text-align: center; margin-bottom: 15px;"><img src="${mathImageUrl}" onclick="openZoomModal('${mathImageUrl}')" class="generated-math-img" style="max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: zoom-in;" title="Click to view/download Digital Paper"></div>`;
         }
         
+        // 🚀 THE FIX: Provider Badge Added Back + Inherited Color for Auto Theme Support
+        let providerBadge = `<div style="position:absolute; top:8px; right:12px; font-size:9px; color:var(--muted, #94a3b8); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">✨ BY ${provider}</div>`;
+        
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-        bbl.innerHTML = `${imgHtml}<div style="color:#ffffff !important; font-size: 15px;">${formattedText}</div>`;
+        
+        bbl.style.position = "relative"; // Ensure the absolute badge stays inside the bubble
+        bbl.innerHTML = `${providerBadge}${imgHtml}<div style="color: inherit; font-size: 15px;">${formattedText}</div>`;
         
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
         scrollToBottom();
@@ -546,6 +546,7 @@ EXPLANATION-
 
             let aiText = data.text;
             let mathImageUrl = null;
+            let finalProvider = data.provider || "Gemini";
 
             if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
                 let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
@@ -557,15 +558,15 @@ EXPLANATION-
                 aiText = aiText.replace(/\[MATH\][\s\S]*?\[\/MATH\]/g, '').trim();
             }
 
-            saveToHistory('math', userText || "Solve this image", aiText, activeImage, data.provider);
-            updateAiBubbleWithContent(lId, aiText, mathImageUrl);
+            saveToHistory('math', userText || "Solve this image", aiText, activeImage, finalProvider);
+            updateAiBubbleWithContent(lId, aiText, finalProvider, mathImageUrl);
             
             clearMathImage();
             isProcessing = false;
 
         } catch (err) {
             isProcessing = false;
-            updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message);
+            updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
         }
     }
 
@@ -597,7 +598,7 @@ EXPLANATION-
             if (!bubble) return;
 
             let clone = bubble.cloneNode(true);
-            clone.querySelectorAll('img').forEach(el => el.remove());
+            clone.querySelectorAll('img, .api-badge').forEach(el => el.remove());
             
             let htmlStr = clone.innerHTML;
             htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n');
