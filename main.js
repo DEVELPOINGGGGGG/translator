@@ -284,8 +284,8 @@ function getRetryButtonsHtml(lId) {
 
 // 🚀 FIXED: SPEED & HTML RENDERER ENGINE
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
-    // 🔥 TEXT COLOR FIX: Forced pure white text (#ffffff)
-    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px; color:#ffffff !important; font-size: 15px;"></div>`;
+    // 🔥 FIX: Removed hardcoded color so it adapts to Light/Dark Theme automatically
+    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px; font-size: 15px;"></div>`;
     const txtEl = document.getElementById(contentId);
     
     let tickRate = 20; 
@@ -297,7 +297,6 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             let currentText = rawText.substring(0, i);
             txtEl.innerHTML = currentText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
             i += charsPerTick;
-            // 🛑 SCROLL BUG FIX: Removed aggressive scrollToBottom from here! Let the user read!
         } else {
             clearInterval(window.currentTypingTimer);
             window.currentTypingTimer = null;
@@ -312,7 +311,6 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
             if (onComplete) onComplete();
             
-            // Scroll ONLY ONCE when the typing is completely finished
             scrollToBottom("mathChatHistory", true);
             window.toggleChatButton(false);
         }
@@ -326,7 +324,7 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     window.latestMathSolution = answer; 
     
     const buttons = `
-        <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+        <div style="margin-top:15px; border-top:1px solid rgba(128,128,128,0.2); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
             <div style="display:flex; gap:10px; width:100%;">
                 <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
                 <button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button>
@@ -340,8 +338,8 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
         typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true); 
     } 
     else {
-        // 🔥 TEXT COLOR FIX
-        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px; color:#ffffff !important; font-size: 15px;">${answer.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>${buttons}`;
+        // 🔥 FIX: Removed hardcoded color here too
+        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px; font-size: 15px;">${answer.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
         window.toggleChatButton(false);
     }
