@@ -28,115 +28,43 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
         
-        /* 🔍 DYNAMIC MATH IMAGE ZOOM VIEWER GUI */
-        .zoom-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 1000000;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            user-select: none;
-        }
-        .zoom-overlay.active {
-            display: flex;
-        }
-        .zoom-container {
+        /* 📝 THE CSS DIGITAL PAPER ENGINE */
+        .digital-paper-container {
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            margin-bottom: 10px;
+            background-color: #fdfbf7; 
+            background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px);
+            line-height: 30px;
+            padding: 30px 20px 30px 65px;
             position: relative;
-            max-width: 90%;
-            max-height: 80%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: auto;
-            padding: 20px;
-        }
-        .zoom-img-wrapper {
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transition: transform 0.1s ease-out;
-            transform-origin: center center;
-            display: inline-block;
-        }
-        .zoom-overlay img {
-            max-width: 100%;
-            max-height: 70vh;
-            display: block;
-            pointer-events: none;
-        }
-        .zoom-controls {
-            position: absolute;
-            bottom: -60px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 18px;
-            border-radius: 30px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .zoom-btn {
-            background: white;
-            color: #0f172a;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            font-weight: bold;
+            font-family: 'Kalam', cursive, sans-serif; 
             font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: #1e3a8a; 
+            overflow-x: auto;
         }
-        .zoom-btn:hover {
-            transform: scale(1.1);
-            background: #f1f5f9;
-        }
-        .zoom-top-actions {
+        .digital-paper-container::before {
+            content: '';
             position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 15px;
-            z-index: 1000002;
+            top: 0; bottom: 0; left: 45px;
+            width: 2px;
+            background: #fca5a5; 
         }
-        .action-round-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            transition: 0.2s;
-            backdrop-filter: blur(5px);
-        }
-        .action-round-btn:hover {
-            background: white;
-            color: #0f172a;
-            transform: scale(1.05);
-        }
-        .generated-math-img {
-            cursor: zoom-in;
-            transition: transform 0.2s ease;
-        }
-        .generated-math-img:hover {
-            transform: scale(1.02);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15) !important;
-        }
+
+        /* 🔍 DYNAMIC MATH IMAGE ZOOM VIEWER GUI */
+        .zoom-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 1000000; justify-content: center; align-items: center; backdrop-filter: blur(10px); user-select: none; }
+        .zoom-overlay.active { display: flex; }
+        .zoom-container { position: relative; max-width: 90%; max-height: 80%; display: flex; justify-content: center; align-items: center; overflow: auto; padding: 20px; }
+        .zoom-img-wrapper { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transition: transform 0.1s ease-out; transform-origin: center center; display: inline-block; }
+        .zoom-overlay img { max-width: 100%; max-height: 70vh; display: block; pointer-events: none; }
+        .zoom-controls { position: absolute; bottom: -60px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; background: rgba(255, 255, 255, 0.15); padding: 8px 18px; border-radius: 30px; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .zoom-btn { background: white; color: #0f172a; border: none; width: 36px; height: 36px; border-radius: 50%; font-weight: bold; font-size: 18px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .zoom-btn:hover { transform: scale(1.1); background: #f1f5f9; }
+        .zoom-top-actions { position: absolute; top: 20px; right: 20px; display: flex; gap: 15px; z-index: 1000002; }
+        .action-round-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: 0.2s; backdrop-filter: blur(5px); }
+        .action-round-btn:hover { background: white; color: #0f172a; transform: scale(1.05); }
     </style>
 </head>
 <body>
@@ -178,7 +106,7 @@
   <div class="chat-scroll-area" id="mathScrollArea">
     <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
         <h1 style="font-size: 24px; color: white;">🧮 Math Solver</h1>
-        <p style="font-size: 14px; opacity: 0.9; color: white;">Get AI Text & Image Solutions For Math.</p>
+        <p style="font-size: 14px; opacity: 0.9; color: white;">Get AI Text & Digital Paper Solutions For Math.</p>
     </div>
     
     <button onclick="openWhatsAppModal()" style="background: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
@@ -225,23 +153,6 @@
     </div>
 </div>
 
-<div id="imageZoomModal" class="zoom-overlay" onclick="closeZoomModal(event)">
-    <div class="zoom-top-actions">
-        <button class="action-round-btn" onclick="downloadZoomedImage(event)" title="Download Math Solution">📥</button>
-        <button class="action-round-btn" onclick="closeZoomModal(event, true)" title="Close Window">✕</button>
-    </div>
-    <div class="zoom-container">
-        <div class="zoom-img-wrapper" id="zoomImgWrapper">
-            <img id="zoomedTargetImg" src="" alt="Zoomed Math Solution">
-        </div>
-        <div class="zoom-controls" onclick="event.stopPropagation()">
-            <button class="zoom-btn" onclick="adjustZoomLevel(-0.25)" title="Zoom Out">−</button>
-            <button class="zoom-btn" onclick="resetZoomLevel()" title="100% Reset">⟲</button>
-            <button class="zoom-btn" onclick="adjustZoomLevel(0.25)" title="Zoom In">+</button>
-        </div>
-    </div>
-</div>
-
 <div id="historyModal" class="zoom-overlay" onclick="closeHistory()">
     <div class="card" style="background:var(--bg-surface); padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,0.1); width:90%; max-width:600px; max-height:80vh; overflow-y:auto;" onclick="event.stopPropagation()">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -255,7 +166,43 @@
 
 <script>
     /* =======================================================
-       🛡️ 1. HISTORY VAULT LOADER & OCR CONTEXT ENGINE
+       📊 0. API TRACKER SYSTEM (FIXED!)
+    ======================================================= */
+    let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
+    let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
+
+    function updateTrackerUI() {
+        let tot = document.getElementById('apiTotal'); if(tot) tot.innerText = visionReqs + textReqs;
+        let vis = document.getElementById('apiVision'); if(vis) vis.innerText = visionReqs;
+        let txt = document.getElementById('apiText'); if(txt) txt.innerText = textReqs;
+    }
+
+    function track(type) { 
+        if(type === 'v'){ visionReqs++; localStorage.setItem('visionReqs', visionReqs); } 
+        else { textReqs++; localStorage.setItem('textReqs', textReqs); } 
+        updateTrackerUI();
+    }
+
+    // Initialize UI on load
+    updateTrackerUI();
+
+    // Foolproof PT Midnight Countdown
+    setInterval(() => {
+        let d = new Date();
+        // Convert to Pacific Time (-7 / -8 roughly, simplified to fixed UTC-7 for math)
+        let utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+        let pt = new Date(utc + (3600000 * -7)); 
+        let h = 23 - pt.getHours();
+        let m = 59 - pt.getMinutes();
+        let s = 59 - pt.getSeconds();
+        
+        let t = document.getElementById('apiTimer');
+        if(t) t.innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+    }, 1000);
+
+
+    /* =======================================================
+       🛡️ 1. HISTORY VAULT LOADER & CONTEXT ENGINE
     ======================================================= */
     let appHistory = [];
     let sessionCache = { math: null };
@@ -340,14 +287,13 @@
     };
 
     /* =======================================================
-       🧮 2. MATH SOLVER ENGINE (SINGLE IMAGE, ADAPTIVE THEME)
+       🧮 2. MATH SOLVER ENGINE (DIGITAL PAPER ONLY, ADAPTIVE THEME)
     ======================================================= */
     let currentMathImage = null;
     let isProcessing = false;
     let videoStream = null;
     let usingFrontCamera = false;
     let currentMathLang = "Hindi";
-    let currentZoomScale = 1;
 
     // UI Tools
     function showToast(msg) {
@@ -403,44 +349,6 @@
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-    // Zoom Viewer
-    window.openZoomModal = function(url) {
-        const modal = document.getElementById("imageZoomModal");
-        const zoomedImg = document.getElementById("zoomedTargetImg");
-        zoomedImg.src = url;
-        modal.classList.add("active");
-        resetZoomLevel();
-    };
-    window.closeZoomModal = function(event, force = false) {
-        if (force || event.target.id === "imageZoomModal" || event.target.classList.contains("zoom-container")) {
-            document.getElementById("imageZoomModal").classList.remove("active");
-        }
-    };
-    window.adjustZoomLevel = function(amount) {
-        currentZoomScale = Math.max(0.5, Math.min(4, currentZoomScale + amount));
-        document.getElementById("zoomImgWrapper").style.transform = `scale(${currentZoomScale})`;
-    };
-    window.resetZoomLevel = function() {
-        currentZoomScale = 1;
-        document.getElementById("zoomImgWrapper").style.transform = `scale(1)`;
-    };
-    window.downloadZoomedImage = async function(event) {
-        event.stopPropagation();
-        const imgSrc = document.getElementById("zoomedTargetImg").src;
-        if (!imgSrc) return;
-        try {
-            const response = await fetch(imgSrc);
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = blobUrl; link.download = `Math_Solution_${Date.now()}.png`;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(blobUrl);
-        } catch (e) { window.open(imgSrc, '_blank'); }
-    };
-    document.getElementById("imageZoomModal").addEventListener("wheel", function(e) {
-        e.preventDefault(); e.deltaY < 0 ? adjustZoomLevel(0.1) : adjustZoomLevel(-0.1);
-    }, { passive: false });
-
     // Chat UI Tools
     document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
@@ -457,7 +365,7 @@
         msgDiv.className = `chat-msg chat-user`;
         let contentHtml = `<div class="bubble">`;
         if (imageUrl) contentHtml += `<img src="${imageUrl}" class="bubble-img" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
-        // Note: Using color: inherit ensures it adapts to the theme instead of being forced white
+        // Adaptive color mapping for UI
         contentHtml += `<div style="color: inherit;">${text.replace(/\n/g, '<br>')}</div></div>`;
         msgDiv.innerHTML = contentHtml;
         historyDiv.appendChild(msgDiv);
@@ -479,23 +387,18 @@
         return id;
     }
 
-    function updateAiBubbleWithContent(lId, text, provider, mathImageUrl = null) {
+    // 🚀 INJECTS TEXT EXPLANATION + CSS DIGITAL PAPER
+    function updateAiBubbleWithContent(lId, text, provider, paperHtml = "") {
         const loadingBubble = document.getElementById(lId);
         if (!loadingBubble) return;
         const bbl = loadingBubble.querySelector('.bubble');
         
-        let imgHtml = "";
-        if (mathImageUrl) {
-            imgHtml = `<div style="text-align: center; margin-bottom: 15px;"><img src="${mathImageUrl}" onclick="openZoomModal('${mathImageUrl}')" class="generated-math-img" style="max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: zoom-in;" title="Click to view/download Digital Paper"></div>`;
-        }
-        
-        // 🚀 THE FIX: Provider Badge Added Back + Inherited Color for Auto Theme Support
         let providerBadge = `<div style="position:absolute; top:8px; right:12px; font-size:9px; color:var(--muted, #94a3b8); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">✨ BY ${provider}</div>`;
         
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
         
-        bbl.style.position = "relative"; // Ensure the absolute badge stays inside the bubble
-        bbl.innerHTML = `${providerBadge}${imgHtml}<div style="color: inherit; font-size: 15px;">${formattedText}</div>`;
+        bbl.style.position = "relative"; 
+        bbl.innerHTML = `${providerBadge}<div style="color: inherit; font-size: 15px;">${formattedText}</div>${paperHtml}`;
         
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
         scrollToBottom();
@@ -515,25 +418,31 @@
         let lId = appendAiLoading();
         isProcessing = true;
 
+        // 🚀 PROMPT ENGINE: FORCING <MATH_PAPER> TAGS INSTEAD OF EXTERNAL API
         const sysPrompt = `You are an expert math tutor. STRICT RULES:
 1. NON-MATH: If the user says "hi" or non-math things, reply normally in ${currentMathLang}.
 2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate:
 
 ${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
 
-SOLUTION:-
-[MATH]
-[Write the step-by-step math solution here using PURE LaTeX notation. DO NOT use $ or $$ signs inside these tags.]
-[/MATH]
+<MATH_PAPER>
+[Write the step-by-step math solution here using standard LaTeX. Use $$ for block equations and $ for inline. DO NOT SKIP ANY STEPS.]
+</MATH_PAPER>
 
 EXPLANATION-
-[Provide the explanation in ${currentMathLang}.]`;
+[Provide a short explanation in ${currentMathLang}.]`;
 
         let activeImage = currentMathImage || getLastContextImage('math');
         let finalPrompt = `${sysPrompt}\n\n${historyContext}\n\nCurrent Task: ${userText}`;
         
         let payload = { userPrompt: finalPrompt };
-        if (activeImage) payload.imageBase64 = activeImage;
+        if (activeImage) {
+            payload.imageBase64 = activeImage;
+            track('v'); // Trigger API tracker update
+        } else {
+            track('t'); // Trigger API tracker update
+        }
+        
         let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
 
         try {
@@ -545,21 +454,25 @@ EXPLANATION-
             if (!res.ok) throw new Error(data.error || "Failed API request.");
 
             let aiText = data.text;
-            let mathImageUrl = null;
             let finalProvider = data.provider || "Gemini";
+            let paperHtml = "";
 
-            if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
-                let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
-                mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); 
-                mathCode = mathCode.replace(/\n/g, ' \\\\ '); 
-                const encodedMath = encodeURIComponent(mathCode);
-                mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
+            // 🚀 PARSER: GRAB THE MATH AND PUT IT ON THE DIGITAL PAPER DOM
+            let match = aiText.match(/<MATH_PAPER>([\s\S]*?)<\/MATH_PAPER>/i);
+            if (match) {
+                let mathContent = match[1].trim();
+                // Clean up any weird bolding that messes up MathJax
+                mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1');
                 
-                aiText = aiText.replace(/\[MATH\][\s\S]*?\[\/MATH\]/g, '').trim();
+                let paperId = "paper_" + Date.now();
+                paperHtml = `<div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
+                
+                // Remove the raw latex block from the standard text response
+                aiText = aiText.replace(/<MATH_PAPER>[\s\S]*?<\/MATH_PAPER>/i, '').trim();
             }
 
-            saveToHistory('math', userText || "Solve this image", aiText, activeImage, finalProvider);
-            updateAiBubbleWithContent(lId, aiText, finalProvider, mathImageUrl);
+            saveToHistory('math', userText || "Solve this image", aiText + "\n" + (match ? match[1] : ""), activeImage, finalProvider);
+            updateAiBubbleWithContent(lId, aiText, finalProvider, paperHtml);
             
             clearMathImage();
             isProcessing = false;
