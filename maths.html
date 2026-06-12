@@ -28,37 +28,6 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
         
-        /* 🚀 THE CSS DIGITAL PAPER ENGINE */
-        .digital-paper-container {
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 5px;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
-        }
-        
-        .digital-paper {
-            background-color: #fdfbf7; 
-            background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px);
-            line-height: 30px;
-            padding: 30px 20px 30px 65px;
-            position: relative;
-            font-family: 'Kalam', cursive; 
-            font-size: 20px;
-            color: #1e3a8a; 
-            min-width: 300px;
-            white-space: pre-wrap; 
-        }
-        
-        .digital-paper::before {
-            content: '';
-            position: absolute;
-            top: 0; bottom: 0; left: 45px;
-            width: 2px;
-            background: #fca5a5; 
-        }
-
         /* 🔍 DYNAMIC MATH IMAGE ZOOM VIEWER GUI */
         .zoom-overlay {
             display: none;
@@ -309,7 +278,6 @@
         let historyContext = mathConversationHistory.slice(-4).join("\n");
         mathConversationHistory.push(`User: ${userText}`);
 
-        // 🚀 PROMPT FIX: Force Gemini to put pure LaTeX in the tags so the image API doesn't crash
         const tutorPrompt = `You are an expert math tutor. STRICT RULES:
 
 1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in ${currentMathLang}. DO NOT use the math format. 
@@ -351,73 +319,29 @@ Current Task: ${userText}`;
             let aiText = data.text;
             let mathImageUrl = null;
 
-            // 🚀 IMAGE FIX: Safely extract and clean the math for CodeCogs
             if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
                 let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
                 
-                // CRITICAL FIX: CodeCogs crashes if there are $ signs or raw line breaks. We must clean them!
-                mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); // Remove all $
-                mathCode = mathCode.replace(/\n/g, ' \\\\ '); // Convert raw 'Enter' spaces into LaTeX newlines
+                mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); 
+                mathCode = mathCode.replace(/\n/g, ' \\\\ '); 
                 
                 const encodedMath = encodeURIComponent(mathCode);
                 
-                // Generate the HD image URL using CodeCogs
                 mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
                 
-                // CRITICAL FIX: Only delete the TAGS from the text, leave the actual formula so the Digital Paper can still read it!
-                aiText = aiText.replace(/\[MATH\]\s*/g, '').replace(/\s*\[\/MATH\]/g, '');
+                aiText = aiText.replace(/\[MATH\][\s\S]*?\[\/MATH\]/g, '');
             }
 
-            // Append the message (passing the Image URL if it successfully generated)
+            // Append ONLY ONE response with the single HD image
             appendMessage('ai', aiText, mathImageUrl, true);
             mathConversationHistory.push(`AI: ${aiText}`);
             clearMathImage();
 
-            // Fire the CSS Digital Paper renderer with the text!
-            generateMathPaper(aiText);
+            // DIGITAL PAPER INJECTION IS DELETED HERE!
 
         } catch (err) {
             removeTyping();
             appendMessage('ai', "❌ Math Solver Error: " + err.message);
-        }
-    }
-
-    // 🚀 YOUR CSS PAPER INJECTION
-    function generateMathPaper(aiResponseText) {
-        try {
-            if (!aiResponseText.includes("SOLUTION:-")) return;
-
-            const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
-            if (hasMultipleQuestions) return; 
-
-            let parts = aiResponseText.split("SOLUTION:-")[1];
-            let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
-
-            if (mathTextOnly.length < 5) return;
-
-            // Clean markdown bolding from the math paper
-            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
-
-            const historyDiv = document.getElementById("mathChatHistory");
-            const paperId = "paper_" + Date.now();
-            
-            historyDiv.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
-                    <div style="width: 100%; max-width: 95%;">
-                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 DIGITAL PAPER SOLUTION----</p>
-                        <div class="digital-paper-container">
-                            <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
-                        </div>
-                    </div>
-                </div>
-            `);
-            
-            if (window.MathJax) { 
-                MathJax.typesetPromise([document.getElementById(paperId)]); 
-            }
-            document.getElementById("mathScrollArea").scrollTop = 99999;
-        } catch (e) {
-            console.error("Paper rendering failed:", e);
         }
     }
 
@@ -433,7 +357,6 @@ Current Task: ${userText}`;
                 ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
                 : "max-width: 200px; border-radius: 10px; margin-bottom: 10px;";
                 
-            // Added dynamic onclick engine if it is an AI generated image solution
             let onClickAttribute = isGeneratedImage ? `onclick="openZoomModal('${imageUrl}')"` : '';
             contentHtml += `<img src="${imageUrl}" ${onClickAttribute} class="${imgClass}" style="${imgStyle}"><br>`;
         }
@@ -490,12 +413,10 @@ Current Task: ${userText}`;
             document.body.removeChild(link);
             URL.revokeObjectURL(blobUrl);
         } catch (e) {
-            // Fallback strategy if CORS issues happen on absolute paths
             window.open(imgSrc, '_blank');
         }
     };
 
-    // Attach native scroll wheel gesture control for interactive mouse zooms
     document.getElementById("imageZoomModal").addEventListener("wheel", function(e) {
         e.preventDefault();
         if (e.deltaY < 0) {
@@ -539,9 +460,6 @@ Current Task: ${userText}`;
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-    // =======================================================
-    // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE
-    // =======================================================
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
         const messages = historyDiv.querySelectorAll(".chat-msg");
