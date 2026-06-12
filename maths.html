@@ -58,6 +58,116 @@
             width: 2px;
             background: #fca5a5; 
         }
+
+        /* 🔍 DYNAMIC MATH IMAGE ZOOM VIEWER GUI */
+        .zoom-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 1000000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            user-select: none;
+        }
+        .zoom-overlay.active {
+            display: flex;
+        }
+        .zoom-container {
+            position: relative;
+            max-width: 90%;
+            max-height: 80%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            padding: 20px;
+        }
+        .zoom-img-wrapper {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+            display: inline-block;
+        }
+        .zoom-overlay img {
+            max-width: 100%;
+            max-height: 70vh;
+            display: block;
+            pointer-events: none;
+        }
+        .zoom-controls {
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 18px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .zoom-btn {
+            background: white;
+            color: #0f172a;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .zoom-btn:hover {
+            transform: scale(1.1);
+            background: #f1f5f9;
+        }
+        .zoom-top-actions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000002;
+        }
+        .action-round-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        .action-round-btn:hover {
+            background: white;
+            color: #0f172a;
+            transform: scale(1.05);
+        }
+        .generated-math-img {
+            cursor: zoom-in;
+            transition: transform 0.2s ease;
+        }
+        .generated-math-img:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15) !important;
+        }
     </style>
 </head>
 <body>
@@ -145,6 +255,23 @@
     </div>
 </div>
 
+<div id="imageZoomModal" class="zoom-overlay" onclick="closeZoomModal(event)">
+    <div class="zoom-top-actions">
+        <button class="action-round-btn" onclick="downloadZoomedImage(event)" title="Download Math Solution">📥</button>
+        <button class="action-round-btn" onclick="closeZoomModal(event, true)" title="Close Window">✕</button>
+    </div>
+    <div class="zoom-container">
+        <div class="zoom-img-wrapper" id="zoomImgWrapper">
+            <img id="zoomedTargetImg" src="" alt="Zoomed Math Solution">
+        </div>
+        <div class="zoom-controls" onclick="event.stopPropagation()">
+            <button class="zoom-btn" onclick="adjustZoomLevel(-0.25)" title="Zoom Out">−</button>
+            <button class="zoom-btn" onclick="resetZoomLevel()" title="100% Reset">⟲</button>
+            <button class="zoom-btn" onclick="adjustZoomLevel(0.25)" title="Zoom In">+</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentMathImage = null;
     let mathConversationHistory = [];
@@ -152,6 +279,7 @@
     let usingFrontCamera = false;
     
     let currentMathLang = "Hindi"; // Default language
+    let currentZoomScale = 1;
 
     window.toggleMathLanguage = function() {
         const langText = document.getElementById('langText');
@@ -305,7 +433,9 @@ Current Task: ${userText}`;
                 ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
                 : "max-width: 200px; border-radius: 10px; margin-bottom: 10px;";
                 
-            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${imgStyle}"><br>`;
+            // Added dynamic onclick engine if it is an AI generated image solution
+            let onClickAttribute = isGeneratedImage ? `onclick="openZoomModal('${imageUrl}')"` : '';
+            contentHtml += `<img src="${imageUrl}" ${onClickAttribute} class="${imgClass}" style="${imgStyle}"><br>`;
         }
         
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
@@ -316,6 +446,64 @@ Current Task: ${userText}`;
         if (window.MathJax) MathJax.typesetPromise([msgDiv]);
         document.getElementById("mathScrollArea").scrollTop = 99999;
     }
+
+    /* 🔍 LIGHTBOX MODAL ACTION HANDLERS */
+    window.openZoomModal = function(url) {
+        const modal = document.getElementById("imageZoomModal");
+        const zoomedImg = document.getElementById("zoomedTargetImg");
+        zoomedImg.src = url;
+        modal.classList.add("active");
+        resetZoomLevel();
+    };
+
+    window.closeZoomModal = function(event, force = false) {
+        if (force || event.target.id === "imageZoomModal" || event.target.classList.contains("zoom-container")) {
+            document.getElementById("imageZoomModal").classList.remove("active");
+        }
+    };
+
+    window.adjustZoomLevel = function(amount) {
+        currentZoomScale = Math.max(0.5, Math.min(4, currentZoomScale + amount));
+        document.getElementById("zoomImgWrapper").style.transform = `scale(${currentZoomScale})`;
+    };
+
+    window.resetZoomLevel = function() {
+        currentZoomScale = 1;
+        document.getElementById("zoomImgWrapper").style.transform = `scale(1)`;
+    };
+
+    window.downloadZoomedImage = async function(event) {
+        event.stopPropagation();
+        const imgSrc = document.getElementById("zoomedTargetImg").src;
+        if (!imgSrc) return;
+        
+        try {
+            const response = await fetch(imgSrc);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = `Math_Solution_${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+            // Fallback strategy if CORS issues happen on absolute paths
+            window.open(imgSrc, '_blank');
+        }
+    };
+
+    // Attach native scroll wheel gesture control for interactive mouse zooms
+    document.getElementById("imageZoomModal").addEventListener("wheel", function(e) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+            adjustZoomLevel(0.1);
+        } else {
+            adjustZoomLevel(-0.1);
+        }
+    }, { passive: false });
 
     function showTyping() {
         const div = document.createElement("div");
