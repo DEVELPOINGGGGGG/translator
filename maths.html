@@ -152,12 +152,13 @@
       🌍 <span id="langText">HI</span>
   </button>
 </div>
-    <div class="apiTracker">
-        <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
-        <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
-        <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
-        <div>📝 <span id="apiText" class="api-val text">0</span></div>
-    </div>
+
+<div class="apiTracker">
+    <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
+    <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+    <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+    <div>📝 <span id="apiText" class="api-val text">0</span></div>
+</div>
 
 <div class="sidebar" id="sidebar">
   <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
@@ -205,7 +206,7 @@
         <button id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()">❌</button>
     </div>
     <div class="cameraControls">
-        <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
+        <button id="toggleFlashBtn" class="cam-icon-btn" onclick="showToast('Flash not supported here')">🔦</button>
         <div id="capturePhotoBtn" class="cameraCircle" onclick="captureImage()"></div>
         <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
@@ -241,205 +242,153 @@
     </div>
 </div>
 
+<div id="historyModal" class="zoom-overlay" onclick="closeHistory()">
+    <div class="card" style="background:var(--bg-surface); padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,0.1); width:90%; max-width:600px; max-height:80vh; overflow-y:auto;" onclick="event.stopPropagation()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 id="histTitle" style="color:var(--primary);">History</h3>
+            <button onclick="closeHistory()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:5px 10px; border-radius:8px; cursor:pointer;">✕</button>
+        </div>
+        <div id="histQuestion" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:15px; font-size:14px; color:#94a3b8;"></div>
+        <div id="histAnswer" style="background:rgba(59,130,246,0.1); padding:15px; border-radius:8px; font-size:14px; color:#f8fafc; border:1px solid rgba(59,130,246,0.3);"></div>
+    </div>
+</div>
+
 <script>
+    /* =======================================================
+       🛡️ 1. HISTORY VAULT LOADER & OCR CONTEXT ENGINE
+    ======================================================= */
+    let appHistory = [];
+    let sessionCache = { math: null };
+    const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
+    
+    // Core OCR Prompt (Just in case needed by legacy APIs)
+    const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
+    CRITICAL INSTRUCTIONS:
+    1. Extract ALL text from the image EXACTLY as it is written in its original language.
+    2. Output ONLY the raw transcribed text. If no text is visible, output exactly "NO_TEXT_FOUND".`;
+
+    if (typeof localforage !== 'undefined') {
+        localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
+        localforage.getItem('aiHistory').then(function(savedData) {
+            let mergedHistory = savedData ? savedData : [];
+            let oldHistory = [];
+            try { let oldData = localStorage.getItem('aiHistory'); if (oldData) oldHistory = JSON.parse(oldData); } catch(e) {}
+
+            if (oldHistory.length > 0) {
+                let existingIds = new Set(mergedHistory.map(item => item.id));
+                oldHistory.forEach(item => { if (!existingIds.has(item.id)) mergedHistory.push(item); });
+                mergedHistory.sort((a, b) => b.id - a.id);
+                localforage.setItem('aiHistory', mergedHistory);
+            }
+            appHistory = mergedHistory;
+        }).catch(e => console.log("Vault error:", e));
+    } else {
+        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
+    }
+
+    function saveHistorySafe() { 
+        if (typeof localforage !== 'undefined') {
+            localforage.setItem('aiHistory', appHistory).catch(e => console.error("Vault save failed:", e));
+        } else {
+            try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); }
+        }
+    }
+
+    function saveToHistory(type, q, a, img = null, provider = "AI") { 
+        fetch(GOOGLE_SHEETS_WEBHOOK, {
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+            body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
+        }).catch(e => console.log("Google Sheets sync failed."));
+
+        let sessionId = sessionCache[type];
+        let histItem = appHistory.find(i => i.id === sessionId);
+
+        if (!histItem) {
+            sessionId = Date.now(); sessionCache[type] = sessionId; 
+            histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
+            appHistory.unshift(histItem);
+        } else {
+            histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
+            histItem.question = q; histItem.answer = a; 
+        }
+        saveHistorySafe(); 
+    }
+
+    function getSessionContext(type) {
+        let sessionId = sessionCache[type];
+        if (!sessionId) return "";
+        let session = appHistory.find(i => i.id === sessionId);
+        if (!session || !session.interactions) return "";
+        
+        let ctx = "\n--- PREVIOUS CHAT HISTORY FOR CONTEXT ---\n";
+        let recent = session.interactions.slice(-3); 
+        recent.forEach(inter => {
+            let cleanAns = inter.answer.replace(/<[^>]*>?/gm, '');
+            ctx += `User asked: ${inter.question}\nYou answered: ${cleanAns}\n\n`;
+        });
+        return ctx + "--- CURRENT NEW QUESTION ---\n";
+    }
+
+    function getLastContextImage(type) {
+        let sessionId = sessionCache[type];
+        if (!sessionId) return null;
+        let session = appHistory.find(i => i.id === sessionId);
+        if (!session || !session.interactions) return null;
+        for (let i = session.interactions.length - 1; i >= 0; i--) {
+            if (session.interactions[i].image) return session.interactions[i].image;
+        }
+        return null;
+    }
+
+    window.closeHistory = function() { 
+        const modal = document.getElementById('historyModal'); 
+        if (modal) modal.classList.remove('active'); 
+    };
+
+    /* =======================================================
+       🧮 2. MATH SOLVER ENGINE (SINGLE IMAGE, NO CSS PAPER)
+    ======================================================= */
     let currentMathImage = null;
-    let mathConversationHistory = [];
+    let isProcessing = false;
     let videoStream = null;
     let usingFrontCamera = false;
-    
-    let currentMathLang = "Hindi"; // Default language
+    let currentMathLang = "Hindi";
     let currentZoomScale = 1;
 
-    window.toggleMathLanguage = function() {
+    // UI Tools
+    function showToast(msg) {
+        let t = document.createElement('div'); t.innerText = msg;
+        t.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #3b82f6, #8b5cf6); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:10000; font-weight:600; font-size: 14px; text-align:center; animation:fadeInOut 3s forwards;";
+        document.body.appendChild(t);
+        if(!document.getElementById('toastStyles')) {
+            let s = document.createElement('style'); s.id = 'toastStyles';
+            s.innerHTML = "@keyframes fadeInOut { 0%{opacity:0; bottom:10px;} 10%{opacity:1; bottom:30px;} 90%{opacity:1; bottom:30px;} 100%{opacity:0; bottom:10px;} }";
+            document.head.appendChild(s);
+        }
+        setTimeout(() => t.remove(), 3000);
+    }
+    
+    function toggleSidebar() { 
+        document.getElementById('sidebar').classList.toggle('active'); 
+        document.getElementById('overlay').classList.toggle('active'); 
+    }
+
+    function toggleMathLanguage() {
         const langText = document.getElementById('langText');
         if (currentMathLang === "Hindi") {
             currentMathLang = "English";
             langText.innerText = "EN";
-            if(typeof showToast === 'function') showToast("🌍 Language changed to English");
+            showToast("🌍 Language changed to English");
         } else {
             currentMathLang = "Hindi";
             langText.innerText = "HI";
-            if(typeof showToast === 'function') showToast("🌍 Language changed to Hindi");
-        }
-    };
-
-    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
-    });
-
-    async function executeMathFlow() {
-        const inputEl = document.getElementById("mathInstructionInput");
-        const userText = inputEl.value.trim();
-        if (!userText && !currentMathImage) return;
-
-        appendMessage('user', userText || "Solve this image.", currentMathImage);
-        inputEl.value = "";
-        
-        let historyContext = mathConversationHistory.slice(-4).join("\n");
-        mathConversationHistory.push(`User: ${userText}`);
-
-        const tutorPrompt = `You are an expert math tutor. STRICT RULES:
-
-1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in ${currentMathLang}. DO NOT use the math format. 
-
-2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate:
-
-${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
-
-SOLUTION:-
-[MATH]
-[Write the step-by-step math solution here using PURE LaTeX notation. DO NOT use $ or $$ signs inside these tags.]
-[/MATH]
-
-EXPLANATION-
-[Keep this extremely short! Max 2 to 3 lines explaining the core concept in ${currentMathLang}.]
-
-Previous Context:
-${historyContext}
-
-Current Task: ${userText}`;
-
-        showTyping();
-
-        let endpoint = currentMathImage ? "/api/gemini-vision" : "/api/gemini-text";
-        let payload = { userPrompt: tutorPrompt };
-        if (currentMathImage) payload.imageBase64 = currentMathImage;
-
-        try {
-            const res = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            removeTyping();
-
-            if (data.error) throw new Error(data.error);
-
-            let aiText = data.text;
-            let mathImageUrl = null;
-
-            if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
-                let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
-                
-                mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); 
-                mathCode = mathCode.replace(/\n/g, ' \\\\ '); 
-                
-                const encodedMath = encodeURIComponent(mathCode);
-                
-                mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
-                
-                aiText = aiText.replace(/\[MATH\][\s\S]*?\[\/MATH\]/g, '');
-            }
-
-            // Append ONLY ONE response with the single HD image
-            appendMessage('ai', aiText, mathImageUrl, true);
-            mathConversationHistory.push(`AI: ${aiText}`);
-            clearMathImage();
-
-            // DIGITAL PAPER INJECTION IS DELETED HERE!
-
-        } catch (err) {
-            removeTyping();
-            appendMessage('ai', "❌ Math Solver Error: " + err.message);
+            showToast("🌍 Language changed to Hindi");
         }
     }
 
-    function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
-        const historyDiv = document.getElementById("mathChatHistory");
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
-        
-        let contentHtml = `<div class="bubble">`;
-        if (imageUrl) {
-            let imgClass = isGeneratedImage ? "generated-math-img" : "bubble-img";
-            let imgStyle = isGeneratedImage 
-                ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-bottom: 10px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
-                : "max-width: 200px; border-radius: 10px; margin-bottom: 10px;";
-                
-            let onClickAttribute = isGeneratedImage ? `onclick="openZoomModal('${imageUrl}')"` : '';
-            contentHtml += `<img src="${imageUrl}" ${onClickAttribute} class="${imgClass}" style="${imgStyle}"><br>`;
-        }
-        
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-        contentHtml += `<div>${formattedText}</div></div>`;
-        msgDiv.innerHTML = contentHtml;
-        historyDiv.appendChild(msgDiv);
-        
-        if (window.MathJax) MathJax.typesetPromise([msgDiv]);
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    }
-
-    /* 🔍 LIGHTBOX MODAL ACTION HANDLERS */
-    window.openZoomModal = function(url) {
-        const modal = document.getElementById("imageZoomModal");
-        const zoomedImg = document.getElementById("zoomedTargetImg");
-        zoomedImg.src = url;
-        modal.classList.add("active");
-        resetZoomLevel();
-    };
-
-    window.closeZoomModal = function(event, force = false) {
-        if (force || event.target.id === "imageZoomModal" || event.target.classList.contains("zoom-container")) {
-            document.getElementById("imageZoomModal").classList.remove("active");
-        }
-    };
-
-    window.adjustZoomLevel = function(amount) {
-        currentZoomScale = Math.max(0.5, Math.min(4, currentZoomScale + amount));
-        document.getElementById("zoomImgWrapper").style.transform = `scale(${currentZoomScale})`;
-    };
-
-    window.resetZoomLevel = function() {
-        currentZoomScale = 1;
-        document.getElementById("zoomImgWrapper").style.transform = `scale(1)`;
-    };
-
-    window.downloadZoomedImage = async function(event) {
-        event.stopPropagation();
-        const imgSrc = document.getElementById("zoomedTargetImg").src;
-        if (!imgSrc) return;
-        
-        try {
-            const response = await fetch(imgSrc);
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            
-            const link = document.createElement("a");
-            link.href = blobUrl;
-            link.download = `Math_Solution_${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(blobUrl);
-        } catch (e) {
-            window.open(imgSrc, '_blank');
-        }
-    };
-
-    document.getElementById("imageZoomModal").addEventListener("wheel", function(e) {
-        e.preventDefault();
-        if (e.deltaY < 0) {
-            adjustZoomLevel(0.1);
-        } else {
-            adjustZoomLevel(-0.1);
-        }
-    }, { passive: false });
-
-    function showTyping() {
-        const div = document.createElement("div");
-        div.id = "mathTyping";
-        div.className = "chat-msg chat-ai";
-        div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-        document.getElementById("mathChatHistory").appendChild(div);
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    }
-
-    function removeTyping() { document.getElementById("mathTyping")?.remove(); }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+    // Camera Tools
     function openCamera() { document.getElementById("cameraModal").classList.add("active"); startVideoStream(); }
     function closeCamera() { document.getElementById("cameraModal").classList.remove("active"); if (videoStream) videoStream.getTracks().forEach(t => t.stop()); }
-    
     async function startVideoStream() {
         if (videoStream) videoStream.getTracks().forEach(t => t.stop());
         try {
@@ -460,15 +409,171 @@ Current Task: ${userText}`;
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
+    // Zoom Viewer
+    window.openZoomModal = function(url) {
+        const modal = document.getElementById("imageZoomModal");
+        const zoomedImg = document.getElementById("zoomedTargetImg");
+        zoomedImg.src = url;
+        modal.classList.add("active");
+        resetZoomLevel();
+    };
+    window.closeZoomModal = function(event, force = false) {
+        if (force || event.target.id === "imageZoomModal" || event.target.classList.contains("zoom-container")) {
+            document.getElementById("imageZoomModal").classList.remove("active");
+        }
+    };
+    window.adjustZoomLevel = function(amount) {
+        currentZoomScale = Math.max(0.5, Math.min(4, currentZoomScale + amount));
+        document.getElementById("zoomImgWrapper").style.transform = `scale(${currentZoomScale})`;
+    };
+    window.resetZoomLevel = function() {
+        currentZoomScale = 1;
+        document.getElementById("zoomImgWrapper").style.transform = `scale(1)`;
+    };
+    window.downloadZoomedImage = async function(event) {
+        event.stopPropagation();
+        const imgSrc = document.getElementById("zoomedTargetImg").src;
+        if (!imgSrc) return;
+        try {
+            const response = await fetch(imgSrc);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl; link.download = `Math_Solution_${Date.now()}.png`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(blobUrl);
+        } catch (e) { window.open(imgSrc, '_blank'); }
+    };
+    document.getElementById("imageZoomModal").addEventListener("wheel", function(e) {
+        e.preventDefault(); e.deltaY < 0 ? adjustZoomLevel(0.1) : adjustZoomLevel(-0.1);
+    }, { passive: false });
+
+    // Chat UI Tools
+    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
+    });
+
+    function scrollToBottom() {
+        const area = document.getElementById("mathScrollArea");
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function appendUserBubble(text, imageUrl = null) {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-msg chat-user`;
+        let contentHtml = `<div class="bubble">`;
+        if (imageUrl) contentHtml += `<img src="${imageUrl}" class="bubble-img" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
+        contentHtml += `<div>${text.replace(/\n/g, '<br>')}</div></div>`;
+        msgDiv.innerHTML = contentHtml;
+        historyDiv.appendChild(msgDiv);
+        scrollToBottom();
+    }
+
+    function appendAiLoading() {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const id = "loading_" + Date.now();
+        historyDiv.insertAdjacentHTML('beforeend', `
+            <div class="chat-msg chat-ai" id="${id}">
+                <div class="bubble" style="display:flex; align-items:center; gap:12px;">
+                    <div class="typing-indicator"><span></span><span></span><span></span></div>
+                    <span style="color:var(--muted); font-size:14px; font-weight:600;">Solving...</span>
+                </div>
+            </div>
+        `);
+        scrollToBottom();
+        return id;
+    }
+
+    function updateAiBubbleWithContent(lId, text, mathImageUrl = null) {
+        const loadingBubble = document.getElementById(lId);
+        if (!loadingBubble) return;
+        const bbl = loadingBubble.querySelector('.bubble');
+        
+        let imgHtml = "";
+        if (mathImageUrl) {
+            imgHtml = `<div style="text-align: center; margin-bottom: 15px;"><img src="${mathImageUrl}" onclick="openZoomModal('${mathImageUrl}')" class="generated-math-img" style="max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: zoom-in;" title="Click to view/download Digital Paper"></div>`;
+        }
+        
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        bbl.innerHTML = `${imgHtml}<div style="color:#ffffff !important; font-size: 15px;">${formattedText}</div>`;
+        
+        if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
+        scrollToBottom();
+    }
+
+    // CORE MATH ENGINE
+    async function executeMathFlow() {
+        if (isProcessing) return;
+        const inputEl = document.getElementById("mathInstructionInput");
+        const userText = inputEl.value.trim();
+        if (!userText && !currentMathImage) return;
+
+        appendUserBubble(userText || "Solve this image.", currentMathImage);
+        inputEl.value = "";
+        
+        let historyContext = getSessionContext('math');
+        let lId = appendAiLoading();
+        isProcessing = true;
+
+        const sysPrompt = `You are an expert math tutor. STRICT RULES:
+1. NON-MATH: If the user says "hi" or non-math things, reply normally in ${currentMathLang}.
+2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate:
+
+${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
+
+SOLUTION:-
+[MATH]
+[Write the step-by-step math solution here using PURE LaTeX notation. DO NOT use $ or $$ signs inside these tags.]
+[/MATH]
+
+EXPLANATION-
+[Provide the explanation in ${currentMathLang}.]`;
+
+        let activeImage = currentMathImage || getLastContextImage('math');
+        let finalPrompt = `${sysPrompt}\n\n${historyContext}\n\nCurrent Task: ${userText}`;
+        
+        let payload = { userPrompt: finalPrompt };
+        if (activeImage) payload.imageBase64 = activeImage;
+        let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
+
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed API request.");
+
+            let aiText = data.text;
+            let mathImageUrl = null;
+
+            if (aiText.includes('[MATH]') && aiText.includes('[/MATH]')) {
+                let mathCode = aiText.split('[MATH]')[1].split('[/MATH]')[0].trim();
+                mathCode = mathCode.replace(/\$/g, '').replace(/\\\[/g, '').replace(/\\\]/g, ''); 
+                mathCode = mathCode.replace(/\n/g, ' \\\\ '); 
+                const encodedMath = encodeURIComponent(mathCode);
+                mathImageUrl = `https://latex.codecogs.com/png.image?\\dpi{300}\\bg{white}\\large\\space ${encodedMath}`;
+                
+                aiText = aiText.replace(/\[MATH\][\s\S]*?\[\/MATH\]/g, '').trim();
+            }
+
+            saveToHistory('math', userText || "Solve this image", aiText, activeImage, data.provider);
+            updateAiBubbleWithContent(lId, aiText, mathImageUrl);
+            
+            clearMathImage();
+            isProcessing = false;
+
+        } catch (err) {
+            isProcessing = false;
+            updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message);
+        }
+    }
+
+    // WHATSAPP SHARE ENGINE
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
         const messages = historyDiv.querySelectorAll(".chat-msg");
-        
-        if (messages.length === 0) {
-            alert("⚠️ No chat history available to share yet! Please ask a question first.");
-            return;
-        }
-        
+        if (messages.length === 0) return alert("⚠️ No chat history available to share yet!");
         document.getElementById('whatsappModal').style.display = 'flex';
         document.getElementById('waNumberInput').focus();
     };
@@ -484,12 +589,6 @@ Current Task: ${userText}`;
 
         const historyDiv = document.getElementById("mathChatHistory");
         const messages = historyDiv.querySelectorAll(".chat-msg");
-        
-        if (messages.length === 0) {
-            alert("⚠️ No chat history to share.");
-            return;
-        }
-
         let fullChatText = "";
 
         messages.forEach(msg => {
@@ -498,85 +597,38 @@ Current Task: ${userText}`;
             if (!bubble) return;
 
             let clone = bubble.cloneNode(true);
-            const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"], img');
-            garbageElements.forEach(el => el.remove());
+            clone.querySelectorAll('img').forEach(el => el.remove());
             
             let htmlStr = clone.innerHTML;
             htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n');
             htmlStr = htmlStr.replace(/<\/div>/gi, '\n');
-            htmlStr = htmlStr.replace(/<\/p>/gi, '\n\n');
             
             clone.innerHTML = htmlStr;
             let msgText = clone.textContent || clone.innerText || "";
             msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
 
             if (msgText.length > 0) {
-                if (isUser) {
-                    fullChatText += `👤 *YOU:* ${msgText}\n\n`;
-                } else {
-                    fullChatText += `🤖 *AI SOLVER:* \n${msgText}\n\n---------------------------------\n\n`;
-                }
+                if (isUser) fullChatText += `👤 *YOU:* ${msgText}\n\n`;
+                else fullChatText += `🤖 *AI SOLVER:* \n${msgText}\n\n---------------------------------\n\n`;
             }
         });
 
-        const superscripts = {
-            '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹',
-            '+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'
-        };
-        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
-
-        fullChatText = fullChatText
-            .replace(/\$\$/g, '') 
-            .replace(/\$/g, '')   
-            .replace(/\\\(/g, '') 
-            .replace(/\\\)/g, '') 
-            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2') 
-            .replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)) 
-            .replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)) 
-            .replace(/\\sqrt{([^}]+)}/g, '√$1') 
-            .replace(/\\times/g, '×') 
-            .replace(/\\cdot/g, '·')  
-            .replace(/\\pi/g, 'π')    
-            .replace(/\\theta/g, 'θ') 
-            .replace(/\\left/g, '')   
-            .replace(/\\right/g, '')
-            .replace(/\\/g, '');      
-
         const btn = event.target;
         const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ Sending Full Chat...";
-        btn.style.opacity = "0.7";
-        btn.disabled = true;
+        btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
 
         try {
             const response = await fetch("/api/secure-whatsapp", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    number: number,
-                    message: "📚 *AI Pro Suite - Complete Session Export* 📚\n\n" + fullChatText.trim()
-                })
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number: number, message: "📚 *AI Pro Suite Math Export*\n\n" + fullChatText.trim() })
             });
+            if (response.ok) { alert("✅ Chat sent!"); closeWhatsAppModal(); } 
+            else { alert("❌ Failed to send."); }
+        } catch (e) { alert("❌ Connection error."); }
 
-            if (response.status === 403) {
-                alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
-            } else if (response.ok) {
-                alert("✅ Full chat history sent successfully to authorized device!");
-                closeWhatsAppModal();
-            } else {
-                alert("❌ Failed to send. Server responded with an error.");
-            }
-        } catch (e) {
-            alert("❌ Connection error. Is your Render server running?");
-        }
-
-        btn.innerHTML = originalText;
-        btn.style.opacity = "1";
-        btn.disabled = false;
+        btn.innerHTML = originalText; btn.disabled = false;
     };
 </script>
-
 <script src="ui-controls.js" defer></script>
-<script src="main.js" defer></script>
 </body>
 </html>
