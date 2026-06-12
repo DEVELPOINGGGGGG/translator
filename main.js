@@ -1009,8 +1009,7 @@ async function runTranslation(){
         const tId = "trans_" + Date.now();
         const transBox = document.getElementById("translatedText"); transBox.style.position = "relative";
         transBox.innerHTML = `
-            <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div>
-            <div id="${tId}" style="margin-top:10px;">${cleanText}</div>
+           <div id="${tId}" style="margin-top:10px;">${cleanText}</div>
             <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; gap:10px; width:100%;">
                 <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
                 <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
