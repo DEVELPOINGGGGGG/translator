@@ -64,9 +64,14 @@
 
 <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-<div class="topbar">
-  <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-  <div class="appTitle">AI Pro Suite</div>
+<div class="topbar" style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px;">
+  <div style="display: flex; align-items: center; gap: 15px;">
+      <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+      <div class="appTitle">AI Pro Suite</div>
+  </div>
+  <button id="langToggleBtn" onclick="toggleMathLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
+      🌍 <span id="langText">HI</span>
+  </button>
 </div>
     <div class="apiTracker">
         <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
@@ -98,7 +103,7 @@
     
     <button onclick="openWhatsAppModal()" style="background: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
         <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.384 0 12.031c0 2.115.548 4.183 1.587 6.008L.063 24l6.104-1.6c1.782.946 3.791 1.446 5.864 1.446 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm3.843 17.202c-.173.486-.998.922-1.428.983-.393.056-1.155.155-3.327-.743-2.618-1.082-4.296-3.75-4.425-3.924-.131-.173-1.056-1.408-1.056-2.684 0-1.277.663-1.905.897-2.164.234-.258.508-.323.679-.323.173 0 .344.004.498.01.161.008.384-.064.602.46.223.535.753 1.84.819 1.968.066.13.111.28.024.453-.087.172-.132.28-.264.432-.131.153-.277.327-.393.454-.123.134-.254.281-.107.535.147.255.653 1.081 1.402 1.748.966.86 1.763 1.132 2.015 1.261.253.13.4.111.55-.064.148-.174.636-.74.808-.992.172-.254.344-.213.576-.126.232.087 1.468.692 1.721.821.253.129.423.193.484.301.062.107.062.624-.11 1.111z"/></svg>
-        Share via WhatsApp
+        Share Full Chat via WhatsApp
     </button>
 
     <div id="mathChatHistory"></div>
@@ -130,11 +135,11 @@
 
 <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
     <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 400px; width: 90%; text-align: center; position:relative;">
-        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share via WhatsApp</h3>
-        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the authorized mobile number to send this solution.</p>
+        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Full Chat</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the authorized mobile number to send the complete history.</p>
         <input type="number" id="waNumberInput" placeholder="e.g. 919876543210" style="width: 100%; padding: 15px; border-radius: 16px; border: 2px solid var(--border-light); background: var(--input-bg); color: var(--text-main); margin-bottom: 25px; font-weight: bold; text-align: center; font-size: 18px;">
         <div style="display: flex; gap: 10px;">
-            <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="submitWhatsAppNumber(event)">🚀 Send</button>
+            <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="submitWhatsAppNumber(event)">🚀 Send Chat</button>
             <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px; background: #ef4444; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="closeWhatsAppModal()">✖ Cancel</button>
         </div>
     </div>
@@ -145,6 +150,21 @@
     let mathConversationHistory = [];
     let videoStream = null;
     let usingFrontCamera = false;
+    
+    let currentMathLang = "Hindi"; // Default language
+
+    window.toggleMathLanguage = function() {
+        const langText = document.getElementById('langText');
+        if (currentMathLang === "Hindi") {
+            currentMathLang = "English";
+            langText.innerText = "EN";
+            if(typeof showToast === 'function') showToast("🌍 Language changed to English");
+        } else {
+            currentMathLang = "Hindi";
+            langText.innerText = "HI";
+            if(typeof showToast === 'function') showToast("🌍 Language changed to Hindi");
+        }
+    };
 
     document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
@@ -165,17 +185,17 @@
         // STRICT FORMATTING PROMPT
         const tutorPrompt = `You are an expert math tutor. STRICT RULES:
 
-1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in Hindi. DO NOT use the math format. DO NOT write "प्रश्न:".
+1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in ${currentMathLang}. DO NOT use the math format. 
 
-2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be in Hindi except numbers and math symbols:
+2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be strictly written in ${currentMathLang} except numbers and math symbols:
 
-प्रश्न: [Write the exact question here]
+${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
 
 SOLUTION:-
 [Step-by-step math solution using $ for math notation. Keep it direct.]
 
 EXPLANATION-
-[Keep this extremely short! Max 2 to 3 lines explaining the core concept.]
+[Keep this extremely short! Max 2 to 3 lines explaining the core concept in ${currentMathLang}.]
 
 Previous Context:
 ${historyContext}
@@ -307,16 +327,15 @@ Current Task: ${userText}`;
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-// ==========================================
-    // 🔗 SECURE WHATSAPP SHARE ENGINE (BULLETPROOF)
-    // ==========================================
+    // =======================================================
+    // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE (UPDATED)
+    // =======================================================
     window.openWhatsAppModal = function() {
-        // Scrape directly from the screen instead of a hidden array
         const historyDiv = document.getElementById("mathChatHistory");
-        const aiMessages = historyDiv.querySelectorAll(".chat-ai .bubble");
+        const messages = historyDiv.querySelectorAll(".chat-msg");
         
-        if (aiMessages.length === 0) {
-            alert("⚠️ No solution available to share yet! Please ask a math question first.");
+        if (messages.length === 0) {
+            alert("⚠️ No chat history available to share yet! Please ask a question first.");
             return;
         }
         
@@ -334,41 +353,54 @@ Current Task: ${userText}`;
         if (!number) return alert("Please enter a mobile number.");
 
         const historyDiv = document.getElementById("mathChatHistory");
-        const aiMessages = historyDiv.querySelectorAll(".chat-ai .bubble");
+        const messages = historyDiv.querySelectorAll(".chat-msg");
         
-        if (aiMessages.length === 0) {
-            alert("⚠️ No solution to share.");
+        if (messages.length === 0) {
+            alert("⚠️ No chat history to share.");
             return;
         }
 
-        let clone = aiMessages[aiMessages.length - 1].cloneNode(true);
-        
-        // 🛑 1. ANNIHILATE ALL BUTTONS, BADGES, AND DROPDOWNS 🛑
-        // This aggressively hunts down and deletes every UI element from the cloned bubble
-        const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"]');
-        garbageElements.forEach(el => el.remove());
-        
-        // 🛑 2. PRESERVE PERFECT LINE BREAKS 🛑
-        // Converts HTML breaks into real WhatsApp newlines before scraping the text
-        let htmlStr = clone.innerHTML;
-        htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n'); // Turn <br> into newlines
-        htmlStr = htmlStr.replace(/<\/div>/gi, '\n');      // Turn div ends into newlines
-        htmlStr = htmlStr.replace(/<\/p>/gi, '\n\n');      // Turn paragraphs into double newlines
-        
-        clone.innerHTML = htmlStr;
-        let messageText = clone.textContent || clone.innerText || "";
+        let fullChatText = "";
 
-        // Clean up any weird triple-spacing left behind
-        messageText = messageText.replace(/\n\s*\n/g, '\n\n').trim();
+        // Loop through all messages in chronological order
+        messages.forEach(msg => {
+            const isUser = msg.classList.contains("chat-user");
+            const bubble = msg.querySelector(".bubble");
+            if (!bubble) return;
 
-        // 🌟 3. THE UNICODE MATH TRANSLATOR 🌟
+            // Clone to avoid breaking live display interface
+            let clone = bubble.cloneNode(true);
+            
+            // Wipe clean buttons, extra badges, layouts from the scraped packet
+            const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"]');
+            garbageElements.forEach(el => el.remove());
+            
+            let htmlStr = clone.innerHTML;
+            htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n');
+            htmlStr = htmlStr.replace(/<\/div>/gi, '\n');
+            htmlStr = htmlStr.replace(/<\/p>/gi, '\n\n');
+            
+            clone.innerHTML = htmlStr;
+            let msgText = clone.textContent || clone.innerText || "";
+            msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
+
+            if (msgText.length > 0) {
+                if (isUser) {
+                    fullChatText += `👤 *YOU:* ${msgText}\n\n`;
+                } else {
+                    fullChatText += `🤖 *AI SOLVER:* \n${msgText}\n\n---------------------------------\n\n`;
+                }
+            }
+        });
+
+        // 🌟 THE UNICODE MATH TRANSLATOR FOR CLEAN WHATSAPP SYSTEM TEXT 🌟
         const superscripts = {
             '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹',
             '+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'
         };
         const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
 
-        messageText = messageText
+        fullChatText = fullChatText
             .replace(/\$\$/g, '') 
             .replace(/\$/g, '')   
             .replace(/\\\(/g, '') 
@@ -385,10 +417,10 @@ Current Task: ${userText}`;
             .replace(/\\right/g, '')
             .replace(/\\/g, '');      
 
-        // 🚀 4. SEND TO BACKEND 🚀
+        // 🚀 ROUTE OUTPUT DIRECTLY TO BACKEND GATEWAY 🚀
         const btn = event.target;
         const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ Sending...";
+        btn.innerHTML = "⏳ Sending Full Chat...";
         btn.style.opacity = "0.7";
         btn.disabled = true;
 
@@ -398,14 +430,14 @@ Current Task: ${userText}`;
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     number: number,
-                    message: "AI Pro Suite Solution:\n\n" + messageText
+                    message: "📚 *AI Pro Suite - Complete Session Export* 📚\n\n" + fullChatText.trim()
                 })
             });
 
             if (response.status === 403) {
                 alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
             } else if (response.ok) {
-                alert("✅ Sent successfully to authorized device!");
+                alert("✅ Full chat history sent successfully to authorized device!");
                 closeWhatsAppModal();
             } else {
                 alert("❌ Failed to send. Server responded with an error.");
