@@ -11,7 +11,14 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
+    <script>
+      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
         /* JS ANIMATION UTILITIES ONLY */
         .ripple {
@@ -45,6 +52,18 @@
             background: rgba(239, 68, 68, 0.2) !important;
             border: 1px solid #ef4444 !important;
             color: white !important;
+        }
+
+        /* Make long MathJax equations scrollable horizontally */
+        mjx-container[display="true"] {
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            max-width: 100% !important;
+            padding-bottom: 8px !important; 
+            padding-top: 5px !important;
+        }
+        mjx-container:not([display="true"]) {
+            white-space: normal;
         }
     </style>
 </head>
@@ -88,7 +107,13 @@
     <div class="topbar">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
         <div class="appTitle">Deep Search</div>
-        <div class="menuBtn btn-relative" style="margin-left: auto; font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
+        
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+            <button id="langToggleBtn" onclick="toggleSearchLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
+                🌍 <span id="langText">HI</span>
+            </button>
+            <div class="menuBtn btn-relative" style="font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
+        </div>
     </div>
 
     <div class="apiTracker">
@@ -167,6 +192,21 @@
         let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
         let hasResetToday = false;
 
+        // NEW: LANGUAGE TOGGLE STATE & LOGIC
+        let currentSearchLang = "Hindi";
+        window.toggleSearchLanguage = function() {
+            const langText = document.getElementById('langText');
+            if (currentSearchLang === "Hindi") {
+                currentSearchLang = "English";
+                langText.innerText = "EN";
+                if(typeof showStandaloneToast === 'function') showStandaloneToast("🌍 Language changed to English");
+            } else {
+                currentSearchLang = "Hindi";
+                langText.innerText = "HI";
+                if(typeof showStandaloneToast === 'function') showStandaloneToast("🌍 Language changed to Hindi");
+            }
+        };
+
         // --- 2. LOCALSTORAGE DB LOGIC & COPY FUNCTION ---
         function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
         function persistHistoryOnChatClose(reason = "page-close") {
@@ -196,7 +236,6 @@
         function copyToClipboard(textId) { 
             navigator.clipboard.writeText(document.getElementById(textId).innerText).then(() => showStandaloneToast("✅ Copied to clipboard!")); 
         }
-
 
         // --- 3. JS ANIMATION FACTORY ---
         function createRipple(event) {
@@ -250,7 +289,11 @@
                         if(c === '\n') { element.appendChild(document.createElement('br')); } else { element.appendChild(document.createTextNode(c)); }
                     }
                     i += charsPerTick;
-                } else { clearInterval(timer); }
+                } else { 
+                    clearInterval(timer);
+                    // MATHJAX INTEGRATION
+                    if (window.MathJax) { MathJax.typesetPromise([element]).catch(e => console.log(e)); }
+                }
             }, tickRate);
         }
 
@@ -512,12 +555,14 @@
                 memoryContextString += "--- CURRENT QUESTION ---\n";
             }
 
+            // MATHJAX + LANGUAGE TOGGLE PROMPT UPDATE
             let sysPrompt = `You are an expert AI Assistant and Guide. 
             CRITICAL RULES:
-            1. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.
+            1. YOU MUST ANSWER ENTIRELY IN ${currentSearchLang.toUpperCase()}. DO NOT USE OTHER LANGUAGES.
             2. If the user provides a document and asks "how to fill it", DO NOT say the document lacks instructions. 
             3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.
-            4. ALWAYS remember the user's previous context from the Chat History.`;
+            4. If the user asks a MATH question or you detect math/physics formulas, YOU MUST solve it step-by-step and use standard LaTeX formatting (e.g. $E=mc^2$ or $$\\frac{a}{b}$$).
+            5. ALWAYS remember the user's previous context from the Chat History.`;
 
             let finalPrompt = memoryContextString + `User Question: ${q || 'Please help me with this document.'}\n\n`;
             if (persistentPdfMemory) finalPrompt += `[BACKGROUND DOCUMENT CONTEXT]:\n${persistentPdfMemory}`;
@@ -608,7 +653,7 @@
                     
                     // Force the window to scroll to the newly injected text
                     setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
-                    if (typeof showToast === 'function') showToast("🔄 Search Restored Successfully!");
+                    if (typeof showStandaloneToast === 'function') showStandaloneToast("🔄 Search Restored Successfully!");
                 } 
                 
                 // 🛑 SCENARIO 2: It's a Text Box Interface (Translator, Q&A)
@@ -626,7 +671,7 @@
                     `;
                     // Refill the input text box too
                     if (document.getElementById('inputText')) document.getElementById('inputText').value = item.question || "";
-                    if (typeof showToast === 'function') showToast("🔄 Document Restored Successfully!");
+                    if (typeof showStandaloneToast === 'function') showStandaloneToast("🔄 Document Restored Successfully!");
                 }
 
                 // Safely render any Math/Physics equations (LaTeX)
