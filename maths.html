@@ -421,7 +421,7 @@
 1. YOU MUST FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 
 QUESTION [Number]: [Write the exact question here]
-SOLUTION-[WRITE THE EXACT SOLUTION OF THE QUESTION DONT EXPLAIN ANYTHING HERE]
+SOLUTION-[WRITE THE EXACT SOLUTION STEP BY STEP OF THE QUESTION EXPLAIN IN 2-3 LINE HERE]
 EXPLANATION- [Write a short text explanation here in ${currentMathLang}. NO MATH FORMULAS HERE.]
 
 <MATH_PAPER>
@@ -444,45 +444,46 @@ If you fail to put the math inside the <MATH_PAPER> tags, the system will crash.
         
         let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
 
-        try {
-            const res = await fetch(endpoint, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed API request.");
+      try {
+        const res = await fetch(endpoint, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed API request.");
 
-            let aiText = data.text;
-            let finalProvider = data.provider || "Gemini";
-            let paperHtml = "";
+        let aiText = data.text;
+        let paperHtml = "";
 
-            // PARSER: GRAB THE MATH AND PUT IT ON THE DIGITAL PAPER DOM
-            let match = aiText.match(/<MATH_PAPER>([\s\S]*?)<\/MATH_PAPER>/i);
-            if (match) {
-                let mathContent = match[1].trim();
-                mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1');
-                
-                let paperId = "paper_" + Date.now();
-                // 🚀 ADDS THE EXACT LABEL REQUESTED BY USER
-                paperHtml = `
-                <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
-                <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
-                
-                aiText = aiText.replace(/<MATH_PAPER>[\s\S]*?<\/MATH_PAPER>/i, '').trim();
-            }
-
-            saveToHistory('math', userText || "Solve this image", aiText + "\n" + (match ? match[1] : ""), activeImage, finalProvider);
-            updateAiBubbleWithContent(lId, aiText, finalProvider, paperHtml);
+        // 🚀 RUTHLESS PARSER: Removes tags, ensures math is pure, cleans display
+        let match = aiText.match(/<MATH_PAPER>([\s\S]*?)<\/MATH_PAPER>/i);
+        if (match) {
+            // 1. Get the math inside the tags
+            let mathContent = match[1].trim();
             
-            clearMathImage();
-            isProcessing = false;
-
-        } catch (err) {
-            isProcessing = false;
-            updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
+            // 2. Kill the tags so they never show up on your screen
+            aiText = aiText.replace(/<MATH_PAPER>[\s\S]*?<\/MATH_PAPER>/i, '').trim();
+            
+            // 3. Create the paper using the cleaned content
+            let paperId = "paper_" + Date.now();
+            paperHtml = `
+            <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
+            <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
+        } else {
+            // Fallback if AI forgets tags
+            aiText = aiText.replace(/<MATH_PAPER>/g, '').replace(/<\/MATH_PAPER>/g, '');
         }
-    }
 
+        saveToHistory('math', userText || "Solve this image", aiText + "\n" + (match ? match[1] : ""), activeImage, data.provider);
+        updateAiBubbleWithContent(lId, aiText, data.provider || "Gemini", paperHtml);
+        
+        clearMathImage();
+        isProcessing = false;
+
+    } catch (err) {
+        isProcessing = false;
+        updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
+    }
     // WHATSAPP SHARE ENGINE
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
