@@ -10,10 +10,11 @@ const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 const hfApiToken = process.env.HF_API_TOKEN || ""; // Added Hugging Face Token
 
 // 🛑 GLOBAL AI INSTRUCTIONS (FIXES CHINESE/JAPANESE BUGS & HINDI BRAND NAMES) 🛑
+// 🛑 GLOBAL AI INSTRUCTIONS 🛑
 const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 1. NO FOREIGN GARBAGE: Never output Chinese, Japanese, Korean, or random unreadable symbols. If the image or text has illegible noise, completely ignore it.
-2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Do NOT transliterate them into Hindi. Keep sentences natural but preserve English nouns.`;
-
+2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script.
+3. MATH FORMATTING: Whenever you solve a math problem or write equations, you MUST wrap the final equations or step-by-step formulas in [MATH] and [/MATH] tags. Example: [MATH] x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} [/MATH].`;
 // 🛑 STRICT MASTER WATERFALL HIERARCHY 🛑
 // ORDER: 3x 3.1 Flash Lite -> 2x 3.5 Pro -> Cloudflare -> Groq
 const VISION_PROVIDERS = [
