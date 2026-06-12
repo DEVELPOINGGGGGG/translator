@@ -559,10 +559,14 @@ EXPLANATION-
     
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
-    try {
+   try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         
         let cleanSol = resObj.text;
+        
+        // 🔥 THE TAG KILLER: Completely nuke <MATH>, </MATH>, [MATH], and [/MATH] from existence!
+        cleanSol = cleanSol.replace(/<\/?math>/gi, '');
+        cleanSol = cleanSol.replace(/\[\/?math\]/gi, '');
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
         
@@ -575,7 +579,7 @@ EXPLANATION-
             generateMathPaper(cleanSol.replace(/\*\*(.*?)\*\*/g, '$1'));
         }
 
-        // 3. टाइपिंग एनीमेशन के साथ AI का रिस्पॉन्स अपेंड करें (यहाँ से इमेज का कोड हमेशा के लिए हटा दिया गया है)
+        // 3. टाइपिंग एनीमेशन के साथ AI का रिस्पॉन्स अपेंड करें
         const c = getActiveChatContainer("mathChatHistory"); 
         if(c) {
             const msgDiv = document.createElement("div");
@@ -599,7 +603,6 @@ EXPLANATION-
              else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
         }
     }
-}
 
 // 🚀 UPDATED APPEND MESSAGE
 // 🚀 UPDATED APPEND MESSAGE (WITH WHITE TEXT FIX)
