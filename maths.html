@@ -166,10 +166,10 @@
 
 <script>
     /* =======================================================
-       📊 0. API TRACKER SYSTEM (FIXED!)
+       📊 0. API TRACKER SYSTEM
     ======================================================= */
-    let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
-    let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
+    let visionReqs = Number(localStorage.getItem('visionReqs')) || 0;
+    let textReqs = Number(localStorage.getItem('textReqs')) || 0;
 
     function updateTrackerUI() {
         let tot = document.getElementById('apiTotal'); if(tot) tot.innerText = visionReqs + textReqs;
@@ -183,23 +183,20 @@
         updateTrackerUI();
     }
 
-    // Initialize UI on load
     updateTrackerUI();
 
-    // Foolproof PT Midnight Countdown
     setInterval(() => {
-        let d = new Date();
-        // Convert to Pacific Time (-7 / -8 roughly, simplified to fixed UTC-7 for math)
-        let utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-        let pt = new Date(utc + (3600000 * -7)); 
-        let h = 23 - pt.getHours();
-        let m = 59 - pt.getMinutes();
-        let s = 59 - pt.getSeconds();
-        
-        let t = document.getElementById('apiTimer');
-        if(t) t.innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+        try {
+            let d = new Date();
+            let utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+            let pt = new Date(utc + (3600000 * -7)); 
+            let h = 23 - pt.getHours();
+            let m = 59 - pt.getMinutes();
+            let s = 59 - pt.getSeconds();
+            let t = document.getElementById('apiTimer');
+            if(t) t.innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
+        } catch(e) {}
     }, 1000);
-
 
     /* =======================================================
        🛡️ 1. HISTORY VAULT LOADER & CONTEXT ENGINE
@@ -287,7 +284,7 @@
     };
 
     /* =======================================================
-       🧮 2. MATH SOLVER ENGINE (DIGITAL PAPER ONLY, ADAPTIVE THEME)
+       🧮 2. MATH SOLVER ENGINE 
     ======================================================= */
     let currentMathImage = null;
     let isProcessing = false;
@@ -365,7 +362,7 @@
         msgDiv.className = `chat-msg chat-user`;
         let contentHtml = `<div class="bubble">`;
         if (imageUrl) contentHtml += `<img src="${imageUrl}" class="bubble-img" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
-        // Adaptive color mapping for UI
+        // Inherits theme color smoothly
         contentHtml += `<div style="color: inherit;">${text.replace(/\n/g, '<br>')}</div></div>`;
         msgDiv.innerHTML = contentHtml;
         historyDiv.appendChild(msgDiv);
@@ -418,29 +415,32 @@
         let lId = appendAiLoading();
         isProcessing = true;
 
-        // 🚀 PROMPT ENGINE: FORCING <MATH_PAPER> TAGS INSTEAD OF EXTERNAL API
+        // 🚀 PROMPT ENGINE: FORCING NO TEXT IN MATH PAPER
         const sysPrompt = `You are an expert math tutor. STRICT RULES:
-1. NON-MATH: If the user says "hi" or non-math things, reply normally in ${currentMathLang}.
-2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate:
+1. Format your response into exactly TWO parts.
+2. First part: A brief explanation or summary in ${currentMathLang}. Do not write "Explanation:" or "Solution:". Just write the text.
+3. Second part: The <MATH_PAPER> block containing ONLY the step-by-step mathematical formulas using standard LaTeX. DO NOT put any plain text, labels, or words inside the <MATH_PAPER> tags. ONLY MATH.
 
-${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
+Example Output:
+Here is how we solve the quadratic equation using the formula.
 
 <MATH_PAPER>
-[Write the step-by-step math solution here using standard LaTeX. Use $$ for block equations and $ for inline. DO NOT SKIP ANY STEPS.]
-</MATH_PAPER>
-
-EXPLANATION-
-[Provide a short explanation in ${currentMathLang}.]`;
+x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
+x = \\frac{-5 \\pm \\sqrt{25 - 24}}{2}
+x = -2, -3
+</MATH_PAPER>`;
 
         let activeImage = currentMathImage || getLastContextImage('math');
         let finalPrompt = `${sysPrompt}\n\n${historyContext}\n\nCurrent Task: ${userText}`;
         
         let payload = { userPrompt: finalPrompt };
+        
+        // 🚀 TRIGGERING THE UI TRACKER
         if (activeImage) {
             payload.imageBase64 = activeImage;
-            track('v'); // Trigger API tracker update
+            track('v'); 
         } else {
-            track('t'); // Trigger API tracker update
+            track('t'); 
         }
         
         let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
@@ -461,13 +461,11 @@ EXPLANATION-
             let match = aiText.match(/<MATH_PAPER>([\s\S]*?)<\/MATH_PAPER>/i);
             if (match) {
                 let mathContent = match[1].trim();
-                // Clean up any weird bolding that messes up MathJax
                 mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1');
                 
                 let paperId = "paper_" + Date.now();
                 paperHtml = `<div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
                 
-                // Remove the raw latex block from the standard text response
                 aiText = aiText.replace(/<MATH_PAPER>[\s\S]*?<\/MATH_PAPER>/i, '').trim();
             }
 
