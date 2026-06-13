@@ -186,9 +186,8 @@
         let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
         let hasResetToday = false;
 
-        // IMAGE CREATOR MODES & LIMITS
         let isImageGenMode = false;
-        const DAILY_IMAGE_LIMIT = 20; // Increased to 20 since we are using a free api!
+        const DAILY_IMAGE_LIMIT = 20;
 
         // LANGUAGE TOGGLE
         let currentSearchLang = "Hindi";
@@ -205,7 +204,7 @@
             }
         };
 
-        // Activate Image Mode (NO PUTER SIGN IN REQUIRED)
+        // Activate Image Mode
         window.activateImageCreatorMode = async function() {
             isImageGenMode = true;
             document.getElementById("searchInput").placeholder = "Describe the image to create (e.g. A futuristic city...)";
@@ -309,7 +308,7 @@
                     i += charsPerTick;
                 } else { 
                     clearInterval(timer);
-                    if (window.MathJax) { MathJax.typesetPromise([element]).catch(e => console.log(e)); }
+                    if (window.MathJax) { MathJax.typesetPromise([container]).catch(e => console.log(e)); }
                 }
             }, tickRate);
         }
@@ -433,7 +432,7 @@
         async function handlePdfUpload(event) {
             const file = event.target.files[0]; if (!file) return;
             if (file.type !== "application/pdf") return showStandaloneToast("⚠️ Only PDF files are supported!");
-            isImageGenMode = false; // Override Image mode
+            isImageGenMode = false; 
             showStandaloneToast("📄 Reading PDF..."); const fileReader = new FileReader();
             fileReader.onload = async function() {
                 const typedarray = new Uint8Array(this.result);
@@ -489,7 +488,7 @@
             const selectedModel = document.getElementById("modelSelector").value;
 
             // ==========================================
-            // 🎨 SECURE HUGGING FACE IMAGE GENERATOR 🎨
+            // 🎨 UNBREAKABLE DIRECT FRONTEND IMAGE GENERATOR 🎨
             // ==========================================
             if (isImageGenMode) {
                 let imgGenReqs = parseInt(localStorage.getItem('imgGenReqs') || '0');
@@ -503,53 +502,52 @@
                 inp.value = ""; scrollToBottom();
 
                 const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Creating via Secure Backend...</span></div></div>`);
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Rendering Image...</span></div></div>`);
                 scrollToBottom();
 
                 try {
-                    // STEP 1: Enhance prompt using Gemini
-                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, and beautifully descriptive prompt for an AI Image Generator. Reply ONLY with the English prompt. NO quotes, NO conversational filler. Idea: " + q;
+                    // STEP 1: Use backend Gemini to expand the prompt perfectly
+                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, photo-realistic and beautifully descriptive prompt for a professional image creator. Reply ONLY with the English prompt text. NO quotes, NO conversational filler. Idea: " + q;
                     
                     const response = await fetch("/api/gemini-text", { 
                         method: "POST", 
                         headers: { "Content-Type": "application/json" }, 
                         body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) 
                     });
+                    
+                    if (!response.ok) throw new Error("Prompt Expansion Failed");
                     const data = await response.json();
                     let enhancedPrompt = data.text ? data.text.replace(/['"]/g, '').trim() : q;
 
-                    // STEP 2: Ask YOUR secure backend to generate the image
-                    const genResponse = await fetch("/api/generate-image", { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" }, 
-                        body: JSON.stringify({ prompt: enhancedPrompt }) 
-                    });
+                    // STEP 2: Generate direct, unbreakable URL string (Skips backend completely!)
+                    let safePrompt = enhancedPrompt.substring(0, 500);
+                    let randomSeed = Math.floor(Math.random() * 999999);
                     
-                    const genData = await genResponse.json();
-                    if (!genResponse.ok) throw new Error(genData.error || "Image Generation Failed");
-                    
-                    let base64Image = genData.imageBase64;
+                    // Direct pipeline route to standard fast pollinations gateway
+                    let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
 
                     imgGenReqs++;
                     localStorage.setItem('imgGenReqs', imgGenReqs);
 
                     let finalHtml = `
-                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ SECURE AI GENERATOR</div>
+                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ VAPI HD PRO</div>
                         <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Enhanced Prompt:</div>
                         <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
                         
                         <div style="position:relative; display:inline-block; margin-top:10px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3);" id="container_${loadId}">
                             <button onclick="document.getElementById('container_${loadId}').style.display='none'" style="position:absolute; top:-12px; right:-12px; background:#e11d48; color:white; border:2px solid var(--bg-surface); border-radius:50%; width:32px; height:32px; cursor:pointer; font-weight:bold; z-index:10; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✕</button>
-                            <img src="${base64Image}" style="max-width:100%; border-radius:12px;" id="img_${loadId}">
+                            <img src="${imageUrl}" style="max-width:100%; border-radius:12px;" id="img_${loadId}">
                         </div>
 
                         <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                            <button class="btn-relative" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); downloadGeneratedImage('img_${loadId}')">📥 Download Image</button>
+                            <a href="${imageUrl}" target="_blank" style="text-decoration:none; flex: 1;">
+                                <button class="btn-relative" style="width:100%; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold;" onclick="createRipple(event);">📥 Open & Download</button>
+                            </a>
                         </div>
                     `;
 
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
-                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Secure Backend API");
+                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "VAPI Generator");
 
                     clearPdfFile(); 
                 } catch (error) { 
