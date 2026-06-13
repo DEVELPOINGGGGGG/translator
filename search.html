@@ -308,7 +308,7 @@
                     i += charsPerTick;
                 } else { 
                     clearInterval(timer);
-                    if (window.MathJax) { MathJax.typesetPromise([container]).catch(e => console.log(e)); }
+                    if (window.MathJax) { MathJax.typesetPromise([element]).catch(e => console.log(e)); }
                 }
             }, tickRate);
         }
@@ -488,7 +488,7 @@
             const selectedModel = document.getElementById("modelSelector").value;
 
             // ==========================================
-            // 🎨 UNBREAKABLE DIRECT FRONTEND IMAGE GENERATOR 🎨
+            // 🎨 DIRECT UNBREAKABLE BROWSER PIPELINE 🎨
             // ==========================================
             if (isImageGenMode) {
                 let imgGenReqs = parseInt(localStorage.getItem('imgGenReqs') || '0');
@@ -502,35 +502,36 @@
                 inp.value = ""; scrollToBottom();
 
                 const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Rendering Image...</span></div></div>`);
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Loading Image Directly...</span></div></div>`);
                 scrollToBottom();
 
                 try {
-                    // STEP 1: Use backend Gemini to expand the prompt perfectly
-                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, photo-realistic and beautifully descriptive prompt for a professional image creator. Reply ONLY with the English prompt text. NO quotes, NO conversational filler. Idea: " + q;
+                    // STEP 1: Expand prompt via server-side Gemini
+                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, photo-realistic prompt. Reply ONLY with the English prompt text. NO quotes, NO conversational filler. Idea: " + q;
                     
-                    const response = await fetch("/api/gemini-text", { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" }, 
-                        body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) 
-                    });
-                    
-                    if (!response.ok) throw new Error("Prompt Expansion Failed");
-                    const data = await response.json();
-                    let enhancedPrompt = data.text ? data.text.replace(/['"]/g, '').trim() : q;
+                    let enhancedPrompt = q;
+                    try {
+                        const response = await fetch("/api/gemini-text", { 
+                            method: "POST", 
+                            headers: { "Content-Type": "application/json" }, 
+                            body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) 
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.text) enhancedPrompt = data.text.replace(/['"]/g, '').trim();
+                        }
+                    } catch(e) { console.log("Prompt enhancement failed, using original prompt."); }
 
-                    // STEP 2: Generate direct, unbreakable URL string (Skips backend completely!)
-                    let safePrompt = enhancedPrompt.substring(0, 500);
+                    // STEP 2: Render directly using safe frontend query parameters
+                    let safePrompt = enhancedPrompt.substring(0, 450);
                     let randomSeed = Math.floor(Math.random() * 999999);
-                    
-                    // Direct pipeline route to standard fast pollinations gateway
                     let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
 
                     imgGenReqs++;
                     localStorage.setItem('imgGenReqs', imgGenReqs);
 
                     let finalHtml = `
-                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ VAPI HD PRO</div>
+                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ HD PRO RECOVERY</div>
                         <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Enhanced Prompt:</div>
                         <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
                         
@@ -541,13 +542,13 @@
 
                         <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
                             <a href="${imageUrl}" target="_blank" style="text-decoration:none; flex: 1;">
-                                <button class="btn-relative" style="width:100%; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold;" onclick="createRipple(event);">📥 Open & Download</button>
+                                <button class="btn-relative" style="width:100%; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold;" onclick="createRipple(event);">📥 Open & Save Image</button>
                             </a>
                         </div>
                     `;
 
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
-                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "VAPI Generator");
+                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Frontend Recovery Pipeline");
 
                     clearPdfFile(); 
                 } catch (error) { 
@@ -623,9 +624,7 @@
         if (!restoreId) return;
 
         setTimeout(() => {
-            let container = document.querySelector('.chat-scroll-area') || 
-                            document.getElementById('searchChatHistory');
-                            
+            let container = document.querySelector('.chat-scroll-area') || document.getElementById('searchChatHistory');
             if (!container) return;
 
             const forceInjectData = (historyData) => {
@@ -648,9 +647,7 @@
                             </div>
                             <div class="chat-msg chat-ai" style="animation: bounceInBubble 0.6s ease-out;">
                                 <div class="bubble" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 6px; box-shadow: var(--glass-shadow); display: flex; flex-direction: column;">
-                                    
                                     <div id="${textId}" style="margin-top:0; width:100%; overflow-x:auto;">${inter.answer}</div>
-                                    
                                 </div>
                             </div>
                         `);
@@ -659,7 +656,6 @@
                     setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
                     if (typeof showStandaloneToast === 'function') showStandaloneToast("🔄 Search Restored Successfully!");
                 } 
-
                 if (window.MathJax) { MathJax.typesetPromise([container]).catch(e => console.log(e)); }
             };
 
@@ -671,10 +667,9 @@
             } else {
                 forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
             }
-            
         }, 800); 
     });
-</script>
-<script src="ui-controls.js" defer></script>
+    </script>
+    <script src="ui-controls.js" defer></script>
 </body>
 </html>
