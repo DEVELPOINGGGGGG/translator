@@ -4,6 +4,12 @@ const path = require("path");
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
+
+// 🚨 THE MAGIC FIX: Forces Render to bypass its broken IPv6 network 🚨
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first'); 
+// -------------------------------------------------------------------
+
 const port = process.env.PORT || 10000;
 
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
