@@ -281,16 +281,22 @@ async function handleCloudflareImage(req, res) {
         return sendJson(res, 200, { base64, image: `data:image/png;base64,${base64}`, provider: "CLOUDFLARE (IMAGE)" });
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
-// IMAGE GENERATION ENDPOINT
-app.post('/api/generate-image', async (req, res) => {
-    try {
-        const { prompt } = req.body;
-        
-        // The token is pulled securely from Render's environment, NOT the code
-        const hfToken = process.env.HF_TOKEN;
 
+// ==========================================
+// 🛡️ SECURE HUGGING FACE IMAGE GENERATOR 🛡️
+// ==========================================
+async function handleGenerateImage(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        const prompt = body.prompt || "";
+        
+        if (!prompt) {
+            return sendJson(res, 400, { error: "Prompt is required." });
+        }
+
+        const hfToken = process.env.HF_TOKEN;
         if (!hfToken) {
-            return res.status(500).json({ error: "HF_TOKEN environment variable is missing!" });
+            return sendJson(res, 500, { error: "HF_TOKEN environment variable is missing on the server!" });
         }
 
         const hfResponse = await fetch(
@@ -306,7 +312,7 @@ app.post('/api/generate-image', async (req, res) => {
         );
 
         if (!hfResponse.ok) {
-            throw new Error("Hugging Face API rejected the request.");
+            throw new Error("Hugging Face API rejected the request. Ensure your token is valid.");
         }
         
         // Securely convert the image buffer to base64 on the server
@@ -314,12 +320,13 @@ app.post('/api/generate-image', async (req, res) => {
         const buffer = Buffer.from(arrayBuffer);
         const base64Image = `data:image/jpeg;base64,${buffer.toString('base64')}`;
 
-        res.json({ imageBase64: base64Image });
+        return sendJson(res, 200, { imageBase64: base64Image });
     } catch (error) {
         console.error("Image Generation Error:", error);
-        res.status(500).json({ error: error.message });
+        return sendJson(res, 502, { error: error.message });
     }
-});
+}
+
 // ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
@@ -387,6 +394,7 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
+        if (req.url === "/api/generate-image") return handleGenerateImage(req, res); // ✨ NEW ENDPOINT ADDED HERE ✨
     }
     
     if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
