@@ -169,7 +169,6 @@
         </div>
     </div>
 
-
     <script>
         // --- 1. STATE VARIABLES, WEBHOOK & HISTORY ---
         const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
@@ -189,7 +188,7 @@
 
         // IMAGE CREATOR MODES & LIMITS
         let isImageGenMode = false;
-        const DAILY_IMAGE_LIMIT = 5; 
+        const DAILY_IMAGE_LIMIT = 20; // Increased to 20 since we are using a free api!
 
         // LANGUAGE TOGGLE
         let currentSearchLang = "Hindi";
@@ -206,7 +205,7 @@
             }
         };
 
-        // Activate Image Mode (NO SIGN IN REQUIRED ANYMORE!)
+        // Activate Image Mode (NO PUTER SIGN IN REQUIRED)
         window.activateImageCreatorMode = async function() {
             isImageGenMode = true;
             document.getElementById("searchInput").placeholder = "Describe the image to create (e.g. A futuristic city...)";
@@ -490,13 +489,11 @@
             const selectedModel = document.getElementById("modelSelector").value;
 
             // ==========================================
-            // 🎨 NEW FREE POLLINATIONS IMAGE GENERATOR 🎨
+            // 🎨 SECURE HUGGING FACE IMAGE GENERATOR 🎨
             // ==========================================
             if (isImageGenMode) {
-                // Increased your free limit to 20 since this new API is totally free!
-                const NEW_DAILY_LIMIT = 20; 
                 let imgGenReqs = parseInt(localStorage.getItem('imgGenReqs') || '0');
-                if (imgGenReqs >= NEW_DAILY_LIMIT) {
+                if (imgGenReqs >= DAILY_IMAGE_LIMIT) {
                     showStandaloneToast("❌ LIMIT REACHED! Wait until tomorrow.");
                     isProcessing = false;
                     return;
@@ -506,11 +503,11 @@
                 inp.value = ""; scrollToBottom();
 
                 const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Creating Image for FREE...</span></div></div>`);
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Creating via Secure Backend...</span></div></div>`);
                 scrollToBottom();
 
                 try {
-                    // STEP 1: Use your backend Gemini to enhance the prompt
+                    // STEP 1: Enhance prompt using Gemini
                     let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, and beautifully descriptive prompt for an AI Image Generator. Reply ONLY with the English prompt. NO quotes, NO conversational filler. Idea: " + q;
                     
                     const response = await fetch("/api/gemini-text", { 
@@ -521,26 +518,23 @@
                     const data = await response.json();
                     let enhancedPrompt = data.text ? data.text.replace(/['"]/g, '').trim() : q;
 
-                    // STEP 2: Use Pollinations.ai (100% Free, No Auth)
-                    // We add a random seed so it generates a new image every time!
-                    let randomSeed = Math.floor(Math.random() * 1000000);
-                    let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
-                    
-                    // STEP 3: Fetch and convert to Base64 so it saves forever!
-                    let fetchRes = await fetch(imageUrl);
-                    if (!fetchRes.ok) throw new Error("Image Generation Failed");
-                    let blob = await fetchRes.blob();
-                    let base64Image = await new Promise((resolve) => {
-                        let reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.readAsDataURL(blob);
+                    // STEP 2: Ask YOUR secure backend to generate the image
+                    const genResponse = await fetch("/api/generate-image", { 
+                        method: "POST", 
+                        headers: { "Content-Type": "application/json" }, 
+                        body: JSON.stringify({ prompt: enhancedPrompt }) 
                     });
+                    
+                    const genData = await genResponse.json();
+                    if (!genResponse.ok) throw new Error(genData.error || "Image Generation Failed");
+                    
+                    let base64Image = genData.imageBase64;
 
                     imgGenReqs++;
                     localStorage.setItem('imgGenReqs', imgGenReqs);
 
                     let finalHtml = `
-                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ FREE AI GENERATOR</div>
+                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ SECURE AI GENERATOR</div>
                         <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Enhanced Prompt:</div>
                         <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
                         
@@ -555,7 +549,7 @@
                     `;
 
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
-                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Pollinations");
+                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Secure Backend API");
 
                     clearPdfFile(); 
                 } catch (error) { 
