@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
+const axios = require('axios');
 const port = process.env.PORT || 10000;
 
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
@@ -290,40 +291,25 @@ async function handleGenerateImage(req, res) {
         const body = JSON.parse(await readRequestBody(req));
         const prompt = body.prompt || "";
         
-        if (!prompt) {
-            return sendJson(res, 400, { error: "Prompt is required." });
-        }
+        if (!prompt) return sendJson(res, 400, { error: "Prompt is required." });
 
-        const hfToken = process.env.HF_TOKEN;
-        if (!hfToken) {
-            return sendJson(res, 500, { error: "HF_TOKEN environment variable is missing on the server!" });
-        }
-
-        const hfResponse = await fetch(
-            "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-            {
+        const response = await axios.post(
+            "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
+            { inputs: prompt },
+            { 
                 headers: { 
-                    "Authorization": `Bearer ${hfToken}`,
+                    "Authorization": `Bearer ${process.env.HF_TOKEN}`,
                     "Content-Type": "application/json"
-                },
-                method: "POST",
-                body: JSON.stringify({ inputs: prompt }),
+                }, 
+                responseType: 'arraybuffer' 
             }
         );
 
-        if (!hfResponse.ok) {
-            throw new Error("Hugging Face API rejected the request. Ensure your token is valid.");
-        }
-        
-        // Securely convert the image buffer to base64 on the server
-        const arrayBuffer = await hfResponse.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const base64Image = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-
+        const base64Image = `data:image/jpeg;base64,${Buffer.from(response.data).toString('base64')}`;
         return sendJson(res, 200, { imageBase64: base64Image });
     } catch (error) {
-        console.error("Image Generation Error:", error);
-        return sendJson(res, 502, { error: error.message });
+        console.error("Backend Error:", error.message);
+        return sendJson(res, 502, { error: "Backend network issue. Check Render logs." });
     }
 }
 
