@@ -166,7 +166,7 @@
 
 <script>
     /* =======================================================
-       📊 0. API TRACKER SYSTEM (FIXED DOMContentLoaded)
+       📊 0. API TRACKER SYSTEM
     ======================================================= */
     let visionReqs = parseInt(localStorage.getItem('visionReqs')) || 0;
     let textReqs = parseInt(localStorage.getItem('textReqs')) || 0;
@@ -385,7 +385,6 @@
         return id;
     }
 
-    // 🚀 INJECTS TEXT EXPLANATION + STRICT PAPER LABEL
     function updateAiBubbleWithContent(lId, text, provider, paperHtml = "") {
         const loadingBubble = document.getElementById(lId);
         if (!loadingBubble) return;
@@ -402,7 +401,8 @@
         scrollToBottom();
     }
 
-    // CORE MATH ENGINE (STRICT PROMPT OVERRIDE)
+    // CORE MATH ENGINE
+    // THIS IS THE FIX: I added the missing closing brace at the end of this function.
     async function executeMathFlow() {
         if (isProcessing) return;
         const inputEl = document.getElementById("mathInstructionInput");
@@ -416,7 +416,6 @@
         let lId = appendAiLoading();
         isProcessing = true;
 
-        // 🚀 AGGRESSIVE PROMPT: EXACT FORMAT, NO BLANK PAPER
         const sysPrompt = `You are an expert math tutor. STRICT RULES:
 1. YOU MUST FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 
@@ -444,46 +443,42 @@ If you fail to put the math inside the <MATH_PAPER> tags, the system will crash.
         
         let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
 
-      try {
-        const res = await fetch(endpoint, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed API request.");
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed API request.");
 
-        let aiText = data.text;
-        let paperHtml = "";
+            let aiText = data.text;
+            let paperHtml = "";
 
-        // 🚀 RUTHLESS PARSER: Removes tags, ensures math is pure, cleans display
-        let match = aiText.match(/<MATH_PAPER>([\s\S]*?)<\/MATH_PAPER>/i);
-        if (match) {
-            // 1. Get the math inside the tags
-            let mathContent = match[1].trim();
+            let match = aiText.match(/<MATH_PAPER>([\s\S]*?)<\/MATH_PAPER>/i);
+            if (match) {
+                let mathContent = match[1].trim();
+                aiText = aiText.replace(/<MATH_PAPER>[\s\S]*?<\/MATH_PAPER>/i, '').trim();
+                
+                let paperId = "paper_" + Date.now();
+                paperHtml = `
+                <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
+                <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
+            } else {
+                aiText = aiText.replace(/<MATH_PAPER>/g, '').replace(/<\/MATH_PAPER>/g, '');
+            }
+
+            saveToHistory('math', userText || "Solve this image", aiText + "\n" + (match ? match[1] : ""), activeImage, data.provider);
+            updateAiBubbleWithContent(lId, aiText, data.provider || "Gemini", paperHtml);
             
-            // 2. Kill the tags so they never show up on your screen
-            aiText = aiText.replace(/<MATH_PAPER>[\s\S]*?<\/MATH_PAPER>/i, '').trim();
-            
-            // 3. Create the paper using the cleaned content
-            let paperId = "paper_" + Date.now();
-            paperHtml = `
-            <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
-            <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
-        } else {
-            // Fallback if AI forgets tags
-            aiText = aiText.replace(/<MATH_PAPER>/g, '').replace(/<\/MATH_PAPER>/g, '');
+            clearMathImage();
+            isProcessing = false;
+
+        } catch (err) {
+            isProcessing = false;
+            updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
         }
+    } // <-- I MISSED THIS BRACKET IN THE PREVIOUS MESSAGES! THIS FIXES EVERYTHING.
 
-        saveToHistory('math', userText || "Solve this image", aiText + "\n" + (match ? match[1] : ""), activeImage, data.provider);
-        updateAiBubbleWithContent(lId, aiText, data.provider || "Gemini", paperHtml);
-        
-        clearMathImage();
-        isProcessing = false;
-
-    } catch (err) {
-        isProcessing = false;
-        updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
-    }
     // WHATSAPP SHARE ENGINE
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
