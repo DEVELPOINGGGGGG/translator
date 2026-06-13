@@ -77,10 +77,13 @@
       <div class="appTitle">AI Pro Suite</div>
   </div>
   <div style="display: flex; align-items: center; gap: 10px;">
-      <select id="modelSelect" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; outline: none;">
-          <option value="flash-lite" style="color: black;">⚡ Flash</option>
-          <option value="pro" style="color: black;">🚀 Pro</option>
-      </select>
+      <div style="display: flex; flex-direction: column; align-items: flex-end;">
+          <select id="modelSelect" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; outline: none; margin-bottom: 2px;">
+              <option value="flash-lite" selected style="color: black;">⚡ Flash</option>
+              <option value="pro" style="color: black;">🚀 Pro</option>
+          </select>
+          <span style="font-size: 9px; color: rgba(255,255,255,0.8); font-weight: 800; letter-spacing: 0.5px;">RESETS ON 12:30 PM</span>
+      </div>
       
       <button id="langToggleBtn" onclick="toggleMathLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
           🌍 <span id="langText">HI</span>
@@ -106,7 +109,7 @@
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+  <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
 <div class="page active chat-page-layout" id="mathsPage">
@@ -160,20 +163,9 @@
     </div>
 </div>
 
-<div id="historyModal" class="zoom-overlay" onclick="closeHistory()">
-    <div class="card" style="background:var(--bg-surface); padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,0.1); width:90%; max-width:600px; max-height:80vh; overflow-y:auto;" onclick="event.stopPropagation()">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 id="histTitle" style="color:var(--primary);">History</h3>
-            <button onclick="closeHistory()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:5px 10px; border-radius:8px; cursor:pointer;">✕</button>
-        </div>
-        <div id="histQuestion" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; margin-bottom:15px; font-size:14px; color:var(--text-main, #94a3b8);"></div>
-        <div id="histAnswer" style="background:rgba(59,130,246,0.1); padding:15px; border-radius:8px; font-size:14px; color:var(--text-main, #f8fafc); border:1px solid rgba(59,130,246,0.3);"></div>
-    </div>
-</div>
-
 <script>
     /* =======================================================
-       📊 0. API TRACKER SYSTEM (FIXED DOMContentLoaded)
+       📊 0. API TRACKER SYSTEM (FIXED)
     ======================================================= */
     let visionReqs = parseInt(localStorage.getItem('visionReqs')) || 0;
     let textReqs = parseInt(localStorage.getItem('textReqs')) || 0;
@@ -210,12 +202,13 @@
     });
 
     /* =======================================================
-       🛡️ 1. HISTORY VAULT LOADER & CONTEXT ENGINE
+       🛡️ 1. HISTORY VAULT LOADER & SESSION RESTORE ENGINE
     ======================================================= */
     let appHistory = [];
     let sessionCache = { math: null };
     const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
 
+    // LOAD HISTORY AND CHECK FOR URL RESTORE COMMAND
     if (typeof localforage !== 'undefined') {
         localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
         localforage.getItem('aiHistory').then(function(savedData) {
@@ -230,9 +223,14 @@
                 localforage.setItem('aiHistory', mergedHistory);
             }
             appHistory = mergedHistory;
+            
+            // 🔥 FIRE URL RESTORE AFTER HISTORY LOADS 🔥
+            const urlParams = new URLSearchParams(window.location.search);
+            const restoreId = urlParams.get('restore');
+            if (restoreId) {
+                setTimeout(() => restoreSession(parseInt(restoreId)), 300);
+            }
         }).catch(e => console.log("Vault error:", e));
-    } else {
-        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
     }
 
     function saveHistorySafe() { 
@@ -243,17 +241,20 @@
         }
     }
 
+    // SAVES FULL RENDERED HTML TO PREVENT BLANK PAPER ON RESTORE
     function saveToHistory(type, q, a, img = null, provider = "AI") { 
+        // Sync to cloud silently
         fetch(GOOGLE_SHEETS_WEBHOOK, {
             method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-            body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini" })
+            body: JSON.stringify({ action: "log", type: type, question: q, answer: "Math Solution Generated", provider: provider || "Gemini" })
         }).catch(e => console.log("Google Sheets sync failed."));
 
         let sessionId = sessionCache[type];
         let histItem = appHistory.find(i => i.id === sessionId);
 
         if (!histItem) {
-            sessionId = Date.now(); sessionCache[type] = sessionId; 
+            sessionId = Date.now(); 
+            sessionCache[type] = sessionId; 
             histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
             appHistory.unshift(histItem);
         } else {
@@ -263,6 +264,7 @@
         saveHistorySafe(); 
     }
 
+    // GRABS CONTEXT FROM THIS EXACT SESSION FOR "CONTINUE CHAT"
     function getSessionContext(type) {
         let sessionId = sessionCache[type];
         if (!sessionId) return "";
@@ -272,6 +274,7 @@
         let ctx = "\n--- PREVIOUS CHAT HISTORY FOR CONTEXT ---\n";
         let recent = session.interactions.slice(-3); 
         recent.forEach(inter => {
+            // Strip HTML to pass raw text to Gemini
             let cleanAns = inter.answer.replace(/<[^>]*>?/gm, '');
             ctx += `User asked: ${inter.question}\nYou answered: ${cleanAns}\n\n`;
         });
@@ -289,10 +292,39 @@
         return null;
     }
 
-    window.closeHistory = function() { 
-        const modal = document.getElementById('historyModal'); 
-        if (modal) modal.classList.remove('active'); 
-    };
+    // 🚀 RESTORES CHAT AND LINKS SESSION SO CONVERSATION CONTINUES 🚀
+    function restoreSession(id) {
+        let item = appHistory.find(i => i.id == id);
+        if(!item) {
+            showToast("⚠️ Could not find this chat session.");
+            return;
+        }
+        
+        // Link the Session ID! This stops the "Data Expired" / Blank context bug.
+        sessionCache['math'] = item.id;
+        
+        let container = document.getElementById("mathChatHistory");
+        container.innerHTML = ""; // Clear existing chat
+        
+        item.interactions.forEach(inter => {
+            appendUserBubble(inter.question, inter.image);
+            
+            let lId = "restored_" + Date.now() + Math.floor(Math.random()*1000);
+            container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${lId}"><div class="bubble"></div></div>`);
+            let bbl = document.getElementById(lId).querySelector('.bubble');
+            
+            // Inject the HTML answer directly from Vault
+            bbl.innerHTML = inter.answer; 
+            
+            // Tell MathJax to re-render the paper
+            if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
+        });
+        
+        scrollToBottom();
+        showToast("✅ Session Restored. You can continue chatting!");
+        // Clear the URL silently
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
     /* =======================================================
        🧮 2. MATH SOLVER ENGINE 
@@ -392,8 +424,8 @@
         return id;
     }
 
-    // 🚀 INJECTS TEXT EXPLANATION + STRICT PAPER LABEL
-    function updateAiBubbleWithContent(lId, text, provider, paperHtml = "") {
+    // GENERATES THE FULL HTML BUBBLE AND SAVES IT TO VAULT
+    function updateAiBubbleWithContent(lId, text, provider, paperHtml = "", saveText = "", saveImage = null) {
         const loadingBubble = document.getElementById(lId);
         if (!loadingBubble) return;
         const bbl = loadingBubble.querySelector('.bubble');
@@ -403,13 +435,22 @@
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
         
         bbl.style.position = "relative"; 
-        bbl.innerHTML = `${providerBadge}<div style="color: inherit; font-size: 15px;">${formattedText}</div>${paperHtml}`;
+        
+        // This exact string is what gets saved to History Vault
+        let fullRenderedHTML = `${providerBadge}<div style="color: inherit; font-size: 15px;">${formattedText}</div>${paperHtml}`;
+        
+        bbl.innerHTML = fullRenderedHTML;
         
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
         scrollToBottom();
+
+        // Pass the HTML string to Vault so it restores visually perfect
+        if (saveText) {
+            saveToHistory('math', saveText, fullRenderedHTML, saveImage, provider);
+        }
     }
 
-    // CORE MATH ENGINE (STRICT PROMPT OVERRIDE)
+    // CORE MATH ENGINE (STRICT FALLBACK & NO TAGS)
     async function executeMathFlow() {
         if (isProcessing) return;
         const inputEl = document.getElementById("mathInstructionInput");
@@ -419,27 +460,27 @@
         appendUserBubble(userText || "Solve this image.", currentMathImage);
         inputEl.value = "";
         
-        let historyContext = getSessionContext('math');
+        let historyContext = getSessionContext('math'); // Pulls past chat from Vault
         let lId = appendAiLoading();
         isProcessing = true;
 
-        // 🚀 PROMPT ENGINE: FORCES GREETING AVOIDANCE AND TAG ISOLATION
+        // 🚀 PROMPT ENGINE: PREVENTS HALLUCINATIONS, ENFORCES PURE SOLUTION AND EXPLANATION
         const sysPrompt = `You are an expert math tutor. STRICT RULES:
-1. GREETINGS: If the user says "hi", "hello", or asks a non-math question, ONLY reply with a normal friendly response in ${currentMathLang}. DO NOT generate any math problems or use the format below.
-2. MATH QUESTIONS: You MUST format your response EXACTLY like this:
+1. GREETINGS & CHAT: If the user says "hi", "hello", "kaise ho", or anything that is NOT a math question, ONLY reply normally and friendly in ${currentMathLang}. DO NOT generate a math problem. DO NOT use the format below.
+2. MATH QUESTIONS: If there is a math problem, you MUST format your response EXACTLY like this:
 
-QUESTION 1: [Write the exact question here]
-SOLUTION- [Write ONLY the final answer or a direct 1-line mathematical result. NO EXPLANATION.]
-EXPLANATION- [Write a short text explanation here in ${currentMathLang}. NO MATH FORMULAS.]
+QUESTION: [Write the exact question here]
+SOLUTION- [Write ONLY the final answer or a direct 1-line mathematical result. NO explanation words here.]
+EXPLANATION- [Write the text explanation here in ${currentMathLang}. NO math formulas here.]
 
-<MATH>
-[Write the pure step-by-step mathematical formulas using standard LaTeX. DO NOT LEAVE THIS BLANK. DO NOT write words inside here, ONLY MATH.]
-</MATH>`;
+<MATH_PAPER>
+[Write the pure step-by-step mathematical formulas using standard LaTeX. DO NOT LEAVE THIS BLANK. AND DONT WIRTE<MATH> AND </MATH> YOU MUST PUT THE MATH INSIDE THESE TAGS. DO NOT write words inside here, ONLY MATH.]
+</MATH_PAPER>`;
 
         let activeImage = currentMathImage || getLastContextImage('math');
         let finalPrompt = `${sysPrompt}\n\n${historyContext}\n\nCurrent Task: ${userText}`;
         
-        // 🚀 GRAB THE SELECTED MODEL FROM THE DROPDOWN
+        // 🚀 GRAB THE SELECTED MODEL FROM THE DROPDOWN (PRO or FLASH)
         let selectedModel = document.getElementById("modelSelect").value;
         let payload = { 
             userPrompt: finalPrompt,
@@ -455,43 +496,68 @@ EXPLANATION- [Write a short text explanation here in ${currentMathLang}. NO MATH
         
         let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
 
+        let res, data;
+
         try {
-            const res = await fetch(endpoint, {
+            // 🚀 ATTEMPT 1: REQUEST FROM SELECTED MODEL 🚀
+            res = await fetch(endpoint, {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Failed API request.");
-
-            let aiText = data.text;
-            let paperHtml = "";
-
-            // 🚀 RUTHLESS PARSER: Eliminates <MATH> tags entirely and prevents empty papers
-            let match = aiText.match(/<MATH(?:_PAPER)?>([\s\S]*?)<\/MATH(?:_PAPER)?>/i);
-            if (match) {
-                let mathContent = match[1].trim();
-                mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1'); // Clean any stray markdown
-                
-                let paperId = "paper_" + Date.now();
-                paperHtml = `
-                <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
-                <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
-            } 
+            data = await res.json();
             
-            // Remove the tags from the main text response completely, whether there was a match or not.
-            aiText = aiText.replace(/<MATH(?:_PAPER)?>[\s\S]*?<\/MATH(?:_PAPER)?>/gi, '').trim();
-            aiText = aiText.replace(/<\/?MATH(?:_PAPER)?>/gi, '').trim();
-
-            saveToHistory('math', userText || "Solve this image", aiText + "\n" + (match ? match[1] : ""), activeImage, data.provider);
-            updateAiBubbleWithContent(lId, aiText, data.provider || "Gemini", paperHtml);
-            
-            clearMathImage();
-            isProcessing = false;
-
+            if (!res.ok || data.error) throw new Error(data.error || "Failed API request.");
         } catch (err) {
-            isProcessing = false;
-            updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
+            // 🚀 ATTEMPT 2: IF PRO FAILS, SILENT FALLBACK TO LITE 🚀
+            if (selectedModel === 'pro') {
+                // Update UI to show fallback is happening
+                document.getElementById(lId).querySelector('.bubble').innerHTML = `<div style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><span></span><span></span><span></span></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Pro failed. Retrying with Flash-Lite...</span></div>`;
+                
+                payload.providerOverride = "flash-lite"; // Force Fallback
+                try {
+                    res = await fetch(endpoint, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    data = await res.json();
+                    if (!res.ok || data.error) throw new Error(data.error || "Flash-Lite fallback also failed.");
+                } catch (fallbackErr) {
+                    isProcessing = false;
+                    updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + fallbackErr.message, "System");
+                    return;
+                }
+            } else {
+                // If it was already Flash and it failed, throw error.
+                isProcessing = false;
+                updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
+                return;
+            }
         }
+
+        let aiText = data.text;
+        let paperHtml = "";
+
+        // 🚀 RUTHLESS PARSER: Eliminates <MATH> tags entirely and prevents empty papers
+        let match = aiText.match(/<MATH(?:_PAPER)?>([\s\S]*?)<\/MATH(?:_PAPER)?>/i);
+        if (match) {
+            let mathContent = match[1].trim();
+            mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1'); // Clean any stray markdown
+            
+            let paperId = "paper_" + Date.now();
+            paperHtml = `
+            <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
+            <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
+        } 
+        
+        // STRIP ALL TRACES OF THE TAGS OUT OF THE CHAT TEXT
+        aiText = aiText.replace(/<MATH(?:_PAPER)?>[\s\S]*?<\/MATH(?:_PAPER)?>/gi, '').trim();
+        aiText = aiText.replace(/<\/?MATH(?:_PAPER)?>/gi, '').trim();
+
+        // 🚀 PUSH TO UI & SAVE FULL HTML TO HISTORY
+        updateAiBubbleWithContent(lId, aiText, data.provider || "Gemini", paperHtml, userText || "Solve this image", activeImage);
+        
+        clearMathImage();
+        isProcessing = false;
     }
 
     // WHATSAPP SHARE ENGINE
@@ -554,6 +620,5 @@ EXPLANATION- [Write a short text explanation here in ${currentMathLang}. NO MATH
         btn.innerHTML = originalText; btn.disabled = false;
     };
 </script>
-<script src="ui-controls.js" defer></script>
 </body>
 </html>
