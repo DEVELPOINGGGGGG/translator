@@ -228,8 +228,24 @@
             chip.querySelector('div').innerText = "🎨";
         };
 
-        // --- 2. DB LOGIC ---
-        function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
+        /// --- 2. DB LOGIC (UPGRADED UNLIMITED STORAGE) ---
+        function saveHistorySafe() { 
+            // 1. Primary Save: LocalForage (Unlimited IndexedDB Storage - Perfect for HD Images)
+            if (typeof localforage !== 'undefined') {
+                localforage.setItem('aiHistory', appHistory).catch(err => console.log("History DB Error:", err));
+            }
+            
+            // 2. Backup Save: LocalStorage (Safely bypasses the 5MB crash bug)
+            try { 
+                let historyString = JSON.stringify(appHistory);
+                if(historyString.length < 4500000) { // Only save if it's under 4.5MB
+                    localStorage.setItem('aiHistory', historyString); 
+                }
+            } catch(e) { 
+                console.warn("LocalStorage is full, relying entirely on LocalForage database.");
+            } 
+        }
+
         function persistHistoryOnChatClose(reason = "page-close") {
             try { saveHistorySafe(); } catch(e) {}
         }
@@ -538,8 +554,10 @@
                         } catch(err) { console.log("Vision analysis failed, fallback to text prompt."); }
                     }
 
-                    // STEP 2: Boost prompt details using server-side Gemini text model
-                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this concept into a highly detailed, cinematic, photo-realistic English prompt for image generation. Reply ONLY with the prompt text.";
+        // STEP 2: Boost prompt details into a flawless production/commercial studio photograph
+                    let sysPrompt = "You are a master commercial photographer and elite prompt engineer. Rewrite the user's concept into an exceptionally detailed, hyper-realistic production photograph prompt for an AI image generator. " + 
+                                    "Incorporate professional studio terminology: commercial catalog photography, tack-sharp focus, clean studio lighting, soft shadows, 8k resolution, photorealistic textures, shot on 50mm lens, f/2.8, premium material finishes, and flawless physical accuracy. Remove any fantasy or cartoon elements. Reply ONLY with the optimized prompt string without quotation marks.";
+                    
                     let enhancedPrompt = finalPrompt;
                     try {
                         const pResponse = await fetch("/api/gemini-text", { 
@@ -549,9 +567,15 @@
                         });
                         if (pResponse.ok) {
                             const pData = await pResponse.json();
-                            if (pData.text) enhancedPrompt = pData.text.replace(/['"]/g, '').trim();
+                            if (pData.text) {
+                                // Add powerful quality suffixes directly to ensure Flux outputs clean reality
+                                enhancedPrompt = pData.text.replace(/['"]/g, '').trim() + ", high-end commercial product advertisement shot, studio background, authentic details, extremely realistic, 4k crisp distribution.";
+                            }
                         }
-                    } catch(e) { console.log("Prompt engine bypassed."); }
+                    } catch(e) { 
+                        console.log("Prompt engine bypassed. Falling back to basic prompt formatting."); 
+                        enhancedPrompt = finalPrompt + ", professional studio product photo, ultra sharp, commercial presentation, highly accurate details.";
+                    }
 
                     // STEP 3: Execute via Puter.js Flux environment sandbox
                     puter.ai.txt2img(enhancedPrompt, { model: "flux-1-schnell" })
@@ -564,8 +588,8 @@
                             localStorage.setItem('imgGenReqs', imgGenReqs);
 
                             let wrapperHtml = `
-                                <div class="api-badge" style="background: linear-gradient(135deg, #a855f7, #06b6d4); border-color:#22d3ee; color:white; padding: 4px 10px;">✨ COMPOSITE SANDBOX</div>
-                                <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Optimized Query Structure:</div>
+                                <div class="api-badge" style="background: linear-gradient(135deg, #a855f7, #06b6d4); border-color:#22d3ee; color:white; padding: 4px 10px;">✨ PRODUCTION STUDIO MODE</div>
+                                <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Optimized Production Prompt:</div>
                                 <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
                                 
                                 <div style="position:relative; display:inline-block; margin-top:10px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3);" id="container_${loadId}">
@@ -573,7 +597,7 @@
                                 </div>
 
                                 <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                                    <button class="btn-relative" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); downloadGeneratedImage('img_${loadId}')">📥 Download Composite Image</button>
+                                    <button class="btn-relative" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); downloadGeneratedImage('img_${loadId}')">📥 Download Production Image</button>
                                 </div>
                             `;
 
@@ -581,7 +605,7 @@
                             bubble.innerHTML = wrapperHtml;
                             document.getElementById(`container_${loadId}`).appendChild(imgElement);
 
-                            saveToHistory('search', `Composite Image: ${q}`, bubble.innerHTML, standaloneCapturedImage, "Puter Flux Sandbox");
+                            saveToHistory('search', `Production Photo: ${q}`, bubble.innerHTML, standaloneCapturedImage, "Flux Production Engine");
                             clearPdfFile();
                             clearSearchImage();
                             isProcessing = false;
