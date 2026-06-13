@@ -66,8 +66,8 @@
   <div style="display: flex; align-items: center; gap: 10px;">
       <div style="display: flex; flex-direction: column; align-items: flex-end;">
           <select id="modelSelect" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; outline: none; margin-bottom: 2px;">
-              <option value="flash-lite" selected style="color: black;">⚡ Flash</option>
-              <option value="pro" style="color: black;">🚀 Pro</option>
+              <option value="pro" selected style="color: black;">🚀 Pro</option>
+              <option value="flash-lite" style="color: black;">⚡ Flash</option>
           </select>
           <span style="font-size: 9px; color: rgba(255,255,255,0.8); font-weight: 800; letter-spacing: 0.5px;">RESETS ON 12:30 PM</span>
       </div>
@@ -91,6 +91,11 @@
   <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
   <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
+  <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
@@ -100,6 +105,12 @@
         <h1 style="font-size: 24px; color: white;">🧮 Math Solver</h1>
         <p style="font-size: 14px; opacity: 0.9; color: white;">Get Detailed Step-by-Step AI Solutions.</p>
     </div>
+    
+    <button onclick="openWhatsAppModal()" style="background: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.384 0 12.031c0 2.115.548 4.183 1.587 6.008L.063 24l6.104-1.6c1.782.946 3.791 1.446 5.864 1.446 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm3.843 17.202c-.173.486-.998.922-1.428.983-.393.056-1.155.155-3.327-.743-2.618-1.082-4.296-3.75-4.425-3.924-.131-.173-1.056-1.408-1.056-2.684 0-1.277.663-1.905.897-2.164.234-.258.508-.323.679-.323.173 0 .344.004.498.01.161.008.384-.064.602.46.223.535.753 1.84.819 1.968.066.13.111.28.024.453-.087.172-.132.28-.264.432-.131.153-.277.327-.393.454-.123.134-.254.281-.107.535.147.255.653 1.081 1.402 1.748.966.86 1.763 1.132 2.015 1.261.253.13.4.111.55-.064.148-.174.636-.74.808-.992.172-.254.344-.213.576-.126.232.087 1.468.692 1.721.821.253.129.423.193.484.301.062.107.062.624-.11 1.111z"/></svg>
+        Share Full Chat via WhatsApp
+    </button>
+
     <div id="mathChatHistory"></div>
   </div>
   <div class="chat-input-area">
@@ -126,9 +137,21 @@
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
+<div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
+    <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 400px; width: 90%; text-align: center; position:relative;">
+        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Full Chat</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the authorized mobile number to send the complete history.</p>
+        <input type="number" id="waNumberInput" placeholder="e.g. 919876543210" style="width: 100%; padding: 15px; border-radius: 16px; border: 2px solid var(--border-light); background: var(--input-bg); color: var(--text-main); margin-bottom: 25px; font-weight: bold; text-align: center; font-size: 18px;">
+        <div style="display: flex; gap: 10px;">
+            <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="submitWhatsAppNumber(event)">🚀 Send Chat</button>
+            <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px; background: #ef4444; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="closeWhatsAppModal()">✖ Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
     /* =======================================================
-       📊 0. API TRACKER SYSTEM
+       📊 0. API TRACKER SYSTEM (FIXED DOMContentLoaded)
     ======================================================= */
     let visionReqs = parseInt(localStorage.getItem('visionReqs')) || 0;
     let textReqs = parseInt(localStorage.getItem('textReqs')) || 0;
@@ -192,17 +215,20 @@
         }
     }
 
-    function saveToHistory(type, q, a, img = null, provider = "AI", fullRenderedHTML = "") { 
+    // 🚀 FIXED: SAVES FULL HTML SO IT RESTORES EXACTLY AS GENERATED 🚀
+    function saveToHistory(type, q, rawText, img = null, provider = "AI", fullRenderedHTML = "") { 
         let sessionId = sessionCache[type];
         let histItem = appHistory.find(i => i.id === sessionId);
+
+        let answerToSave = fullRenderedHTML ? fullRenderedHTML : rawText;
 
         if (!histItem) {
             sessionId = Date.now(); 
             sessionCache[type] = sessionId; 
-            histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: fullRenderedHTML, image: img, provider: provider }] };
+            histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: answerToSave, image: img, provider: provider }] };
             appHistory.unshift(histItem);
         } else {
-            histItem.interactions.push({ question: q, answer: fullRenderedHTML, image: img, provider: provider });
+            histItem.interactions.push({ question: q, answer: answerToSave, image: img, provider: provider });
         }
         saveHistorySafe(); 
     }
@@ -222,11 +248,23 @@
         return ctx + "--- CURRENT NEW QUESTION ---\n";
     }
 
+    function getLastContextImage(type) {
+        let sessionId = sessionCache[type];
+        if (!sessionId) return null;
+        let session = appHistory.find(i => i.id === sessionId);
+        if (!session || !session.interactions) return null;
+        for (let i = session.interactions.length - 1; i >= 0; i--) {
+            if (session.interactions[i].image) return session.interactions[i].image;
+        }
+        return null;
+    }
+
     // 🚀 THE RESTORE FUNCTION - FIXES THE UGLY ONE-LINE FORMAT AND MISSING IMAGES 🚀
     function restoreSession(id) {
         let item = appHistory.find(i => i.id == id);
         if(!item) return;
         
+        // Link session cache to prevent "Data Expired" / new session creation
         sessionCache['math'] = item.id;
         let container = document.getElementById("mathChatHistory");
         container.innerHTML = ""; 
@@ -255,6 +293,7 @@
     let videoStream = null;
     let usingFrontCamera = false;
     let currentMathLang = "Hindi";
+    let aiTextForHistory = "";
 
     function toggleSidebar() { 
         document.getElementById('sidebar').classList.toggle('active'); 
@@ -366,7 +405,29 @@
         }, 15);
     }
 
-    let aiTextForHistory = "";
+    // 🚀 SAFE FETCH WRAPPER TO PREVENT "SOLVING" FREEZES 🚀
+    async function safeFetch(endpoint, payload) {
+        let fetchTimer;
+        const timeoutPromise = new Promise((_, reject) => {
+            fetchTimer = setTimeout(() => reject(new Error("Server took too long. It might be asleep. Try again in 30s.")), 25000);
+        });
+
+        const fetchPromise = fetch(endpoint, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const res = await Promise.race([fetchPromise, timeoutPromise]);
+        clearTimeout(fetchTimer);
+
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } 
+        catch(e) { throw new Error("Server is offline or returned an error page."); }
+        
+        if (!res.ok || data.error) throw new Error(data.error || "API Request Failed");
+        return data;
+    }
 
     async function executeMathFlow() {
         if (isProcessing) return;
@@ -391,13 +452,13 @@ QUESTION 1: [Write the exact question here]
 SOLUTION- [Write ONLY the final answer here. Example: x = 5]
 EXPLANATION- [Write the text explanation here in ${currentMathLang}. NO math formulas here.]
 
-<MATH>
+<MATH_PAPER>
 [Write the detailed, STEP-BY-STEP mathematical formulas here.
 CRITICAL: Use standard LaTeX. 
 Use \\frac{numerator}{denominator} for fractions.
 Use \\times for multiplication. DO NOT USE THE * SYMBOL.
 DO NOT write any plain text words inside here, ONLY pure LaTeX math.]
-</MATH>`;
+</MATH_PAPER>`;
 
         let activeImage = currentMathImage || getLastContextImage('math');
         let finalPrompt = `${sysPrompt}\n\n${historyContext}\n\nCurrent Task: ${userText}`;
@@ -409,30 +470,23 @@ DO NOT write any plain text words inside here, ONLY pure LaTeX math.]
         else { track('t'); }
         
         let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
-        let res, data;
+        let data;
 
         try {
-            res = await fetch(endpoint, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            data = await res.json();
-            if (!res.ok || data.error) throw new Error(data.error || "Failed API request.");
+            // TRY SELECTED MODEL (Default is PRO)
+            data = await safeFetch(endpoint, payload);
         } catch (err) {
-            // 🚀 AUTOMATIC FALLBACK TO FLASH-LITE 🚀
+            // 🚀 AUTOMATIC FALLBACK TO FLASH-LITE IF PRO FAILS 🚀
             if (selectedModel === 'pro') {
-                document.getElementById(lId).querySelector('.bubble').innerHTML = `<div style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><span></span><span></span><span></span></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Pro failed. Retrying with Flash...</span></div>`;
+                let loadMsg = document.getElementById(lId).querySelector('.bubble span');
+                if (loadMsg) loadMsg.innerText = "Pro failed. Retrying with Flash-Lite...";
+                
                 payload.providerOverride = "flash-lite"; 
                 try {
-                    res = await fetch(endpoint, {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    data = await res.json();
-                    if (!res.ok || data.error) throw new Error("Fallback failed.");
+                    data = await safeFetch(endpoint, payload);
                 } catch (fallbackErr) {
                     isProcessing = false;
-                    document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + fallbackErr.message;
+                    document.getElementById(lId).querySelector('.bubble').innerText = "❌ Both Pro and Flash failed: " + fallbackErr.message;
                     return;
                 }
             } else {
@@ -442,7 +496,7 @@ DO NOT write any plain text words inside here, ONLY pure LaTeX math.]
             }
         }
 
-        let aiText = data.text;
+        let aiText = data.text || "";
         aiTextForHistory = aiText; // Save raw text for context
         let paperHtml = "";
 
@@ -455,6 +509,9 @@ DO NOT write any plain text words inside here, ONLY pure LaTeX math.]
             mathContent = mathContent.replace(/\*/g, '\\times '); 
             mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1'); 
             
+            // ANNIHILATE STRAY MATH TAGS INSIDE THE PAPER
+            mathContent = mathContent.replace(/<\/?(?:MATH|MATH_PAPER)>/gi, '');
+
             let paperId = "paper_" + Date.now();
             paperHtml = `
             <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
@@ -465,12 +522,72 @@ DO NOT write any plain text words inside here, ONLY pure LaTeX math.]
         aiText = aiText.replace(/<(?:MATH|MATH_PAPER)>[\s\S]*?<\/(?:MATH|MATH_PAPER)>/gi, '').trim();
         aiText = aiText.replace(/<\/?(?:MATH|MATH_PAPER)>/gi, '').trim();
 
-        // Trigger Typewriter!
+        // Trigger Typewriter! (Which then saves to history when done)
         typeWriteResponse(lId, aiText, data.provider || "Gemini", paperHtml, userText || "Solve this image", rawImageToSave);
         
         clearMathImage();
         isProcessing = false;
     }
+
+    // WHATSAPP SHARE ENGINE
+    window.openWhatsAppModal = function() {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const messages = historyDiv.querySelectorAll(".chat-msg");
+        if (messages.length === 0) return alert("⚠️ No chat history available to share yet!");
+        document.getElementById('whatsappModal').style.display = 'flex';
+        document.getElementById('waNumberInput').focus();
+    };
+
+    window.closeWhatsAppModal = function() {
+        document.getElementById('whatsappModal').style.display = 'none';
+        document.getElementById('waNumberInput').value = '';
+    };
+
+    window.submitWhatsAppNumber = async function(event) {
+        const number = document.getElementById('waNumberInput').value.trim();
+        if (!number) return alert("Please enter a mobile number.");
+
+        const historyDiv = document.getElementById("mathChatHistory");
+        const messages = historyDiv.querySelectorAll(".chat-msg");
+        let fullChatText = "";
+
+        messages.forEach(msg => {
+            const isUser = msg.classList.contains("chat-user");
+            const bubble = msg.querySelector(".bubble");
+            if (!bubble) return;
+
+            let clone = bubble.cloneNode(true);
+            clone.querySelectorAll('img, .api-badge').forEach(el => el.remove());
+            
+            let htmlStr = clone.innerHTML;
+            htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n');
+            htmlStr = htmlStr.replace(/<\/div>/gi, '\n');
+            
+            clone.innerHTML = htmlStr;
+            let msgText = clone.textContent || clone.innerText || "";
+            msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
+
+            if (msgText.length > 0) {
+                if (isUser) fullChatText += `👤 *YOU:* ${msgText}\n\n`;
+                else fullChatText += `🤖 *AI SOLVER:* \n${msgText}\n\n---------------------------------\n\n`;
+            }
+        });
+
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
+
+        try {
+            const response = await fetch("/api/secure-whatsapp", {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number: number, message: "📚 *AI Pro Suite Math Export*\n\n" + fullChatText.trim() })
+            });
+            if (response.ok) { alert("✅ Chat sent!"); closeWhatsAppModal(); } 
+            else { alert("❌ Failed to send."); }
+        } catch (e) { alert("❌ Connection error."); }
+
+        btn.innerHTML = originalText; btn.disabled = false;
+    };
 </script>
 </body>
 </html>
