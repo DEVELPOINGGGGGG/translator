@@ -281,7 +281,45 @@ async function handleCloudflareImage(req, res) {
         return sendJson(res, 200, { base64, image: `data:image/png;base64,${base64}`, provider: "CLOUDFLARE (IMAGE)" });
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
+// IMAGE GENERATION ENDPOINT
+app.post('/api/generate-image', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        
+        // The token is pulled securely from Render's environment, NOT the code
+        const hfToken = process.env.HF_TOKEN;
 
+        if (!hfToken) {
+            return res.status(500).json({ error: "HF_TOKEN environment variable is missing!" });
+        }
+
+        const hfResponse = await fetch(
+            "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+            {
+                headers: { 
+                    "Authorization": `Bearer ${hfToken}`,
+                    "Content-Type": "application/json"
+                },
+                method: "POST",
+                body: JSON.stringify({ inputs: prompt }),
+            }
+        );
+
+        if (!hfResponse.ok) {
+            throw new Error("Hugging Face API rejected the request.");
+        }
+        
+        // Securely convert the image buffer to base64 on the server
+        const arrayBuffer = await hfResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64Image = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+
+        res.json({ imageBase64: base64Image });
+    } catch (error) {
+        console.error("Image Generation Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
 // ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
