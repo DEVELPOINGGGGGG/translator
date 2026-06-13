@@ -28,24 +28,30 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
         
-        /* 📝 THE PURE CSS DIGITAL PAPER ENGINE */
+        /* 🚀 THE CSS DIGITAL PAPER ENGINE */
         .digital-paper-container {
             width: 100%;
+            overflow-x: auto;
             margin-top: 5px;
             border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             margin-bottom: 10px;
+        }
+        
+        .digital-paper {
             background-color: #fdfbf7; 
             background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px);
             line-height: 30px;
             padding: 30px 20px 30px 65px;
             position: relative;
-            font-family: 'Kalam', cursive, sans-serif; 
-            font-size: 18px;
+            font-family: 'Kalam', cursive; 
+            font-size: 20px;
             color: #1e3a8a; 
-            overflow-x: auto;
+            min-width: 300px;
+            white-space: pre-wrap; 
         }
-        .digital-paper-container::before {
+        
+        .digital-paper::before {
             content: '';
             position: absolute;
             top: 0; bottom: 0; left: 45px;
@@ -63,47 +69,36 @@
       <div class="menuBtn" onclick="toggleSidebar()">☰</div>
       <div class="appTitle">AI Pro Suite</div>
   </div>
-  <div style="display: flex; align-items: center; gap: 10px;">
-      <div style="display: flex; flex-direction: column; align-items: flex-end;">
-          <select id="modelSelect" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; outline: none; margin-bottom: 2px;">
-              <option value="pro" selected style="color: black;">🚀 Pro</option>
-              <option value="flash-lite" style="color: black;">⚡ Flash</option>
-          </select>
-          <span style="font-size: 9px; color: rgba(255,255,255,0.8); font-weight: 800; letter-spacing: 0.5px;">RESETS ON 12:30 PM</span>
-      </div>
-      
-      <button id="langToggleBtn" onclick="toggleMathLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
-          🌍 <span id="langText">HI</span>
-      </button>
-  </div>
+  <button id="langToggleBtn" onclick="toggleMathLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
+      🌍 <span id="langText">HI</span>
+  </button>
 </div>
-
-<div class="apiTracker">
-    <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
-    <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
-    <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
-    <div>📝 <span id="apiText" class="api-val text">0</span></div>
-</div>
+    <div class="apiTracker">
+        <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
+        <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+        <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+        <div>📝 <span id="apiText" class="api-val text">0</span></div>
+    </div>
 
 <div class="sidebar" id="sidebar">
   <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
   <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
   <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
 </div>
 
 <div class="page active chat-page-layout" id="mathsPage">
   <div class="chat-scroll-area" id="mathScrollArea">
     <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
         <h1 style="font-size: 24px; color: white;">🧮 Math Solver</h1>
-        <p style="font-size: 14px; opacity: 0.9; color: white;">Get Detailed Step-by-Step AI Solutions.</p>
+        <p style="font-size: 14px; opacity: 0.9; color: white;">Give Answers Of Maths.</p>
     </div>
     
     <button onclick="openWhatsAppModal()" style="background: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
@@ -131,6 +126,7 @@
         <button id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()">❌</button>
     </div>
     <div class="cameraControls">
+        <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
         <div id="capturePhotoBtn" class="cameraCircle" onclick="captureImage()"></div>
         <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
@@ -150,170 +146,173 @@
 </div>
 
 <script>
-    /* =======================================================
-       📊 0. API TRACKER SYSTEM (FIXED DOMContentLoaded)
-    ======================================================= */
-    let visionReqs = parseInt(localStorage.getItem('visionReqs')) || 0;
-    let textReqs = parseInt(localStorage.getItem('textReqs')) || 0;
-
-    function updateTrackerUI() {
-        let tot = document.getElementById('apiTotal'); if(tot) tot.innerText = visionReqs + textReqs;
-        let vis = document.getElementById('apiVision'); if(vis) vis.innerText = visionReqs;
-        let txt = document.getElementById('apiText'); if(txt) txt.innerText = textReqs;
-    }
-
-    function track(type) { 
-        if(type === 'v'){ visionReqs++; localStorage.setItem('visionReqs', visionReqs); } 
-        else { textReqs++; localStorage.setItem('textReqs', textReqs); } 
-        updateTrackerUI();
-    }
-
-    function updatePTTimer() {
-        try {
-            let d = new Date();
-            let utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-            let pt = new Date(utc + (3600000 * -7)); 
-            let h = 23 - pt.getHours();
-            let m = 59 - pt.getMinutes();
-            let s = 59 - pt.getSeconds();
-            let t = document.getElementById('apiTimer');
-            if(t) t.innerText = `${h.toString().padStart(2,'0')}h ${m.toString().padStart(2,'0')}m ${s.toString().padStart(2,'0')}s`;
-        } catch(e) {}
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        updateTrackerUI();
-        updatePTTimer();
-        setInterval(updatePTTimer, 1000);
-    });
-
-    /* =======================================================
-       🛡️ 1. HISTORY VAULT LOADER & SESSION RESTORE
-    ======================================================= */
-    let appHistory = [];
-    let sessionCache = { math: null };
-
-    if (typeof localforage !== 'undefined') {
-        localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
-        localforage.getItem('aiHistory').then(function(savedData) {
-            appHistory = savedData ? savedData : [];
-            
-            // RESTORE SESSION LOGIC
-            const urlParams = new URLSearchParams(window.location.search);
-            const restoreId = urlParams.get('restore');
-            if (restoreId) {
-                setTimeout(() => restoreSession(parseInt(restoreId)), 300);
-            }
-        });
-    }
-
-    function saveHistorySafe() { 
-        if (typeof localforage !== 'undefined') {
-            localforage.setItem('aiHistory', appHistory);
-        } else {
-            localStorage.setItem('aiHistory', JSON.stringify(appHistory));
-        }
-    }
-
-    // 🚀 FIXED: SAVES FULL HTML SO IT RESTORES EXACTLY AS GENERATED 🚀
-    function saveToHistory(type, q, rawText, img = null, provider = "AI", fullRenderedHTML = "") { 
-        let sessionId = sessionCache[type];
-        let histItem = appHistory.find(i => i.id === sessionId);
-
-        let answerToSave = fullRenderedHTML ? fullRenderedHTML : rawText;
-
-        if (!histItem) {
-            sessionId = Date.now(); 
-            sessionCache[type] = sessionId; 
-            histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: answerToSave, image: img, provider: provider }] };
-            appHistory.unshift(histItem);
-        } else {
-            histItem.interactions.push({ question: q, answer: answerToSave, image: img, provider: provider });
-        }
-        saveHistorySafe(); 
-    }
-
-    function getSessionContext(type) {
-        let sessionId = sessionCache[type];
-        if (!sessionId) return "";
-        let session = appHistory.find(i => i.id === sessionId);
-        if (!session || !session.interactions) return "";
-        
-        let ctx = "\n--- PREVIOUS CHAT HISTORY FOR CONTEXT ---\n";
-        let recent = session.interactions.slice(-3); 
-        recent.forEach(inter => {
-            let cleanAns = inter.answer.replace(/<[^>]*>?/gm, ''); // Strip HTML to raw text
-            ctx += `User asked: ${inter.question}\nYou answered: ${cleanAns}\n\n`;
-        });
-        return ctx + "--- CURRENT NEW QUESTION ---\n";
-    }
-
-    function getLastContextImage(type) {
-        let sessionId = sessionCache[type];
-        if (!sessionId) return null;
-        let session = appHistory.find(i => i.id === sessionId);
-        if (!session || !session.interactions) return null;
-        for (let i = session.interactions.length - 1; i >= 0; i--) {
-            if (session.interactions[i].image) return session.interactions[i].image;
-        }
-        return null;
-    }
-
-    // 🚀 THE RESTORE FUNCTION - FIXES THE UGLY ONE-LINE FORMAT AND MISSING IMAGES 🚀
-    function restoreSession(id) {
-        let item = appHistory.find(i => i.id == id);
-        if(!item) return;
-        
-        // Link session cache to prevent "Data Expired" / new session creation
-        sessionCache['math'] = item.id;
-        let container = document.getElementById("mathChatHistory");
-        container.innerHTML = ""; 
-        
-        item.interactions.forEach(inter => {
-            appendUserBubble(inter.question, inter.image);
-            
-            let lId = "restored_" + Date.now() + Math.floor(Math.random()*1000);
-            container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${lId}"><div class="bubble"></div></div>`);
-            let bbl = document.getElementById(lId).querySelector('.bubble');
-            
-            // This injects the PERFECTLY formatted HTML saved from the previous session!
-            bbl.innerHTML = inter.answer; 
-            if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
-        });
-        
-        scrollToBottom();
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    /* =======================================================
-       🧮 2. MATH SOLVER ENGINE (TYPEWRITER & FORMATTING)
-    ======================================================= */
     let currentMathImage = null;
-    let isProcessing = false;
+    let mathConversationHistory = [];
     let videoStream = null;
     let usingFrontCamera = false;
-    let currentMathLang = "Hindi";
-    let aiTextForHistory = "";
+    
+    let currentMathLang = "Hindi"; // Default language
 
-    function toggleSidebar() { 
-        document.getElementById('sidebar').classList.toggle('active'); 
-        document.getElementById('overlay').classList.toggle('active'); 
-    }
-
-    function toggleMathLanguage() {
+    window.toggleMathLanguage = function() {
         const langText = document.getElementById('langText');
-        if (currentMathLang === "Hindi") { currentMathLang = "English"; langText.innerText = "EN"; } 
-        else { currentMathLang = "Hindi"; langText.innerText = "HI"; }
+        if (currentMathLang === "Hindi") {
+            currentMathLang = "English";
+            langText.innerText = "EN";
+            if(typeof showToast === 'function') showToast("🌍 Language changed to English");
+        } else {
+            currentMathLang = "Hindi";
+            langText.innerText = "HI";
+            if(typeof showToast === 'function') showToast("🌍 Language changed to Hindi");
+        }
+    };
+
+    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
+    });
+
+    async function executeMathFlow() {
+        const inputEl = document.getElementById("mathInstructionInput");
+        const userText = inputEl.value.trim();
+        if (!userText && !currentMathImage) return;
+
+        appendMessage('user', userText || "Solve this image.", currentMathImage);
+        inputEl.value = "";
+        
+        // Feed conversation history context
+        let historyContext = mathConversationHistory.slice(-4).join("\n");
+        mathConversationHistory.push(`User: ${userText}`);
+
+        // STRICT FORMATTING PROMPT
+        const tutorPrompt = `You are an expert math tutor. STRICT RULES:
+
+1. NON-MATH/GREETINGS: If the user says "hi", "hello", or asks a non-math question, reply normally in ${currentMathLang}. DO NOT use the math format. 
+
+2. MATH QUESTIONS ONLY: You MUST format your answer EXACTLY like this template. Do NOT deviate. EVERYTHING must be strictly written in ${currentMathLang} except numbers and math symbols:
+
+${currentMathLang === "Hindi" ? "प्रश्न" : "Question"}: [Write the exact question here]
+
+SOLUTION:-
+[Step-by-step math solution using $ for math notation. Keep it direct.]
+
+EXPLANATION-
+[Keep this extremely short! Max 2 to 3 lines explaining the core concept in ${currentMathLang}.]
+
+Previous Context:
+${historyContext}
+
+Current Task: ${userText}`;
+
+        showTyping();
+
+        let endpoint = currentMathImage ? "/api/gemini-vision" : "/api/gemini-text";
+        let payload = { userPrompt: tutorPrompt };
+        if (currentMathImage) payload.imageBase64 = currentMathImage;
+
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            removeTyping();
+
+            if (data.error) throw new Error(data.error);
+
+            appendMessage('ai', data.text);
+            mathConversationHistory.push(`AI: ${data.text}`);
+            clearMathImage();
+
+            // Fire the CSS paper renderer
+            generateMathPaper(data.text);
+
+        } catch (err) {
+            removeTyping();
+            appendMessage('ai', "❌ Math Solver Error: " + err.message);
+        }
     }
 
+    // 🚀 BULLETPROOF CSS PAPER INJECTION
+    function generateMathPaper(aiResponseText) {
+        try {
+            if (!aiResponseText.includes("SOLUTION:-")) return;
+
+            // DETECT MULTIPLE QUESTIONS
+            const hasMultipleQuestions = (aiResponseText.match(/Q\d+/g) || aiResponseText.match(/प्रश्न\s?\d+/g) || []).length > 1;
+            if (hasMultipleQuestions) return; 
+
+            let parts = aiResponseText.split("SOLUTION:-")[1];
+            let mathTextOnly = parts.split("EXPLANATION-")[0].trim();
+
+            if (mathTextOnly.length < 5) return;
+
+            // Clean LaTeX
+            mathTextOnly = mathTextOnly.replace(/[*#`]/g, '');
+
+            const historyDiv = document.getElementById("mathChatHistory");
+            const paperId = "paper_" + Date.now();
+            
+            historyDiv.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" style="animation: slideUp 0.3s ease-out;">
+                    <div style="width: 100%; max-width: 95%;">
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 5px; font-weight: 600; padding-left: 10px;">📝 IMAGE OF SOLUTION----</p>
+                        <div class="digital-paper-container">
+                            <div class="digital-paper" id="${paperId}">${mathTextOnly}</div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // MathJax rendering
+            if (window.MathJax) { 
+                MathJax.typesetPromise([document.getElementById(paperId)]); 
+            }
+            document.getElementById("mathScrollArea").scrollTop = 99999;
+        } catch (e) {
+            console.error("Paper rendering failed:", e);
+        }
+    }
+
+    function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
+        
+        let contentHtml = `<div class="bubble">`;
+        if (imageUrl) {
+            let imgClass = isGeneratedImage ? "handwritten-img" : "bubble-img";
+            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${!isGeneratedImage ? 'max-width: 200px; border-radius: 10px; margin-bottom: 10px;' : ''}"><br>`;
+        }
+        
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        contentHtml += `<div>${formattedText}</div></div>`;
+        msgDiv.innerHTML = contentHtml;
+        historyDiv.appendChild(msgDiv);
+        
+        if (window.MathJax) MathJax.typesetPromise([msgDiv]);
+        document.getElementById("mathScrollArea").scrollTop = 99999;
+    }
+
+    function showTyping() {
+        const div = document.createElement("div");
+        div.id = "mathTyping";
+        div.className = "chat-msg chat-ai";
+        div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+        document.getElementById("mathChatHistory").appendChild(div);
+        document.getElementById("mathScrollArea").scrollTop = 99999;
+    }
+
+    function removeTyping() { document.getElementById("mathTyping")?.remove(); }
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
     function openCamera() { document.getElementById("cameraModal").classList.add("active"); startVideoStream(); }
     function closeCamera() { document.getElementById("cameraModal").classList.remove("active"); if (videoStream) videoStream.getTracks().forEach(t => t.stop()); }
+    
     async function startVideoStream() {
         if (videoStream) videoStream.getTracks().forEach(t => t.stop());
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: usingFrontCamera ? "user" : "environment" } });
             document.getElementById("cameraVideo").srcObject = videoStream;
-        } catch (err) { closeCamera(); }
+        } catch (err) { alert("Camera Error"); closeCamera(); }
     }
     function switchCamera() { usingFrontCamera = !usingFrontCamera; startVideoStream(); }
     function captureImage() {
@@ -328,212 +327,18 @@
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-    document.getElementById("mathInstructionInput").addEventListener("keydown", function(e) {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
-    });
-
-    function scrollToBottom() {
-        const area = document.getElementById("mathScrollArea");
-        area.scrollTop = area.scrollHeight;
-    }
-
-    function appendUserBubble(text, imageUrl = null) {
-        const historyDiv = document.getElementById("mathChatHistory");
-        let contentHtml = `<div class="chat-msg chat-user"><div class="bubble">`;
-        if (imageUrl) contentHtml += `<img src="${imageUrl}" style="max-width: 200px; border-radius: 10px; margin-bottom: 10px;"><br>`;
-        contentHtml += `<div style="color: inherit;">${text.replace(/\n/g, '<br>')}</div></div></div>`;
-        historyDiv.insertAdjacentHTML('beforeend', contentHtml);
-        scrollToBottom();
-    }
-
-    function appendAiLoading() {
-        const historyDiv = document.getElementById("mathChatHistory");
-        const id = "loading_" + Date.now();
-        historyDiv.insertAdjacentHTML('beforeend', `
-            <div class="chat-msg chat-ai" id="${id}">
-                <div class="bubble" style="display:flex; align-items:center; gap:12px;">
-                    <div class="typing-indicator"><span></span><span></span><span></span></div>
-                    <span style="color:var(--muted); font-size:14px; font-weight:600;">Solving...</span>
-                </div>
-            </div>
-        `);
-        scrollToBottom();
-        return id;
-    }
-
-    // 🔥 THE RESTORED TYPEWRITER ANIMATION 🔥
-    function typeWriteResponse(lId, textPart, provider, paperHtml, rawUserText, rawImage) {
-        const loadingBubble = document.getElementById(lId);
-        if (!loadingBubble) return;
-        const bbl = loadingBubble.querySelector('.bubble');
-        
-        let providerBadge = `<div style="position:absolute; top:8px; right:12px; font-size:9px; color:var(--muted); font-weight:bold; z-index:2; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">✨ BY ${provider}</div>`;
-        bbl.style.position = "relative"; 
-        bbl.innerHTML = providerBadge;
-
-        let textDiv = document.createElement('div');
-        textDiv.style.color = "inherit";
-        textDiv.style.fontSize = "15px";
-        bbl.appendChild(textDiv);
-
-        let formattedText = textPart.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        let i = 0;
-
-        let timer = setInterval(() => {
-            if (i <= formattedText.length) {
-                textDiv.innerHTML = formattedText.substring(0, i).replace(/\n/g, '<br>');
-                i += 3; // Typing Speed
-                scrollToBottom();
-            } else {
-                clearInterval(timer);
-                textDiv.innerHTML = formattedText.replace(/\n/g, '<br>');
-                
-                // INJECT THE MATH PAPER AT THE END
-                if (paperHtml) {
-                    let wrapper = document.createElement('div');
-                    wrapper.innerHTML = paperHtml;
-                    bbl.appendChild(wrapper);
-                }
-                
-                if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
-                scrollToBottom();
-
-                // SAVE EXACT HTML TO HISTORY SO IT RESTORES PERFECTLY
-                let fullRenderedHTML = bbl.innerHTML;
-                saveToHistory('math', rawUserText, aiTextForHistory, rawImage, provider, fullRenderedHTML);
-            }
-        }, 15);
-    }
-
-    // 🚀 SAFE FETCH WRAPPER TO PREVENT "SOLVING" FREEZES 🚀
-    async function safeFetch(endpoint, payload) {
-        let fetchTimer;
-        const timeoutPromise = new Promise((_, reject) => {
-            fetchTimer = setTimeout(() => reject(new Error("Server took too long. It might be asleep. Try again in 30s.")), 25000);
-        });
-
-        const fetchPromise = fetch(endpoint, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        const res = await Promise.race([fetchPromise, timeoutPromise]);
-        clearTimeout(fetchTimer);
-
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } 
-        catch(e) { throw new Error("Server is offline or returned an error page."); }
-        
-        if (!res.ok || data.error) throw new Error(data.error || "API Request Failed");
-        return data;
-    }
-
-    async function executeMathFlow() {
-        if (isProcessing) return;
-        const inputEl = document.getElementById("mathInstructionInput");
-        const userText = inputEl.value.trim();
-        if (!userText && !currentMathImage) return;
-
-        let rawImageToSave = currentMathImage; // Keep a copy to save to history
-        appendUserBubble(userText || "Solve this image.", currentMathImage);
-        inputEl.value = "";
-        
-        let historyContext = getSessionContext('math');
-        let lId = appendAiLoading();
-        isProcessing = true;
-
-        // 🚀 THE ULTIMATE PROMPT: NO TAG LEAKS, EXACT FORMAT, FORCED FRACTIONS
-        const sysPrompt = `You are an expert math tutor. STRICT RULES:
-1. GREETINGS: If user says "hi", reply normally. DO NOT generate math.
-2. MATH QUESTIONS: You MUST format your response EXACTLY like this:
-
-QUESTION 1: [Write the exact question here]
-SOLUTION- [Write ONLY the final answer here. Example: x = 5]
-EXPLANATION- [Write the text explanation here in ${currentMathLang}. NO math formulas here.]
-
-<MATH_PAPER>
-[Write the detailed, STEP-BY-STEP mathematical formulas here.
-CRITICAL: Use standard LaTeX. 
-Use \\frac{numerator}{denominator} for fractions.
-Use \\times for multiplication. DO NOT USE THE * SYMBOL.
-DO NOT write any plain text words inside here, ONLY pure LaTeX math.]
-</MATH_PAPER>`;
-
-        let activeImage = currentMathImage || getLastContextImage('math');
-        let finalPrompt = `${sysPrompt}\n\n${historyContext}\n\nCurrent Task: ${userText}`;
-        
-        let selectedModel = document.getElementById("modelSelect").value;
-        let payload = { userPrompt: finalPrompt, providerOverride: selectedModel };
-        
-        if (activeImage) { payload.imageBase64 = activeImage; track('v'); } 
-        else { track('t'); }
-        
-        let endpoint = activeImage ? "/api/gemini-vision" : "/api/gemini-text";
-        let data;
-
-        try {
-            // TRY SELECTED MODEL (Default is PRO)
-            data = await safeFetch(endpoint, payload);
-        } catch (err) {
-            // 🚀 AUTOMATIC FALLBACK TO FLASH-LITE IF PRO FAILS 🚀
-            if (selectedModel === 'pro') {
-                let loadMsg = document.getElementById(lId).querySelector('.bubble span');
-                if (loadMsg) loadMsg.innerText = "Pro failed. Retrying with Flash-Lite...";
-                
-                payload.providerOverride = "flash-lite"; 
-                try {
-                    data = await safeFetch(endpoint, payload);
-                } catch (fallbackErr) {
-                    isProcessing = false;
-                    document.getElementById(lId).querySelector('.bubble').innerText = "❌ Both Pro and Flash failed: " + fallbackErr.message;
-                    return;
-                }
-            } else {
-                isProcessing = false;
-                document.getElementById(lId).querySelector('.bubble').innerText = "❌ Error: " + err.message;
-                return;
-            }
-        }
-
-        let aiText = data.text || "";
-        aiTextForHistory = aiText; // Save raw text for context
-        let paperHtml = "";
-
-        // 🚀 RUTHLESS PARSER: Extracts Math, FORCES \times instead of *, and ANNIHILATES TAGS
-        let match = aiText.match(/<(?:MATH|MATH_PAPER)>([\s\S]*?)<\/(?:MATH|MATH_PAPER)>/i);
-        if (match) {
-            let mathContent = match[1].trim();
-            
-            // OVERRIDE: Destroy * signs and replace with proper LaTeX multiplication
-            mathContent = mathContent.replace(/\*/g, '\\times '); 
-            mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1'); 
-            
-            // ANNIHILATE STRAY MATH TAGS INSIDE THE PAPER
-            mathContent = mathContent.replace(/<\/?(?:MATH|MATH_PAPER)>/gi, '');
-
-            let paperId = "paper_" + Date.now();
-            paperHtml = `
-            <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
-            <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
-        } 
-        
-        // ✂️ NUCLEAR DELETION OF ALL MATH TAGS FROM THE TEXT ✂️
-        aiText = aiText.replace(/<(?:MATH|MATH_PAPER)>[\s\S]*?<\/(?:MATH|MATH_PAPER)>/gi, '').trim();
-        aiText = aiText.replace(/<\/?(?:MATH|MATH_PAPER)>/gi, '').trim();
-
-        // Trigger Typewriter! (Which then saves to history when done)
-        typeWriteResponse(lId, aiText, data.provider || "Gemini", paperHtml, userText || "Solve this image", rawImageToSave);
-        
-        clearMathImage();
-        isProcessing = false;
-    }
-
-    // WHATSAPP SHARE ENGINE
+    // =======================================================
+    // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE (UPDATED)
+    // =======================================================
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
         const messages = historyDiv.querySelectorAll(".chat-msg");
-        if (messages.length === 0) return alert("⚠️ No chat history available to share yet!");
+        
+        if (messages.length === 0) {
+            alert("⚠️ No chat history available to share yet! Please ask a question first.");
+            return;
+        }
+        
         document.getElementById('whatsappModal').style.display = 'flex';
         document.getElementById('waNumberInput').focus();
     };
@@ -549,45 +354,106 @@ DO NOT write any plain text words inside here, ONLY pure LaTeX math.]
 
         const historyDiv = document.getElementById("mathChatHistory");
         const messages = historyDiv.querySelectorAll(".chat-msg");
+        
+        if (messages.length === 0) {
+            alert("⚠️ No chat history to share.");
+            return;
+        }
+
         let fullChatText = "";
 
+        // Loop through all messages in chronological order
         messages.forEach(msg => {
             const isUser = msg.classList.contains("chat-user");
             const bubble = msg.querySelector(".bubble");
             if (!bubble) return;
 
+            // Clone to avoid breaking live display interface
             let clone = bubble.cloneNode(true);
-            clone.querySelectorAll('img, .api-badge').forEach(el => el.remove());
+            
+            // Wipe clean buttons, extra badges, layouts from the scraped packet
+            const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"]');
+            garbageElements.forEach(el => el.remove());
             
             let htmlStr = clone.innerHTML;
             htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n');
             htmlStr = htmlStr.replace(/<\/div>/gi, '\n');
+            htmlStr = htmlStr.replace(/<\/p>/gi, '\n\n');
             
             clone.innerHTML = htmlStr;
             let msgText = clone.textContent || clone.innerText || "";
             msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
 
             if (msgText.length > 0) {
-                if (isUser) fullChatText += `👤 *YOU:* ${msgText}\n\n`;
-                else fullChatText += `🤖 *AI SOLVER:* \n${msgText}\n\n---------------------------------\n\n`;
+                if (isUser) {
+                    fullChatText += `👤 *YOU:* ${msgText}\n\n`;
+                } else {
+                    fullChatText += `🤖 *AI SOLVER:* \n${msgText}\n\n---------------------------------\n\n`;
+                }
             }
         });
 
+        // 🌟 THE UNICODE MATH TRANSLATOR FOR CLEAN WHATSAPP SYSTEM TEXT 🌟
+        const superscripts = {
+            '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹',
+            '+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'
+        };
+        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
+
+        fullChatText = fullChatText
+            .replace(/\$\$/g, '') 
+            .replace(/\$/g, '')   
+            .replace(/\\\(/g, '') 
+            .replace(/\\\)/g, '') 
+            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2') 
+            .replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)) 
+            .replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)) 
+            .replace(/\\sqrt{([^}]+)}/g, '√$1') 
+            .replace(/\\times/g, '×') 
+            .replace(/\\cdot/g, '·')  
+            .replace(/\\pi/g, 'π')    
+            .replace(/\\theta/g, 'θ') 
+            .replace(/\\left/g, '')   
+            .replace(/\\right/g, '')
+            .replace(/\\/g, '');      
+
+        // 🚀 ROUTE OUTPUT DIRECTLY TO BACKEND GATEWAY 🚀
         const btn = event.target;
         const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
+        btn.innerHTML = "⏳ Sending Full Chat...";
+        btn.style.opacity = "0.7";
+        btn.disabled = true;
 
         try {
             const response = await fetch("/api/secure-whatsapp", {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ number: number, message: "📚 *AI Pro Suite Math Export*\n\n" + fullChatText.trim() })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    number: number,
+                    message: "📚 *AI Pro Suite - Complete Session Export* 📚\n\n" + fullChatText.trim()
+                })
             });
-            if (response.ok) { alert("✅ Chat sent!"); closeWhatsAppModal(); } 
-            else { alert("❌ Failed to send."); }
-        } catch (e) { alert("❌ Connection error."); }
 
-        btn.innerHTML = originalText; btn.disabled = false;
+            if (response.status === 403) {
+                alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
+            } else if (response.ok) {
+                alert("✅ Full chat history sent successfully to authorized device!");
+                closeWhatsAppModal();
+            } else {
+                alert("❌ Failed to send. Server responded with an error.");
+            }
+        } catch (e) {
+            alert("❌ Connection error. Is your Render server running?");
+        }
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = "1";
+        btn.disabled = false;
     };
+
 </script>
+
+<script src="ui-controls.js" defer></script>
+<script src="main.js" defer></script>
 </body>
 </html>
