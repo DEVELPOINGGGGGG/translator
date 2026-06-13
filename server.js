@@ -291,14 +291,20 @@ async function handleGenerateImage(req, res) {
         const body = JSON.parse(await readRequestBody(req));
         const prompt = body.prompt || "";
         
-        if (!prompt) return sendJson(res, 400, { error: "Prompt is required." });
+        // This line pulls the token from the Render Dashboard ENV tab!
+        const token = process.env.HF_TOKEN; 
+
+        if (!token) {
+            console.error("CRITICAL: HF_TOKEN is missing in Environment Variables!");
+            return sendJson(res, 500, { error: "Server Configuration Error: Token missing." });
+        }
 
         const response = await axios.post(
             "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
             { inputs: prompt },
             { 
                 headers: { 
-                    "Authorization": `Bearer ${process.env.HF_TOKEN}`,
+                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 }, 
                 responseType: 'arraybuffer' 
@@ -309,7 +315,7 @@ async function handleGenerateImage(req, res) {
         return sendJson(res, 200, { imageBase64: base64Image });
     } catch (error) {
         console.error("Backend Error:", error.message);
-        return sendJson(res, 502, { error: "Backend network issue. Check Render logs." });
+        return sendJson(res, 502, { error: "Backend failed. Check logs." });
     }
 }
 
