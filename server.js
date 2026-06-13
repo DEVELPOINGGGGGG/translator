@@ -7,14 +7,12 @@ const port = process.env.PORT || 10000;
 
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
-const hfApiToken = process.env.HF_API_TOKEN || ""; // Added Hugging Face Token
 
 // 🛑 GLOBAL AI INSTRUCTIONS (FIXES CHINESE/JAPANESE BUGS & HINDI BRAND NAMES) 🛑
-// 🛑 GLOBAL AI INSTRUCTIONS 🛑
 const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 1. NO FOREIGN GARBAGE: Never output Chinese, Japanese, Korean, or random unreadable symbols. If the image or text has illegible noise, completely ignore it.
-2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script.
-3. MATH FORMATTING: Whenever you solve a math problem or write equations, you MUST wrap the final equations or step-by-step formulas in [MATH] and [/MATH] tags. Example: [MATH] x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} [/MATH].`;
+2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Do NOT transliterate them into Hindi. Keep sentences natural but preserve English nouns.`;
+
 // 🛑 STRICT MASTER WATERFALL HIERARCHY 🛑
 // ORDER: 3x 3.1 Flash Lite -> 2x 3.5 Pro -> Cloudflare -> Groq
 const VISION_PROVIDERS = [
@@ -285,47 +283,6 @@ async function handleCloudflareImage(req, res) {
 }
 
 // ==========================================
-// HUGGING FACE IMAGE GENERATION ENDPOINT
-// ==========================================
-async function handleHuggingFaceImage(req, res) {
-    try {
-        if (!hfApiToken) return sendJson(res, 503, { error: "Hugging Face API key is missing." });
-        
-        const body = JSON.parse(await readRequestBody(req));
-        const prompt = String(body.prompt || body.userPrompt || "").trim();
-        if (!prompt) return sendJson(res, 400, { error: "Prompt is required." });
-
-        const hfModelUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large";
-
-        const response = await fetch(hfModelUrl, {
-            method: "POST",
-            headers: { 
-                "Authorization": `Bearer ${hfApiToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ inputs: prompt })
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Hugging Face Error: ${errorText}`);
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString('base64');
-        
-        apiUsageStats["HUGGING_FACE (IMAGE)"] = (apiUsageStats["HUGGING_FACE (IMAGE)"] || 0) + 1;
-        
-        return sendJson(res, 200, { 
-            base64: base64, 
-            image: `data:image/jpeg;base64,${base64}`, 
-            provider: "HUGGING_FACE (IMAGE)" 
-        });
-
-    } catch (e) { return sendJson(res, 502, { error: e.message }); }
-}
-
-// ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
 const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "")
@@ -392,7 +349,6 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
-        if (req.url === "/api/huggingface-image") return handleHuggingFaceImage(req, res); // NEW HF ROUTE
     }
     
     if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
