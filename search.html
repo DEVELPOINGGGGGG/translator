@@ -488,7 +488,7 @@
             const selectedModel = document.getElementById("modelSelector").value;
 
             // ==========================================
-            // 🎨 DIRECT UNBREAKABLE BROWSER PIPELINE 🎨
+            // 🎨 SECURE SERVER-SIDE IMAGE GENERATOR (AXIOS BACKEND)
             // ==========================================
             if (isImageGenMode) {
                 let imgGenReqs = parseInt(localStorage.getItem('imgGenReqs') || '0');
@@ -502,53 +502,67 @@
                 inp.value = ""; scrollToBottom();
 
                 const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Loading Image Directly...</span></div></div>`);
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Calling Server...</span></div></div>`);
                 scrollToBottom();
 
                 try {
-                    // STEP 1: Expand prompt via server-side Gemini
+                    // STEP 1: Enhance prompt using Gemini (via Server)
                     let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, photo-realistic prompt. Reply ONLY with the English prompt text. NO quotes, NO conversational filler. Idea: " + q;
                     
                     let enhancedPrompt = q;
                     try {
-                        const response = await fetch("/api/gemini-text", { 
+                        const pResponse = await fetch("/api/gemini-text", { 
                             method: "POST", 
                             headers: { "Content-Type": "application/json" }, 
                             body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) 
                         });
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.text) enhancedPrompt = data.text.replace(/['"]/g, '').trim();
+                        if (pResponse.ok) {
+                            const pData = await pResponse.json();
+                            if (pData.text) enhancedPrompt = pData.text.replace(/['"]/g, '').trim();
                         }
                     } catch(e) { console.log("Prompt enhancement failed, using original prompt."); }
 
-                    // STEP 2: Render directly using safe frontend query parameters
-                    let safePrompt = enhancedPrompt.substring(0, 450);
-                    let randomSeed = Math.floor(Math.random() * 999999);
-                    let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
+                    // STEP 2: Call YOUR secure backend to generate the image
+                    const genResponse = await fetch("/api/generate-image", { 
+                        method: "POST", 
+                        headers: { "Content-Type": "application/json" }, 
+                        body: JSON.stringify({ prompt: enhancedPrompt }) 
+                    });
+                    
+                    if (!genResponse.ok) {
+                        let errorText = "Unknown Server Error";
+                        try {
+                            const errData = await genResponse.json();
+                            errorText = errData.error || errorText;
+                        } catch(e) {
+                            errorText = `Server returned status: ${genResponse.status}.`;
+                        }
+                        throw new Error(errorText);
+                    }
+                    
+                    const genData = await genResponse.json();
+                    let base64Image = genData.imageBase64;
 
                     imgGenReqs++;
                     localStorage.setItem('imgGenReqs', imgGenReqs);
 
                     let finalHtml = `
-                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ HD PRO RECOVERY</div>
+                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ SECURE API GENERATOR</div>
                         <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Enhanced Prompt:</div>
                         <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
                         
                         <div style="position:relative; display:inline-block; margin-top:10px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3);" id="container_${loadId}">
                             <button onclick="document.getElementById('container_${loadId}').style.display='none'" style="position:absolute; top:-12px; right:-12px; background:#e11d48; color:white; border:2px solid var(--bg-surface); border-radius:50%; width:32px; height:32px; cursor:pointer; font-weight:bold; z-index:10; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✕</button>
-                            <img src="${imageUrl}" style="max-width:100%; border-radius:12px;" id="img_${loadId}">
+                            <img src="${base64Image}" style="max-width:100%; border-radius:12px;" id="img_${loadId}">
                         </div>
 
                         <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                            <a href="${imageUrl}" target="_blank" style="text-decoration:none; flex: 1;">
-                                <button class="btn-relative" style="width:100%; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold;" onclick="createRipple(event);">📥 Open & Save Image</button>
-                            </a>
+                            <button class="btn-relative" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); downloadGeneratedImage('img_${loadId}')">📥 Download Image</button>
                         </div>
                     `;
 
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
-                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Frontend Recovery Pipeline");
+                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Secure Backend API");
 
                     clearPdfFile(); 
                 } catch (error) { 
@@ -624,7 +638,9 @@
         if (!restoreId) return;
 
         setTimeout(() => {
-            let container = document.querySelector('.chat-scroll-area') || document.getElementById('searchChatHistory');
+            let container = document.querySelector('.chat-scroll-area') || 
+                            document.getElementById('searchChatHistory');
+                            
             if (!container) return;
 
             const forceInjectData = (historyData) => {
@@ -647,7 +663,9 @@
                             </div>
                             <div class="chat-msg chat-ai" style="animation: bounceInBubble 0.6s ease-out;">
                                 <div class="bubble" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 6px; box-shadow: var(--glass-shadow); display: flex; flex-direction: column;">
+                                    
                                     <div id="${textId}" style="margin-top:0; width:100%; overflow-x:auto;">${inter.answer}</div>
+                                    
                                 </div>
                             </div>
                         `);
@@ -656,6 +674,7 @@
                     setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
                     if (typeof showStandaloneToast === 'function') showStandaloneToast("🔄 Search Restored Successfully!");
                 } 
+
                 if (window.MathJax) { MathJax.typesetPromise([container]).catch(e => console.log(e)); }
             };
 
@@ -667,9 +686,10 @@
             } else {
                 forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
             }
+            
         }, 800); 
     });
-    </script>
-    <script src="ui-controls.js" defer></script>
+</script>
+<script src="ui-controls.js" defer></script>
 </body>
 </html>
