@@ -13,8 +13,6 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
-    <script src="https://js.puter.com/v2/"></script>
-    
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
     </script>
@@ -31,10 +29,10 @@
         .btn-relative { position: relative; overflow: hidden; }
         
         .api-badge {
-            position: absolute; top: 12px; right: 16px; font-size: 9px; color: #c084fc; 
+            position: absolute; top: 12px; right: 16px; font-size: 9px; color: #10b981; 
             font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-            background: rgba(192, 132, 252, 0.1); padding: 4px 8px; border-radius: 10px;
-            border: 1px solid rgba(192, 132, 252, 0.3); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.3); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes slideDownPlayer {
@@ -105,7 +103,7 @@
         
         <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
             <button id="langToggleBtn" onclick="toggleSearchLanguage()" style="background: linear-gradient(135deg, var(--secondary), var(--primary)); border: none; color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px var(--primary-glow); transition: 0.2s;">
-                🌍 <span id="langText" style="color: white;">HI</span>
+                🌍 <span id="langText" style="color: white !important;">HI</span>
             </button>
             <div class="menuBtn btn-relative" style="font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
         </div>
@@ -208,21 +206,9 @@
             }
         };
 
-        // Activate Image Mode & Trigger Sign In
+        // Activate Image Mode (NO SIGN IN REQUIRED ANYMORE!)
         window.activateImageCreatorMode = async function() {
             isImageGenMode = true;
-            
-            // Trigger Puter Sign In Only on First Click
-            if (!puter.auth.isSignedIn()) {
-                try {
-                    await puter.auth.signIn();
-                } catch (e) {
-                    showStandaloneToast("⚠️ Sign-in required for Image Creation");
-                    isImageGenMode = false;
-                    return;
-                }
-            }
-
             document.getElementById("searchInput").placeholder = "Describe the image to create (e.g. A futuristic city...)";
             showStandaloneToast("🎨 Image Creator Active! Type your prompt.");
             
@@ -504,11 +490,13 @@
             const selectedModel = document.getElementById("modelSelector").value;
 
             // ==========================================
-            // 🎨 NEW PUTER IMAGE GENERATOR BRANCH 🎨
+            // 🎨 NEW FREE POLLINATIONS IMAGE GENERATOR 🎨
             // ==========================================
             if (isImageGenMode) {
+                // Increased your free limit to 20 since this new API is totally free!
+                const NEW_DAILY_LIMIT = 20; 
                 let imgGenReqs = parseInt(localStorage.getItem('imgGenReqs') || '0');
-                if (imgGenReqs >= DAILY_IMAGE_LIMIT) {
+                if (imgGenReqs >= NEW_DAILY_LIMIT) {
                     showStandaloneToast("❌ LIMIT REACHED! Wait until tomorrow.");
                     isProcessing = false;
                     return;
@@ -518,35 +506,41 @@
                 inp.value = ""; scrollToBottom();
 
                 const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt with Gemini & Creating via Puter...</span></div></div>`);
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Creating Image for FREE...</span></div></div>`);
                 scrollToBottom();
 
                 try {
-                    let sysPrompt = "You are a master AI Prompt Engineer. The user wants to generate an image. Rewrite their idea into a highly detailed, cinematic, and beautifully descriptive prompt for an AI image generator like DALL-E. Reply ONLY with the English prompt. NO quotes, NO extra text.";
-                    const response = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error || "Gemini Failed");
-                    let enhancedPrompt = data.text.trim();
-
-                    // explicitly define model dall-e-3 (OpenAI ChatGPT Image Model on Puter)
-                    let imageElement = await puter.ai.txt2img(enhancedPrompt, { model: 'dall-e-3' });
+                    // STEP 1: Use your backend Gemini to enhance the prompt
+                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, and beautifully descriptive prompt for an AI Image Generator. Reply ONLY with the English prompt. NO quotes, NO conversational filler. Idea: " + q;
                     
-                    let base64Image = imageElement.src; 
-                    try {
-                        let fetchRes = await fetch(imageElement.src);
-                        let blob = await fetchRes.blob();
-                        base64Image = await new Promise((resolve) => {
-                            let reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch(err) { console.log("CORS block on blob, using raw src"); }
+                    const response = await fetch("/api/gemini-text", { 
+                        method: "POST", 
+                        headers: { "Content-Type": "application/json" }, 
+                        body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) 
+                    });
+                    const data = await response.json();
+                    let enhancedPrompt = data.text ? data.text.replace(/['"]/g, '').trim() : q;
+
+                    // STEP 2: Use Pollinations.ai (100% Free, No Auth)
+                    // We add a random seed so it generates a new image every time!
+                    let randomSeed = Math.floor(Math.random() * 1000000);
+                    let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?seed=${randomSeed}&width=1024&height=1024&nologo=true`;
+                    
+                    // STEP 3: Fetch and convert to Base64 so it saves forever!
+                    let fetchRes = await fetch(imageUrl);
+                    if (!fetchRes.ok) throw new Error("Image Generation Failed");
+                    let blob = await fetchRes.blob();
+                    let base64Image = await new Promise((resolve) => {
+                        let reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
 
                     imgGenReqs++;
                     localStorage.setItem('imgGenReqs', imgGenReqs);
 
                     let finalHtml = `
-                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ BY PUTER & GEMINI</div>
+                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ FREE AI GENERATOR</div>
                         <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Enhanced Prompt:</div>
                         <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
                         
@@ -561,7 +555,7 @@
                     `;
 
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
-                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Puter");
+                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Pollinations");
 
                     clearPdfFile(); 
                 } catch (error) { 
