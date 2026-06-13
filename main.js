@@ -1,6 +1,6 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V64 - SPEED & LATEX FIXED)
-   Fixed Typewriter Speed, Markdown Bold Rendering & LaTeX Destruction Bug
+   AI PRO SUITE - THE ULTIMATE BUILD (V62 - MASTER EDITION)
+   Includes Synchronized Video Typewriter, Deep Search, Context Memory & PDF Support
 ======================================================= */
 
 let appHistory = [];
@@ -23,6 +23,7 @@ if (typeof localforage !== 'undefined') {
         appHistory = mergedHistory;
         if (document.getElementById('historyList')) renderHistory();
 
+        // 🚀 DELAYED RESTORE FIX: Waits for vault to unlock before restoring chat!
         const urlParams = new URLSearchParams(window.location.search);
         const restoreId = urlParams.get('restore');
         if (restoreId) {
@@ -31,6 +32,7 @@ if (typeof localforage !== 'undefined') {
         }
     }).catch(e => console.log("Vault error:", e));
 } else {
+    console.warn("⚠️ LocalForage is missing from your HTML! Falling back to 5MB limits to prevent a crash.");
     try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
     setTimeout(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -48,6 +50,7 @@ window.latestMathSolution = "";
 let availableVoices = [];
 window.hasResetToday = false;
 
+// 🛑 ABORT & CANCEL ENGINE 🛑
 window.currentAbortController = null;
 window.currentTypingTimer = null;
 
@@ -91,11 +94,14 @@ window.cancelActiveRequest = function() {
     showToast("⚠️ Generation Stopped");
 };
 
+// 🛑 YOUR GOOGLE SHEETS WEBHOOK 🛑
 const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
 
+// 🛑 SESSION CACHE & RETRY ENGINE 🛑
 window.requestCache = {};
 let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
 
+// 🛑 CONTINUOUS CONTEXT MEMORY ENGINE 🛑
 function getLastContextImage(type) {
     let sessionId = sessionCache[type];
     if (!sessionId) return null;
@@ -122,6 +128,7 @@ function getSessionContext(type) {
     return ctx + "--- CURRENT NEW QUESTION ---\n";
 }
 
+// 🛑 THE MILITARY-GRADE OCR PROMPT 🛑
 const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
 CRITICAL INSTRUCTIONS:
 1. Extract ALL text from the image EXACTLY as it is written in its original language.
@@ -131,6 +138,7 @@ CRITICAL INSTRUCTIONS:
 5. DO NOT add conversational filler.
 6. Output ONLY the raw transcribed text. If no text is visible, output exactly "NO_TEXT_FOUND".`;
 
+// Video Player Variables
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
 let videoElapsed = 0, videoTotalEst = 0, videoTickInterval, hideControlsTimer, videoLineIndex = 0, activeVideoUtterance = null, videoRunToken = 0;
 
@@ -153,6 +161,16 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     document.body.appendChild(ttsDiv);
 
+    const tracker = document.querySelector('.apiTracker');
+    if (tracker) {
+        tracker.innerHTML = `
+            <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
+            <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+            <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+            <div>📝 <span id="apiText" class="api-val text">0</span></div>
+        `;
+    }
+
     setInterval(() => {
         const now = new Date();
         const laTimeStr = now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
@@ -172,10 +190,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!lastResetDate) {
             localStorage.setItem('lastApiResetDatePT', currentPtDate); 
         } else if (currentPtDate !== lastResetDate) { 
+            console.log("🕛 Pacific Time Midnight Hit! Wiping Database...");
             visionReqs = 0; textReqs = 0; 
             localStorage.setItem('visionReqs', '0'); 
             localStorage.setItem('textReqs', '0'); 
             localStorage.setItem('lastApiResetDatePT', currentPtDate); 
+            fetch(GOOGLE_SHEETS_WEBHOOK, {
+                method: "POST", mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({ action: "reset" })
+            }).catch(e => console.log("Failed to wipe DB", e));
         }
         
         const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
@@ -183,6 +207,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const elTotal = document.getElementById('apiTotal'); if(elTotal) elTotal.innerText = total;
         const elVis = document.getElementById('apiVision'); if(elVis) elVis.innerText = visionReqs;
         const elTxt = document.getElementById('apiText'); if(elTxt) elTxt.innerText = textReqs;
+        const txtInput = document.getElementById('inputText');
+        if(txtInput && document.getElementById('charCount')) document.getElementById('charCount').innerText = txtInput.value.length + " chars";
     }, 1000);
     
     const inputs = [{id:"searchInput", fn:runGroqSearch}, {id:"mathInstructionInput", fn:executeMathFlow}];
@@ -194,6 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById('historyList') && typeof localforage === 'undefined') renderHistory();
 });
 
+// --- UI FEATURES ---
 function showToast(msg) {
     let t = document.createElement('div'); t.innerText = msg;
     t.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #3b82f6, #8b5cf6); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:10000; font-weight:600; font-size: 14px; text-align:center; animation:fadeInOut 3s forwards; letter-spacing: 0.5px;";
@@ -253,6 +280,8 @@ function appendUserBubble(txt, img, cid) {
 
 function appendAiLoading(cid) {
     const c = getActiveChatContainer(cid); if(!c) return null;
+    
+    // 🚀 MULTIPLE BUBBLE FIX: Random IDs prevent 12 messages from squashing together
     const id = "loading_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
     
     c.insertAdjacentHTML('beforeend', `
@@ -282,36 +311,30 @@ function getRetryButtonsHtml(lId) {
     </div>`;
 }
 
-// 🚀 FIXED: SPEED & HTML RENDERER ENGINE
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
-    // 🔥 FIX: Removed hardcoded color so it adapts to Light/Dark Theme automatically
-    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px; font-size: 15px;"></div>`;
+    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
     const txtEl = document.getElementById(contentId);
     
-    let tickRate = 20; 
-    let charsPerTick = rawText.length > 800 ? 4 : 2; 
+    const chars = rawText.length || 1;
+    let tickRate = Math.floor(10000 / chars);
+    let charsPerTick = 1;
+    
+    if (tickRate > 35) { tickRate = 35; } 
+    else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
     let i = 0; 
     window.currentTypingTimer = setInterval(() => {
-        if (i <= rawText.length) {
-            let currentText = rawText.substring(0, i);
-            txtEl.innerHTML = currentText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+        if (i < rawText.length) {
+            let chunk = rawText.substr(i, charsPerTick);
+            for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
             i += charsPerTick;
         } else {
             clearInterval(window.currentTypingTimer);
             window.currentTypingTimer = null;
-            
-            txtEl.innerHTML = rawText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-            
-            if (isMath && window.MathJax) { 
-                MathJax.typesetClear([containerEl]); 
-                MathJax.typesetPromise([containerEl]).catch(err => console.log(err)); 
-            }
-            
+            if (isMath && window.MathJax) { MathJax.typesetClear([containerEl]); MathJax.typesetPromise([containerEl]); }
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
             if (onComplete) onComplete();
             
-            scrollToBottom("mathChatHistory", true);
             window.toggleChatButton(false);
         }
     }, tickRate);
@@ -324,7 +347,7 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     window.latestMathSolution = answer; 
     
     const buttons = `
-        <div style="margin-top:15px; border-top:1px solid rgba(128,128,128,0.2); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+        <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
             <div style="display:flex; gap:10px; width:100%;">
                 <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button>
                 <button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button>
@@ -334,12 +357,9 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
         </div>
     `;
     
-    if (useTyping) { 
-        typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true); 
-    } 
+    if (useTyping) { typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true); } 
     else {
-        // 🔥 FIX: Removed hardcoded color here too
-        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px; font-size: 15px;">${answer.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>${buttons}`;
+        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px;">${answer.replace(/\n/g, '<br>')}</div>${buttons}`;
         if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); }
         window.toggleChatButton(false);
     }
@@ -372,14 +392,21 @@ async function callGeminiText(sysText, usrText, override = null) {
       }); 
       
       const d = await checkHtmlError(r); 
-      if(!r.ok) throw new Error(d.error || "All API keys failed."); 
+      if(!r.ok) {
+          // If the server returned an error, the tryProviders loop in server.js 
+          // has already exhausted all 5 keys before sending this error back.
+          throw new Error(d.error || "All API keys failed."); 
+      }
       
-      isProcessing = false; window.currentAbortController = null; return d; 
+      isProcessing = false; 
+      window.currentAbortController = null; 
+      return d; 
   } catch(e) { 
-      isProcessing = false; window.currentAbortController = null; throw e; 
+      isProcessing = false; 
+      window.currentAbortController = null; 
+      throw e; // This will trigger the red "Error" bubble in search.html
   }
 }
-
 async function callGeminiVision(imgData, aiQuery, override = null) {
   if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('v');
   window.currentAbortController = new AbortController();
@@ -478,8 +505,7 @@ async function retryRequest(lId, targetProvider) {
     try {
         if (req.type === 'math') {
             let resObj = req.image ? await callGeminiVision(req.image, req.prompt, targetProvider) : await callGeminiText(req.sysPrompt, req.prompt, targetProvider);
-            // 🚀 FIXED: No longer aggressively destroying LaTeX with replace(/[\*&#_]/g, '')
-            let cleanSol = resObj.text;
+            let cleanSol = resObj.text.replace(/[\*&#_]/g, '');
             saveToHistory('math', req.prompt.substring(0, 100) + " (Retry)", cleanSol, req.image, resObj.provider);
             updateAiBubble(lId, cleanSol, resObj.provider, true);
         }
@@ -500,7 +526,7 @@ async function retryRequest(lId, targetProvider) {
                      window.currentAbortController = null;
                 }
             }
-            let ans = resObj.text;
+            let ans = resObj.text.replace(/[\*&#_]/g, '');
             saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider || targetProvider);
             const buttons = `
                 <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
@@ -513,26 +539,63 @@ async function retryRequest(lId, targetProvider) {
             `;
             typeWriteResponse(container, ans, resObj.provider || targetProvider, `search_${lId}`, buttons, false);
         }
+        else if (req.type === 'image_trans') {
+            let resObj = await callGeminiText("You are a strict translator.", req.prompt, targetProvider); 
+            let parts = resObj.text.split('|||'); let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed."; let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
+            saveToHistory('image_translation', `Translate to ${req.targetLang} (Retry)`, cleanText + "\n\nHard Words:\n" + hardWordsText, null, resObj.provider);
+            container.innerHTML = `
+                <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${resObj.provider}</div>
+                <div style="margin-top:10px; font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div>
+                <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${req.extractedText.replace(/\n/g, '<br>')}</div>
+                <div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${req.targetLang}:</div>
+                <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
+                <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
+                <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <div style="display:flex; gap:10px; width:100%;">
+                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
+                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
+                    </div>
+                    ${getRetryButtonsHtml(lId)}
+                </div>
+            `;
+            window.toggleChatButton(false);
+        }
+        else if (req.type === 'qa') {
+            let ansObj = await callGeminiText("You are a helpful document assistant.", req.prompt, targetProvider);
+            let cleanAns = ansObj.text.replace(/[\*&#_]/g, ''); document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "✅ Done!";
+            saveToHistory('qa', req.finalQuestion + " (Retry)", cleanAns, null, ansObj.provider);
+            container.innerHTML = `
+                <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${ansObj.provider}</div>
+                <div style="margin-top:10px; font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div>
+                <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${req.finalQuestion.replace(/\n/g, '<br>')}</div>
+                <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
+                <div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
+                    <div style="display:flex; gap:10px; width:100%;">
+                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button>
+                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${lId}')">📋 Copy</button>
+                    </div>
+                    ${getRetryButtonsHtml(lId)}
+                </div>
+            `;
+            if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); }
+            window.toggleChatButton(false);
+        }
     } catch(e) { 
         window.toggleChatButton(false);
-        container.innerText = "❌ Error: " + e.message; 
+        if(req.type === 'qa') { document.getElementById("qaStatusText").innerText = "❌ Error Occurred"; document.getElementById("qaProgressBar").style.background = "var(--red)"; container.innerHTML = "Error: " + e.message; } 
+        else { container.innerText = "❌ Error: " + e.message; }
     }
 }
 
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
-
-// ==========================================
-// 🚀 THE FIXED MATH FLOW (SPEED, IMAGE POS, & LATEX)
-// ==========================================
-// ==========================================
-// 🚀 THE FIXED MATH FLOW (NO MORE BOTTOM IMAGES!)
-// ==========================================
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
     
     let uiImage = capturedImage;
-    appendUserBubble(instruction || "Solve this image.", uiImage, "mathChatHistory");
+    appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; let lId = appendAiLoading("mathChatHistory");
 
     window.toggleChatButton(true);
@@ -540,61 +603,38 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // 🛑 PROMPT FIX: Removed [MATH] tags completely so no images are generated
-    const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI. STRICT RULES:
+const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI ANGUAGE.STRICT RULES:
 
-1. SOLVE ALL QUESTIONS: You MUST solve EVERY single question as USER PROVIDES in HINDI LANGUAGE. Do not skip any question.
+1. SOLVE ALL QUESTIONS: You MUST solve EVERY single question as USER PROVIDES in HINDI LANGUAGE. Do not skip any any question.
 
-2. MATH FORMAT RULES: You MUST format your answer EXACTLY like this template. Do NOT deviate:
+2. EXPLANATION LENGTH:
+   - If there is ONLY ONE question: Provide a deep, detailed explanation of 8 to 15 lines.
+   - If there are MULTIPLE questions: Provide a concise explanation of 6 to 8 lines for EACH question.
+3. Do not output any warnings, rules, or agreements. Just solve the problem.
+4. MATH QUESTIONS ONLY FORMAT: You MUST format your answer EXACTLY like this template. Explain using bullet points. Everything must be in clean Detected Question Language. Use properly formatted LaTeX for math formulas (e.g., use $\\frac{a}{b}$ instead of a/b, and $x^2$ for powers).
 
-प्रश्न: [Write the exact question here]
+[Write the exact question here]
 
 SOLUTION:-
-[Write the step-by-step math solution here using standard LaTeX notation. Use proper spacing.]
+[Step-by-step and LINE BY LINE math solution in HINDI language for question use $ for inline math and $$ for display math. Keep it mathematically flawless.]
 
 EXPLANATION-
-[Provide the explanation in HINDI language. Max 6 to 8 lines.]`;
+[Provide the explanation in HINDI language based on the length rules above. Use bullet points.]
+
+[Write the exact second question here]
+Do like question 1 but value of question 2`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
     window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
 
-   try {
+    try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
-        
-        let cleanSol = resObj.text;
-        
-        // 🔥 THE TAG KILLER: Completely nuke <MATH>, </MATH>, [MATH], and [/MATH] from existence!
-        cleanSol = cleanSol.replace(/<\/?math>/gi, '');
-        cleanSol = cleanSol.replace(/\[\/?math\]/gi, '');
+        let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
-        
-        // 1. लोडिंग बबल को हटाएं
-        const loadingBubble = document.getElementById(lId);
-        if(loadingBubble) loadingBubble.remove();
-        
-        // 2. पहले डिजिटल पेपर रेंडर करें
-        if (typeof generateMathPaper === "function") {
-            generateMathPaper(cleanSol.replace(/\*\*(.*?)\*\*/g, '$1'));
-        }
-
-        // 3. टाइपिंग एनीमेशन के साथ AI का रिस्पॉन्स अपेंड करें
-        const c = getActiveChatContainer("mathChatHistory"); 
-        if(c) {
-            const msgDiv = document.createElement("div");
-            msgDiv.className = `chat-msg chat-ai`;
-            msgDiv.id = lId; 
-            
-            let contentHtml = `<div class="bubble"></div>`;
-            msgDiv.innerHTML = contentHtml;
-            c.appendChild(msgDiv);
-            
-            updateAiBubble(lId, cleanSol, resObj.provider, true);
-        }
-        
+        updateAiBubble(lId, cleanSol, resObj.provider, true);
         clearMathImage();
-
     } catch(e) { 
         window.toggleChatButton(false);
         const el = document.getElementById(lId); 
@@ -603,37 +643,7 @@ EXPLANATION-
              else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
         }
     }
-
-// 🚀 UPDATED APPEND MESSAGE
-// 🚀 UPDATED APPEND MESSAGE (WITH WHITE TEXT FIX)
-function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
-    const c = getActiveChatContainer("mathChatHistory"); if(!c) return;
-    const msgDiv = document.createElement("div");
-    msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
-    
-    let contentHtml = `<div class="bubble">`;
-    if (imageUrl) {
-        let imgClass = isGeneratedImage ? "generated-math-img" : "bubble-img";
-        let imgStyle = isGeneratedImage 
-            ? "max-width: 100%; border-radius: 8px; border: 2px solid #ddd; padding: 15px; margin-bottom: 15px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" 
-            : "max-width: 200px; border-radius: 10px; margin-bottom: 10px; cursor: pointer;";
-            
-        let onclickAttr = !isGeneratedImage ? `onclick="viewPhotoFullscreen(this.src)" title="Click to expand"` : ``;
-        contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${imgStyle}" ${onclickAttr}><br>`;
-    }
-    
-    let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-    
-    // 🔥 यहीं पर WHITE TEXT और FONT SIZE का फिक्स लगाया है 🔥
-    contentHtml += `<div style="color:#ffffff !important; font-size: 15px;">${formattedText}</div></div>`;
-    
-    msgDiv.innerHTML = contentHtml;
-    c.appendChild(msgDiv);
-    
-    if (window.MathJax) MathJax.typesetPromise([msgDiv]);
-    scrollToBottom("mathChatHistory", true);
 }
-
 
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
@@ -676,7 +686,7 @@ async function runGroqSearch() {
             ans = resObj.text; provider = resObj.provider;
         }
         
-        // 🚀 FIXED: Retaining LaTeX here too!
+        ans = ans.replace(/[\*&#_]/g, '');
         saveToHistory('search', q || "PDF Analysis", ans, uiImage, provider); 
         
         const bbl = document.getElementById(lId);
@@ -992,8 +1002,8 @@ async function runTranslation(){
         let resObj = await callGeminiText("You are a strict translator.", prompt); 
         
         let parts = resObj.text.split('|||');
-        let cleanText = parts[0] ? parts[0].trim() : "Translation failed.";
-        let hardWordsText = parts[1] ? parts[1].trim() : "No hard words found.";
+        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
+        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
         let provider = resObj.provider;
         
         const tId = "trans_" + Date.now();
@@ -1046,7 +1056,7 @@ async function executeImageTransFlow() {
         let combinedText = "";
         for (let i = 0; i < imagesToProcess.length; i++) {
             const rObj = await callGeminiVision(imagesToProcess[i], MASTER_OCR_PROMPT);
-            combinedText += rObj.text + "\n\n";
+            combinedText += rObj.text.replace(/[\*&#_]/g, '') + "\n\n";
         }
         combinedText = combinedText.trim();
         if (!combinedText || combinedText.toLowerCase().includes("no text found") || combinedText === "NO_TEXT_FOUND") throw new Error("Could not detect any text in the images.");
@@ -1063,8 +1073,8 @@ async function executeImageTransFlow() {
 
         let resObj = await callGeminiText("You are a strict translator.", prompt); 
         let parts = resObj.text.split('|||');
-        let cleanText = parts[0] ? parts[0].trim() : "Translation failed.";
-        let hardWordsText = parts[1] ? parts[1].trim() : "No hard words found.";
+        let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
+        let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
         let provider = resObj.provider;
         
         let finalHtml = `
@@ -1148,14 +1158,14 @@ async function executeQaFlow() {
         for(let i=0; i<qaSourceImages.length; i++) {
             statusTxt.innerText = `Reading Source Page ${i+1} of ${qaSourceImages.length}...`; pBar.style.width = `${10 + ((i / qaSourceImages.length) * 40)}%`; 
             let rObj = await callGeminiVision(qaSourceImages[i], MASTER_OCR_PROMPT);
-            extractedContext += `\n--- PAGE ${i+1} ---\n` + rObj.text;
+            extractedContext += `\n--- PAGE ${i+1} ---\n` + rObj.text.replace(/[\*&#_]/g, '');
         }
         
         let finalQuestion = typedQuestion;
         if (qaQuestionImage) {
             statusTxt.innerText = "Extracting Question from Image..."; pBar.style.width = "65%";
             let rObj = await callGeminiVision(qaQuestionImage, "Extract ONLY the question text exactly as written. Do not answer it.");
-            let qText = rObj.text.trim();
+            let qText = rObj.text.replace(/[\*&#_]/g, '').trim();
             finalQuestion = typedQuestion ? `${typedQuestion}\n(Image Text: ${qText})` : qText;
         }
         
@@ -1174,7 +1184,7 @@ async function executeQaFlow() {
         window.requestCache[qaId] = { type: 'qa', prompt: prompt, targetLang: targetLang, finalQuestion: finalQuestion };
 
         let ansObj = await callGeminiText("You are a helpful document assistant.", prompt);
-        let cleanAns = ansObj.text; let provider = ansObj.provider;
+        let cleanAns = ansObj.text.replace(/[\*&#_]/g, ''); let provider = ansObj.provider;
         
         pBar.style.width = "100%"; statusTxt.innerText = "✅ Done!";
         
@@ -1365,6 +1375,8 @@ function restoreSession(e, id) {
     sessionCache[item.type] = item.id;
     const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
 
+    // 🛑 BULLETPROOF CONTAINER FINDER 🛑
+    // This dynamically finds your chat area no matter what you named it in your HTML files!
     let container = document.querySelector('.chat-scroll-area') || 
                     document.getElementById('chatHistory') || 
                     document.getElementById('searchChatHistory') || 
@@ -1373,8 +1385,9 @@ function restoreSession(e, id) {
                     document.getElementById('imageChatHistory');
     
     let containerId = container ? (container.id || "chatContainerFallback") : "";
-    if (container && !container.id) container.id = containerId; 
+    if (container && !container.id) container.id = containerId; // Assign fallback ID if missing
 
+    // 🧮 1. RESTORE MATH SOLVER
     if(item.type === 'math' && container) { 
         container.innerHTML = ''; 
         interactionsToRestore.forEach(inter => {
@@ -1384,6 +1397,7 @@ function restoreSession(e, id) {
         });
         scrollToBottom(containerId);
     } 
+    // 🔍 2. RESTORE DEEP SEARCH
     else if (item.type === 'search' && container) {
         container.innerHTML = ''; 
         interactionsToRestore.forEach(inter => {
@@ -1401,6 +1415,7 @@ function restoreSession(e, id) {
         });
         scrollToBottom(containerId);
     } 
+    // 🎙️ 3. RESTORE TEXT TRANSLATOR
     else if (item.type === 'translation') {
         const inputField = document.getElementById("inputText");
         const outputBox = document.getElementById("translatedText");
@@ -1413,6 +1428,7 @@ function restoreSession(e, id) {
             }
         }
     }
+    // 🖼️ 4. RESTORE IMAGE TRANSLATOR
     else if (item.type === 'image_translation' && container) {
         container.innerHTML = ''; 
         interactionsToRestore.forEach(inter => {
@@ -1423,6 +1439,7 @@ function restoreSession(e, id) {
         });
         scrollToBottom(containerId);
     } 
+    // 📄 5. RESTORE DOCUMENT Q&A
     else if (item.type === 'qa') {
         const outBox = document.getElementById("qaAnswerBox") || document.getElementById("qaResult");
         const statusTxt = document.getElementById("qaStatusText");
@@ -1433,6 +1450,7 @@ function restoreSession(e, id) {
             if(pBar) pBar.style.width = "100%"; 
             if(statusTxt) statusTxt.innerText = "Restored from History";
         } else if (container) { 
+            // Fallback just in case you use a chat UI for QA
             container.innerHTML = ''; 
             interactionsToRestore.forEach(inter => {
                 appendUserBubble(inter.question, inter.image, containerId); 
@@ -1442,6 +1460,7 @@ function restoreSession(e, id) {
             scrollToBottom(containerId);
         }
     }
+    // 🎬 6. RESTORE YOUTUBE
     else if (item.type === 'youtube') {
         let ytInput = document.getElementById('ytSearchInput') || document.getElementById('searchInput');
         let ytBtn = document.getElementById('ytSearchBtn') || document.getElementById('searchBtn');
@@ -1449,9 +1468,10 @@ function restoreSession(e, id) {
             ytInput.value = interactionsToRestore[0].question.replace("YouTube Search: ", "");
             let status = document.getElementById('ytStatus');
             if (status) status.innerHTML = `⏳ Loaded from history. Re-triggering search ranking...`;
-            ytBtn.click(); 
+            ytBtn.click(); // Auto-clicks the search button to pull the videos
         }
     }
+    // 🏆 7. RESTORE QUIZ
     else if (item.type === 'quiz') {
         let reviewContainer = document.getElementById('reviewContainer');
         if (reviewContainer) {
@@ -1476,5 +1496,135 @@ function restoreSession(e, id) {
     showToast("🔄 Session Restored Successfully");
 }
 
+let currentStream = null, currentFacing = "environment";
+async function startCamera() { try { if(currentStream) currentStream.getTracks().forEach(t => t.stop()); currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); document.getElementById("cameraVideo").srcObject = currentStream; const track = currentStream.getVideoTracks()[0]; setTimeout(async () => { try { const cap = track.getCapabilities(); if (cap.torch && currentFacing === "environment") { isFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } else { isFlashOn = false; updateFlashUI(); } } catch(err) {} }, 500); } catch(e) { alert("Camera Error."); } }
+async function toggleFlash() { if (!currentStream) return; const track = currentStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isFlashOn = !isFlashOn; await track.applyConstraints({ advanced: [{ torch: isFlashOn }] }); updateFlashUI(); } } catch(err){} }
+function updateFlashUI() { const btn = document.getElementById("toggleFlashBtn"); if(btn) { btn.innerText = isFlashOn ? "💡" : "🔦"; btn.style.background = isFlashOn ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"; } }
+async function openCamera(m){ currentMode = m; const mod = document.getElementById("cameraModal"); if(mod) { mod.classList.add("active"); await startCamera(); } }
+function closeCamera() { 
+    const mod = document.getElementById("cameraModal"); 
+    if (mod) mod.classList.remove("active"); 
+    if (currentStream) {
+        const track = currentStream.getVideoTracks()[0];
+        try { if (track && track.getCapabilities && track.getCapabilities().torch) { track.applyConstraints({ advanced: [{ torch: false }] }); } } catch(err) { console.log("Torch off error:", err); }
+        currentStream.getTracks().forEach(t => t.stop()); currentStream = null;
+    }
+    isFlashOn = false; updateFlashUI();
+}
+async function switchCamera() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); }
+
+if(document.getElementById('closeCameraBtn')) document.getElementById('closeCameraBtn').onclick = closeCamera;
+if(document.getElementById('switchCameraBtn')) document.getElementById('switchCameraBtn').onclick = switchCamera;
+if(document.getElementById('capturePhotoBtn')) document.getElementById('capturePhotoBtn').onclick = capturePhoto;
+if(document.getElementById('toggleFlashBtn')) document.getElementById('toggleFlashBtn').onclick = toggleFlash;
+if(document.getElementById('closePreviewBtn')) document.getElementById('closePreviewBtn').onclick = () => { document.getElementById('photoViewer').classList.remove('active'); };
+if(document.getElementById('clearMathImgBtn')) document.getElementById('clearMathImgBtn').onclick = clearMathImage;
+if(document.getElementById('openMathCameraBtn')) document.getElementById('openMathCameraBtn').onclick = () => openCamera('math');
+
+function capturePhoto(){ 
+    const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
+    let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
+    c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, w, h); capturedImage = c.toDataURL("image/jpeg", 0.7); 
+    
+    if (currentMode === 'math' || currentMode === 'search') { 
+        const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
+    }
+    else if (currentMode === 'image_trans') {
+        if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } else { transImages.push(capturedImage); renderTransImagePreviews(); }
+    }
+    else if (currentMode === 'qa_source') {
+        if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
+    }
+    else if (currentMode === 'qa_question') { qaQuestionImage = capturedImage; renderQaQuestionPreview(); }
+    closeCamera(); 
+}
+
+window.attachedPdfText = "";
+
+window.handlePdfUpload = async function(event) {
+    const file = event.target.files[0]; if (!file) return;
+    if (file.type !== "application/pdf") return showToast("⚠️ Only PDF files are supported!");
+    
+    showToast("📄 Reading PDF... Please wait.");
+    const fileReader = new FileReader();
+    
+    fileReader.onload = async function() {
+        const typedarray = new Uint8Array(this.result);
+        try {
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let fullText = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `\n--- Page ${i} ---\n` + pageText;
+            }
+            window.attachedPdfText = fullText;
+            const chip = document.getElementById("pdfPreviewChip");
+            if(chip) { chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name; }
+            showToast(`✅ PDF Attached! (${pdf.numPages} pages)`);
+        } catch(e) { showToast("❌ Error reading PDF: " + e.message); }
+    };
+    fileReader.readAsArrayBuffer(file);
+};
+
+window.clearPdfFile = function(e) {
+    if(e) e.stopPropagation(); window.attachedPdfText = "";
+    const inp = document.getElementById("pdfUploadInput"); if(inp) inp.value = "";
+    const chip = document.getElementById("pdfPreviewChip"); if(chip) chip.style.display = "none";
+};
+
+// ==========================================
+// 📤 SHARE CHAT HISTORY ENGINE
+// ==========================================
+async function shareChatHistory() {
+    const historyDiv = document.getElementById("mathChatHistory");
+    if (!historyDiv) return;
+
+    // 1. Gather all chat bubbles
+    const messages = historyDiv.querySelectorAll('.chat-msg');
+    
+    if (messages.length === 0) {
+        alert("No chat history to share yet!");
+        return;
+    }
+
+    // 2. Format the chat into clean text
+    let chatText = "📚 My Math Study Session:\n\n";
+
+    messages.forEach(msg => {
+        const isUser = msg.classList.contains('chat-user');
+        // Clean up the text by removing the "IMAGE OF SOLUTION" label for text sharing
+        let text = msg.innerText.replace("📝 IMAGE OF SOLUTION----", "").trim();
+        
+        if (isUser) {
+            chatText += `👤 Me: ${text}\n`;
+        } else {
+            chatText += `🤖 Tutor:\n${text}\n\n`;
+            chatText += `-----------------------------------\n\n`;
+        }
+    });
+
+    // 3. Trigger Native Share or Fallback to Clipboard
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Math Solution Chat',
+                text: chatText,
+            });
+            console.log('Shared successfully');
+        } catch (err) {
+            console.log('User cancelled share or error:', err);
+        }
+    } else {
+        try {
+            await navigator.clipboard.writeText(chatText);
+            alert("✅ Entire chat copied to clipboard! You can paste it in WhatsApp or Discord.");
+        } catch (err) {
+            alert("❌ Failed to copy chat.");
+            console.error(err);
+        }
+    }
+}
 // --- GLOBAL EXPORTS ---
 window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest; window.handlePdfUpload = handlePdfUpload; window.clearPdfFile = clearPdfFile;
