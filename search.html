@@ -13,6 +13,8 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
+    <script src="https://js.puter.com/v2/"></script>
+    
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
     </script>
@@ -61,6 +63,15 @@
         }
         mjx-container:not([display="true"]) {
             white-space: normal;
+        }
+
+        /* ✨ EXCLUSIVE NEW GRADIENT CHIP STYLES ✨ */
+        .gradient-image-chip {
+            background: linear-gradient(135deg, #a855f7, #06b6d4) !important;
+            border: 2px solid #22d3ee !important;
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.4) !important;
+            color: white !important;
+            font-weight: bold !important;
         }
     </style>
 </head>
@@ -124,7 +135,7 @@
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px;" onclick="clearSearchImage(event)">✕</div>
         </div>
         
-        <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; position:absolute; top:-85px; left:100px; background:var(--bg-surface); border-color:var(--primary); flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+        <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; position:absolute; top:-85px; left:100px; background:var(--bg-surface); border-color:var(--primary); flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: all 0.3s ease;">
             <div style="font-size:24px; margin-bottom:2px;">📄</div>
             <div id="pdfName" style="font-size:10px; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center; padding: 0 4px;">doc.pdf</div>
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48; color:white; display:flex; justify-content:center; align-items:center; border-radius:50%;" onclick="clearPdfFile(event)">✕</div>
@@ -146,7 +157,7 @@
                     <button class="btn-relative" style="background:var(--input-bg); border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
                     <button class="btn-relative" style="background:var(--input-bg); border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
                     
-                    <button class="btn-relative" style="background:linear-gradient(135deg, var(--secondary), var(--primary)); border:none; color:white; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%; box-shadow: 0 4px 10px var(--primary-glow);" onclick="createRipple(event); activateImageCreatorMode(); toggleAttachmentMenu();">🎨 Create Image</button>
+                    <button class="btn-relative" style="background:linear-gradient(135deg, #a855f7, #06b6d4); border:none; color:white; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);" onclick="createRipple(event); activateImageCreatorMode(); toggleAttachmentMenu();">🎨 Create Image</button>
                 </div>
             </div>
             
@@ -189,22 +200,22 @@
         let isImageGenMode = false;
         const DAILY_IMAGE_LIMIT = 20;
 
-        // LANGUAGE TOGGLE
+        // LANGUAGE TOGGLE WITH GRADIENT TOASTS
         let currentSearchLang = "Hindi";
         window.toggleSearchLanguage = function() {
             const langText = document.getElementById('langText');
             if (currentSearchLang === "Hindi") {
                 currentSearchLang = "English";
                 langText.innerText = "EN";
-                if(typeof showStandaloneToast === 'function') showStandaloneToast("🌍 Language changed to English");
+                showStandaloneToast("🌍 Language changed to English");
             } else {
                 currentSearchLang = "Hindi";
                 langText.innerText = "HI";
-                if(typeof showStandaloneToast === 'function') showStandaloneToast("🌍 Language changed to Hindi");
+                showStandaloneToast("🌍 Language changed to Hindi");
             }
         };
 
-        // Activate Image Mode
+        // Activate Image Mode with Glowing Gradient Modifications
         window.activateImageCreatorMode = async function() {
             isImageGenMode = true;
             document.getElementById("searchInput").placeholder = "Describe the image to create (e.g. A futuristic city...)";
@@ -212,7 +223,8 @@
             
             const chip = document.getElementById("pdfPreviewChip");
             chip.style.display = "flex";
-            document.getElementById("pdfName").innerText = "Image Creator";
+            chip.classList.add("gradient-image-chip"); // Apply glowing gradient structure
+            document.getElementById("pdfName").innerText = "Image Mode Active";
             chip.querySelector('div').innerText = "🎨";
         };
 
@@ -394,7 +406,7 @@
 
         function toggleSidebar() { const sidebar = document.getElementById("sidebar"); const overlay = document.getElementById("overlay"); const active = !sidebar.classList.contains("active"); sidebar.classList.toggle("active", active); overlay.classList.toggle("active", active); document.body.classList.toggle("sidebar-open", active); }
         function toggleAttachmentMenu() { const menu = document.getElementById('attachmentMenu'); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; }
-        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); if (!c) return; requestAnimationFrame(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" })); setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }), 80); }
+        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); if (!c) return; requestAnimationFrame(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" })); }
         
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat and memory?")) {
@@ -403,9 +415,10 @@
             }
         }
 
+        // ✨ GLOWING TOAST NOTIFICATION STYLING ✨
         function showStandaloneToast(msg) {
             let t = document.createElement('div'); t.innerText = msg;
-            t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background: var(--gemini-grad); color:black; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,242,254,0.4); z-index:10000; font-weight:800; font-size: 14px; text-align:center; animation: slideUp 0.3s ease-out;";
+            t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background: linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:14px 28px; border-radius:30px; box-shadow:0 10px 30px rgba(6,182,212,0.5); z-index:10000; font-weight:800; font-size: 14px; text-align:center; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid #22d3ee;";
             document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
         }
 
@@ -417,13 +430,7 @@
             setInterval(() => {
                 const now = new Date(); const laTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })); const nextMidnight = new Date(laTime); nextMidnight.setHours(24, 0, 0, 0);
                 let diffMs = nextMidnight - laTime; let h = Math.floor(diffMs / (1000 * 60 * 60)), m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((diffMs % (1000 * 60)) / 1000);
-                if (h === 24) { h = 0; m = 0; s = 0; } const pad = (num) => num.toString().padStart(2, '0');
-                if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { 
-                    visionReqs = 0; textReqs = 0; 
-                    localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); 
-                    localStorage.setItem('imgGenReqs', '0'); 
-                    hasResetToday = true; updateTrackerDisplay(); 
-                } else if (laTime.getHours() !== 0) { hasResetToday = false; }
+                const pad = (num) => num.toString().padStart(2, '0');
                 const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
             }, 1000);
         }
@@ -440,6 +447,7 @@
                     const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = `DOCUMENT NAME: ${file.name}\n`;
                     for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += `\n--- Page ${i} ---\n` + textContent.items.map(item => item.str).join(' '); }
                     persistentPdfMemory = fullText; const chip = document.getElementById("pdfPreviewChip");
+                    chip.classList.remove("gradient-image-chip"); // Reset to standard style
                     chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name;
                     chip.querySelector('div').innerText = "📄";
                     showStandaloneToast(`✅ PDF Attached!`);
@@ -454,6 +462,7 @@
             document.getElementById("pdfUploadInput").value = ""; 
             const chip = document.getElementById("pdfPreviewChip");
             chip.style.display = "none"; 
+            chip.classList.remove("gradient-image-chip");
             document.getElementById("searchInput").placeholder = "Search web, ask a question...";
             chip.querySelector('div').innerText = "📄";
         };
@@ -465,14 +474,10 @@
             try {
                 standaloneStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: standaloneFacingMode, width: {ideal: 1920}, height: {ideal: 1080} } });
                 document.getElementById("standaloneVideo").srcObject = standaloneStream;
-                setTimeout(async () => { if (standaloneFacingMode === "environment") { const track = standaloneStream.getVideoTracks()[0]; try { const cap = track.getCapabilities(); if (cap.torch) { isStandaloneFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } } catch(err) {} } }, 500);
             } catch(e) { showStandaloneToast("⚠️ Camera Error."); }
         }
         async function openStandaloneCamera() { isImageGenMode = false; document.getElementById("standaloneCameraModal").classList.add("active"); await startCameraTrack(); }
-        function closeStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.remove("active"); if (standaloneStream) { const track = standaloneStream.getVideoTracks()[0]; try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; } isStandaloneFlashOn = false; updateFlashUI(); }
-        async function switchStandaloneCamera() { standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment"; await startCameraTrack(); }
-        async function toggleStandaloneFlash() { if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isStandaloneFlashOn = !isStandaloneFlashOn; await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] }); updateFlashUI(); } } catch(err){} }
-        function updateFlashUI() { const btn = document.getElementById("standaloneFlashBtn"); if (btn) { btn.innerText = isStandaloneFlashOn ? "💡" : "🔦"; btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)"; } }
+        function closeStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.remove("active"); if (standaloneStream) { standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; } }
         function captureStandalonePhoto() {
             const v = document.getElementById("standaloneVideo"); const c = document.getElementById("standaloneCanvas");
             let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
@@ -488,7 +493,7 @@
             const selectedModel = document.getElementById("modelSelector").value;
 
             // ==========================================
-            // 🎨 SECURE SERVER-SIDE IMAGE GENERATOR (AXIOS BACKEND)
+            // 🎨 UNBREAKABLE IMAGE GENERATOR LAYER 🎨
             // ==========================================
             if (isImageGenMode) {
                 let imgGenReqs = parseInt(localStorage.getItem('imgGenReqs') || '0');
@@ -498,82 +503,106 @@
                     return;
                 }
 
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">🎨 <b>Generate Image:</b><br>${q}</div></div>`);
+                let userImgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img" style="max-height: 120px; border-radius: 8px; margin-bottom: 8px;"><br>` : '';
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgHtml}🎨 <b>Generate Image:</b><br>${q}</div></div>`);
                 inp.value = ""; scrollToBottom();
 
                 const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt & Calling Server...</span></div></div>`);
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">AI Sandbox is building your artwork...</span></div></div>`);
                 scrollToBottom();
 
+                showStandaloneToast("🎨 Generating an Image...");
+
                 try {
-                    // STEP 1: Enhance prompt using Gemini (via Server)
-                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this user idea into a highly detailed, cinematic, photo-realistic prompt. Reply ONLY with the English prompt text. NO quotes, NO conversational filler. Idea: " + q;
-                    
-                    let enhancedPrompt = q;
+                    let finalPrompt = q;
+
+                    // 🛠️ COMBINATION MATRIX: If an image is uploaded, we describe it using Gemini Vision first!
+                    if (standaloneCapturedImage) {
+                        showStandaloneToast("👁️ Analyzing uploaded image for composition...");
+                        try {
+                            const visionResponse = await fetch("/api/gemini-vision", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    imageBase64: standaloneCapturedImage,
+                                    userPrompt: "Analyze this image and describe its core visual elements, colors, subject matter, and layout in detail. Provide only the description."
+                                })
+                            });
+                            if (visionResponse.ok) {
+                                const visionData = await visionResponse.json();
+                                if (visionData.text) {
+                                    // Combine description of uploaded image with user prompt text!
+                                    finalPrompt = `An image blending the layout/elements of this source: (${visionData.text}) with the new creative request: [${q}]. Ensure a seamless, matching artistic style.`;
+                                }
+                            }
+                        } catch(err) { console.log("Vision analysis failed, fallback to text prompt."); }
+                    }
+
+                    // STEP 2: Boost prompt details using server-side Gemini text model
+                    let sysPrompt = "You are a master AI Prompt Engineer. Rewrite this concept into a highly detailed, cinematic, photo-realistic English prompt for image generation. Reply ONLY with the prompt text.";
+                    let enhancedPrompt = finalPrompt;
                     try {
                         const pResponse = await fetch("/api/gemini-text", { 
                             method: "POST", 
                             headers: { "Content-Type": "application/json" }, 
-                            body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) 
+                            body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: finalPrompt, providerOverride: "gemini" }) 
                         });
                         if (pResponse.ok) {
                             const pData = await pResponse.json();
                             if (pData.text) enhancedPrompt = pData.text.replace(/['"]/g, '').trim();
                         }
-                    } catch(e) { console.log("Prompt enhancement failed, using original prompt."); }
+                    } catch(e) { console.log("Prompt engine bypassed."); }
 
-                    // STEP 2: Call YOUR secure backend to generate the image
-                    const genResponse = await fetch("/api/generate-image", { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" }, 
-                        body: JSON.stringify({ prompt: enhancedPrompt }) 
-                    });
-                    
-                    if (!genResponse.ok) {
-                        let errorText = "Unknown Server Error";
-                        try {
-                            const errData = await genResponse.json();
-                            errorText = errData.error || errorText;
-                        } catch(e) {
-                            errorText = `Server returned status: ${genResponse.status}.`;
-                        }
-                        throw new Error(errorText);
-                    }
-                    
-                    const genData = await genResponse.json();
-                    let base64Image = genData.imageBase64;
+                    // STEP 3: Execute via Puter.js Flux environment sandbox
+                    puter.ai.txt2img(enhancedPrompt, { model: "flux-1-schnell" })
+                        .then((imgElement) => {
+                            imgElement.style.maxWidth = "100%";
+                            imgElement.style.borderRadius = "12px";
+                            imgElement.id = `img_${loadId}`;
 
-                    imgGenReqs++;
-                    localStorage.setItem('imgGenReqs', imgGenReqs);
+                            imgGenReqs++;
+                            localStorage.setItem('imgGenReqs', imgGenReqs);
 
-                    let finalHtml = `
-                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ SECURE API GENERATOR</div>
-                        <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Enhanced Prompt:</div>
-                        <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
-                        
-                        <div style="position:relative; display:inline-block; margin-top:10px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3);" id="container_${loadId}">
-                            <button onclick="document.getElementById('container_${loadId}').style.display='none'" style="position:absolute; top:-12px; right:-12px; background:#e11d48; color:white; border:2px solid var(--bg-surface); border-radius:50%; width:32px; height:32px; cursor:pointer; font-weight:bold; z-index:10; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✕</button>
-                            <img src="${base64Image}" style="max-width:100%; border-radius:12px;" id="img_${loadId}">
-                        </div>
+                            let wrapperHtml = `
+                                <div class="api-badge" style="background: linear-gradient(135deg, #a855f7, #06b6d4); border-color:#22d3ee; color:white; padding: 4px 10px;">✨ COMPOSITE SANDBOX</div>
+                                <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Optimized Query Structure:</div>
+                                <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
+                                
+                                <div style="position:relative; display:inline-block; margin-top:10px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3);" id="container_${loadId}">
+                                    <button onclick="document.getElementById('container_${loadId}').style.display='none'" style="position:absolute; top:-12px; right:-12px; background:#e11d48; color:white; border:2px solid var(--bg-surface); border-radius:50%; width:32px; height:32px; cursor:pointer; font-weight:bold; z-index:10; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✕</button>
+                                </div>
 
-                        <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                            <button class="btn-relative" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); downloadGeneratedImage('img_${loadId}')">📥 Download Image</button>
-                        </div>
-                    `;
+                                <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
+                                    <button class="btn-relative" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); downloadGeneratedImage('img_${loadId}')">📥 Download Composite Image</button>
+                                </div>
+                            `;
 
-                    document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
-                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Secure Backend API");
+                            const bubble = document.getElementById(loadId).querySelector('.bubble');
+                            bubble.innerHTML = wrapperHtml;
+                            document.getElementById(`container_${loadId}`).appendChild(imgElement);
 
-                    clearPdfFile(); 
+                            saveToHistory('search', `Composite Image: ${q}`, bubble.innerHTML, standaloneCapturedImage, "Puter Flux Sandbox");
+                            clearPdfFile();
+                            clearSearchImage();
+                            isProcessing = false;
+                        })
+                        .catch((err) => {
+                            document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Sandbox Exception: ${err.message}</span>`;
+                            isProcessing = false;
+                        });
+
                 } catch (error) { 
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; 
-                } finally { isProcessing = false; }
+                    isProcessing = false;
+                }
                 
                 return; 
             }
-            // ==========================================
+            // =========================================================
 
-            let displayQ = q || "Analyze this document."; let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
+            // Standard Text Search Route
+            let displayQ = q || "Analyze this document."; 
+            let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${imgHtml}<div>${displayQ.replace(/\n/g, '<br>')}</div></div></div>`);
             inp.value = ""; scrollToBottom(); 
 
@@ -591,9 +620,7 @@
             let sysPrompt = `You are an expert AI Assistant and Guide. 
             CRITICAL RULES:
             1. YOU MUST ANSWER ENTIRELY IN ${currentSearchLang.toUpperCase()}. DO NOT USE OTHER LANGUAGES.
-            2. If the user provides a document and asks "how to fill it", DO NOT say the document lacks instructions. 
-            3. Use your general internet knowledge combined with the provided document context to explain EXACTLY how to fulfill the user's request step-by-step.
-            4. If the user asks a MATH question or you detect math/physics formulas, YOU MUST solve it step-by-step and use standard LaTeX formatting (e.g. $E=mc^2$ or $$\\frac{a}{b}$$).
+            4. If the user asks a MATH/PHYSICS question, YOU MUST solve it step-by-step and use standard LaTeX formatting (e.g. $E=mc^2$ or $$\\frac{a}{b}$$).
             5. ALWAYS remember the user's previous context from the Chat History.`;
 
             let finalPrompt = memoryContextString + `User Question: ${q || 'Please help me with this document.'}\n\n`;
@@ -614,7 +641,6 @@
                 saveToHistory('search', q || "[Document/Image Analysis]", cleanAns, standaloneCapturedImage, apiProvider);
                 
                 clearSearchImage(); document.getElementById("pdfPreviewChip").style.display = "none";
-                
                 const finalBubble = document.getElementById(loadId).querySelector('.bubble');
                 
                 finalBubble.innerHTML = `
@@ -631,6 +657,7 @@
             } catch (error) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; } finally { isProcessing = false; }
         }
     </script>
+
     <script>
     document.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -638,9 +665,7 @@
         if (!restoreId) return;
 
         setTimeout(() => {
-            let container = document.querySelector('.chat-scroll-area') || 
-                            document.getElementById('searchChatHistory');
-                            
+            let container = document.querySelector('.chat-scroll-area') || document.getElementById('searchChatHistory');
             if (!container) return;
 
             const forceInjectData = (historyData) => {
@@ -663,9 +688,7 @@
                             </div>
                             <div class="chat-msg chat-ai" style="animation: bounceInBubble 0.6s ease-out;">
                                 <div class="bubble" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 6px; box-shadow: var(--glass-shadow); display: flex; flex-direction: column;">
-                                    
                                     <div id="${textId}" style="margin-top:0; width:100%; overflow-x:auto;">${inter.answer}</div>
-                                    
                                 </div>
                             </div>
                         `);
@@ -674,7 +697,6 @@
                     setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
                     if (typeof showStandaloneToast === 'function') showStandaloneToast("🔄 Search Restored Successfully!");
                 } 
-
                 if (window.MathJax) { MathJax.typesetPromise([container]).catch(e => console.log(e)); }
             };
 
@@ -686,10 +708,9 @@
             } else {
                 forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
             }
-            
         }, 800); 
     });
-</script>
-<script src="ui-controls.js" defer></script>
+    </script>
+    <script src="ui-controls.js" defer></script>
 </body>
 </html>
