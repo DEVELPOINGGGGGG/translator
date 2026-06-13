@@ -104,8 +104,8 @@
         <div class="appTitle">Deep Search</div>
         
         <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-            <button id="langToggleBtn" onclick="toggleSearchLanguage()" style="background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: var(--glass-shadow); transition: 0.2s;">
-                🌍 <span id="langText" style="color: var(--text-main);">HI</span>
+            <button id="langToggleBtn" onclick="toggleSearchLanguage()" style="background: linear-gradient(135deg, var(--secondary), var(--primary)); border: none; color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px var(--primary-glow); transition: 0.2s;">
+                🌍 <span id="langText" style="color: white;">HI</span>
             </button>
             <div class="menuBtn btn-relative" style="font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
         </div>
@@ -208,9 +208,21 @@
             }
         };
 
-        // Activate Image Mode
-        window.activateImageCreatorMode = function() {
+        // Activate Image Mode & Trigger Sign In
+        window.activateImageCreatorMode = async function() {
             isImageGenMode = true;
+            
+            // Trigger Puter Sign In Only on First Click
+            if (!puter.auth.isSignedIn()) {
+                try {
+                    await puter.auth.signIn();
+                } catch (e) {
+                    showStandaloneToast("⚠️ Sign-in required for Image Creation");
+                    isImageGenMode = false;
+                    return;
+                }
+            }
+
             document.getElementById("searchInput").placeholder = "Describe the image to create (e.g. A futuristic city...)";
             showStandaloneToast("🎨 Image Creator Active! Type your prompt.");
             
@@ -246,7 +258,6 @@
             navigator.clipboard.writeText(document.getElementById(textId).innerText).then(() => showStandaloneToast("✅ Copied to clipboard!")); 
         }
 
-        // GLOBAL DOWNLOAD GENERATED IMAGE HELPER
         window.downloadGeneratedImage = function(imgId) {
             let img = document.getElementById(imgId);
             if(!img) return;
@@ -426,7 +437,7 @@
                 if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { 
                     visionReqs = 0; textReqs = 0; 
                     localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); 
-                    localStorage.setItem('imgGenReqs', '0'); // Reset Image Limit Daily
+                    localStorage.setItem('imgGenReqs', '0'); 
                     hasResetToday = true; updateTrackerDisplay(); 
                 } else if (laTime.getHours() !== 0) { hasResetToday = false; }
                 const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
@@ -511,17 +522,15 @@
                 scrollToBottom();
 
                 try {
-                    // Step 1: Gemini Enhances the prompt
                     let sysPrompt = "You are a master AI Prompt Engineer. The user wants to generate an image. Rewrite their idea into a highly detailed, cinematic, and beautifully descriptive prompt for an AI image generator like DALL-E. Reply ONLY with the English prompt. NO quotes, NO extra text.";
                     const response = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) });
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error || "Gemini Failed");
                     let enhancedPrompt = data.text.trim();
 
-                    // Step 2: Puter generates the Image (GPT/DALL-E underlying)
-                    let imageElement = await puter.ai.txt2img(enhancedPrompt);
+                    // explicitly define model dall-e-3 (OpenAI ChatGPT Image Model on Puter)
+                    let imageElement = await puter.ai.txt2img(enhancedPrompt, { model: 'dall-e-3' });
                     
-                    // Step 3: Securely convert to Base64 so it persists on reload!
                     let base64Image = imageElement.src; 
                     try {
                         let fetchRes = await fetch(imageElement.src);
@@ -533,7 +542,6 @@
                         });
                     } catch(err) { console.log("CORS block on blob, using raw src"); }
 
-                    // Update Tracker
                     imgGenReqs++;
                     localStorage.setItem('imgGenReqs', imgGenReqs);
 
@@ -555,12 +563,12 @@
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
                     saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Puter");
 
-                    clearPdfFile(); // Turn off Image Mode
+                    clearPdfFile(); 
                 } catch (error) { 
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; 
                 } finally { isProcessing = false; }
                 
-                return; // End branch
+                return; 
             }
             // ==========================================
 
