@@ -234,6 +234,8 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary) !import
 /* --- 15. OVERRIDES FOR APPS (QUIZ, YT) --- */
 #questionText, h3[style*="color: white"], div[style*="color: white"], .result-card { color: var(--text-main) !important; }
 #quizSubjectSelector, #quizTopicSelector { background: var(--input-bg) !important; color: var(--text-main) !important; border: 2px solid var(--border-light) !important; }
+#networkStatus { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: bold; display: none; z-index: 1000; }
+#fabScroll { position: fixed; bottom: 150px; right: 20px; background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; display: none; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--glass-shadow); z-index: 999; }
 .option-btn { background: var(--input-bg) !important; color: var(--text-main) !important; border: 2px solid var(--border-light) !important; font-weight: 700 !important; }
 .option-btn:hover { border-color: var(--primary) !important; transform: translateY(-2px); }
 .option-btn.selected { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; box-shadow: 0 5px 15px var(--primary-glow) !important; }
@@ -305,3 +307,10 @@ mjx-container:not([display="true"]) {
     max-width: 100%;
     overflow-x: hidden;
 }
+#networkStatus { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: bold; display: none; z-index: 1000; }
+#fabScroll { position: fixed; bottom: 150px; right: 20px; background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; display: none; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--glass-shadow); z-index: 999; }
+
+/* MULTI-IMAGE */
+.img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-light); }
+.img-thumb-container { position: relative; display: inline-block; margin-right: 10px; }
+.img-thumb-remove { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; }
