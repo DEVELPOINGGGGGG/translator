@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Search</title>
+    <title>Deep Search & Image Creator</title>
     
     <link rel="stylesheet" href="style.css">
     
@@ -12,6 +12,8 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
+    <script src="https://js.puter.com/v2/"></script>
     
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
@@ -35,13 +37,11 @@
             border: 1px solid rgba(192, 132, 252, 0.3); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* Player Animation */
         @keyframes slideDownPlayer {
             0% { transform: translate(-50%, -50px); opacity: 0; }
             100% { transform: translate(-50%, 0); opacity: 1; }
         }
 
-        /* Mic Recording Pulse Animation */
         @keyframes pulse-red {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
@@ -54,7 +54,6 @@
             color: white !important;
         }
 
-        /* Make long MathJax equations scrollable horizontally */
         mjx-container[display="true"] {
             overflow-x: auto !important;
             overflow-y: hidden !important;
@@ -70,47 +69,43 @@
 <body class="chat-page-layout">
 
     <div id="micLangModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10002; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
-        <div style="background:rgba(15,23,42,0.95); border:1px solid #38bdf8; border-radius:20px; padding:20px; width:80%; max-width:300px; box-shadow:0 10px 30px rgba(0,0,0,0.8); text-align:center; animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-            <h3 style="color:white; margin-top:0; margin-bottom:20px; font-size:16px;">Speak In Which Language?</h3>
-            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('hi-IN')" style="width:100%; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:white; padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:10px; cursor:pointer;">🇮🇳 Hindi</button>
-            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('en-US')" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:white; padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:15px; cursor:pointer;">🇺🇸 English</button>
-            <button class="btn-relative" onclick="createRipple(event); closeMicModal()" style="width:100%; background:transparent; border:none; color:var(--muted); font-size:14px; cursor:pointer; text-decoration:underline;">Cancel</button>
+        <div style="background:var(--bg-surface); border:1px solid var(--primary); border-radius:20px; padding:20px; width:80%; max-width:300px; box-shadow:0 10px 30px rgba(0,0,0,0.8); text-align:center; animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <h3 style="color:var(--text-main); margin-top:0; margin-bottom:20px; font-size:16px;">Speak In Which Language?</h3>
+            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('hi-IN')" style="width:100%; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:var(--text-main); padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:10px; cursor:pointer;">🇮🇳 Hindi</button>
+            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('en-US')" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:var(--text-main); padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:15px; cursor:pointer;">🇺🇸 English</button>
+            <button class="btn-relative" onclick="createRipple(event); closeMicModal()" style="width:100%; background:transparent; border:none; color:var(--text-muted); font-size:14px; cursor:pointer; text-decoration:underline;">Cancel</button>
         </div>
     </div>
 
-    <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); border:1px solid #38bdf8; border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px); animation:slideDownPlayer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-        <div style="color:#38bdf8; font-size:22px; filter: drop-shadow(0 0 5px #38bdf8);">🎧</div>
-        
-        <button class="btn-relative" id="ttsPlayPauseBtn" onclick="createRipple(event); toggleTts()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border-radius:50%;">⏸️</button>
-        
-        <button class="btn-relative" id="ttsBracketBtn" onclick="createRipple(event); toggleBracketReading()" style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:white; padding:6px 12px; border-radius:15px; cursor:pointer; font-size:12px; font-weight:bold; transition:all 0.3s;">[x] Read Brackets</button>
-        
+    <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px); animation:slideDownPlayer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div style="color:var(--primary); font-size:22px; filter: drop-shadow(0 0 5px var(--primary));">🎧</div>
+        <button class="btn-relative" id="ttsPlayPauseBtn" onclick="createRipple(event); toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border-radius:50%;">⏸️</button>
+        <button class="btn-relative" id="ttsBracketBtn" onclick="createRipple(event); toggleBracketReading()" style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:var(--text-main); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:12px; font-weight:bold; transition:all 0.3s;">[x] Read Brackets</button>
         <button class="btn-relative" onclick="createRipple(event); closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(225,29,72,0.5);">✕</button>
     </div>
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
-  <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
-  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
-  <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
-  <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
-  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
-  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-
-</div>
+      <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
+      <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+      <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+      <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+      <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
+      <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
+      <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+      <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+      <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
+      <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+      <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+    </div>
 
     <div class="topbar">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
         <div class="appTitle">Deep Search</div>
         
         <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-            <button id="langToggleBtn" onclick="toggleSearchLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
-                🌍 <span id="langText">HI</span>
+            <button id="langToggleBtn" onclick="toggleSearchLanguage()" style="background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: var(--glass-shadow); transition: 0.2s;">
+                🌍 <span id="langText" style="color: var(--text-main);">HI</span>
             </button>
             <div class="menuBtn btn-relative" style="font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
         </div>
@@ -131,14 +126,14 @@
             <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px;" onclick="clearSearchImage(event)">✕</div>
         </div>
         
-        <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; position:absolute; top:-85px; left:100px; background:var(--glass-panel); border-color:#38bdf8; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+        <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; position:absolute; top:-85px; left:100px; background:var(--bg-surface); border-color:var(--primary); flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
             <div style="font-size:24px; margin-bottom:2px;">📄</div>
-            <div id="pdfName" style="font-size:10px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center; padding: 0 4px;">doc.pdf</div>
-            <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48;" onclick="clearPdfFile(event)">✕</div>
+            <div id="pdfName" style="font-size:10px; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center; padding: 0 4px;">doc.pdf</div>
+            <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48; color:white; display:flex; justify-content:center; align-items:center; border-radius:50%;" onclick="clearPdfFile(event)">✕</div>
         </div>
 
         <div style="display: flex; justify-content: flex-start; padding-left: 5px; margin-bottom: 8px; width: 100%;">
-            <select id="modelSelector" style="background: rgba(15,23,42,0.95); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 15px; padding: 5px 12px; outline: none; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
+            <select id="modelSelector" style="background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); border-radius: 15px; padding: 5px 12px; outline: none; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: var(--glass-shadow); backdrop-filter: blur(10px);">
                 <option value="gemini">✨ Model: Gemini</option>
                 <option value="groq">⚡ Model: Groq</option>
                 <option value="cloudflare">☁️ Model: Cloudflare</option>
@@ -149,9 +144,11 @@
             <div style="position:relative;">
                 <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
                 
-                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:rgba(15,23,42,0.95); border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
-                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
-                    <button class="btn-relative" style="background:rgba(255,255,255,0.05); border:none; color:#f8fafc; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
+                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
+                    <button class="btn-relative" style="background:var(--input-bg); border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
+                    <button class="btn-relative" style="background:var(--input-bg); border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
+                    
+                    <button class="btn-relative" style="background:linear-gradient(135deg, var(--secondary), var(--primary)); border:none; color:white; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%; box-shadow: 0 4px 10px var(--primary-glow);" onclick="createRipple(event); activateImageCreatorMode(); toggleAttachmentMenu();">🎨 Create Image</button>
                 </div>
             </div>
             
@@ -192,7 +189,11 @@
         let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
         let hasResetToday = false;
 
-        // NEW: LANGUAGE TOGGLE STATE & LOGIC
+        // IMAGE CREATOR MODES & LIMITS
+        let isImageGenMode = false;
+        const DAILY_IMAGE_LIMIT = 5; 
+
+        // LANGUAGE TOGGLE
         let currentSearchLang = "Hindi";
         window.toggleSearchLanguage = function() {
             const langText = document.getElementById('langText');
@@ -207,23 +208,32 @@
             }
         };
 
-        // --- 2. LOCALSTORAGE DB LOGIC & COPY FUNCTION ---
+        // Activate Image Mode
+        window.activateImageCreatorMode = function() {
+            isImageGenMode = true;
+            document.getElementById("searchInput").placeholder = "Describe the image to create (e.g. A futuristic city...)";
+            showStandaloneToast("🎨 Image Creator Active! Type your prompt.");
+            
+            const chip = document.getElementById("pdfPreviewChip");
+            chip.style.display = "flex";
+            document.getElementById("pdfName").innerText = "Image Creator";
+            chip.querySelector('div').innerText = "🎨";
+        };
+
+        // --- 2. DB LOGIC ---
         function saveHistorySafe() { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); } }
         function persistHistoryOnChatClose(reason = "page-close") {
-            try {
-                saveHistorySafe();
-                localStorage.setItem('aiHistoryLastCloseReason', reason);
-                localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString());
-            } catch(e) { console.log("Close-safe history save failed", e); }
+            try { saveHistorySafe(); } catch(e) {}
         }
-        window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'));
-        window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeunload'));
+        window.addEventListener('pagehide', persistHistoryOnChatClose);
+        window.addEventListener('beforeunload', persistHistoryOnChatClose);
+        
         function saveToHistory(type, q, a, img = null, provider = "AI") {
             let sessionId = sessionCache[type];
             let histItem = appHistory.find(i => i.id === sessionId);
             if (!histItem) {
                 sessionId = Date.now(); sessionCache[type] = sessionId; 
-                histItem = { id: sessionId, type: type, title: (q || "Image/PDF Search").substring(0, 25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
+                histItem = { id: sessionId, type: type, title: (q || "Search").substring(0, 25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
                 appHistory.unshift(histItem);
             } else {
                 histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
@@ -232,12 +242,24 @@
             saveHistorySafe();
         }
 
-        // 📋 THE MISSING COPY TO CLIPBOARD FUNCTION RESTORED!
-        function copyToClipboard(textId) { 
+        window.copyToClipboard = function(textId) { 
             navigator.clipboard.writeText(document.getElementById(textId).innerText).then(() => showStandaloneToast("✅ Copied to clipboard!")); 
         }
 
-        // --- 3. JS ANIMATION FACTORY ---
+        // GLOBAL DOWNLOAD GENERATED IMAGE HELPER
+        window.downloadGeneratedImage = function(imgId) {
+            let img = document.getElementById(imgId);
+            if(!img) return;
+            let a = document.createElement("a");
+            a.href = img.src;
+            a.download = `AI_Image_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showStandaloneToast("✅ Image download started!");
+        };
+
+        // --- 3. ANIMATIONS & EFFECTS ---
         function createRipple(event) {
             const button = event.currentTarget;
             const circle = document.createElement("span");
@@ -291,15 +313,13 @@
                     i += charsPerTick;
                 } else { 
                     clearInterval(timer);
-                    // MATHJAX INTEGRATION
                     if (window.MathJax) { MathJax.typesetPromise([element]).catch(e => console.log(e)); }
                 }
             }, tickRate);
         }
 
-        // --- 4. SPEECH RECOGNITION (MIC) ENGINE ---
+        // --- 4. SPEECH RECOGNITION ---
         let speechRecog = null; let isRecording = false;
-
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             speechRecog = new SpeechRecognition(); speechRecog.continuous = false; speechRecog.interimResults = true;
@@ -308,136 +328,63 @@
                 let transcript = ""; for (let i = 0; i < e.results.length; i++) { transcript += e.results[i][0].transcript; }
                 const inp = document.getElementById("searchInput"); if (inp) inp.value = transcript;
             };
-            speechRecog.onerror = (e) => { stopVoiceRecognition(); };
+            speechRecog.onerror = () => { stopVoiceRecognition(); };
             speechRecog.onend = () => { stopVoiceRecognition(); };
         }
-
-        window.openMicModal = function() {
-            if (!speechRecog) return showStandaloneToast("⚠️ Voice recognition not supported.");
-            if (isRecording) { stopVoiceRecognition(); } else { document.getElementById("micLangModal").style.display = "flex"; }
-        }
+        window.openMicModal = function() { if (!speechRecog) return showStandaloneToast("⚠️ Voice recognition not supported."); if (isRecording) { stopVoiceRecognition(); } else { document.getElementById("micLangModal").style.display = "flex"; } }
         window.closeMicModal = function() { document.getElementById("micLangModal").style.display = "none"; }
-        window.startVoiceRecognition = function(lang) {
-            closeMicModal();
-            if (speechRecog) {
-                speechRecog.lang = lang; const inp = document.getElementById("searchInput");
-                if(inp && !inp.value) inp.value = "Listening..."; speechRecog.start();
-            }
-        }
-        window.stopVoiceRecognition = function() {
-            isRecording = false; if (speechRecog) speechRecog.stop();
-            const mic = document.getElementById("micBtn"); if (mic) mic.classList.remove("recording-mic");
-            const inp = document.getElementById("searchInput"); if (inp && inp.value === "Listening...") inp.value = "";
-        }
+        window.startVoiceRecognition = function(lang) { closeMicModal(); if (speechRecog) { speechRecog.lang = lang; const inp = document.getElementById("searchInput"); if(inp && !inp.value) inp.value = "Listening..."; speechRecog.start(); } }
+        window.stopVoiceRecognition = function() { isRecording = false; if (speechRecog) speechRecog.stop(); const mic = document.getElementById("micBtn"); if (mic) mic.classList.remove("recording-mic"); const inp = document.getElementById("searchInput"); if (inp && inp.value === "Listening...") inp.value = ""; }
 
-
-        // --- 5. SMART TTS PLAYER ENGINE (SENTENCE CHUNKING) ---
-        let ttsSentences = [];
-        let currentSentenceIndex = 0;
-        let isBracketReadingEnabled = true;
-        let isCancelingForToggle = false;
-
-        window.speechSynthesis.onvoiceschanged = () => {};
-
+        // --- 5. SMART TTS PLAYER ENGINE ---
+        let ttsSentences = []; let currentSentenceIndex = 0; let isBracketReadingEnabled = true; let isCancelingForToggle = false;
         window.startTts = function(elementId) {
-            const el = document.getElementById(elementId);
-            if (!el) return;
+            const el = document.getElementById(elementId); if (!el) return;
             let fullText = el.innerText || el.textContent;
-            
             ttsSentences = fullText.match(/[^.!?।\n]+[.!?।\n]*/g) || [fullText];
             currentSentenceIndex = 0;
-            
             document.getElementById("ttsPlayer").style.display = "flex";
             document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
-            
-            window.speechSynthesis.cancel(); 
-            setTimeout(playNextSentence, 50);
+            window.speechSynthesis.cancel(); setTimeout(playNextSentence, 50);
         };
-
         function playNextSentence() {
-            if (currentSentenceIndex >= ttsSentences.length) {
-                document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
-                return;
-            }
+            if (currentSentenceIndex >= ttsSentences.length) { document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; return; }
             let originalSentence = ttsSentences[currentSentenceIndex];
-            if (!originalSentence || !originalSentence.trim()) {
-                currentSentenceIndex++; playNextSentence(); return;
-            }
+            if (!originalSentence || !originalSentence.trim()) { currentSentenceIndex++; playNextSentence(); return; }
 
             let processedText = originalSentence;
             if (isBracketReadingEnabled) {
-                processedText = processedText
-                    .replace(/-/g, " ghatav ")
-                    .replace(/\+/g, " jor ")
-                    .replace(/%/g, " pratishat ")
-                    .replace(/\(/g, " bracket ")
-                    .replace(/\)/g, " bracket ")
-                    .replace(/\{/g, " madhyam kosthak ")
-                    .replace(/\}/g, " madhyam kosthak ")
-                    .replace(/\[/g, " bara kosthak ")
-                    .replace(/\]/g, " bara kosthak ");
-            } else {
-                processedText = processedText.replace(/\([^)]*\)/g, " ").replace(/\[[^\]]*\]/g, " ").replace(/\{[^}]*\}/g, " ");
-            }
+                processedText = processedText.replace(/-/g, " ghatav ").replace(/\+/g, " jor ").replace(/%/g, " pratishat ").replace(/\(/g, " bracket ").replace(/\)/g, " bracket ").replace(/\{/g, " madhyam kosthak ").replace(/\}/g, " madhyam kosthak ").replace(/\[/g, " bara kosthak ").replace(/\]/g, " bara kosthak ");
+            } else { processedText = processedText.replace(/\([^)]*\)/g, " ").replace(/\[[^\]]*\]/g, " ").replace(/\{[^}]*\}/g, " "); }
             processedText = processedText.replace(/[\*#]/g, "");
 
             let ttsUtterance = new SpeechSynthesisUtterance(processedText);
             ttsUtterance.lang = 'hi-IN'; ttsUtterance.rate = 0.9;
-            
             let voices = window.speechSynthesis.getVoices();
             let hindiVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || voices.find(v => v.lang.includes('hi')) || voices[0];
             if (hindiVoice) ttsUtterance.voice = hindiVoice;
-
             ttsUtterance.onend = () => { if (isCancelingForToggle) return; currentSentenceIndex++; playNextSentence(); };
             ttsUtterance.onerror = (e) => { if (isCancelingForToggle) return; if(e.error !== 'canceled') document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; };
-
-            window.speechSynthesis.speak(ttsUtterance);
-            document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
+            window.speechSynthesis.speak(ttsUtterance); document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
         }
-
         window.toggleTts = function() {
-            if (window.speechSynthesis.paused) {
-                window.speechSynthesis.resume(); document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
-            } else if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.pause(); document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
-            } else {
-                if(currentSentenceIndex >= ttsSentences.length) currentSentenceIndex = 0; playNextSentence();
-            }
+            if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); document.getElementById("ttsPlayPauseBtn").innerText = "⏸️"; } else if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; } else { if(currentSentenceIndex >= ttsSentences.length) currentSentenceIndex = 0; playNextSentence(); }
         };
-
         window.toggleBracketReading = function() {
-            isBracketReadingEnabled = !isBracketReadingEnabled;
-            const btn = document.getElementById("ttsBracketBtn");
-            if (isBracketReadingEnabled) {
-                btn.innerText = "[x] Read Brackets"; btn.style.background = "rgba(56,189,248,0.2)"; btn.style.borderColor = "#38bdf8";
-            } else {
-                btn.innerText = "[ ] Skip Brackets"; btn.style.background = "rgba(255,255,255,0.1)"; btn.style.borderColor = "rgba(255,255,255,0.2)";
-            }
-            if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
-                isCancelingForToggle = true; window.speechSynthesis.cancel();
-                setTimeout(() => { isCancelingForToggle = false; playNextSentence(); }, 100);
-            }
+            isBracketReadingEnabled = !isBracketReadingEnabled; const btn = document.getElementById("ttsBracketBtn");
+            if (isBracketReadingEnabled) { btn.innerText = "[x] Read Brackets"; btn.style.background = "rgba(56,189,248,0.2)"; btn.style.borderColor = "#38bdf8"; } else { btn.innerText = "[ ] Skip Brackets"; btn.style.background = "rgba(255,255,255,0.1)"; btn.style.borderColor = "rgba(255,255,255,0.2)"; }
+            if (window.speechSynthesis.speaking || window.speechSynthesis.paused) { isCancelingForToggle = true; window.speechSynthesis.cancel(); setTimeout(() => { isCancelingForToggle = false; playNextSentence(); }, 100); }
         };
+        window.closeTts = function() { window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none"; ttsSentences = []; currentSentenceIndex = 0; };
 
-        window.closeTts = function() {
-            window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none";
-            ttsSentences = []; currentSentenceIndex = 0;
-        };
-
-
-        // --- 6. BACKGROUND WEBHOOK LOGGING ---
-        function syncToSheets(question, answer, provider) {
-            fetch(GOOGLE_SHEETS_WEBHOOK, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "log", type: "search", question: question, answer: answer.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini" }) }).catch(e => console.log("Google Sheets sync failed."));
-        }
-
-        // --- 7. INITIALIZATION ---
+        // --- 7. INITIALIZATION & TRACKER ---
         document.addEventListener("DOMContentLoaded", () => {
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai">
                     <div class="bubble">
                         👋 <b>Welcome to Deep Search!</b><br><br>
-                        1. <b>➕ Button:</b> Attach a PDF or use the Camera.<br>
+                        1. <b>➕ Button:</b> Attach a PDF, Camera, or Generate an Image!<br>
                         2. <b>Model:</b> Choose Gemini, Groq, or Cloudflare.<br>
                         3. <b>Search:</b> Type any question; I will answer it.<br>
                         <br><i style="color: var(--muted); font-size: 13px;">Note: I will remember your PDF and conversation during our chat!</i>
@@ -450,21 +397,9 @@
             startApiTracker();
         });
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const overlay = document.getElementById("overlay");
-            const active = !sidebar.classList.contains("active");
-            sidebar.classList.toggle("active", active);
-            overlay.classList.toggle("active", active);
-            document.body.classList.toggle("sidebar-open", active);
-        }
+        function toggleSidebar() { const sidebar = document.getElementById("sidebar"); const overlay = document.getElementById("overlay"); const active = !sidebar.classList.contains("active"); sidebar.classList.toggle("active", active); overlay.classList.toggle("active", active); document.body.classList.toggle("sidebar-open", active); }
         function toggleAttachmentMenu() { const menu = document.getElementById('attachmentMenu'); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; }
-        function scrollToBottom() {
-            const c = document.getElementById("searchChatHistory");
-            if (!c) return;
-            requestAnimationFrame(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }));
-            setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }), 80);
-        }
+        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); if (!c) return; requestAnimationFrame(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" })); setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }), 80); }
         
         function clearSearchChat() {
             if(confirm("Are you sure you want to clear this chat and memory?")) {
@@ -488,15 +423,21 @@
                 const now = new Date(); const laTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" })); const nextMidnight = new Date(laTime); nextMidnight.setHours(24, 0, 0, 0);
                 let diffMs = nextMidnight - laTime; let h = Math.floor(diffMs / (1000 * 60 * 60)), m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)), s = Math.floor((diffMs % (1000 * 60)) / 1000);
                 if (h === 24) { h = 0; m = 0; s = 0; } const pad = (num) => num.toString().padStart(2, '0');
-                if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { visionReqs = 0; textReqs = 0; localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); hasResetToday = true; updateTrackerDisplay(); } else if (laTime.getHours() !== 0) { hasResetToday = false; }
+                if (laTime.getHours() === 0 && laTime.getMinutes() === 0 && !hasResetToday) { 
+                    visionReqs = 0; textReqs = 0; 
+                    localStorage.setItem('visionReqs', '0'); localStorage.setItem('textReqs', '0'); 
+                    localStorage.setItem('imgGenReqs', '0'); // Reset Image Limit Daily
+                    hasResetToday = true; updateTrackerDisplay(); 
+                } else if (laTime.getHours() !== 0) { hasResetToday = false; }
                 const t = document.getElementById('apiTimer'); if(t) t.innerText = `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
             }, 1000);
         }
 
-        // --- 8. PERSISTENT PDF MEMORY ---
+        // --- 8. PERSISTENT PDF & CLEARANCE ---
         async function handlePdfUpload(event) {
             const file = event.target.files[0]; if (!file) return;
             if (file.type !== "application/pdf") return showStandaloneToast("⚠️ Only PDF files are supported!");
+            isImageGenMode = false; // Override Image mode
             showStandaloneToast("📄 Reading PDF..."); const fileReader = new FileReader();
             fileReader.onload = async function() {
                 const typedarray = new Uint8Array(this.result);
@@ -504,11 +445,23 @@
                     const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = `DOCUMENT NAME: ${file.name}\n`;
                     for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += `\n--- Page ${i} ---\n` + textContent.items.map(item => item.str).join(' '); }
                     persistentPdfMemory = fullText; const chip = document.getElementById("pdfPreviewChip");
-                    chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name; showStandaloneToast(`✅ PDF Attached!`);
+                    chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name;
+                    chip.querySelector('div').innerText = "📄";
+                    showStandaloneToast(`✅ PDF Attached!`);
                 } catch(e) { showStandaloneToast("❌ Error reading PDF."); }
             }; fileReader.readAsArrayBuffer(file);
         }
-        function clearPdfFile(e) { if(e) e.stopPropagation(); persistentPdfMemory = ""; document.getElementById("pdfUploadInput").value = ""; document.getElementById("pdfPreviewChip").style.display = "none"; }
+        
+        window.clearPdfFile = function(e) { 
+            if(e) e.stopPropagation(); 
+            persistentPdfMemory = ""; 
+            isImageGenMode = false;
+            document.getElementById("pdfUploadInput").value = ""; 
+            const chip = document.getElementById("pdfPreviewChip");
+            chip.style.display = "none"; 
+            document.getElementById("searchInput").placeholder = "Search web, ask a question...";
+            chip.querySelector('div').innerText = "📄";
+        };
 
         // --- 9. PRO CAMERA ENGINE ---
         let standaloneStream = null; let standaloneFacingMode = "environment"; let isStandaloneFlashOn = false;
@@ -520,7 +473,7 @@
                 setTimeout(async () => { if (standaloneFacingMode === "environment") { const track = standaloneStream.getVideoTracks()[0]; try { const cap = track.getCapabilities(); if (cap.torch) { isStandaloneFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } } catch(err) {} } }, 500);
             } catch(e) { showStandaloneToast("⚠️ Camera Error."); }
         }
-        async function openStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.add("active"); await startCameraTrack(); }
+        async function openStandaloneCamera() { isImageGenMode = false; document.getElementById("standaloneCameraModal").classList.add("active"); await startCameraTrack(); }
         function closeStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.remove("active"); if (standaloneStream) { const track = standaloneStream.getVideoTracks()[0]; try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; } isStandaloneFlashOn = false; updateFlashUI(); }
         async function switchStandaloneCamera() { standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment"; await startCameraTrack(); }
         async function toggleStandaloneFlash() { if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isStandaloneFlashOn = !isStandaloneFlashOn; await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] }); updateFlashUI(); } } catch(err){} }
@@ -532,14 +485,85 @@
         }
         function clearSearchImage(e) { if(e) e.stopPropagation(); standaloneCapturedImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-        // --- 10. CORE SEARCH LOGIC & API CALLS ---
+        // --- 10. CORE SEARCH & IMAGE GEN LOGIC ---
         async function runStandaloneSearch() {
             const inp = document.getElementById("searchInput"); const q = inp.value.trim(); 
             if(!q && !standaloneCapturedImage && !persistentPdfMemory) return; if(isProcessing) return; isProcessing = true;
-
             const chatContainer = document.getElementById("searchChatHistory");
             const selectedModel = document.getElementById("modelSelector").value;
-            
+
+            // ==========================================
+            // 🎨 NEW PUTER IMAGE GENERATOR BRANCH 🎨
+            // ==========================================
+            if (isImageGenMode) {
+                let imgGenReqs = parseInt(localStorage.getItem('imgGenReqs') || '0');
+                if (imgGenReqs >= DAILY_IMAGE_LIMIT) {
+                    showStandaloneToast("❌ LIMIT REACHED! Wait until tomorrow.");
+                    isProcessing = false;
+                    return;
+                }
+
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">🎨 <b>Generate Image:</b><br>${q}</div></div>`);
+                inp.value = ""; scrollToBottom();
+
+                const loadId = "load_" + Date.now();
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">Enhancing prompt with Gemini & Creating via Puter...</span></div></div>`);
+                scrollToBottom();
+
+                try {
+                    // Step 1: Gemini Enhances the prompt
+                    let sysPrompt = "You are a master AI Prompt Engineer. The user wants to generate an image. Rewrite their idea into a highly detailed, cinematic, and beautifully descriptive prompt for an AI image generator like DALL-E. Reply ONLY with the English prompt. NO quotes, NO extra text.";
+                    const response = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: q, providerOverride: "gemini" }) });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || "Gemini Failed");
+                    let enhancedPrompt = data.text.trim();
+
+                    // Step 2: Puter generates the Image (GPT/DALL-E underlying)
+                    let imageElement = await puter.ai.txt2img(enhancedPrompt);
+                    
+                    // Step 3: Securely convert to Base64 so it persists on reload!
+                    let base64Image = imageElement.src; 
+                    try {
+                        let fetchRes = await fetch(imageElement.src);
+                        let blob = await fetchRes.blob();
+                        base64Image = await new Promise((resolve) => {
+                            let reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch(err) { console.log("CORS block on blob, using raw src"); }
+
+                    // Update Tracker
+                    imgGenReqs++;
+                    localStorage.setItem('imgGenReqs', imgGenReqs);
+
+                    let finalHtml = `
+                        <div class="api-badge" style="background:rgba(16,185,129,0.1); border-color:#10b981; color:#10b981;">✨ BY PUTER & GEMINI</div>
+                        <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Enhanced Prompt:</div>
+                        <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
+                        
+                        <div style="position:relative; display:inline-block; margin-top:10px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3);" id="container_${loadId}">
+                            <button onclick="document.getElementById('container_${loadId}').style.display='none'" style="position:absolute; top:-12px; right:-12px; background:#e11d48; color:white; border:2px solid var(--bg-surface); border-radius:50%; width:32px; height:32px; cursor:pointer; font-weight:bold; z-index:10; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✕</button>
+                            <img src="${base64Image}" style="max-width:100%; border-radius:12px;" id="img_${loadId}">
+                        </div>
+
+                        <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
+                            <button class="btn-relative" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); downloadGeneratedImage('img_${loadId}')">📥 Download Image</button>
+                        </div>
+                    `;
+
+                    document.getElementById(loadId).querySelector('.bubble').innerHTML = finalHtml;
+                    saveToHistory('search', `Generate Image: ${q}`, finalHtml, null, "Puter");
+
+                    clearPdfFile(); // Turn off Image Mode
+                } catch (error) { 
+                    document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; 
+                } finally { isProcessing = false; }
+                
+                return; // End branch
+            }
+            // ==========================================
+
             let displayQ = q || "Analyze this document."; let imgHtml = standaloneCapturedImage ? `<img src="${standaloneCapturedImage}" class="bubble-img">` : '';
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${imgHtml}<div>${displayQ.replace(/\n/g, '<br>')}</div></div></div>`);
             inp.value = ""; scrollToBottom(); 
@@ -555,7 +579,6 @@
                 memoryContextString += "--- CURRENT QUESTION ---\n";
             }
 
-            // MATHJAX + LANGUAGE TOGGLE PROMPT UPDATE
             let sysPrompt = `You are an expert AI Assistant and Guide. 
             CRITICAL RULES:
             1. YOU MUST ANSWER ENTIRELY IN ${currentSearchLang.toUpperCase()}. DO NOT USE OTHER LANGUAGES.
@@ -578,7 +601,6 @@
                 let cleanAns = data.text.replace(/[\*&#_]/g, ''); let apiProvider = data.provider || selectedModel.toUpperCase(); 
                 
                 trackAPI(standaloneCapturedImage ? 'v' : 't');
-                syncToSheets(q || "PDF/Image Search", cleanAns, apiProvider);
                 sessionMessages.push({ q: q || "[Image/PDF Upload]", a: cleanAns });
                 saveToHistory('search', q || "[Document/Image Analysis]", cleanAns, standaloneCapturedImage, apiProvider);
                 
@@ -586,13 +608,12 @@
                 
                 const finalBubble = document.getElementById(loadId).querySelector('.bubble');
                 
-                // 📋 THE COPY BUTTON IS BACK IN ACTION!
                 finalBubble.innerHTML = `
                     <div class="api-badge">✨ BY ${apiProvider}</div>
                     <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
-                    <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; display:flex; gap: 10px;">
+                    <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
                         <button class="btn-relative" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); startTts('text_${loadId}')">🔊 Listen</button>
-                        <button class="btn-relative" style="background:rgba(255,255,255,0.05); color:#f8fafc; border:1px solid rgba(255,255,255,0.2); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); copyToClipboard('text_${loadId}')">📋 Copy</button>
+                        <button class="btn-relative" style="background:rgba(255,255,255,0.05); color:var(--text-main); border:1px solid var(--border-light); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); copyToClipboard('text_${loadId}')">📋 Copy</button>
                     </div>
                 `;
                 
@@ -607,14 +628,9 @@
         const restoreId = urlParams.get('restore');
         if (!restoreId) return;
 
-        // Wait 800ms to guarantee the page, CSS, and animations are 100% finished loading
         setTimeout(() => {
-            // Automatically hunt down the chat box or text area on the page
             let container = document.querySelector('.chat-scroll-area') || 
-                            document.getElementById('chatHistory') || 
-                            document.getElementById('searchChatHistory') ||
-                            document.getElementById('qaAnswerBox') ||
-                            document.getElementById('translatedText');
+                            document.getElementById('searchChatHistory');
                             
             if (!container) return;
 
@@ -622,9 +638,8 @@
                 let item = historyData.find(i => i.id == restoreId);
                 if (!item) return;
 
-                // 🛑 SCENARIO 1: It's a Chat Interface (Search, Image)
                 if (item.interactions && item.interactions.length > 0 && container.classList.contains('chat-scroll-area')) {
-                    container.innerHTML = ''; // Wipe the empty screen
+                    container.innerHTML = ''; 
                     
                     item.interactions.forEach((inter, index) => {
                         let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-width:100%; border-radius:16px; margin-bottom:15px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">` : '';
@@ -639,48 +654,21 @@
                             </div>
                             <div class="chat-msg chat-ai" style="animation: bounceInBubble 0.6s ease-out;">
                                 <div class="bubble" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 6px; box-shadow: var(--glass-shadow); display: flex; flex-direction: column;">
-                                    <div class="api-badge" style="display: inline-block; align-self: flex-start; background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 14px; font-size: 11px; font-weight: 900; margin-bottom: 20px; box-shadow: 0 4px 10px var(--primary-glow);">✨ BY ${inter.provider || "AI"}</div>
-                                    <div id="${textId}" style="margin-top:0; width:100%; overflow-x:auto;">${inter.answer.replace(/\n/g, '<br>')}</div>
                                     
-                                    <div class="action-buttons-container" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:25px; padding-top:15px; border-top:1px solid var(--border-light); width:100%;">
-                                        <button class="btn green" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; flex: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onclick="speakAndHighlight('${textId}')">🔊 Listen</button>
-                                        <button class="btn" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; flex: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onclick="copyToClipboard('${textId}')">📋 Copy</button>
-                                    </div>
+                                    <div id="${textId}" style="margin-top:0; width:100%; overflow-x:auto;">${inter.answer}</div>
+                                    
                                 </div>
                             </div>
                         `);
                     });
                     
-                    // Force the window to scroll to the newly injected text
                     setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
                     if (typeof showStandaloneToast === 'function') showStandaloneToast("🔄 Search Restored Successfully!");
                 } 
-                
-                // 🛑 SCENARIO 2: It's a Text Box Interface (Translator, Q&A)
-                else {
-                    let textId = `restored_text_box`;
-                    let ansText = item.interactions ? item.interactions[0].answer : item.answer;
-                    
-                    container.innerHTML = `
-                        <div class="api-badge" style="display: inline-block; background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 14px; font-size: 11px; font-weight: 900; margin-bottom: 20px;">✨ BY ${item.provider || "AI"}</div>
-                        <div id="${textId}" style="margin-top:0;">${ansText.replace(/\n/g, '<br>')}</div>
-                        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:25px; padding-top:15px; border-top:1px solid var(--border-light);">
-                            <button class="btn green" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; flex: 1;" onclick="speakAndHighlight('${textId}')">🔊 Listen</button>
-                            <button class="btn" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; flex: 1;" onclick="copyToClipboard('${textId}')">📋 Copy</button>
-                        </div>
-                    `;
-                    // Refill the input text box too
-                    if (document.getElementById('inputText')) document.getElementById('inputText').value = item.question || "";
-                    if (typeof showStandaloneToast === 'function') showStandaloneToast("🔄 Document Restored Successfully!");
-                }
 
-                // Safely render any Math/Physics equations (LaTeX)
-                if (window.MathJax) {
-                    MathJax.typesetPromise([container]).catch(e => console.log(e));
-                }
+                if (window.MathJax) { MathJax.typesetPromise([container]).catch(e => console.log(e)); }
             };
 
-            // Safely fetch from your LocalForage database, fallback to LocalStorage
             if (typeof localforage !== 'undefined') {
                 localforage.getItem('aiHistory').then(data => {
                     if (data && data.length > 0) forceInjectData(data);
@@ -690,7 +678,7 @@
                 forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
             }
             
-        }, 800); // 👈 THIS 800ms DELAY IS THE MAGIC FIX. IT WAITS FOR EVERYTHING TO BE READY.
+        }, 800); 
     });
 </script>
 <script src="ui-controls.js" defer></script>
