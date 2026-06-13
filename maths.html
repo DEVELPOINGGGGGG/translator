@@ -76,9 +76,16 @@
       <div class="menuBtn" onclick="toggleSidebar()">☰</div>
       <div class="appTitle">AI Pro Suite</div>
   </div>
-  <button id="langToggleBtn" onclick="toggleMathLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
-      🌍 <span id="langText">HI</span>
-  </button>
+  <div style="display: flex; align-items: center; gap: 10px;">
+      <select id="modelSelect" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; outline: none;">
+          <option value="flash-lite" style="color: black;">⚡ Flash</option>
+          <option value="pro" style="color: black;">🚀 Pro</option>
+      </select>
+      
+      <button id="langToggleBtn" onclick="toggleMathLanguage()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;">
+          🌍 <span id="langText">HI</span>
+      </button>
+  </div>
 </div>
 
 <div class="apiTracker">
@@ -91,8 +98,8 @@
 <div class="sidebar" id="sidebar">
   <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
   <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
@@ -166,7 +173,7 @@
 
 <script>
     /* =======================================================
-       📊 0. API TRACKER SYSTEM
+       📊 0. API TRACKER SYSTEM (FIXED DOMContentLoaded)
     ======================================================= */
     let visionReqs = parseInt(localStorage.getItem('visionReqs')) || 0;
     let textReqs = parseInt(localStorage.getItem('textReqs')) || 0;
@@ -349,7 +356,7 @@
     }
     function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
 
-    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
+    document.getElementById("mathInstructionInput").addEventListener("keydown", function(e) {
         if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
     });
 
@@ -385,6 +392,7 @@
         return id;
     }
 
+    // 🚀 INJECTS TEXT EXPLANATION + STRICT PAPER LABEL
     function updateAiBubbleWithContent(lId, text, provider, paperHtml = "") {
         const loadingBubble = document.getElementById(lId);
         if (!loadingBubble) return;
@@ -401,8 +409,7 @@
         scrollToBottom();
     }
 
-    // CORE MATH ENGINE
-    // THIS IS THE FIX: I added the missing closing brace at the end of this function.
+    // CORE MATH ENGINE (STRICT PROMPT OVERRIDE)
     async function executeMathFlow() {
         if (isProcessing) return;
         const inputEl = document.getElementById("mathInstructionInput");
@@ -416,23 +423,28 @@
         let lId = appendAiLoading();
         isProcessing = true;
 
+        // 🚀 PROMPT ENGINE: FORCES GREETING AVOIDANCE AND TAG ISOLATION
         const sysPrompt = `You are an expert math tutor. STRICT RULES:
-1. YOU MUST FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+1. GREETINGS: If the user says "hi", "hello", or asks a non-math question, ONLY reply with a normal friendly response in ${currentMathLang}. DO NOT generate any math problems or use the format below.
+2. MATH QUESTIONS: You MUST format your response EXACTLY like this:
 
-QUESTION [Number]: [Write the exact question here]
-SOLUTION-[WRITE THE EXACT SOLUTION STEP BY STEP OF THE QUESTION EXPLAIN IN 2-3 LINE HERE]
-EXPLANATION- [Write a short text explanation here in ${currentMathLang}. NO MATH FORMULAS HERE.]
+QUESTION 1: [Write the exact question here]
+SOLUTION- [Write ONLY the final answer or a direct 1-line mathematical result. NO EXPLANATION.]
+EXPLANATION- [Write a short text explanation here in ${currentMathLang}. NO MATH FORMULAS.]
 
-<MATH_PAPER>
-[Write the pure step-by-step mathematical formulas using standard LaTeX. DO NOT LEAVE THIS BLANK. AND DONT WIRTE<MATH> AND </MATH> YOU MUST PUT THE MATH INSIDE THESE TAGS. DO NOT write words inside here, ONLY MATH.]
-</MATH_PAPER>
-
-If you fail to put the math inside the <MATH_PAPER> tags, the system will crash.`;
+<MATH>
+[Write the pure step-by-step mathematical formulas using standard LaTeX. DO NOT LEAVE THIS BLANK. DO NOT write words inside here, ONLY MATH.]
+</MATH>`;
 
         let activeImage = currentMathImage || getLastContextImage('math');
         let finalPrompt = `${sysPrompt}\n\n${historyContext}\n\nCurrent Task: ${userText}`;
         
-        let payload = { userPrompt: finalPrompt };
+        // 🚀 GRAB THE SELECTED MODEL FROM THE DROPDOWN
+        let selectedModel = document.getElementById("modelSelect").value;
+        let payload = { 
+            userPrompt: finalPrompt,
+            providerOverride: selectedModel
+        };
         
         if (activeImage) {
             payload.imageBase64 = activeImage;
@@ -454,18 +466,21 @@ If you fail to put the math inside the <MATH_PAPER> tags, the system will crash.
             let aiText = data.text;
             let paperHtml = "";
 
-            let match = aiText.match(/<MATH_PAPER>([\s\S]*?)<\/MATH_PAPER>/i);
+            // 🚀 RUTHLESS PARSER: Eliminates <MATH> tags entirely and prevents empty papers
+            let match = aiText.match(/<MATH(?:_PAPER)?>([\s\S]*?)<\/MATH(?:_PAPER)?>/i);
             if (match) {
                 let mathContent = match[1].trim();
-                aiText = aiText.replace(/<MATH_PAPER>[\s\S]*?<\/MATH_PAPER>/i, '').trim();
+                mathContent = mathContent.replace(/\*\*(.*?)\*\*/g, '$1'); // Clean any stray markdown
                 
                 let paperId = "paper_" + Date.now();
                 paperHtml = `
                 <div style="font-weight:bold; color:#3b82f6; margin-top:20px; margin-bottom:5px; font-size:14px;">IMAGE OF SOLUTION-</div>
                 <div class="digital-paper-container" id="${paperId}">${mathContent.replace(/\n/g, '<br>')}</div>`;
-            } else {
-                aiText = aiText.replace(/<MATH_PAPER>/g, '').replace(/<\/MATH_PAPER>/g, '');
-            }
+            } 
+            
+            // Remove the tags from the main text response completely, whether there was a match or not.
+            aiText = aiText.replace(/<MATH(?:_PAPER)?>[\s\S]*?<\/MATH(?:_PAPER)?>/gi, '').trim();
+            aiText = aiText.replace(/<\/?MATH(?:_PAPER)?>/gi, '').trim();
 
             saveToHistory('math', userText || "Solve this image", aiText + "\n" + (match ? match[1] : ""), activeImage, data.provider);
             updateAiBubbleWithContent(lId, aiText, data.provider || "Gemini", paperHtml);
@@ -477,7 +492,7 @@ If you fail to put the math inside the <MATH_PAPER> tags, the system will crash.
             isProcessing = false;
             updateAiBubbleWithContent(lId, "❌ Math Solver Error: " + err.message, "System");
         }
-    } // <-- I MISSED THIS BRACKET IN THE PREVIOUS MESSAGES! THIS FIXES EVERYTHING.
+    }
 
     // WHATSAPP SHARE ENGINE
     window.openWhatsAppModal = function() {
