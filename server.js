@@ -12,7 +12,8 @@ dns.setDefaultResultOrder('ipv4first');
 // -------------------------------------------------------------------
 
 const port = process.env.PORT || 10000;
-
+const app = express(); // <--- THIS LINE WAS MISSING
+app.use(express.json({ limit: '50mb' }));
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
