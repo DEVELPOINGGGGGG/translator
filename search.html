@@ -9,15 +9,13 @@
     
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
-    
     <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     
     <script>
         MathJax = { 
             options: {
-                ignoreHtmlClass: 'code-box', // Forces MathJax to NEVER touch code
+                ignoreHtmlClass: 'code-box', 
                 processHtmlClass: 'markdown-body'
             },
             tex: { 
@@ -41,10 +39,8 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; 
-            padding: 0;
+            margin: 0; padding: 0;
             overflow-x: hidden;
-            background-color: var(--bg-main);
         }
 
         body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { 
@@ -60,7 +56,7 @@
             opacity: 0.7; 
         }
 
-        /* --- Scrollable Math Equations (Fixes layout breaks) --- */
+        /* Scrollable Math Equations */
         mjx-container[jax="CHTML"][display="true"] {
             overflow-x: auto !important;
             overflow-y: hidden !important;
@@ -68,16 +64,8 @@
             padding-bottom: 5px;
             scrollbar-width: thin;
         }
-        
-        mjx-container[jax="CHTML"][display="true"]::-webkit-scrollbar {
-            height: 6px;
-        }
-        mjx-container[jax="CHTML"][display="true"]::-webkit-scrollbar-thumb {
-            background-color: var(--primary);
-            border-radius: 10px;
-        }
 
-        /* --- TRUE FOCUS MODE (Hides UI for distraction-free reading) --- */
+        /* TRUE FOCUS MODE */
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
         body.focus-mode #searchChatHistory { 
@@ -110,14 +98,10 @@
             align-items: center; 
             transition: transform 0.2s ease;
         }
-        #exitFocusBtn:hover { 
-            transform: scale(1.1); 
-        }
-        body.focus-mode #exitFocusBtn { 
-            display: flex; 
-        }
+        #exitFocusBtn:hover { transform: scale(1.1); }
+        body.focus-mode #exitFocusBtn { display: flex; }
 
-        /* --- Global Settings Modal --- */
+        /* Global Settings Modal */
         #settingsModal { 
             display: none; 
             position: fixed; 
@@ -128,7 +112,6 @@
             justify-content: center; 
             align-items: center; 
         }
-        
         .settings-content { 
             background: var(--bg-surface); 
             border: 2px solid var(--primary); 
@@ -138,17 +121,12 @@
             box-shadow: 0 15px 40px rgba(0,0,0,0.5); 
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
-        
-        @keyframes popIn { 
-            0% { transform: scale(0.8); opacity: 0; } 
-            100% { transform: scale(1); opacity: 1; } 
-        }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
         .setting-row { 
             display: flex; align-items: center; justify-content: space-between; 
             margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; 
         }
-        
         .setting-select, .setting-input { 
             background: var(--input-bg); border: 1px solid var(--border-light); 
             color: var(--text-main); padding: 8px; border-radius: 8px; 
@@ -161,13 +139,9 @@
             color: var(--text-main); padding: 6px; border-radius: 6px; 
             font-size: 11px; cursor: pointer; transition: 0.2s;
         }
-        .font-btn.active { 
-            background: var(--primary); 
-            color: white; 
-            border-color: var(--primary); 
-        }
+        .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* --- AI Thinking Animation --- */
+        /* AI Thinking Animation */
         .ai-thinking-pulse { display: flex; align-items: center; gap: 10px; }
         .pulse-orb { 
             width: 15px; height: 15px; border-radius: 50%; 
@@ -187,12 +161,7 @@
             font-size: 11px; font-weight: bold; cursor: pointer; transition: var(--transition-speed);
         }
         .mode-toggle-btn:hover { border-color: var(--primary); }
-        .mode-toggle-btn.active { 
-            background: var(--primary); 
-            color: white; 
-            border-color: var(--primary); 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
-        }
+        .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
 
         /* Markdown Styles */
         .markdown-body { line-height: 1.6; }
@@ -208,7 +177,7 @@
             opacity: 0.9; display: flex; align-items: center; gap: 5px; 
         }
 
-        /* --- THEME FLIPPING CODE BOX --- */
+        /* THEME FLIPPING CODE BOX */
         .code-box { 
             background:#0d1117; color:#c9d1d9; border-radius:8px; 
             margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; 
@@ -218,23 +187,15 @@
             background:#161b22; padding:8px 15px; display:flex; 
             justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; 
         }
-        .code-body { 
-            padding:15px; overflow-x:auto; font-size:13px; 
-            white-space:pre-wrap; line-height: 1.5; 
-        }
+        .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; line-height: 1.5; }
         .copy-btn { 
             background:#21262d; border:1px solid #30363d; color:#c9d1d9; 
             padding:5px 12px; border-radius:6px; cursor:pointer; 
             font-weight:bold; font-size:11px; transition: 0.2s; 
         }
-        .copy-btn:hover { 
-            background: #30363d; transform: translateY(-1px); 
-        }
-        .play-btn { 
-            background:#10b981 !important; color:white !important; border-color:#059669 !important; 
-        }
+        .copy-btn:hover { background: #30363d; transform: translateY(-1px); }
+        .play-btn { background:#10b981 !important; color:white !important; border-color:#059669 !important; }
 
-        /* Automatic Dark Mode Override for System Preferences */
         @media (prefers-color-scheme: dark) {
             .code-box { background:#f6f8fa; color:#24292f; border-color:#d0d7de; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
             .code-header { background:#eaeef2; border-bottom:1px solid #d0d7de; }
@@ -244,7 +205,7 @@
 
         /* COMPACT OPTIMIZED IMAGE RENDERING CONTAINER */
         .ai-generated-img-container {
-            max-width: 320px; /* Forces generated images to not be too huge */
+            max-width: 320px; 
             width: 100%;
             border-radius: 12px; 
             overflow: hidden; 
@@ -253,28 +214,14 @@
             border: 2px solid var(--border-light);
             transition: transform 0.2s ease;
         }
-        .ai-generated-img-container:hover {
-            transform: scale(1.02);
-        }
-        .ai-generated-img-container img {
-            width: 100%;
-            height: auto;
-            display: block;
-            cursor: pointer;
-        }
+        .ai-generated-img-container:hover { transform: scale(1.02); }
+        .ai-generated-img-container img { width: 100%; height: auto; display: block; cursor: pointer; }
 
-        /* User Uploaded Chips Clickable Style */
-        .uploaded-thumbnail-frame {
-            position: relative;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .uploaded-thumbnail-frame:hover {
-            opacity: 0.85;
-        }
+        /* User Uploaded Chips */
+        .uploaded-thumbnail-frame { position: relative; flex-shrink: 0; cursor: pointer; transition: opacity 0.2s; }
+        .uploaded-thumbnail-frame:hover { opacity: 0.85; }
 
-        /* Action Row Utility Controls */
+        /* Action Row */
         .action-row { 
             margin-top:15px; border-top:1px solid var(--border-light); 
             padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; 
@@ -285,16 +232,10 @@
             font-size:12px; cursor:pointer; font-weight:bold; 
             display:flex; align-items:center; gap:4px; transition: 0.2s;
         }
-        .action-btn:hover { 
-            background: var(--primary); color: white; 
-            border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
-        }
+        .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
-        /* --- GLOBAL TOP-CORNER FEEDBACK SYSTEM --- */
-        .global-options-btn {
-            background: none; border: none; font-size: 24px; color: var(--text-main); 
-            cursor: pointer; padding: 0 5px; transition: color 0.2s;
-        }
+        /* GLOBAL TOP-CORNER FEEDBACK SYSTEM */
+        .global-options-btn { background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; padding: 0 5px; transition: color 0.2s; }
         .global-options-btn:hover { color: var(--primary); }
         
         #globalOptionsMenu {
@@ -304,67 +245,31 @@
             z-index: 99999; flex-direction: column; min-width: 140px; overflow: hidden;
             animation: slideDown 0.2s ease;
         }
-        @keyframes slideDown { 
-            from { opacity: 0; transform: translateY(-10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
         #globalOptionsMenu button { 
             background: transparent; border: none; color: var(--text-main); 
             padding: 12px 15px; font-size: 13px; font-weight: bold; 
             text-align: left; cursor: pointer; width: 100%; transition: 0.2s;
         }
-        #globalOptionsMenu button:hover { 
-            background: var(--input-bg); color: var(--primary); 
-        }
+        #globalOptionsMenu button:hover { background: var(--input-bg); color: var(--primary); }
 
         /* Compact Feedback Overlay */
-        .feedback-overlay { 
-            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); 
-            backdrop-filter: blur(4px); z-index:100005; justify-content:center; align-items:center; 
-        }
-        .feedback-box { 
-            background:var(--bg-surface); border:2px solid var(--primary); 
-            border-radius:16px; padding:20px; width:90%; max-width:320px; 
-            box-shadow:0 15px 40px rgba(0,0,0,0.6); animation: popIn 0.2s ease;
-        }
+        .feedback-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index:100005; justify-content:center; align-items:center; }
+        .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:20px; width:90%; max-width:320px; box-shadow:0 15px 40px rgba(0,0,0,0.6); animation: popIn 0.2s ease; }
 
-        /* --- SANDBOXED HTML PREVIEW MODAL --- */
-        #htmlPreviewModal { 
-            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); 
-            z-index:100005; flex-direction:column; 
-        }
-        .preview-header { 
-            display:flex; justify-content:space-between; align-items:center; 
-            padding:12px 20px; background:#161b22; color:white; font-weight:bold; 
-            font-family:sans-serif; border-bottom: 1px solid #30363d; 
-        }
-        .preview-close { 
-            background:#ef4444; color:white; border:none; border-radius:8px; 
-            padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; 
-            box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; 
-        }
-        .preview-close:hover { 
-            background:#dc2626; transform: translateY(-1px); 
-        }
-        #htmlPreviewFrame { 
-            flex:1; width:100%; border:none; background:white; 
-        } 
+        /* SANDBOXED HTML PREVIEW MODAL */
+        #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100005; flex-direction:column; }
+        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; border-bottom: 1px solid #30363d; }
+        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
+        .preview-close:hover { background:#dc2626; transform: translateY(-1px); }
+        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; } 
 
         /* Floating Image Chip */
-        #floatingModeChip { 
-            display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); 
-            color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; 
-            font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); 
-        }
-        #floatingModeChip button { 
-            background:rgba(255,255,255,0.2); border:none; color:white; font-weight:bold; 
-            border-radius:50%; width:18px; height:18px; display:flex; align-items:center; 
-            justify-content:center; cursor:pointer; font-size:10px; 
-        }
+        #floatingModeChip { display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); }
+        #floatingModeChip button { background:rgba(255,255,255,0.2); border:none; color:white; font-weight:bold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:10px; }
         #floatingModeChip button:hover { background:rgba(255,255,255,0.4); }
 
-        /* Media Container Scroll fixes */
         #multiImageManager::-webkit-scrollbar { height: 6px; }
         #multiImageManager::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
     </style>
@@ -379,7 +284,7 @@
         
         <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
             <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main); transition: 0.2s;">🧘‍♂️</button>
-            <div class="menuBtn" style="font-size: 20px; transition: 0.2s;" onclick="clearSearchChat();" title="Clear All Chat">🗑️</div>
+            <button class="menuBtn" style="font-size: 20px; transition: 0.2s; background:none; border:none; cursor:pointer;" onclick="clearSearchChat();" title="Clear All Chat">🗑️</button>
             <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="System Settings" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--primary); transition: 0.2s;">⚙️</button>
             
             <div style="position:relative;">
@@ -535,7 +440,7 @@
 
     <script>
         /**
-         * GLOBAL STATE VARIABLES
+         * GLOBAL STATE VARIABLES & SESSION TRACKER
          */
         let appHistory = [];
         let sessionMessages = [];
@@ -546,6 +451,7 @@
         let activeSearchMode = "web"; 
         let imageGenerationModeActive = false; 
         let currentFullscreenBase64 = "";
+        let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
 
         // --------------------------------------------
         // MARKDOWN & CODE BOX RENDERING SYSTEM
@@ -668,11 +574,22 @@
             try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) {}
         }
 
+        // --- SESSION RESTORATION LOGIC (FLAWLESS MEMORY) ---
         try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
         try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
 
         document.addEventListener("DOMContentLoaded", () => {
-            if (sessionMessages.length === 0 && !new URLSearchParams(window.location.search).get('restore')) {
+            const restoreId = new URLSearchParams(window.location.search).get('restore');
+            if (restoreId) {
+                setTimeout(() => {
+                    let item = appHistory.find(i => i.id == restoreId);
+                    if (item && item.interactions) {
+                        // Rebuild entire session memory array flawlessly
+                        sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
+                        showToast("🧠 Session memory fully restored.");
+                    }
+                }, 500);
+            } else if (sessionMessages.length === 0) {
                 showWelcomeMessage();
             }
         });
@@ -683,14 +600,16 @@
                 <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
                     <div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));">
                         <div class="ai-signature">✨ DEEP AI PRO SYSTEM</div>
-                        <b style="color:var(--primary); font-size:18px;">👋 Dynamic Routing Enabled.</b><br><br>
+                        <b style="color:var(--primary); font-size:18px;">👋 Memory System & Routing Restored.</b><br><br>
                         <div style="font-size:14px; line-height: 1.6;">
-                        • <b>Smart Quota Saver:</b> System now scans your prompt automatically. Standard chat uses fast APIs (1, 2). HTML/CSS Code requests automatically switch to Heavy APIs (5, 4, 3) to protect your Pro limits!<br>
-                        • <b>Click to Fullscreen:</b> Click any photo (Uploaded thumbnails or AI generated results) to view full screen with instant download support.<br>
-                        • <b>Bracket Localization Engine:</b> Technical references translate inside <code>English(Translated)</code> layout masks.<br>
+                        • <b>No Screen Hijacking:</b> Auto-scrolling during AI generation has been completely disabled. You are in full control.<br>
+                        • <b>True Fallback Reporting:</b> If API 5 fails, the UI will honestly tell you exactly which API (e.g., API 1) handled the request.<br>
+                        • <b>Smart Code Isolation:</b> When asking for code, the system bypasses Hindi translation and writes unified, unbreakable code files.<br>
+                        • <b>True Session Memory:</b> AI will now perfectly remember every message in your current chat array.<br>
                         </div>
                     </div>
                 </div>`);
+            // Only scroll ONCE on load.
             safeScroll();
         }
 
@@ -768,6 +687,7 @@
             }, 2500); 
         }
         
+        // This is ONLY called when the user hits Send. NEVER during AI generation.
         function safeScroll() { 
             const c = document.getElementById("searchChatHistory"); 
             c.scrollTop = c.scrollHeight; 
@@ -785,12 +705,25 @@
                 showToast("🧠 Memory Wiped."); 
             } 
         }
+        
+        function clearSearchChat() { 
+            if(confirm("Clear chat and reset memory for this session?")) { 
+                document.getElementById("searchChatHistory").innerHTML = ''; 
+                sessionMessages = []; 
+                uploadedImages = []; 
+                updateImageUI(); 
+                clearPdfFile(); 
+                currentSessionId = Date.now(); // Reset session ID
+                showWelcomeMessage(); 
+            } 
+        }
 
         function copyResponseToClipboard(textElementId) {
             navigator.clipboard.writeText(document.getElementById(textElementId).innerText);
             showToast("📋 Response text copied!");
         }
 
+        // --- NON-INTRUSIVE ADAPTIVE SPEED TYPEWRITER ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullHtml;
@@ -798,9 +731,12 @@
             targetElement.innerHTML = "";
             let nodeIndex = 0;
 
+            // Strict Speed Mathematics:
+            // Short response (<500): ~7.5 seconds
+            // Long response (>500): ~22.5 seconds
             let totalLength = tempDiv.innerText.length || 1;
-            let targetDuration = totalLength < 200 ? 2000 : 6000;
-            let intervalTime = 15; 
+            let targetDuration = totalLength < 500 ? 7500 : 22500; 
+            let intervalTime = 30; // Smooth frame rate
             let totalTicks = targetDuration / intervalTime;
             let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
 
@@ -822,13 +758,13 @@
                         } else {
                             span.textContent += text.substring(charIndex, charIndex + textChunks);
                             charIndex += textChunks;
-                            safeScroll();
+                            // NO SAFESCROLL HERE! Screen stays perfectly still.
                         }
                     }, intervalTime);
                 } else {
                     targetElement.appendChild(currentNode);
                     nodeIndex++;
-                    safeScroll();
+                    // NO SAFESCROLL HERE! 
                     typeNextNode();
                 }
             }
@@ -957,7 +893,7 @@
                 </div>`);
             
             document.getElementById("searchInput").value = "";
-            safeScroll();
+            safeScroll(); // Scroll ONLY once when user hits send
 
             try {
                 const response = await fetch("/api/hf-search-image", { 
@@ -971,7 +907,7 @@
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = `
                         <div class="ai-signature">✨ BY FLUX ENGINE (RENDER API)</div>
                         <div class="ai-generated-img-container" onclick="openFullscreenImage('img_src_${loadId}')">
-                            <img src="${result.imageBase64}" id="img_src_${loadId}" title="Click to view full screen with download" onload="safeScroll()">
+                            <img src="${result.imageBase64}" id="img_src_${loadId}" title="Click to view full screen with download">
                         </div>`;
                     saveHistorySafe();
                 } else {
@@ -983,50 +919,38 @@
         }
 
         // --------------------------------------------
-        // 🚨 DYNAMIC INTENT PARSER & FALLBACK ROUTER 🚨
-        // This is the core fix to protect the user's Pro Quota.
-        // If code is requested -> Try Tiers 5, 4, 3 first.
-        // If normal text is requested -> Try Tiers 2, 1 first.
+        // EXECUTIVE MULTI-TIER API FALLBACK ROUTER
         // --------------------------------------------
-        async function executeWithSmartFallbackLoop(endpoint, requestBody, initialTier) {
-            
-            let userPromptText = requestBody.userPrompt ? requestBody.userPrompt.toLowerCase() : "";
-            
-            // 1. NLP Scanner for Coding Activity
-            const codingKeywords = ['code', 'html', 'css', 'javascript', 'js', 'python', 'java', 'c++', 'script', 'function', 'debug', 'error', 'programming', 'developer', 'react', 'node', 'tailwind'];
-            let isCodingRequest = codingKeywords.some(keyword => userPromptText.includes(keyword));
-
-            // 2. Build the Execution Priority Array based on Intent
+        async function executeWithSmartFallbackLoop(endpoint, requestBody, initialTier, isCodingRequest) {
             let tierExecutionSequence = [];
             
-            // If the user manually forced a setting in the dashboard dropdown, respect it first
+            // If user explicitly requests a specific tier, try it first
             if (initialTier !== "auto") {
                 tierExecutionSequence.push(initialTier);
             }
 
-            // Populate the rest of the fallback array based on the NLP scanner
+            // Dynamic Intent Router
             if (isCodingRequest) {
-                console.log("🛠️ Code Request Detected: Routing to High-Performance APIs (5, 4, 3)...");
+                console.log("🛠️ Code Request: Routing to High-Performance APIs (5, 4, 3)...");
                 tierExecutionSequence.push("api_5", "api_4", "api_3", "api_2", "api_1");
             } else {
-                console.log("📝 Standard Request Detected: Routing to Quota-Saver APIs (2, 1)...");
+                console.log("📝 Standard Request: Routing to Quota-Saver APIs (2, 1)...");
                 tierExecutionSequence.push("api_2", "api_1", "api_3", "api_4", "api_5");
             }
 
-            // Clean up any duplicates if the user manually selected one that is also in the auto-list
+            // Remove duplicates
             tierExecutionSequence = [...new Set(tierExecutionSequence)];
 
-            // Execute the API waterfall sequence
             for (let i = 0; i < tierExecutionSequence.length; i++) {
                 let activeTier = tierExecutionSequence[i];
                 console.log(`📡 Attempting pipeline processing on channel: ${activeTier}`);
                 
                 try {
-                    // Inject routing target payload flag
+                    // Inject active tier payload override so backend knows exactly what to hit
                     requestBody.providerOverride = activeTier;
-
+                    
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+                    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
                     const response = await fetch(endpoint, { 
                         method: "POST", 
@@ -1040,20 +964,21 @@
                     if (response.ok) {
                         const parsedData = await response.json();
                         if(parsedData && parsedData.text) {
-                            parsedData.provider = activeTier; // Inject tracker for signature UI
+                            // CRITICAL FIX: Explicitly report which activeTier actually succeeded
+                            parsedData.provider = activeTier;
                             return parsedData;
                         }
                     }
-                    console.warn(`⚠️ Channel ${activeTier} dropped request. Looping down to next tier...`);
+                    console.warn(`⚠️ Channel ${activeTier} dropped request. Looping down...`);
                 } catch(e) {
-                    console.warn(`⚠️ Execution failure on ${activeTier}. Error log:`, e.message);
+                    console.warn(`⚠️ Execution failure on ${activeTier}. Log:`, e.message);
                 }
             }
             throw new Error("All pipeline execution channels exhausted.");
         }
 
         // --------------------------------------------
-        // STANDALONE ROUTER PIPELINE DRIVER
+        // MASTER TEXT, VISION & HISTORY ENGINE
         // --------------------------------------------
         async function runStandaloneTextSearch() {
             const inp = document.getElementById("searchInput"); 
@@ -1076,14 +1001,21 @@
             uploadedImages.forEach(img => { 
                 userImgHtml += `<img src="${img}" onclick="openFullscreenImage('${img}')" style="max-height:80px; margin-right:5px; margin-bottom:5px; border-radius:8px; border:1px solid var(--border-light); display:inline-block; cursor:pointer;" title="Click to expand">`; 
             });
+            let currentImagesToSave = [...uploadedImages];
             let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
 
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
             inp.value = ""; 
+            
+            // Scroll ONCE when user submits prompt. Never during generation.
             safeScroll();
 
-            let requiresImageTrigger = false;
+            // NLP Scanner
             let lowercaseQ = q.toLowerCase();
+            const codingKeywords = ['code', 'html', 'css', 'javascript', 'js', 'python', 'java', 'c++', 'script', 'function', 'debug', 'error', 'programming', 'developer', 'react', 'node', 'tailwind'];
+            let isCodingRequest = codingKeywords.some(keyword => lowercaseQ.includes(keyword));
+
+            let requiresImageTrigger = false;
             if(lowercaseQ.includes("चित्र") || lowercaseQ.includes("नक्शा") || lowercaseQ.includes("map") || lowercaseQ.includes("diagram") || lowercaseQ.includes("picture")) {
                 requiresImageTrigger = true;
             }
@@ -1098,17 +1030,24 @@
                 </div>`);
             safeScroll();
 
-            const advancedPrompt = `You are an elite AI assistant. 
+            // ============================================
+            // 🚨 TRUE MEMORY & SMART CODE ISOLATOR 🚨
+            // ============================================
             
-CRITICAL LANGUAGE INSTRUCTION: You MUST write your ENTIRE response STRICTLY in ${selectedLang}. Do not drift into English unless absolutely necessary for programming code blocks.
+            // Inject complete, unfragmented chat history
+            let historyLog = sessionMessages.length > 0 
+                ? "PAST CONVERSATION MEMORY:\n" + sessionMessages.map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n---\n') + "\n\n" 
+                : "";
 
-BRAND/TERM FORMATTING: If you use any brand names, technical terms, or specific English words in the text, you MUST write the English word first, followed immediately by its ${selectedLang} translation in brackets. Example: Apple(ऐप्पल), crompton(क्रॉम्पटन), or Bluetooth(ब्लूटूथ).
+            // Dynamic Instruction Switcher
+            let promptDirectives = "";
+            if (isCodingRequest) {
+                promptDirectives = `CRITICAL CODING INSTRUCTION: You are generating code. You MUST provide the code as a SINGLE, complete, fully runnable file. DO NOT break it into parts. DO NOT output conversational filler like "Here is your code" or "Yah ek udaharan hai". ALL explanations and comments MUST be in English. NO HINDI allowed when coding. Tone: ${toneSelect}.`;
+            } else {
+                promptDirectives = `CRITICAL LANGUAGE INSTRUCTION: You MUST write your ENTIRE response STRICTLY in ${selectedLang}. Do not drift into English. BRAND/TERM FORMATTING: If you use any brand names or technical terms, you MUST write the English word first, followed immediately by its ${selectedLang} translation in brackets. Example: Apple(ऐप्पल). Tone: ${toneSelect}.`;
+            }
 
-Write the ABSOLUTE BEST, most detailed, modern, and responsive code or text possible. NEVER use or link to polyfill.io under any circumstances. Ensure perfect LaTeX for math. Structure your answer cleanly. Tone: ${toneSelect}. 
-
-User query: ${q}
-
-${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
+            const advancedPrompt = `You are an elite AI assistant.\n\n${promptDirectives}\n\n${historyLog}CURRENT QUERY: ${q}\n\n${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
 
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
@@ -1116,21 +1055,36 @@ ${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
                     ? { imageBase64: imageToUseForApi, userPrompt: advancedPrompt } 
                     : { systemPrompt: "You are an elite AI system.", userPrompt: advancedPrompt };
                 
-                // Route query through the new Dynamic Intent Parser
-                const data = await executeWithSmartFallbackLoop(endpoint, basePayload, selectedTierOnStartup);
+                const data = await executeWithSmartFallbackLoop(endpoint, basePayload, selectedTierOnStartup, isCodingRequest);
                 
-                let activeResolvedChannel = data.provider ? data.provider.toUpperCase() : "SYSTEM ROUTER";
+                // CRITICAL FIX: Transparently report the exact API that succeeded
+                let activeResolvedChannel = data.provider ? data.provider.toUpperCase().replace('_', ' ') : "SYSTEM ROUTER";
+                if (selectedTierOnStartup !== "auto" && activeResolvedChannel !== selectedTierOnStartup.toUpperCase().replace('_', ' ')) {
+                    activeResolvedChannel += " (FALLBACK)";
+                }
+
                 let cleanAns = data.text;
 
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
                     cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
                 }
 
+                // Add to perfect session memory array
+                sessionMessages.push({ q: q, a: cleanAns, imgs: currentImagesToSave });
+                
+                let existingSession = appHistory.find(s => s.id == currentSessionId);
+                if (existingSession) {
+                    existingSession.interactions.push({ question: q, answer: cleanAns, image: currentImagesToSave[0] });
+                } else {
+                    appHistory.unshift({ id: currentSessionId, type: 'search', title: q.substring(0, 20), interactions: [{ question: q, answer: cleanAns, image: currentImagesToSave[0] }] });
+                }
+                saveHistorySafe();
+
                 let processedMathAns = processMath(cleanAns);
                 let finalHtml = marked.parse(processedMathAns);
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-signature">✨ RESOLVED VIA CHANNEL: ${activeResolvedChannel.replace('_', ' ')}</div>
+                    <div class="ai-signature">✨ RESOLVED VIA: ${activeResolvedChannel}</div>
                     <div id="text_${loadId}" class="markdown-body"></div>
                     <div class="action-row">
                         <button class="action-btn" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button>
@@ -1145,13 +1099,13 @@ ${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
                     }
                 });
             } catch (err) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Pipeline Failure: All routing paths dropped connection or server is experiencing an outage.</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Pipeline Failure: All routing paths dropped connection. Backend may be offline.</span>`;
             } finally {
                 isProcessing = false; 
                 document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
                 uploadedImages = []; 
                 updateImageUI(); 
-                safeScroll();
+                // Do NOT call safeScroll() here. Let user stay where they are reading.
             }
         }
     </script>
