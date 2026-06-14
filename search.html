@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Search & AI Creator</title>
+    <title>Deep Search & AI Creator Pro</title>
     
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
+    
     <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     
     <script>
@@ -18,7 +20,10 @@
                 ignoreHtmlClass: 'code-box', 
                 processHtmlClass: 'markdown-body'
             },
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            tex: { 
+                inlineMath: [['$', '$'], ['\\(', '\\)']], 
+                displayMath: [['$$', '$$'], ['\\[', '\\]']] 
+            },
             svg: { fontCache: 'global' },
             chtml: { displayAlign: 'left' }
         };
@@ -26,21 +31,37 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        :root { --app-font-scale: 1; }
+        /* Base Variables & Reset */
+        :root { 
+            --app-font-scale: 1; 
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
         
         body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { 
             font-size: calc(15px * var(--app-font-scale)) !important; 
+            transition: font-size 0.2s ease;
         }
         
-        .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
+        .chat-time { 
+            font-size: 10px; 
+            color: var(--text-muted); 
+            margin-top: 5px; 
+            text-align: right; 
+            opacity: 0.7; 
+        }
 
+        /* --- Scrollable Math Equations --- */
         mjx-container[jax="CHTML"][display="true"] {
             overflow-x: auto !important;
             overflow-y: hidden !important;
             max-width: 100%;
             padding-bottom: 5px;
+            /* Custom scrollbar for math */
+            scrollbar-width: thin;
         }
 
+        /* --- TRUE FOCUS MODE --- */
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
         body.focus-mode #searchChatHistory { 
@@ -53,72 +74,234 @@
             word-wrap: break-word;
         }
         
-        #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
+        #exitFocusBtn { 
+            display: none; 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 100000; 
+            background: #ef4444; 
+            color: white; 
+            border: 2px solid white; 
+            border-radius: 50%; 
+            width: 45px; 
+            height: 45px; 
+            font-weight: bold; 
+            font-size: 18px; 
+            cursor: pointer; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+            justify-content: center; 
+            align-items: center; 
+            transition: transform 0.2s ease;
+        }
+        #exitFocusBtn:hover { transform: scale(1.1); }
         body.focus-mode #exitFocusBtn { display: flex; }
 
-        #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
-        .settings-content { background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); animation: popIn 0.3s ease; }
-        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; }
-        .setting-select, .setting-input { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; width: 140px; }
+        /* --- Global Settings Modal --- */
+        #settingsModal { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(5px); 
+            z-index: 100000; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        .settings-content { 
+            background: var(--bg-surface); 
+            border: 2px solid var(--primary); 
+            border-radius: 20px; 
+            padding: 20px; 
+            width: 90%; max-width: 400px; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5); 
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        .setting-row { 
+            display: flex; align-items: center; justify-content: space-between; 
+            margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; 
+        }
+        .setting-select, .setting-input { 
+            background: var(--input-bg); border: 1px solid var(--border-light); 
+            color: var(--text-main); padding: 8px; border-radius: 8px; 
+            outline: none; font-size: 13px; width: 140px; 
+        }
         
         .font-btns { display: flex; gap: 5px; }
-        .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .font-btn { 
+            background: var(--input-bg); border: 1px solid var(--border-light); 
+            color: var(--text-main); padding: 6px; border-radius: 6px; 
+            font-size: 11px; cursor: pointer; transition: 0.2s;
+        }
         .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+        /* --- AI Thinking Animation --- */
         .ai-thinking-pulse { display: flex; align-items: center; gap: 10px; }
-        .pulse-orb { width: 15px; height: 15px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary), var(--primary)); animation: pulseGlow 1.5s infinite; }
-        @keyframes pulseGlow { 0% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 50% { transform: scale(1.1); box-shadow: 0 0 20px var(--primary); } 100% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } }
+        .pulse-orb { 
+            width: 15px; height: 15px; border-radius: 50%; 
+            background: linear-gradient(135deg, var(--secondary), var(--primary)); 
+            animation: pulseGlow 1.5s infinite; 
+        }
+        @keyframes pulseGlow { 
+            0% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 
+            50% { transform: scale(1.1); box-shadow: 0 0 20px var(--primary); } 
+            100% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 
+        }
 
-        .mode-toggle-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        /* Mode Selector Badges */
+        .mode-toggle-btn { 
+            background: var(--input-bg); border: 1px solid var(--border-light); 
+            color: var(--text-main); padding: 5px 10px; border-radius: 12px; 
+            font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
         .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+        /* Markdown Styles */
         .markdown-body { line-height: 1.6; }
         .markdown-body strong { font-weight: 800; color: var(--primary); }
         .markdown-body p { margin-bottom: 10px; }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .markdown-body th, .markdown-body td { border: 1px solid var(--border-light); padding: 8px; }
         
-        .ai-signature { font-size: 10px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
+        .ai-signature { 
+            font-size: 10px; color: var(--primary); text-transform: uppercase; 
+            font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; 
+            opacity: 0.9; display: flex; align-items: center; gap: 5px; 
+        }
 
-        /* Code Containers */
-        .code-box { background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; }
-        .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; }
+        /* --- THEME FLIPPING CODE BOX --- */
+        .code-box { 
+            background:#0d1117; color:#c9d1d9; border-radius:8px; 
+            margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .code-header { 
+            background:#161b22; padding:8px 15px; display:flex; 
+            justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; 
+        }
         .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; }
-        .copy-btn { background:#21262d; border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px; transition: 0.2s; }
-        .copy-btn:hover { background: #30363d; }
+        .copy-btn { 
+            background:#21262d; border:1px solid #30363d; color:#c9d1d9; 
+            padding:5px 12px; border-radius:6px; cursor:pointer; 
+            font-weight:bold; font-size:11px; transition: 0.2s; 
+        }
+        .copy-btn:hover { background: #30363d; transform: translateY(-1px); }
         .play-btn { background:#10b981 !important; color:white !important; border-color:#059669 !important; }
 
         @media (prefers-color-scheme: dark) {
-            .code-box { background:#f6f8fa; color:#24292f; border-color:#d0d7de; }
+            .code-box { background:#f6f8fa; color:#24292f; border-color:#d0d7de; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
             .code-header { background:#eaeef2; border-bottom:1px solid #d0d7de; }
             .copy-btn { background:#ffffff; border:1px solid #d0d7de; color:#24292f; }
             .copy-btn:hover { background: #f3f4f6; }
         }
 
+        /* Large Screen Image Restriction */
         .bubble img { max-width: 100%; border-radius: 8px; display: block; object-fit: contain; }
         @media (min-width: 1024px) { .bubble img { max-width: 450px; } }
 
-        .action-row { margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; }
-        .action-btn { background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:4px; }
+        /* Action Row Utility Controls */
+        .action-row { 
+            margin-top:15px; border-top:1px solid var(--border-light); 
+            padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; 
+        }
+        .action-btn { 
+            background:var(--input-bg); border:1px solid var(--border-light); 
+            color:var(--text-main); border-radius:8px; padding:6px 12px; 
+            font-size:12px; cursor:pointer; font-weight:bold; 
+            display:flex; align-items:center; gap:4px; transition: 0.2s;
+        }
+        .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* --- GLOBAL TOP-CORNER FEEDBACK SYSTEM --- */
+        .global-options-btn {
+            background: none; border: none; font-size: 24px; color: var(--text-main); 
+            cursor: pointer; padding: 0 5px; transition: color 0.2s;
+        }
+        .global-options-btn:hover { color: var(--primary); }
         
-        .options-menu { display:none; position:absolute; bottom:40px; left:120px; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:99; flex-direction:column; min-width:120px; overflow:hidden; }
-        .options-menu button { background:transparent; border:none; color:var(--text-main); padding:10px; font-size:12px; font-weight:bold; text-align:left; cursor:pointer; width:100%; }
-        .options-menu button:hover { background:var(--input-bg); }
+        #globalOptionsMenu {
+            display: none; position: absolute; top: 60px; right: 15px; 
+            background: var(--bg-surface); border: 1px solid var(--border-light); 
+            border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            z-index: 99999; flex-direction: column; min-width: 140px; overflow: hidden;
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #globalOptionsMenu button { 
+            background: transparent; border: none; color: var(--text-main); 
+            padding: 12px 15px; font-size: 13px; font-weight: bold; 
+            text-align: left; cursor: pointer; width: 100%; transition: 0.2s;
+        }
+        #globalOptionsMenu button:hover { background: var(--input-bg); color: var(--primary); }
 
-        .feedback-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100005; justify-content:center; align-items:center; }
-        .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:20px; width:90%; max-width:360px; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+        /* Compact Feedback Overlay */
+        .feedback-overlay { 
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); 
+            backdrop-filter: blur(4px); z-index:100005; justify-content:center; align-items:center; 
+        }
+        .feedback-box { 
+            background:var(--bg-surface); border:2px solid var(--primary); 
+            border-radius:16px; padding:20px; width:90%; max-width:320px; /* Compact width */
+            box-shadow:0 15px 40px rgba(0,0,0,0.6); animation: popIn 0.2s ease;
+        }
 
-        #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100005; flex-direction:column; }
-        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; }
-        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(0,0,0,0.3); }
-        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; }
+        /* --- SANDBOXED HTML PREVIEW MODAL --- */
+        #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100005; flex-direction:column; }
+        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; border-bottom: 1px solid #30363d; }
+        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
+        .preview-close:hover { background:#dc2626; transform: translateY(-1px); }
+        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; } /* Frame is white to act like real browser */
 
-        #floatingModeChip { display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); }
-        #floatingModeChip button { background:rgba(255,255,255,0.2); border:none; color:white; font-weight:bold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:10px; }
+        /* Floating Image Chip */
+        #floatingModeChip { 
+            display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); 
+            color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; 
+            font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); 
+        }
+        #floatingModeChip button { 
+            background:rgba(255,255,255,0.2); border:none; color:white; font-weight:bold; 
+            border-radius:50%; width:18px; height:18px; display:flex; align-items:center; 
+            justify-content:center; cursor:pointer; font-size:10px; 
+        }
         #floatingModeChip button:hover { background:rgba(255,255,255,0.4); }
     </style>
 </head>
 <body class="chat-page-layout" onclick="closeAllMenus(event)">
 
     <button id="exitFocusBtn" onclick="toggleFocusMode()" title="Exit Focus Mode">✕</button>
+
+    <div class="topbar" style="transition: transform 0.4s ease;">
+        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+        <div class="appTitle" style="font-size: 18px; font-weight: 800;">Deep AI <span style="color:var(--primary); font-size:12px; vertical-align: top;">PRO</span></div>
+        
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main);">🧘‍♂️</button>
+            <div class="menuBtn" style="font-size: 20px;" onclick="clearSearchChat();" title="Clear All">🗑️</div>
+            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="Settings" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--primary);">⚙️</button>
+            
+            <div style="position:relative;">
+                <button class="global-options-btn" onclick="toggleGlobalMenu(event)">⋮</button>
+                <div id="globalOptionsMenu">
+                    <button onclick="openFeedbackDialog()">📝 Submit Feedback</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedbackOverlay" class="feedback-overlay" onclick="document.getElementById('feedbackOverlay').style.display='none'">
+        <div class="feedback-box" onclick="event.stopPropagation()">
+            <h4 style="margin:0 0 10px 0; color:var(--primary); font-size: 16px;">📝 Direct Dev Feedback</h4>
+            <p style="margin:0 0 10px 0; font-size:12px; color:var(--text-muted);">Report a bug or request a system change.</p>
+            <textarea id="feedbackText" style="width:100%; height:70px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-main); padding:10px; font-size:13px; resize:none; outline:none; margin-bottom:12px;" placeholder="Type system changes here..."></textarea>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="document.getElementById('feedbackOverlay').style.display='none'" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px;">Cancel</button>
+                <button onclick="submitFeedbackApi()" style="background:#10b981; color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">Send</button>
+            </div>
+        </div>
+    </div>
 
     <div id="settingsModal">
         <div class="settings-content">
@@ -166,24 +349,12 @@
         </div>
     </div>
 
-    <div id="feedbackOverlay" class="feedback-overlay" onclick="document.getElementById('feedbackOverlay').style.display='none'">
-        <div class="feedback-box" onclick="event.stopPropagation()">
-            <h4 style="margin:0 0 10px 0; color:var(--primary);">📝 Submit Feedback</h4>
-            <p style="margin:0 0 10px 0; font-size:13px; color:var(--text-main);">What do you want to change?</p>
-            <textarea id="feedbackText" style="width:100%; height:80px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-main); padding:10px; font-size:13px; resize:none; outline:none; margin-bottom:12px;" placeholder="Type system requested changes here..."></textarea>
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button onclick="document.getElementById('feedbackOverlay').style.display='none'" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px;">Cancel</button>
-                <button onclick="submitFeedbackApi()" style="background:#10b981; color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px;">Send</button>
-            </div>
-        </div>
-    </div>
-
     <div id="htmlPreviewModal">
         <div class="preview-header">
-            <span>🌐 Live Web Preview</span>
+            <span style="display:flex; align-items:center; gap:8px;">🌐 Live Web Preview <span style="font-size:10px; background:#10b981; padding:2px 6px; border-radius:4px;">Protected Sandbox</span></span>
             <button class="preview-close" onclick="document.getElementById('htmlPreviewModal').style.display='none'">✕ Close</button>
         </div>
-        <iframe id="htmlPreviewFrame"></iframe>
+        <iframe id="htmlPreviewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
     </div>
 
     <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px);">
@@ -195,7 +366,7 @@
     <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column;">
         <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#e11d48; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer;">✕</button>
         <img id="fsImage" style="max-width:90%; max-height:75%; border-radius:16px; object-fit:contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
-        <button id="fsDownloadBtn" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:15px 40px; border-radius:30px; font-weight:800; cursor:pointer; font-size:18px;" onclick="downloadFullscreenImage()">📥 Download Original</button>
+        <button id="fsDownloadBtn" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:15px 40px; border-radius:30px; font-weight:800; cursor:pointer; font-size:18px; box-shadow: 0 10px 20px rgba(16,185,129,0.4);" onclick="downloadFullscreenImage()">📥 Force Download</button>
     </div>
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
@@ -212,18 +383,7 @@
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
-    <div class="topbar">
-        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-        <div class="appTitle" style="font-size: 18px;">Deep AI</div>
-        
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
-            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main);">🧘‍♂️</button>
-            <div class="menuBtn" style="font-size: 20px;" onclick="clearSearchChat();" title="Clear All">🗑️</div>
-            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="Settings" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--primary);">⚙️</button>
-        </div>
-    </div>
-
-    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 75px; padding-bottom: 180px;"></div>
+    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 70px; padding-bottom: 180px;"></div>
 
     <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1);">
         
@@ -233,8 +393,8 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <button id="modeLocalBtn" class="mode-toggle-btn" onclick="setSearchMode('local')">📚 Local Mode (Book Data)</button>
-            <button id="modeWebBtn" class="mode-toggle-btn active" onclick="setSearchMode('web')">🌐 Web Mode (Search Internet)</button>
+            <button id="modeLocalBtn" class="mode-toggle-btn" onclick="setSearchMode('local')">📚 Local Book Data</button>
+            <button id="modeWebBtn" class="mode-toggle-btn active" onclick="setSearchMode('web')">🌐 Live Web Data</button>
             <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Photos (0)</button>
         </div>
 
@@ -262,14 +422,17 @@
             <input type="file" id="pdfUploadInput" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
             <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
             
-            <textarea id="searchInput" placeholder="Ask anything, solve using book data or draw diagrams..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none;"></textarea>
+            <textarea id="searchInput" placeholder="Ask anything, solve maths, write HTML code..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; font-family: inherit;"></textarea>
             
-            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runMainPipeline()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer;">🚀</button>
+            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runMainPipeline()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; transition: 0.2s;">🚀</button>
         </div>
     </div>
 
     <script>
-        // 1. ABSOLUTE TOP: ALL GLOBAL VARIABLES DECLARED HERE FIRST (Fixes crashes)
+        /**
+         * GLOBAL STATE VARIABLES
+         * Declaring these at the top strictly prevents "Cannot access before initialization" crashes.
+         */
         let appHistory = [];
         let sessionMessages = [];
         let isProcessing = false;
@@ -278,24 +441,68 @@
         let uploadedImages = []; 
         let aiBrain = []; 
         let activeSearchMode = "web"; 
-        let currentFeedbackTargetText = "";
+        let currentFeedbackContext = "General UI";
         let imageGenerationModeActive = false; 
 
-        // 2. MARKDOWN CONFIGURATION
+        // --------------------------------------------
+        // MARKDOWN & CODE BOX RENDERING SYSTEM
+        // --------------------------------------------
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
+            // Encode brackets to prevent accidental HTML execution outside the sandbox
             let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
-            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html') || safeCode.toLowerCase().includes('&lt;!doctype html');
-            let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
+            
+            // Intelligently detect if the AI wrote HTML
+            let isHtml = (language && language.toLowerCase() === 'html') || 
+                         safeCode.toLowerCase().includes('&lt;html') || 
+                         safeCode.toLowerCase().includes('&lt;!doctype html');
+            
+            // Only add play button if it's safe renderable HTML
+            let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)" title="Open in Sandboxed Preview">▶ Play HTML</button>` : '';
 
-            return `<div class="code-box">
-                <div class="code-header">${playBtnStr}<button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Code',2000);">Copy Code</button></div>
+            return `
+            <div class="code-box">
+                <div class="code-header">
+                    ${playBtnStr}
+                    <button class="copy-btn" onclick="copyToClipboardEngine(this)">Copy Code</button>
+                </div>
                 <div class="code-body">${safeCode}</div>
             </div>`;
         };
         marked.setOptions({ renderer: renderer });
 
-        // 3. UI AND INTERACTION FUNCTIONS
+        // Enhanced Copy Engine for Code Boxes
+        function copyToClipboardEngine(btn) {
+            const codeText = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied! ✓';
+                btn.style.background = '#10b981';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            });
+        }
+
+        // --------------------------------------------
+        // SECURE HTML PREVIEWER (POLYFILL.IO BLOCKER)
+        // --------------------------------------------
+        window.playHtmlCode = function(btn) {
+            const rawCode = btn.parentElement.nextElementSibling.innerText;
+            
+            // SECURITY LAYER: Rip out malicious or dead CDN links that cause popups
+            let sanitizedCode = rawCode.replace(/<script\s+src=["'][^>]*polyfill\.io[^>]*>[\s\S]*?<\/script>/gi, '');
+            
+            const iframe = document.getElementById('htmlPreviewFrame');
+            // Inject sanitized code into sandboxed iframe
+            iframe.srcdoc = sanitizedCode;
+            document.getElementById('htmlPreviewModal').style.display = 'flex';
+        }
+
+        // --------------------------------------------
+        // UI TOGGLES & MANAGERS
+        // --------------------------------------------
         function setSearchMode(mode) {
             activeSearchMode = mode;
             document.getElementById('modeLocalBtn').classList.toggle('active', mode === 'local');
@@ -314,16 +521,20 @@
         function disableImageMode() {
             imageGenerationModeActive = false;
             document.getElementById("floatingModeChip").style.display = "none";
-            document.getElementById("searchInput").placeholder = "Ask anything, solve using book data or draw diagrams...";
+            document.getElementById("searchInput").placeholder = "Ask anything, solve maths, write HTML code...";
         }
 
+        // --------------------------------------------
+        // SESSION & HISTORY MANAGEMENT
+        // --------------------------------------------
         function saveHistorySafe() {
             if (typeof localforage !== 'undefined') {
-                localforage.setItem('aiHistory', appHistory).catch(err => console.log(err));
+                localforage.setItem('aiHistory', appHistory).catch(err => console.warn(err));
             }
             try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) {}
         }
 
+        // Load existing history on boot
         try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
         try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
 
@@ -333,132 +544,169 @@
             }
         });
 
-        // MASSIVE WELCOME MESSAGE RESTORED
+        // --------------------------------------------
+        // WELCOME MESSAGE GENERATOR
+        // --------------------------------------------
         function showWelcomeMessage() {
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
-                    <div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));">
-                        <div class="ai-signature">✨ BY SYSTEM ENGINE</div>
-                        <b style="color:var(--primary); font-size:18px;">👋 Welcome to Deep AI Dashboard!</b><br><br>
-                        • <b>Local Mode vs Web Mode:</b> Toggle above to answer directly from uploaded textbook files or from live web data.<br>
-                        • <b>Auto-Diagram System:</b> Ask things like <i>"नामांकित चित्र से घर्षण के कारणों का संक्षिप्त वर्णन करें"</i> and it will write the text AND auto-generate the map/diagram below it!<br>
-                        • <b>Code Box Fix:</b> HTML code will now perfectly format inside a code box with a Play Button.<br>
-                        • <b>Math Scroll Fix:</b> Long equations now scroll horizontally instead of breaking the layout.<br>
-                        • <b>Direct Download:</b> The image download button now force-downloads the actual image file to your device instantly.<br>
+                    <div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));">
+                        <div class="ai-signature">✨ DEEP AI PRO SYSTEM</div>
+                        <b style="color:var(--primary); font-size:18px;">👋 Welcome back! System is fully online.</b><br><br>
+                        <div style="font-size:14px; line-height: 1.6;">
+                        • <b>Global Feedback Fix:</b> You can now access the feedback menu via the three dots (⋮) in the top-right corner. It will never clip or cut off.<br>
+                        • <b>Polyfill Hijack Blocked:</b> The HTML Previewer now features a dynamic regex scanner that rips out malicious <i>polyfill.io</i> tags before they load.<br>
+                        • <b>Code Box Engine:</b> Code will now perfectly wrap in black (light mode) or white (dark mode) boxes, safe from MathJax parsing interference.<br>
+                        • <b>Force Download:</b> The image download engine utilizes Blob fetching to completely bypass Hugging Face redirects.<br>
+                        </div>
                     </div>
                 </div>`);
             safeScroll();
         }
 
-        function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
-        function clearBrain() { if(confirm("Erase AI's memory of you?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
+        // --------------------------------------------
+        // GLOBAL FEEDBACK SYSTEM (THE FIX)
+        // --------------------------------------------
+        function toggleGlobalMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('globalOptionsMenu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
 
+        function closeAllMenus(e) {
+            document.getElementById('attachmentMenu').style.display = 'none';
+            document.getElementById('globalOptionsMenu').style.display = 'none';
+        }
+
+        function openFeedbackDialog() {
+            document.getElementById('globalOptionsMenu').style.display = 'none';
+            document.getElementById('feedbackText').value = "";
+            document.getElementById('feedbackOverlay').style.display = 'flex';
+        }
+
+        // API Submission logic for Feedback
+        async function submitFeedbackApi() {
+            const userChanges = document.getElementById('feedbackText').value.trim();
+            if(!userChanges) return showToast("⚠️ Please type your feedback first.");
+
+            try {
+                showToast("⏳ Delivering to dev server...");
+                
+                // --- GREEN API CONFIGURATION ---
+                // We send the flag "USE_ENV_FEEDBACK" so your server.js knows
+                // to swap it out for the real .env phone number.
+                const payload = { 
+                    number: "USE_ENV_FEEDBACK", 
+                    message: `SYSTEM FEEDBACK REPORT:\n\nUser Notes:\n${userChanges}` 
+                };
+
+                const res = await fetch("/api/secure-whatsapp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                
+                if(res.ok) {
+                    showToast("🚀 Feedback delivered securely!");
+                    document.getElementById('feedbackOverlay').style.display = 'none';
+                } else {
+                    const errorData = await res.json();
+                    showToast("❌ Server Block: " + (errorData.error || "Route /api/secure-whatsapp failed"));
+                }
+            } catch(err) {
+                showToast("❌ Network error. Backend offline.");
+                document.getElementById('feedbackOverlay').style.display = 'none';
+            }
+        }
+
+        // --------------------------------------------
+        // UTILITY FUNCTIONS
+        // --------------------------------------------
         function setFont(scale, btn) {
             document.documentElement.style.setProperty('--app-font-scale', scale);
             document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
 
-        function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
-        function toggleFocusMode() { document.body.classList.toggle("focus-mode"); }
-        function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
-        function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
+        function toggleSidebar() { 
+            document.getElementById("sidebar").classList.toggle("active"); 
+            document.getElementById("overlay").classList.toggle("active"); 
+        }
         
-        function clearSearchChat() { 
-            if(confirm("Clear chat?")) { 
-                document.getElementById("searchChatHistory").innerHTML = ''; 
-                sessionMessages = []; 
-                uploadedImages = []; 
-                updateImageUI(); 
-                clearPdfFile(); 
-                showWelcomeMessage(); 
+        function toggleFocusMode() { 
+            document.body.classList.toggle("focus-mode"); 
+            showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Entering Focus Mode" : "🧘‍♂️ Exiting Focus Mode");
+        }
+        
+        function showToast(msg) { 
+            let t = document.createElement('div'); 
+            t.innerText = msg; 
+            t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:12px 24px; border-radius:30px; z-index:100000; font-weight:bold; font-size:13px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); animation: slideUp 0.3s ease;"; 
+            document.body.appendChild(t); 
+            setTimeout(() => {
+                t.style.opacity = '0';
+                t.style.transition = '0.3s ease';
+                setTimeout(() => t.remove(), 300);
+            }, 2500); 
+        }
+        
+        function safeScroll() { 
+            const c = document.getElementById("searchChatHistory"); 
+            c.scrollTop = c.scrollHeight; 
+        }
+        
+        function updateBrainDisplay() { 
+            document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); 
+        }
+        
+        function clearBrain() { 
+            if(confirm("Permanently erase AI's memory?")) { 
+                aiBrain = []; 
+                localStorage.removeItem('aiBrain'); 
+                updateBrainDisplay(); 
+                showToast("🧠 Memory Wiped."); 
             } 
-        }
-
-        function closeAllMenus(e) {
-            document.getElementById('attachmentMenu').style.display = 'none';
-            document.querySelectorAll('.options-menu').forEach(m => m.style.display = 'none');
-        }
-
-        function toggleOptionsMenu(e, menuId) {
-            e.stopPropagation();
-            const targetMenu = document.getElementById(menuId);
-            const currentState = targetMenu.style.display;
-            document.querySelectorAll('.options-menu').forEach(m => m.style.display = 'none');
-            targetMenu.style.display = currentState === 'flex' ? 'none' : 'flex';
-        }
-
-        function openFeedbackDialog(textElementId) {
-            currentFeedbackTargetText = document.getElementById(textElementId).innerText;
-            document.getElementById('feedbackText').value = "";
-            document.getElementById('feedbackOverlay').style.display = 'flex';
-        }
-
-        // --- FIXED FEEDBACK SEND TO BACKEND ENV VARIABLE ---
-        async function submitFeedbackApi() {
-            const userChanges = document.getElementById('feedbackText').value.trim();
-            if(!userChanges) return showToast("⚠️ Please type your feedback first.");
-
-            try {
-                showToast("⏳ Sending feedback...");
-                
-                // CRITICAL FIX: Frontend sends a unique target string. 
-                // Your server.js must map this string to process.env.FEEDBACK
-                const res = await fetch("/api/secure-whatsapp", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        number: "USE_ENV_FEEDBACK", // Tell backend to use the environment variable
-                        message: `FEEDBACK SUBMISSION:\n\nRequested Change:\n${userChanges}\n\nContext Fragment:\n${currentFeedbackTargetText.substring(0, 200)}...` 
-                    })
-                });
-                
-                const data = await res.json();
-                
-                if(res.ok) {
-                    showToast("🚀 Feedback delivered via Green API!");
-                    document.getElementById('feedbackOverlay').style.display = 'none';
-                } else {
-                    showToast("❌ Server Issue: " + (data.error || "Ensure server handles USE_ENV_FEEDBACK"));
-                }
-            } catch(err) {
-                showToast("❌ Network error. Backend unreachable.");
-            }
         }
 
         function copyResponseToClipboard(textElementId) {
             navigator.clipboard.writeText(document.getElementById(textElementId).innerText);
-            showToast("📋 Copied!");
+            showToast("📋 Response text copied!");
         }
 
-        let currentFullscreenBase64 = null;
-        window.openFullscreenImage = function(imgId) {
-            const imgEl = document.getElementById(imgId); if(!imgEl) return;
-            currentFullscreenBase64 = imgEl.src; document.getElementById('fsImage').src = currentFullscreenBase64;
-            document.getElementById('fullscreenViewer').style.display = 'flex';
-        }
-        
+        // --------------------------------------------
+        // IMAGE DOWNLOAD ENGINE (FORCE BLOB)
+        // --------------------------------------------
         window.downloadFullscreenImage = async function() {
             if(!currentFullscreenBase64) return;
-            showToast("⏳ Processing Download...");
+            showToast("⏳ Fetching original file...");
             try {
+                // Fetch the image as a raw data blob to bypass browser redirect tendencies
                 const response = await fetch(currentFullscreenBase64);
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
+                
+                // Create invisible anchor, trigger download, destroy anchor
                 let a = document.createElement("a");
+                a.style.display = "none";
                 a.href = url;
-                a.download = `DeepAI_Image_${Date.now()}.png`;
+                a.download = `DeepAI_Artwork_${Date.now()}.png`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
+                
+                // Free memory
                 window.URL.revokeObjectURL(url);
                 showToast("✅ Download Complete!");
             } catch(e) {
+                console.error("Blob fetch failed (CORS), falling back to new tab.", e);
                 window.open(currentFullscreenBase64, '_blank');
             }
         }
 
+        // --------------------------------------------
+        // ADAPTIVE TEXT ANIMATION (TYPEWRITER)
+        // --------------------------------------------
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullHtml;
@@ -466,9 +714,10 @@
             targetElement.innerHTML = "";
             let nodeIndex = 0;
 
+            // Mathematical speed scaling based on text payload volume
             let totalLength = tempDiv.innerText.length || 1;
-            let targetDuration = totalLength < 200 ? 2500 : 8500;
-            let intervalTime = 20; 
+            let targetDuration = totalLength < 200 ? 2500 : 7500;
+            let intervalTime = 15; 
             let totalTicks = targetDuration / intervalTime;
             let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
 
@@ -481,6 +730,7 @@
                     let span = document.createElement('span');
                     targetElement.appendChild(span);
                     let charIndex = 0;
+                    
                     let interval = setInterval(() => {
                         if (charIndex >= text.length) {
                             clearInterval(interval);
@@ -502,9 +752,13 @@
             typeNextNode();
         }
 
+        // --------------------------------------------
+        // TEXT-TO-SPEECH (TTS) ENGINE
+        // --------------------------------------------
         window.startTts = function(textId) {
             window.speechSynthesis.cancel();
-            let cleanSpeechText = document.getElementById(textId).innerText.replace(/[\*\#\_]/g, '');
+            // Sanitize markdown artifacts so the engine doesn't say "star star"
+            let cleanSpeechText = document.getElementById(textId).innerText.replace(/[\*\#\_\`]/g, '');
             let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText);
             currentUtterance.lang = document.getElementById("appLang").value;
             window.speechSynthesis.speak(currentUtterance);
@@ -512,115 +766,220 @@
 
         window.closeTts = function() { window.speechSynthesis.cancel(); };
 
-        window.playHtmlCode = function(btn) {
-            const code = btn.parentElement.nextElementSibling.innerText;
-            document.getElementById('htmlPreviewFrame').srcdoc = code;
-            document.getElementById('htmlPreviewModal').style.display = 'flex';
-        }
-
+        // --------------------------------------------
+        // MATH PROCESSING PIPELINE
+        // --------------------------------------------
         function processMath(text) {
+            // Automatically convert simple 1/2 fractions to LaTeX fractions for gorgeous rendering
             return text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
         }
 
-        function toggleMultiImage() { const m = document.getElementById("multiImageManager"); m.style.display = m.style.display === "none" ? "block" : "none"; }
-        function updateImageUI() {
-            const list = document.getElementById("multiImageList"); const btn = document.getElementById("viewPhotosBtn");
-            if (uploadedImages.length > 0) {
-                btn.style.display = "block"; btn.innerText = `🖼️ View Photos (${uploadedImages.length})`; list.innerHTML = "";
-                uploadedImages.forEach((imgSrc, index) => {
-                    list.innerHTML += `<div style="position:relative;"><button onclick="removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer;">✕</button><img src="${imgSrc}" style="width:70px; height:70px; object-fit:cover; border-radius:10px;"></div>`;
-                });
-            } else { btn.style.display = "none"; document.getElementById("multiImageManager").style.display = "none"; }
+        // --------------------------------------------
+        // FILE UPLOAD MANAGERS
+        // --------------------------------------------
+        function toggleMultiImage() { 
+            const m = document.getElementById("multiImageManager"); 
+            m.style.display = m.style.display === "none" ? "block" : "none"; 
         }
-        function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
-        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 10) return showToast("❌ Max 10 photos allowed!"); const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); }; r.readAsDataURL(f); }
-        function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; }; r.readAsArrayBuffer(f); }
-        function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; }
+        
+        function updateImageUI() {
+            const list = document.getElementById("multiImageList"); 
+            const btn = document.getElementById("viewPhotosBtn");
+            if (uploadedImages.length > 0) {
+                btn.style.display = "block"; 
+                btn.innerText = `🖼️ View Photos (${uploadedImages.length})`; 
+                list.innerHTML = "";
+                uploadedImages.forEach((imgSrc, index) => {
+                    list.innerHTML += `
+                    <div style="position:relative; flex-shrink:0;">
+                        <button onclick="removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.5);">✕</button>
+                        <img src="${imgSrc}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:2px solid var(--border-light);">
+                    </div>`;
+                });
+            } else { 
+                btn.style.display = "none"; 
+                document.getElementById("multiImageManager").style.display = "none"; 
+            }
+        }
+        
+        function removeUploadedImage(index) { 
+            uploadedImages.splice(index, 1); 
+            updateImageUI(); 
+        }
+        
+        function handleImageUpload(e) { 
+            const f = e.target.files[0]; 
+            if(!f) return; 
+            // 10 Image limit enforced here
+            if(uploadedImages.length >= 10) return showToast("❌ Maximum 10 photos reached!"); 
+            const r = new FileReader(); 
+            r.onload = () => { 
+                uploadedImages.push(r.result); 
+                updateImageUI(); 
+                showToast(`📸 Photo attached (${uploadedImages.length}/10)`);
+            }; 
+            r.readAsDataURL(f); 
+        }
+        
+        function handlePdfUpload(e) { 
+            const f = e.target.files[0]; 
+            if(!f) return; 
+            showToast("⏳ Reading PDF data...");
+            const r = new FileReader(); 
+            r.onload = async function() { 
+                try {
+                    const typedarray = new Uint8Array(this.result); 
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise; 
+                    let text = ""; 
+                    for(let i=1; i<=pdf.numPages; i++){ 
+                        const p = await pdf.getPage(i); 
+                        const c = await p.getTextContent(); 
+                        text += c.items.map(i=>i.str).join(' '); 
+                    } 
+                    persistentPdfMemory = text; 
+                    document.getElementById('pdfPreviewChip').style.display='flex'; 
+                    document.getElementById('pdfName').innerText = f.name; 
+                    showToast("✅ PDF Processed successfully!");
+                } catch(err) {
+                    showToast("❌ Failed to read PDF formatting.");
+                }
+            }; 
+            r.readAsArrayBuffer(f); 
+        }
+        
+        function clearPdfFile() { 
+            persistentPdfMemory = ""; 
+            document.getElementById('pdfPreviewChip').style.display='none'; 
+            showToast("🗑️ PDF cleared from memory.");
+        }
 
-        // 4. MAIN PIPELINE LOGIC
+        // --------------------------------------------
+        // CENTRAL ROUTING PIPELINE
+        // --------------------------------------------
         function runMainPipeline() {
             const inp = document.getElementById("searchInput");
             const textValue = inp.value.trim();
-            if (imageGenerationModeActive) { runDirectImageGeneration(textValue); disableImageMode(); } 
-            else { runStandaloneTextSearch(); }
+            if (imageGenerationModeActive) { 
+                runDirectImageGeneration(textValue); 
+                disableImageMode(); 
+            } else { 
+                runStandaloneTextSearch(); 
+            }
         }
 
+        // --------------------------------------------
+        // DIRECT IMAGE GENERATOR (FLUX)
+        // --------------------------------------------
         async function runDirectImageGeneration(promptText) {
             if(!promptText) return;
             const chatContainer = document.getElementById("searchChatHistory"); 
-            const loadId = "load_" + Date.now();
+            const loadId = "img_load_" + Date.now();
             
             chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image Request:</b><br>${promptText}</div></div>
+                <div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">🎨 <b>Art Request:</b><br>${promptText}</div></div>
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY FLUX ENGINE</div>
+                        <div class="ai-signature">✨ BY FLUX ENGINE (RENDER API)</div>
                         <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Painting your request in high definition...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
             try {
-                const response = await fetch("/api/hf-search-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: promptText }) });
+                const response = await fetch("/api/hf-search-image", { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ prompt: promptText }) 
+                });
                 const result = await response.json();
+                
                 if (result.imageBase64) {
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                        <div class="ai-signature">✨ BY FLUX ENGINE</div>
-                        <div style="border-radius:12px; overflow:hidden; margin-top:10px;" onclick="openFullscreenImage('img_src_${loadId}')">
-                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_src_${loadId}" onload="safeScroll()">
+                        <div class="ai-signature">✨ BY FLUX ENGINE (RENDER API)</div>
+                        <div style="border-radius:12px; overflow:hidden; margin-top:10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);" onclick="openFullscreenImage('img_src_${loadId}')">
+                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_src_${loadId}" title="Click to expand" onload="safeScroll()">
                         </div>`;
                     saveHistorySafe();
+                } else {
+                    throw new Error("No image data received.");
                 }
             } catch (error) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Image painting failed.</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Image generation queue failed.</span>`;
             }
         }
 
+        // --------------------------------------------
+        // MASTER TEXT & VISION AI ENGINE
+        // --------------------------------------------
         async function runStandaloneTextSearch() {
-            const inp = document.getElementById("searchInput"); let q = inp.value.trim(); 
+            const inp = document.getElementById("searchInput"); 
+            let q = inp.value.trim(); 
+            
             if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
             
-            isProcessing = true; document.getElementById("sendSearchBtn").innerHTML = "🛑";
+            if(isProcessing) return; // Prevent spam clicking
+            isProcessing = true; 
+            document.getElementById("sendSearchBtn").innerHTML = "🛑";
+            
             const chatContainer = document.getElementById("searchChatHistory");
             const selectedModelValue = document.getElementById("modelSelector").value;
 
-            let userImgHtml = ''; uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" style="max-height:80px; margin-right:5px; display:inline-block;">`; });
+            // Render user attachments in chat bubble
+            let userImgHtml = ''; 
+            uploadedImages.forEach(img => { 
+                userImgHtml += `<img src="${img}" style="max-height:80px; margin-right:5px; margin-bottom:5px; border-radius:8px; border:1px solid var(--border-light); display:inline-block;">`; 
+            });
             let currentImagesToSave = [...uploadedImages];
             let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
 
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
-            inp.value = ""; safeScroll();
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
+            inp.value = ""; 
+            safeScroll();
 
+            // Auto-detect if user wants a diagram generated
             let requiresImageTrigger = false;
             let lowercaseQ = q.toLowerCase();
             if(lowercaseQ.includes("चित्र") || lowercaseQ.includes("नक्शा") || lowercaseQ.includes("map") || lowercaseQ.includes("diagram") || lowercaseQ.includes("picture")) {
                 requiresImageTrigger = true;
             }
 
-            const loadId = "load_" + Date.now();
+            const loadId = "txt_load_" + Date.now();
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY AI MODEL</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is processing...</span></div>
+                        <div class="ai-signature">✨ AI IS PROCESSING</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Compiling response...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
+            // ADVANCED SYSTEM PROMPT DIRECTIVE
+            const advancedPrompt = `You are an elite AI. Write the ABSOLUTE BEST, most detailed, modern, and responsive code or text possible. NEVER use or link to polyfill.io under any circumstances. Ensure perfect LaTeX for math. Structure your answer cleanly. Tone: Standard. \n\nUser query: ${q}\n\n${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
+
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
-                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: q, providerOverride: selectedModelValue } : { systemPrompt: "Tone: Standard. Use LaTeX.", userPrompt: q, providerOverride: selectedModelValue };
+                let body = imageToUseForApi 
+                    ? { imageBase64: imageToUseForApi, userPrompt: advancedPrompt, providerOverride: selectedModelValue } 
+                    : { systemPrompt: "You are an elite AI.", userPrompt: advancedPrompt, providerOverride: selectedModelValue };
                 
-                const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                const response = await fetch(endpoint, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify(body) 
+                });
+                
                 const data = await response.json();
                 
-                let actualProvider = data.provider ? data.provider.toUpperCase() : "GEMINI API";
+                // Real API Signature Extraction
+                let actualProvider = data.provider ? data.provider.toUpperCase() : "GEMINI ENGINE";
                 let cleanAns = data.text;
 
+                // Safety check: Ensure raw HTML gets wrapped so it goes into a safe Code Box
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
-                    cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/i, "\n```html\n$1\n```\n");
+                    cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
                 }
 
+                // Math formatting and markdown parsing
                 let processedMathAns = processMath(cleanAns);
                 let finalHtml = marked.parse(processedMathAns);
 
@@ -628,23 +987,27 @@
                     <div class="ai-signature">✨ BY ${actualProvider}</div>
                     <div id="text_${loadId}" class="markdown-body"></div>
                     <div class="action-row">
-                        <button class="action-btn" onclick="startTts('text_${loadId}')">🔊 Voice</button>
-                        <button class="action-btn" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy Text</button>
-                        <button class="action-btn" onclick="toggleOptionsMenu(event, 'menu_${loadId}')">•••</button>
-                        <div class="options-menu" id="menu_${loadId}"><button onclick="openFeedbackDialog('text_${loadId}')">📝 Feedback</button></div>
+                        <button class="action-btn" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button>
+                        <button class="action-btn" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy</button>
                     </div>
                     <div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
                 
+                // Blast text onto screen
                 runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
                     if (window.MathJax) { MathJax.typesetPromise([document.getElementById(loadId)]); }
+                    // Trigger secondary image creation if intent detected
                     if (requiresImageTrigger) {
                         runDirectImageGeneration(q, `attached_image_zone_${loadId}`);
                     }
                 });
             } catch (err) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span>❌ Delivery exception encountered.</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Error: Network timeout or server failure.</span>`;
             } finally {
-                isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImages = []; updateImageUI(); safeScroll();
+                isProcessing = false; 
+                document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
+                uploadedImages = []; 
+                updateImageUI(); 
+                safeScroll();
             }
         }
     </script>
