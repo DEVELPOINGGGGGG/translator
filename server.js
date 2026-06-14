@@ -471,6 +471,7 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
+        if (req.url === "/api/feedback") return handleFeedbackRoute(req, res);
         if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); // ✨ THE HEADLESS BROWSER ENDPOINT ✨
     }
     
