@@ -15,27 +15,24 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* ULTRA-CLEAN UI ADDITIONS */
+        :root { --app-font-scale: 1; }
+        body { font-size: calc(15px * var(--app-font-scale)); }
+        
         body.focus-mode .topbar { transform: translateY(-100%); }
         body.focus-mode #searchChatHistory { margin-top: 20px; }
         
-        .quick-chips-container { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 10px 0; margin-bottom: 5px; scrollbar-width: none; }
-        .quick-chips-container::-webkit-scrollbar { display: none; }
-        .quick-chip { background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 15px; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .quick-chip:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
 
-        .pro-tools-drawer { display: none; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 16px; padding: 15px; margin-bottom: 10px; box-shadow: var(--glass-shadow); animation: slideUp 0.3s ease; }
-        .pro-tools-drawer.active { display: block; }
+        /* Settings Modal */
+        #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
+        .settings-content { background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); animation: popIn 0.3s ease; }
+        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; }
+        .setting-select, .setting-input { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; width: 140px; }
         
-        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: var(--text-main); }
-        .setting-select { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 5px 10px; border-radius: 8px; outline: none; font-size: 12px; }
-        
-        .format-toolbar { display: flex; gap: 5px; padding: 5px; background: transparent; border-bottom: 1px solid var(--border-light); margin-bottom: 5px; }
-        .format-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 5px; transition: 0.2s; }
-        .format-btn:hover { background: var(--border-light); color: var(--text-main); }
+        .font-btns { display: flex; gap: 5px; }
+        .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .input-footer { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px 0 10px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
-        
         .toggle-switch { position: relative; width: 34px; height: 18px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
@@ -43,24 +40,80 @@
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(16px); }
 
-        .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
+        /* Floating Photo Creator */
+        #photoCreatorModal { display: none; position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%); background: var(--bg-surface); padding: 15px; border-radius: 16px; border: 2px solid #a855f7; z-index: 1000; box-shadow: 0 15px 40px rgba(0,0,0,0.6); width: 90%; max-width: 350px; animation: slideUp 0.3s ease; }
 
-        /* Multi-Image Slider Styling */
-        .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid var(--border-light); position: relative; }
-        .img-thumb-container { position: relative; display: inline-block; margin-right: 10px; }
-        .img-thumb-remove { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; border: none; }
-        .api-badge { position: absolute; top: 12px; right: 16px; font-size: 9px; color: #10b981; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3); }
+        /* Thinking Animation */
+        .ai-thinking-pulse { display: flex; align-items: center; gap: 10px; }
+        .pulse-orb { width: 15px; height: 15px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary), var(--primary)); animation: pulseGlow 1.5s infinite; }
+        @keyframes pulseGlow { 0% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 50% { transform: scale(1.1); box-shadow: 0 0 20px var(--primary); } 100% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } }
 
-        /* TTS Animations */
-        @keyframes slideDownPlayer { 0% { transform: translate(-50%, -50px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+        /* TTS Word Highlight */
+        .tts-highlight { color: #3b82f6 !important; font-weight: bold; background: rgba(59, 130, 246, 0.2); border-radius: 4px; padding: 0 2px; transition: background 0.2s; }
     </style>
 </head>
 <body class="chat-page-layout">
 
-    <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px); animation:slideDownPlayer 0.4s ease;">
-        <div style="color:var(--primary); font-size:22px; filter: drop-shadow(0 0 5px var(--primary));">🎧</div>
-        <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border-radius:50%;">⏸️</button>
-        <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(225,29,72,0.5);">✕</button>
+    <div id="settingsModal">
+        <div class="settings-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
+                <h3 style="margin:0; color:var(--primary);">⚙️ Settings & Brain</h3>
+                <button onclick="document.getElementById('settingsModal').style.display='none'" style="background:#ef4444; color:white; border:none; width:25px; height:25px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
+            </div>
+            
+            <div class="setting-row">
+                <span>🌍 Language:</span>
+                <select class="setting-select" id="appLang">
+                    <option value="hi-IN" selected>Hindi (Default)</option>
+                    <option value="en-US">English</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <option value="de-DE">German</option>
+                </select>
+            </div>
+            
+            <div class="setting-row">
+                <span>🔠 Font Size:</span>
+                <div class="font-btns">
+                    <button class="font-btn" onclick="setFont(0.85, this)">Small</button>
+                    <button class="font-btn active" onclick="setFont(1, this)">Normal</button>
+                    <button class="font-btn" onclick="setFont(1.15, this)">Large</button>
+                    <button class="font-btn" onclick="setFont(1.3, this)">XL</button>
+                    <button class="font-btn" onclick="setFont(1.5, this)">Max</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span>🎭 AI Tone:</span>
+                <select class="setting-select" id="aiTone">
+                    <option value="Standard">Standard</option>
+                    <option value="Professional">Professional</option>
+                    <option value="Casual">Casual</option>
+                </select>
+            </div>
+
+            <div class="setting-row">
+                <span>🌐 Web Data:</span>
+                <label class="toggle-switch"><input type="checkbox" id="webPriority"><span class="slider"></span></label>
+            </div>
+            
+            <div style="margin-top:20px; font-size:12px; color:var(--text-muted); font-weight:bold;">🧠 AI Memory (Brain)</div>
+            <textarea id="aiBrainDisplay" readonly style="width:100%; height:60px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-muted); font-size:11px; padding:8px; margin-top:5px; resize:none;" placeholder="Facts AI has learned about you will appear here..."></textarea>
+            <button onclick="clearBrain()" style="width:100%; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; padding:8px; border-radius:8px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:12px;">Wipe Memory</button>
+        </div>
+    </div>
+
+    <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px);">
+        <div style="color:var(--primary); font-size:22px;">🎧</div>
+        <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer; width:35px; height:35px;">⏸️</button>
+        <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
+    </div>
+
+    <div id="photoCreatorModal">
+        <button style="position:absolute; top:-10px; right:-10px; background:#ef4444; color:white; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="document.getElementById('photoCreatorModal').style.display='none'">✕</button>
+        <h4 style="margin:0 0 10px 0; color:#a855f7; display:flex; align-items:center; gap:8px;">🎨 Photo Creator</h4>
+        <textarea id="photoPromptInput" placeholder="Describe the image you want to create..." style="width:100%; height:70px; background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:10px; font-size:13px; resize:none; outline:none;"></textarea>
+        <button onclick="runFloatingImageCreator()" style="width:100%; margin-top:10px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4);">🚀 Generate</button>
     </div>
 
     <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column;">
@@ -71,15 +124,9 @@
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
-      <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
+      <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close</button>
       <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-      <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
       <button onclick="window.location.href='search.html'" class="active">🔎 Deep Search</button>
-      <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-      <button onclick="window.location.href='translator.html'">🌍 Translator</button>
-      <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
-      <button onclick="window.location.href='youtube.html'">📺 YouTube AI</button>
-      <button onclick="window.location.href='quiz.html'">📝 Quiz Maker</button>
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
@@ -87,189 +134,106 @@
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
         <div class="appTitle" style="font-size: 18px;">Deep AI</div>
         
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
-            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-main);">🧘‍♂️</button>
-            <button onclick="exportChat()" title="Export Chat" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-main);">📥</button>
-            <button onclick="window.print()" title="Print Chat" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-main);">🖨️</button>
-            <button onclick="summarizeChat()" title="Summarize Chat" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--primary);">📑</button>
-            <div class="menuBtn" style="font-size: 18px; padding: 5px;" onclick="clearSearchChat();" title="Clear All">🗑️</div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main);">🧘‍♂️</button>
+            <div class="menuBtn" style="font-size: 20px;" onclick="clearSearchChat();" title="Clear All">🗑️</div>
+            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="Settings" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--primary); animation: spinSlow 10s linear infinite;">⚙️</button>
         </div>
     </div>
 
-    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 75px; padding-bottom: 250px; transition: margin 0.4s ease;"></div>
+    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 75px; padding-bottom: 180px; transition: margin 0.4s ease;"></div>
 
-    <div class="chat-input-area" style="background: transparent; border: none; padding: 10px;">
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 24px; padding: 12px; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); backdrop-filter: blur(15px);">
+    <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1);">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <select id="modelSelector" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--primary); font-weight:bold; cursor:pointer; font-size:12px; padding:6px 12px; border-radius:12px;">
+                <option value="gemini">✨ Model: Gemini</option>
+                <option value="groq">⚡ Model: Groq</option>
+            </select>
+            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🖼️ View Photos (0)</button>
+        </div>
+
+        <div id="multiImageManager" style="display:none; padding:10px; margin-bottom:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:12px; overflow-x:auto;">
+            <div id="multiImageList" style="display:flex; gap:10px;"></div>
+        </div>
+
+        <div id="pdfPreviewChip" style="display:none; align-items:center; background:var(--input-bg); padding:8px 12px; border-radius:12px; margin-bottom:10px; font-size:12px; color:var(--primary); border:1px solid var(--primary);">
+            📄 <span id="pdfName" style="margin:0 10px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">doc.pdf</span>
+            <button onclick="clearPdfFile()" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; font-size:14px;">✕</button>
+        </div>
+
+        <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px; box-shadow:var(--glass-shadow);">
             
-            <div class="quick-chips-container">
-                <div class="quick-chip" onclick="insertPrompt('Summarize this in bullet points: ')">📝 Summarize</div>
-                <div class="quick-chip" onclick="insertPrompt('Explain this simply like I am 5: ')">👶 Explain Simply</div>
-                <div class="quick-chip" onclick="insertPrompt('Fix the grammar and rewrite professionally: ')">✍️ Fix Grammar</div>
-                <div class="quick-chip" onclick="insertPrompt('Write code for: ')">💻 Code</div>
-                <div class="quick-chip" onclick="clearContextOnly()" style="background:rgba(239, 68, 68, 0.1); color:#ef4444; border-color:#ef4444;">🧠 Forget Memory</div>
-            </div>
-
-            <div class="pro-tools-drawer" id="proTools">
-                <div class="setting-row">
-                    <span>🎭 Tone:</span>
-                    <select class="setting-select" id="aiTone">
-                        <option value="Standard">Standard</option>
-                        <option value="Professional">Professional</option>
-                        <option value="Casual">Casual</option>
-                        <option value="Academic">Academic</option>
-                    </select>
-                </div>
-                <div class="setting-row">
-                    <span>📏 Length:</span>
-                    <select class="setting-select" id="aiLength">
-                        <option value="Auto">Auto</option>
-                        <option value="Concise">Concise</option>
-                        <option value="Detailed">Detailed</option>
-                    </select>
-                </div>
-                <div class="setting-row">
-                    <span>🌐 Force Web Data:</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="webPriority">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="setting-row">
-                    <span>🔒 Lock Scroll:</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="lockScroll">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <input type="text" id="sysPrompt" placeholder="Custom System Instructions (Optional)" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-light); background:var(--input-bg); color:var(--text-main); font-size:12px; margin-top:5px;">
-            </div>
-
-            <div class="chat-input-wrapper" style="flex-direction: column; align-items: stretch; border: none; padding: 0; box-shadow: none; background: transparent;">
+            <div style="position:relative;">
+                <button class="chat-action-btn" onclick="document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:45px; height:45px; font-size:20px; background:transparent; border:none;">➕</button>
                 
-                <div class="format-toolbar">
-                    <button class="format-btn" onclick="formatText('**', '**')" title="Bold"><b>B</b></button>
-                    <button class="format-btn" onclick="formatText('_', '_')" title="Italic"><i>I</i></button>
-                    <button class="format-btn" onclick="formatText('```\n', '\n```')" title="Code">{' '}</button>
-                    <div style="flex:1;"></div>
-                    <button class="format-btn" onclick="document.getElementById('proTools').classList.toggle('active')" title="Settings" style="color:var(--primary);">⚙️ Settings</button>
-                </div>
-
-                <div id="multiImageManager" style="display:none; padding:5px; margin-bottom:5px; border-bottom:1px solid var(--border-light);">
-                    <div id="multiImageList" style="display:flex; gap:10px; overflow-x:auto;"></div>
-                </div>
-
-                <div id="pdfPreviewChip" style="display:none; align-items:center; background:var(--input-bg); padding:5px 10px; border-radius:8px; margin-bottom:8px; font-size:11px; color:var(--primary); border:1px solid var(--primary);">
-                    📄 <span id="pdfName" style="margin:0 10px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">doc.pdf</span>
-                    <button onclick="clearPdfFile()" style="background:none; border:none; color:red; cursor:pointer;">✕</button>
-                </div>
-
-                <div style="display: flex; align-items: flex-end; gap: 10px;">
-                    <div style="position:relative;">
-                        <button class="chat-action-btn" onclick="document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:40px; height:40px; font-size:18px;">➕</button>
-                        
-                        <div id="attachmentMenu" style="display:none; position:absolute; bottom:50px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:15px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.5); flex-direction:column; gap:8px; z-index:100; min-width:140px;">
-                            <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:10px; border-radius:8px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Upload Image</button>
-                            <button onclick="document.getElementById('pdfUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:10px; border-radius:8px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">📄 Upload PDF</button>
-                            <button onclick="activateImageCreatorMode(); this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; text-align:left; font-weight:600;">🎨 Create Image</button>
-                        </div>
-                    </div>
-                    
-                    <input type="file" id="pdfUploadInput" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
-                    <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
-                    
-                    <textarea id="searchInput" placeholder="Ask a question or type '/' for commands..." style="flex:1; background:var(--input-bg); border:1px solid var(--border-light); border-radius:16px; padding:12px; font-size:14px; min-height:40px; color:var(--text-main); outline:none;" oninput="updateCharCount()"></textarea>
-                    
-                    <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" style="width:45px; height:45px; font-size:20px;">🚀</button>
-                </div>
-
-                <div class="input-footer">
-                    <span id="charCount">0 chars</span>
-                    <select id="modelSelector" style="background:transparent; border:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:11px;">
-                        <option value="gemini">✨ Gemini</option>
-                        <option value="groq">⚡ Groq</option>
-                    </select>
+                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:150px;">
+                    <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Add Photo</button>
+                    <button onclick="document.getElementById('pdfUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">📄 Add PDF</button>
+                    <button onclick="document.getElementById('photoCreatorModal').style.display='block'; this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; font-weight:600;">🎨 Create Photo</button>
                 </div>
             </div>
+            
+            <input type="file" id="pdfUploadInput" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
+            <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+            
+            <textarea id="searchInput" placeholder="Type a message..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none;"></textarea>
+            
+            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; box-shadow: 0 5px 15px var(--primary-glow);">🚀</button>
         </div>
     </div>
 
     <script>
-        // --- BASE STATE & HISTORY (FULLY RESTORED) ---
+        // --- BASE STATE & PERSISTENT BRAIN ---
         let appHistory = [];
-        let sessionCache = { search: null }; 
-        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
-        
         let sessionMessages = [];
         let isProcessing = false;
         let activeAbortController = null;
-        let isImageGenMode = false;
         let persistentPdfMemory = "";
-        let uploadedImages = []; // Array for multi-images
-        let autoScroll = true;
+        let uploadedImages = []; 
+        let aiBrain = []; 
 
-        // --- HISTORY SAVING SYSTEM ---
-        function saveHistorySafe() { 
-            if (typeof localforage !== 'undefined') {
-                localforage.setItem('aiHistory', appHistory).catch(err => console.log("History DB Error:", err));
+        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
+        try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) { aiBrain = []; }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (sessionMessages.length === 0 && !new URLSearchParams(window.location.search).get('restore')) {
+                showWelcomeMessage();
             }
-            try { 
-                let historyString = JSON.stringify(appHistory);
-                localStorage.setItem('aiHistory', historyString); 
-            } catch(e) {} 
+        });
+
+        function showWelcomeMessage() {
+            const chatContainer = document.getElementById("searchChatHistory");
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
+                    <div class="bubble" style="background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--primary);">
+                        <b style="color:var(--primary); font-size:18px;">👋 Welcome to Deep AI!</b><br><br>
+                        • <b>Ask anything</b> or upload photos/PDFs using the ➕ button.<br>
+                        • Use the <b>⚙️ Settings</b> icon (top right) to change Language, Tone, and Font Size.<br>
+                        • <b>AI Memory:</b> Tell me details like "I am a teacher" and I will remember it forever.<br>
+                        • <b>Code Boxes:</b> If I write code, it will be in a black box with a Copy button.<br>
+                        • <b>Voice:</b> Play my answers, and the exact word I speak will turn <span style="color:#3b82f6; font-weight:bold;">blue</span>!
+                    </div>
+                </div>`);
         }
 
-        function saveToHistory(type, q, a, imagesArr = [], provider = "AI") {
-            let sessionId = sessionCache[type];
-            let histItem = appHistory.find(i => i.id === sessionId);
-            let primaryImg = (imagesArr && imagesArr.length > 0) ? imagesArr[0] : null;
+        // --- BRAIN CONTROLS ---
+        function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
+        function clearBrain() { if(confirm("Erase AI's memory of you?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
 
-            if (!histItem) {
-                sessionId = Date.now(); sessionCache[type] = sessionId; 
-                histItem = { id: sessionId, type: type, title: (q || "Search").substring(0, 25) + '...', interactions: [{ question: q, answer: a, image: primaryImg, provider: provider }], provider: provider, question: q, answer: a };
-                appHistory.unshift(histItem);
-            } else {
-                histItem.interactions.push({ question: q, answer: a, image: primaryImg, provider: provider });
-                histItem.question = q; histItem.answer = a; 
-            }
-            saveHistorySafe();
+        // --- FONT & SETTINGS CONTROLS ---
+        function setFont(scale, btn) {
+            document.documentElement.style.setProperty('--app-font-scale', scale);
+            document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
-        window.addEventListener('pagehide', () => saveHistorySafe());
-        window.addEventListener('beforeunload', () => saveHistorySafe());
-
-        // --- UI & NEW FEATURE FUNCTIONS ---
+        // --- UI UTILS ---
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function toggleFocusMode() { document.body.classList.toggle("focus-mode"); showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Focus Mode ON" : "🧘‍♂️ Focus Mode OFF"); }
-        function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px; animation: slideUp 0.3s ease;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
-        function updateCharCount() { document.getElementById('charCount').innerText = document.getElementById('searchInput').value.length + " chars"; }
-        function insertPrompt(text) { const inp = document.getElementById("searchInput"); inp.value = text + inp.value; inp.focus(); updateCharCount(); }
-        
-        function formatText(open, close) {
-            const inp = document.getElementById("searchInput"); const start = inp.selectionStart; const end = inp.selectionEnd;
-            const text = inp.value; inp.value = text.slice(0, start) + open + text.slice(start, end) + close + text.slice(end);
-            inp.focus(); inp.selectionEnd = end + open.length;
-        }
-
-        function exportChat() {
-            const chatText = document.getElementById("searchChatHistory").innerText;
-            if(!chatText.trim()) return showToast("No chat to export!");
-            const blob = new Blob([chatText], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a"); a.href = url; a.download = `Chat_Export_${new Date().toLocaleDateString()}.txt`;
-            a.click(); URL.revokeObjectURL(url);
-        }
-
-        function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; sessionCache['search'] = null; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
-        function clearContextOnly() { sessionMessages = []; showToast("🧠 Memory Cleared. AI forgot previous context."); }
-        
-        function summarizeChat() {
-            if(sessionMessages.length < 2) return showToast("Not enough chat to summarize.");
-            document.getElementById("searchInput").value = "Please summarize our entire conversation above in 3 bullet points.";
-            runStandaloneSearch();
-        }
-
-        document.getElementById('lockScroll').addEventListener('change', (e) => { autoScroll = !e.target.checked; });
-        function safeScroll() { if(autoScroll) { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; } }
+        function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px; animation: slideUp 0.3s ease;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
+        function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
+        function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
 
         // --- FULLSCREEN VIEWER ---
         let currentFullscreenBase64 = null;
@@ -280,32 +244,89 @@
         }
         window.downloadFullscreenImage = function() {
             if(!currentFullscreenBase64) return;
-            let a = document.createElement("a"); a.href = currentFullscreenBase64; a.download = `DeepSearch_Artwork_${Date.now()}.png`;
+            let a = document.createElement("a"); a.href = currentFullscreenBase64; a.download = `DeepAI_Artwork_${Date.now()}.png`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
         }
 
-        // --- TTS (TEXT TO SPEECH) FLOATING CONTROLS RESTORED ---
+        // --- TTS WITH WORD HIGHLIGHTING ---
         let currentUtterance = null;
-        
+        let ttsWordElements = [];
+
+        function wrapTextNodesForTTS(element) {
+            let wordId = 0;
+            ttsWordElements = [];
+            
+            function traverse(node) {
+                if(node.nodeType === 3 && node.nodeValue.trim().length > 0) {
+                    let words = node.nodeValue.split(/(\s+)/);
+                    let frag = document.createDocumentFragment();
+                    words.forEach(w => {
+                        if(w.trim().length > 0) {
+                            let span = document.createElement('span');
+                            span.className = 'tts-word';
+                            span.id = 'tts_w_' + wordId;
+                            span.innerText = w;
+                            ttsWordElements.push(span);
+                            wordId++;
+                            frag.appendChild(span);
+                        } else {
+                            frag.appendChild(document.createTextNode(w));
+                        }
+                    });
+                    node.parentNode.replaceChild(frag, node);
+                } else if(node.nodeType === 1 && node.className !== 'code-box') {
+                    // Do not wrap inside code boxes to prevent breaking them
+                    Array.from(node.childNodes).forEach(traverse);
+                }
+            }
+            traverse(element);
+        }
+
+        function unwrapTextNodesForTTS(element) {
+            element.querySelectorAll('.tts-word').forEach(span => {
+                let text = document.createTextNode(span.innerText);
+                span.parentNode.replaceChild(text, span);
+            });
+            // normalize merges adjacent text nodes back together
+            element.normalize(); 
+        }
+
         window.startTts = function(textId) {
             const textEl = document.getElementById(textId);
             if(!textEl) return;
             
-            // Clean text before reading
-            let cleanText = textEl.innerText.replace(/[\*#_\[\]]/g, '').trim();
-            if(!cleanText) return;
-
             window.speechSynthesis.cancel();
-            currentUtterance = new SpeechSynthesisUtterance(cleanText);
             
-            // Defaulting to Hindi or English based on browser voices
-            currentUtterance.lang = "hi-IN"; 
-            let availableVoices = window.speechSynthesis.getVoices();
-            let premiumVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || availableVoices.find(v => v.lang.includes('hi')) || availableVoices[0];
-            if (premiumVoice) currentUtterance.voice = premiumVoice;
+            // Clean state if played previously
+            unwrapTextNodesForTTS(textEl);
             
-            currentUtterance.onend = () => closeTts();
-            currentUtterance.onerror = () => closeTts();
+            let pureText = textEl.innerText; // Get raw text to speak
+            wrapTextNodesForTTS(textEl); // Inject spans
+
+            currentUtterance = new SpeechSynthesisUtterance(pureText);
+            currentUtterance.lang = document.getElementById("appLang").value || "hi-IN"; 
+            
+            // Highlight logic using word indexing
+            currentUtterance.onboundary = (e) => {
+                if(e.name === 'word') {
+                    // Clear previous highlights
+                    ttsWordElements.forEach(el => el.classList.remove('tts-highlight'));
+                    
+                    // Approximate the word index based on character position
+                    let passedText = pureText.substring(0, e.charIndex);
+                    let wordIndex = passedText.trim().split(/\s+/).length - 1;
+                    
+                    if(ttsWordElements[wordIndex]) {
+                        ttsWordElements[wordIndex].classList.add('tts-highlight');
+                    }
+                }
+            };
+
+            currentUtterance.onend = () => { 
+                closeTts(); 
+                unwrapTextNodesForTTS(textEl); 
+            };
+            currentUtterance.onerror = () => { closeTts(); unwrapTextNodesForTTS(textEl); };
 
             window.speechSynthesis.speak(currentUtterance);
             document.getElementById("ttsPlayer").style.display = "flex";
@@ -313,74 +334,100 @@
         };
 
         window.toggleTts = function() {
-            if(window.speechSynthesis.paused) {
-                window.speechSynthesis.resume();
-                document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
-            } else if(window.speechSynthesis.speaking) {
-                window.speechSynthesis.pause();
-                document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
-            }
+            if(window.speechSynthesis.paused) { window.speechSynthesis.resume(); document.getElementById("ttsPlayPauseBtn").innerText = "⏸️"; } 
+            else if(window.speechSynthesis.speaking) { window.speechSynthesis.pause(); document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; }
         };
 
-        window.closeTts = function() {
-            window.speechSynthesis.cancel();
-            document.getElementById("ttsPlayer").style.display = "none";
-        };
+        window.closeTts = function() { window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none"; };
 
-        // Ensure voices are loaded
-        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+
+        // --- CODE BOX FORMATTING ---
+        function formatCodeBlocks(text) {
+            return text.replace(/```([\s\S]*?)```/g, function(match, code) {
+                let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+                let lines = safeCode.split('\n');
+                if(lines[0] && !lines[0].includes(' ') && lines.length > 1) lines.shift(); // remove lang identifier
+                safeCode = lines.join('\n');
+                
+                return `<div class="code-box" style="background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace;">
+                    <div style="background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; border-bottom:1px solid #30363d;">
+                        <button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Code',2000);" style="background:#21262d; border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px;">Copy Code</button>
+                    </div>
+                    <div style="padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap;">${safeCode}</div>
+                </div>`;
+            });
+        }
 
 
         // --- FILE & IMAGE HANDLING ---
-        function activateImageCreatorMode() { 
-            isImageGenMode = true; 
-            document.getElementById("searchInput").placeholder = "Describe image to create..."; 
-            document.getElementById("searchInput").style.borderColor = "#a855f7";
-            showToast("🎨 Image Mode Active! Type your prompt."); 
+        function toggleMultiImage() {
+            const m = document.getElementById("multiImageManager");
+            m.style.display = m.style.display === "none" ? "block" : "none";
         }
 
         function updateImageUI() {
             const list = document.getElementById("multiImageList");
+            const btn = document.getElementById("viewPhotosBtn");
             const manager = document.getElementById("multiImageManager");
+            
             if (uploadedImages.length > 0) {
-                manager.style.display = "block";
+                btn.style.display = "block";
+                btn.innerText = `🖼️ View Photos (${uploadedImages.length})`;
                 list.innerHTML = "";
                 uploadedImages.forEach((imgSrc, index) => {
                     list.innerHTML += `
-                        <div class="img-thumb-container">
-                            <button class="img-thumb-remove" onclick="removeUploadedImage(${index})">✕</button>
-                            <img src="${imgSrc}" class="img-thumb">
+                        <div style="position:relative; display:inline-block;">
+                            <button onclick="removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; z-index:10;">✕</button>
+                            <img src="${imgSrc}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:2px solid var(--border-light);">
                         </div>`;
                 });
             } else {
+                btn.style.display = "none";
                 manager.style.display = "none";
             }
         }
 
         function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
-
-        function handleImageUpload(e) { 
-            const f = e.target.files[0]; if(!f) return; 
-            if(uploadedImages.length >= 5) return showToast("❌ Max 5 images allowed!");
-            const r = new FileReader(); 
-            r.onload = () => { uploadedImages.push(r.result); updateImageUI(); showToast(`🖼️ Image added (${uploadedImages.length}/5)`); }; 
-            r.readAsDataURL(f); 
-            e.target.value = "";
-        }
-
-        function handlePdfUpload(e) { 
-            const f = e.target.files[0]; if(!f) return; 
-            const r = new FileReader(); r.onload = async function() { 
-                const typedarray = new Uint8Array(this.result); 
-                const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; 
-                for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } 
-                persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); 
-            }; r.readAsArrayBuffer(f); 
-            e.target.value = "";
-        }
+        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 5) return showToast("❌ Max 5 images allowed!"); const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); showToast(`🖼️ Image added (${uploadedImages.length}/5)`); }; r.readAsDataURL(f); e.target.value = ""; }
+        function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); }; r.readAsArrayBuffer(f); e.target.value = ""; }
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
-        // --- CORE SEARCH & COMPOSITE LOGIC ---
+
+        // --- CORE SEARCH & BRAIN SYSTEM ---
+        
+        // Floating Image Creator Logic
+        function runFloatingImageCreator() {
+            const q = document.getElementById("photoPromptInput").value.trim();
+            if(!q) return showToast("Please describe the image first.");
+            document.getElementById("photoCreatorModal").style.display = 'none';
+            document.getElementById("photoPromptInput").value = "";
+            
+            const chatContainer = document.getElementById("searchChatHistory");
+            const loadId = "load_" + Date.now();
+            
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
+                <div class="chat-msg chat-ai" id="${loadId}">
+                    <div class="bubble">
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting...</span></div>
+                    </div>
+                </div>`);
+            safeScroll();
+
+            puter.ai.txt2img(q, { model: "flux-1-schnell" })
+                .then((imgElement) => {
+                    document.getElementById(loadId).querySelector('.bubble').innerHTML = `
+                        <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to expand">
+                            <img src="${imgElement.src}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}">
+                        </div>`;
+                    saveHistorySafe(); safeScroll();
+                })
+                .catch(() => {
+                    document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Image Generation Failed</span>`;
+                });
+        }
+
+        // Main Text / Vision Logic
         async function runStandaloneSearch() {
             const inp = document.getElementById("searchInput"); let q = inp.value.trim(); 
             if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
@@ -390,125 +437,81 @@
             document.getElementById("sendSearchBtn").innerHTML = "🛑";
             
             const chatContainer = document.getElementById("searchChatHistory");
-            const model = document.getElementById("modelSelector").value;
+            const lang = document.getElementById("appLang").options[document.getElementById("appLang").selectedIndex].text;
             const tone = document.getElementById("aiTone").value;
-            const length = document.getElementById("aiLength").value;
-            const webFocus = document.getElementById("webPriority").checked ? "PRIORITIZE LIVE WEB KNOWLEDGE." : "";
-            const customSys = document.getElementById("sysPrompt").value;
+            const webFocus = document.getElementById("webPriority").checked ? "PRIORITIZE LIVE WEB DATA." : "";
 
-            // Display multiple images in user bubble
             let userImgHtml = '';
-            uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" class="bubble-img" style="max-height: 80px; border-radius: 8px; margin-right: 5px; margin-bottom: 5px; display:inline-block;">`; });
-            if (userImgHtml) userImgHtml += '<br>';
+            uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" style="max-height:80px; border-radius:8px; margin-right:5px; margin-bottom:5px; display:inline-block; border:1px solid var(--border-light);">`; });
 
-            // Display User Message
-            let timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml}${isImageGenMode?'🎨 <b>Generate Image:</b><br>':''}${q.replace(/\n/g, '<br>')}<div class="chat-time">${timeStr}</div></div></div>`);
-            inp.value = ""; document.getElementById('charCount').innerText = "0 chars"; safeScroll();
-
-            // ==========================================
-            // 🎨 COMPOSITE IMAGE GENERATOR 🎨
-            // ==========================================
-            if (isImageGenMode) {
-                const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--text-muted); font-size:12px; font-weight:600;">AI Studio is building your artwork...</span></div></div>`);
-                safeScroll();
-
-                try {
-                    let finalPrompt = q;
-
-                    if (uploadedImages.length > 0) {
-                        showToast("👁️ Analyzing image for background compositing...");
-                        try {
-                            const visionResponse = await fetch("/api/gemini-vision", {
-                                method: "POST", headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ imageBase64: uploadedImages[0], userPrompt: "Analyze the background, color palette, lighting, and overall aesthetic style of this image perfectly. Describe it so an image generator can recreate the exact same vibe and background." }),
-                                signal: activeAbortController.signal
-                            });
-                            if (visionResponse.ok) {
-                                const visionData = await visionResponse.json();
-                                if (visionData.text) finalPrompt = `Recreate an image using EXACTLY this background environment, lighting, and style: (${visionData.text}). Insert the following subject/request seamlessly into that exact background: [${q}]. Ensure flawless compositing.`;
-                            }
-                        } catch(err) { console.log("Vision analysis skipped."); }
+            // Store current images in context memory in case user refers to them later
+            let currentImagesToSave = [...uploadedImages];
+            
+            // If no image uploaded, check if user asks to "remember the image" and fetch from memory
+            let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
+            if (!imageToUseForApi && q.toLowerCase().includes('image') || q.toLowerCase().includes('photo')) {
+                // Find latest image in session
+                for(let i=sessionMessages.length-1; i>=0; i--) {
+                    if(sessionMessages[i].imgs && sessionMessages[i].imgs.length > 0) {
+                        imageToUseForApi = sessionMessages[i].imgs[0];
+                        break;
                     }
-
-                    let sysPrompt = "You are an elite prompt engineer. Rewrite this concept into a highly detailed, cinematic prompt. Reply ONLY with the English prompt text. No quotes.";
-                    let enhancedPrompt = finalPrompt;
-                    try {
-                        const pResponse = await fetch("/api/gemini-text", { 
-                            method: "POST", headers: { "Content-Type": "application/json" }, 
-                            body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: finalPrompt, providerOverride: "gemini" }),
-                            signal: activeAbortController.signal
-                        });
-                        if (pResponse.ok) { const pData = await pResponse.json(); if (pData.text) enhancedPrompt = pData.text.replace(/['"]/g, '').trim(); }
-                    } catch(e) {}
-
-                    puter.ai.txt2img(enhancedPrompt, { model: "flux-1-schnell" })
-                        .then((imgElement) => {
-                            let wrapperHtml = `
-                                <div class="api-badge" style="background: linear-gradient(135deg, #a855f7, #06b6d4); border-color:#22d3ee; color:white;">✨ COMPOSITE STUDIO</div>
-                                <div style="margin-top:20px; font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
-                                <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Fullscreen">
-                                    <img src="${imgElement.src}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}">
-                                </div>
-                                <div class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                            `;
-                            document.getElementById(loadId).querySelector('.bubble').innerHTML = wrapperHtml;
-                            
-                            // Save to global DB history
-                            saveToHistory('search', `Composite Image: ${q}`, wrapperHtml, uploadedImages, "Flux AI");
-
-                            isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
-                            isImageGenMode = false; document.getElementById("searchInput").placeholder = "Ask a question..."; document.getElementById("searchInput").style.borderColor = "";
-                            uploadedImages = []; updateImageUI(); safeScroll();
-                        })
-                        .catch((err) => {
-                            if(err.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Generation Error</span>`;
-                            isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀";
-                        });
-
-                } catch (error) { 
-                    if(error.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error</span>`; 
-                    isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀";
                 }
-                return; 
             }
-            // ==========================================
 
-            // STANDARD TEXT ROUTE
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
+            inp.value = ""; safeScroll();
+
             const loadId = "load_" + Date.now();
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`);
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" id="${loadId}">
+                    <div class="bubble"><div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is thinking...</span></div></div>
+                </div>`);
             safeScroll();
 
-            // Build Enhanced Prompt
-            let sysInstructions = `You are a helpful AI. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). ${webFocus} Tone: ${tone}. Length constraint: ${length}. ${customSys}`;
-            let contextStr = sessionMessages.map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n');
+            // BRAIN INJECTION
+            let brainContext = aiBrain.length > 0 ? `USER PROFILE FACTS: ${aiBrain.join('. ')}.` : '';
+            let brainInstruction = `If the user tells you a specific fact about themselves or explicitly says "remember that [fact]", output the exact tag [MEMORY_SAVE: fact] at the VERY END of your response.`;
+
+            let sysInstructions = `You are a highly intelligent AI. ${brainInstruction} ${brainContext} YOU MUST ANSWER ENTIRELY IN ${lang}. ${webFocus} Tone: ${tone}.`;
+            let contextStr = sessionMessages.slice(-5).map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n'); // Keep last 5 for context limit
             let finalPrompt = `${contextStr}\n\nCurrent Request: ${q}\n\n${persistentPdfMemory ? 'Context Document:\n'+persistentPdfMemory : ''}`;
 
             try {
-                let endpoint = uploadedImages.length > 0 ? "/api/gemini-vision" : "/api/gemini-text";
-                let body = uploadedImages.length > 0 ? { imageBase64: uploadedImages[0], userPrompt: sysInstructions + "\n" + finalPrompt, providerOverride: model } : { systemPrompt: sysInstructions, userPrompt: finalPrompt, providerOverride: model };
+                let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
+                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: sysInstructions + "\n" + finalPrompt } : { systemPrompt: sysInstructions, userPrompt: finalPrompt };
                 
                 const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: activeAbortController.signal });
                 const data = await response.json();
                 
-                let cleanAns = data.text.replace(/[\*&#_]/g, '');
+                let cleanAns = data.text;
                 
-                // Add to Context Memory
-                sessionMessages.push({ q: q, a: cleanAns });
+                // BRAIN EXTRACTION
+                let memoryMatch = cleanAns.match(/\[MEMORY_SAVE:(.*?)\]/i);
+                if(memoryMatch) {
+                    let newFact = memoryMatch[1].trim();
+                    aiBrain.push(newFact);
+                    localStorage.setItem('aiBrain', JSON.stringify(aiBrain));
+                    cleanAns = cleanAns.replace(memoryMatch[0], '').trim();
+                    showToast("🧠 AI memorized a new fact!");
+                }
+
+                // Format Code Blocks & Clean markdown bolding issues
+                let formattedAns = formatCodeBlocks(cleanAns).replace(/\n/g, '<br>');
+                
+                // Save to context
+                sessionMessages.push({ q: q, a: cleanAns, imgs: currentImagesToSave });
                 
                 // Save to Global DB History
-                saveToHistory('search', q || "[Document Analysis]", cleanAns, uploadedImages, data.provider || model.toUpperCase());
+                appHistory.unshift({ id: Date.now(), type: 'search', title: q.substring(0, 20), interactions: [{ question: q, answer: cleanAns, image: currentImagesToSave[0] }] });
+                saveHistorySafe();
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div id="text_${loadId}" style="font-size:14px; line-height:1.6;">${cleanAns.replace(/\n/g, '<br>')}</div>
-                    <div class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                    <div id="text_${loadId}" style="font-size:15px; line-height:1.7;">${formattedAns}</div>
                     <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                        <button onclick="startTts('text_${loadId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Listen</button>
-                        <button onclick="navigator.clipboard.writeText(document.getElementById('text_${loadId}').innerText)" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold;">📋 Copy</button>
+                        <button onclick="startTts('text_${loadId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 15px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Play Voice</button>
                     </div>`;
                 
-                // MathJax re-render for math formulas
                 if (window.MathJax) { MathJax.typesetClear([document.getElementById(loadId)]); MathJax.typesetPromise([document.getElementById(loadId)]); }
 
             } catch (err) {
@@ -517,59 +520,42 @@
                 isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImages = []; updateImageUI(); safeScroll();
             }
         }
-        
-        // --- RESTORE SESSION LOGIC ---
+
+        // --- SESSION RESTORE ---
         document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const restoreId = urlParams.get('restore');
+            const restoreId = new URLSearchParams(window.location.search).get('restore');
             if (!restoreId) return;
 
             setTimeout(() => {
-                const forceInjectData = (historyData) => {
-                    let item = historyData.find(i => i.id == restoreId);
-                    if (!item) return;
+                let item = appHistory.find(i => i.id == restoreId);
+                if (!item || !item.interactions) return;
 
-                    if (item.interactions) {
-                        sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer }));
-                        sessionCache['search'] = item.id;
-                        showToast("🧠 Session Memory Restored!");
-                    }
+                sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
+                showToast("🧠 Session & Images Restored!");
 
-                    const container = document.getElementById('searchChatHistory');
-                    if (item.interactions && item.interactions.length > 0 && container) {
-                        container.innerHTML = ''; 
-                        item.interactions.forEach((inter, index) => {
-                            let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-height:80px; border-radius:8px; margin-bottom:5px;">` : '';
-                            let textId = `restored_text_${index}`;
-                            
-                            container.insertAdjacentHTML('beforeend', `
-                                <div class="chat-msg chat-user">
-                                    <div class="bubble">${imgHtml}<div>${inter.question.replace(/\n/g, '<br>')}</div></div>
+                const container = document.getElementById('searchChatHistory');
+                container.innerHTML = ''; 
+                item.interactions.forEach((inter, index) => {
+                    let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-height:80px; border-radius:8px; margin-bottom:5px; border:1px solid var(--border-light);">` : '';
+                    let textId = `restored_text_${index}`;
+                    
+                    container.insertAdjacentHTML('beforeend', `
+                        <div class="chat-msg chat-user">
+                            <div class="bubble">${imgHtml}<div>${inter.question.replace(/\n/g, '<br>')}</div></div>
+                        </div>
+                        <div class="chat-msg chat-ai">
+                            <div class="bubble">
+                                <div id="${textId}">${formatCodeBlocks(inter.answer).replace(/\n/g, '<br>')}</div>
+                                <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
+                                    <button onclick="startTts('${textId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 15px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Play Voice</button>
                                 </div>
-                                <div class="chat-msg chat-ai">
-                                    <div class="bubble">
-                                        <div id="${textId}">${inter.answer.replace(/\n/g, '<br>')}</div>
-                                        <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                                            <button onclick="startTts('${textId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Listen</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `);
-                        });
-                        setTimeout(() => safeScroll(), 100);
-                    } 
-                    if (window.MathJax) { MathJax.typesetPromise([container]); }
-                };
-
-                if (typeof localforage !== 'undefined') {
-                    localforage.getItem('aiHistory').then(data => {
-                        if (data && data.length > 0) forceInjectData(data);
-                        else forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
-                    }).catch(() => forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]')));
-                } else {
-                    forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
-                }
-            }, 800); 
+                            </div>
+                        </div>
+                    `);
+                });
+                safeScroll();
+                if (window.MathJax) { MathJax.typesetPromise([container]); }
+            }, 500); 
         });
     </script>
 </body>
