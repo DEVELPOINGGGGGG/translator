@@ -17,7 +17,7 @@
     <script>
         MathJax = { 
             options: {
-                ignoreHtmlClass: 'code-box', 
+                ignoreHtmlClass: 'code-box', // Forces MathJax to NEVER touch code
                 processHtmlClass: 'markdown-body'
             },
             tex: { 
@@ -36,8 +36,15 @@
             --app-font-scale: 1; 
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --transition-speed: 0.3s;
         }
         
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+        }
+
         body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { 
             font-size: calc(15px * var(--app-font-scale)) !important; 
             transition: font-size 0.2s ease;
@@ -112,8 +119,8 @@
             background: var(--bg-surface); 
             border: 2px solid var(--primary); 
             border-radius: 20px; 
-            padding: 20px; 
-            width: 90%; max-width: 400px; 
+            padding: 25px; 
+            width: 90%; max-width: 420px; 
             box-shadow: 0 15px 40px rgba(0,0,0,0.5); 
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
@@ -153,10 +160,11 @@
         /* Mode Selector Badges */
         .mode-toggle-btn { 
             background: var(--input-bg); border: 1px solid var(--border-light); 
-            color: var(--text-main); padding: 5px 10px; border-radius: 12px; 
-            font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;
+            color: var(--text-main); padding: 5px 12px; border-radius: 12px; 
+            font-size: 11px; font-weight: bold; cursor: pointer; transition: var(--transition-speed);
         }
-        .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .mode-toggle-btn:hover { border-color: var(--primary); }
+        .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
 
         /* Markdown Styles */
         .markdown-body { line-height: 1.6; }
@@ -164,6 +172,7 @@
         .markdown-body p { margin-bottom: 10px; }
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 15px 0; }
         .markdown-body th, .markdown-body td { border: 1px solid var(--border-light); padding: 8px; }
+        .markdown-body ul, .markdown-body ol { padding-left: 20px; }
         
         .ai-signature { 
             font-size: 10px; color: var(--primary); text-transform: uppercase; 
@@ -181,7 +190,7 @@
             background:#161b22; padding:8px 15px; display:flex; 
             justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; 
         }
-        .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; }
+        .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; line-height: 1.5; }
         .copy-btn { 
             background:#21262d; border:1px solid #30363d; color:#c9d1d9; 
             padding:5px 12px; border-radius:6px; cursor:pointer; 
@@ -212,7 +221,7 @@
             font-size:12px; cursor:pointer; font-weight:bold; 
             display:flex; align-items:center; gap:4px; transition: 0.2s;
         }
-        .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
         /* --- GLOBAL TOP-CORNER FEEDBACK SYSTEM --- */
         .global-options-btn {
@@ -244,7 +253,7 @@
         }
         .feedback-box { 
             background:var(--bg-surface); border:2px solid var(--primary); 
-            border-radius:16px; padding:20px; width:90%; max-width:320px; /* Compact width */
+            border-radius:16px; padding:20px; width:90%; max-width:320px; 
             box-shadow:0 15px 40px rgba(0,0,0,0.6); animation: popIn 0.2s ease;
         }
 
@@ -253,7 +262,7 @@
         .preview-header { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; border-bottom: 1px solid #30363d; }
         .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
         .preview-close:hover { background:#dc2626; transform: translateY(-1px); }
-        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; } /* Frame is white to act like real browser */
+        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; } 
 
         /* Floating Image Chip */
         #floatingModeChip { 
@@ -267,6 +276,10 @@
             justify-content:center; cursor:pointer; font-size:10px; 
         }
         #floatingModeChip button:hover { background:rgba(255,255,255,0.4); }
+
+        /* Media Container Scroll fixes */
+        #multiImageManager::-webkit-scrollbar { height: 6px; }
+        #multiImageManager::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
     </style>
 </head>
 <body class="chat-page-layout" onclick="closeAllMenus(event)">
@@ -278,14 +291,15 @@
         <div class="appTitle" style="font-size: 18px; font-weight: 800;">Deep AI <span style="color:var(--primary); font-size:12px; vertical-align: top;">PRO</span></div>
         
         <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
-            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main);">🧘‍♂️</button>
-            <div class="menuBtn" style="font-size: 20px;" onclick="clearSearchChat();" title="Clear All">🗑️</div>
-            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="Settings" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--primary);">⚙️</button>
+            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main); transition: 0.2s;">🧘‍♂️</button>
+            <div class="menuBtn" style="font-size: 20px; transition: 0.2s;" onclick="clearSearchChat();" title="Clear All Chat">🗑️</div>
+            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="System Settings" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--primary); transition: 0.2s;">⚙️</button>
             
             <div style="position:relative;">
                 <button class="global-options-btn" onclick="toggleGlobalMenu(event)">⋮</button>
                 <div id="globalOptionsMenu">
                     <button onclick="openFeedbackDialog()">📝 Submit Feedback</button>
+                    <button onclick="window.location.reload()">🔄 Refresh App</button>
                 </div>
             </div>
         </div>
@@ -323,6 +337,8 @@
                 <select class="setting-select" id="appLang">
                     <option value="hi-IN" selected>Hindi (Default)</option>
                     <option value="en-US">English</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
                 </select>
             </div>
             
@@ -340,18 +356,19 @@
                 <select class="setting-select" id="aiTone">
                     <option value="Standard">Standard</option>
                     <option value="Professional">Professional</option>
+                    <option value="Casual">Casual & Friendly</option>
                 </select>
             </div>
 
             <div style="margin-top:20px; font-size:12px; color:var(--text-muted); font-weight:bold;">🧠 AI Memory (Brain)</div>
             <textarea id="aiBrainDisplay" readonly style="width:100%; height:60px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-muted); font-size:11px; padding:8px; margin-top:5px; resize:none;" placeholder="Facts AI has learned about you..."></textarea>
-            <button onclick="clearBrain()" style="width:100%; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; padding:8px; border-radius:8px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:12px;">Wipe Memory</button>
+            <button onclick="clearBrain()" style="width:100%; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; padding:8px; border-radius:8px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:12px; transition: 0.2s;">Wipe Memory</button>
         </div>
     </div>
 
     <div id="htmlPreviewModal">
         <div class="preview-header">
-            <span style="display:flex; align-items:center; gap:8px;">🌐 Live Web Preview <span style="font-size:10px; background:#10b981; padding:2px 6px; border-radius:4px;">Protected Sandbox</span></span>
+            <span style="display:flex; align-items:center; gap:8px;">🌐 Live Web Preview <span style="font-size:10px; background:#10b981; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Protected Sandbox</span></span>
             <button class="preview-close" onclick="document.getElementById('htmlPreviewModal').style.display='none'">✕ Close</button>
         </div>
         <iframe id="htmlPreviewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
@@ -360,11 +377,11 @@
     <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px);">
         <div style="color:var(--primary); font-size:22px;">🎧</div>
         <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer;">⏸️</button>
-        <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer;">✕</button>
+        <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
     </div>
 
     <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column;">
-        <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#e11d48; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer;">✕</button>
+        <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#e11d48; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; transition: 0.2s;">✕</button>
         <img id="fsImage" style="max-width:90%; max-height:75%; border-radius:16px; object-fit:contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
         <button id="fsDownloadBtn" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:15px 40px; border-radius:30px; font-weight:800; cursor:pointer; font-size:18px; box-shadow: 0 10px 20px rgba(16,185,129,0.4);" onclick="downloadFullscreenImage()">📥 Force Download</button>
     </div>
@@ -392,10 +409,10 @@
             <button onclick="disableImageMode()" title="Cancel Image Mode">✕</button>
         </div>
 
-        <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <div style="display:flex; gap:10px; margin-bottom:10px; overflow-x: auto; padding-bottom: 5px;">
             <button id="modeLocalBtn" class="mode-toggle-btn" onclick="setSearchMode('local')">📚 Local Book Data</button>
             <button id="modeWebBtn" class="mode-toggle-btn active" onclick="setSearchMode('web')">🌐 Live Web Data</button>
-            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Photos (0)</button>
+            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 12px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Photos (0)</button>
         </div>
 
         <div id="multiImageManager" style="display:none; padding:10px; margin-bottom:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:12px; overflow-x:auto;">
@@ -407,31 +424,31 @@
             <button onclick="clearPdfFile()" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; font-size:14px;">✕</button>
         </div>
 
-        <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px;">
+        <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
             
             <div style="position:relative;">
-                <button class="chat-action-btn" onclick="event.stopPropagation(); document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:45px; height:45px; font-size:20px; background:transparent; border:none; cursor:pointer;">➕</button>
+                <button class="chat-action-btn" onclick="event.stopPropagation(); document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:45px; height:45px; font-size:20px; background:transparent; border:none; cursor:pointer; transition: 0.2s;">➕</button>
                 
-                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:150px;">
-                    <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Add Photo (Max 10)</button>
-                    <button onclick="document.getElementById('pdfUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">📄 Add PDF</button>
-                    <button onclick="activateImageMode(); this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; font-weight:600;">🎨 Create Photo</button>
+                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation: slideUp 0.2s ease;">
+                    <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600; transition: 0.2s;">🖼️ Add Photo (Max 10)</button>
+                    <button onclick="document.getElementById('pdfUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600; transition: 0.2s;">📄 Attach PDF</button>
+                    <button onclick="activateImageMode(); this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; font-weight:600; transition: 0.2s;">🎨 Create Photo</button>
                 </div>
             </div>
             
             <input type="file" id="pdfUploadInput" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
             <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
             
-            <textarea id="searchInput" placeholder="Ask anything, solve maths, write HTML code..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; font-family: inherit;"></textarea>
+            <textarea id="searchInput" placeholder="Ask anything, solve maths, write HTML code..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; font-family: inherit; line-height: 1.5;"></textarea>
             
-            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runMainPipeline()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; transition: 0.2s;">🚀</button>
+            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runMainPipeline()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">🚀</button>
         </div>
     </div>
 
     <script>
         /**
          * GLOBAL STATE VARIABLES
-         * Declaring these at the top strictly prevents "Cannot access before initialization" crashes.
+         * Declared at top level to prevent initialization crashing.
          */
         let appHistory = [];
         let sessionMessages = [];
@@ -553,12 +570,14 @@
                 <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
                     <div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));">
                         <div class="ai-signature">✨ DEEP AI PRO SYSTEM</div>
-                        <b style="color:var(--primary); font-size:18px;">👋 Welcome back! System is fully online.</b><br><br>
+                        <b style="color:var(--primary); font-size:18px;">👋 System is fully online.</b><br><br>
                         <div style="font-size:14px; line-height: 1.6;">
-                        • <b>Global Feedback Fix:</b> You can now access the feedback menu via the three dots (⋮) in the top-right corner. It will never clip or cut off.<br>
+                        • <b>Language Enforcement:</b> Deep AI will strictly force output in your selected language.<br>
+                        • <b>Brand Formatting:</b> Technical terms and brands will auto-format as <code>English(Translated)</code>.<br>
+                        • <b>Global Feedback:</b> Access the feedback menu via the three dots (⋮) in the top-right corner. It will never clip or cut off.<br>
                         • <b>Polyfill Hijack Blocked:</b> The HTML Previewer now features a dynamic regex scanner that rips out malicious <i>polyfill.io</i> tags before they load.<br>
-                        • <b>Code Box Engine:</b> Code will now perfectly wrap in black (light mode) or white (dark mode) boxes, safe from MathJax parsing interference.<br>
-                        • <b>Force Download:</b> The image download engine utilizes Blob fetching to completely bypass Hugging Face redirects.<br>
+                        • <b>Code Box Engine:</b> Code will perfectly wrap in themed boxes, safe from MathJax parsing interference.<br>
+                        • <b>Force Download:</b> The image download engine utilizes Blob fetching to bypass redirects.<br>
                         </div>
                     </div>
                 </div>`);
@@ -595,7 +614,7 @@
                 
                 // --- GREEN API CONFIGURATION ---
                 // We send the flag "USE_ENV_FEEDBACK" so your server.js knows
-                // to swap it out for the real .env phone number.
+                // to swap it out for the real .env phone number securely.
                 const payload = { 
                     number: "USE_ENV_FEEDBACK", 
                     message: `SYSTEM FEEDBACK REPORT:\n\nUser Notes:\n${userChanges}` 
@@ -819,6 +838,7 @@
                 showToast(`📸 Photo attached (${uploadedImages.length}/10)`);
             }; 
             r.readAsDataURL(f); 
+            e.target.value = ''; // Reset input
         }
         
         function handlePdfUpload(e) { 
@@ -845,6 +865,7 @@
                 }
             }; 
             r.readAsArrayBuffer(f); 
+            e.target.value = ''; // Reset input
         }
         
         function clearPdfFile() { 
@@ -872,6 +893,10 @@
         // --------------------------------------------
         async function runDirectImageGeneration(promptText) {
             if(!promptText) return;
+            
+            // Revert submit button icon
+            document.getElementById("sendSearchBtn").innerHTML = "🚀";
+            
             const chatContainer = document.getElementById("searchChatHistory"); 
             const loadId = "img_load_" + Date.now();
             
@@ -883,6 +908,8 @@
                         <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Painting your request in high definition...</span></div>
                     </div>
                 </div>`);
+            
+            document.getElementById("searchInput").value = "";
             safeScroll();
 
             try {
@@ -923,6 +950,11 @@
             
             const chatContainer = document.getElementById("searchChatHistory");
             const selectedModelValue = document.getElementById("modelSelector").value;
+            
+            // Extract the selected language explicitly from dropdown
+            const langSelect = document.getElementById("appLang");
+            const selectedLang = langSelect.options[langSelect.selectedIndex].text;
+            const toneSelect = document.getElementById("aiTone").value;
 
             // Render user attachments in chat bubble
             let userImgHtml = ''; 
@@ -953,14 +985,28 @@
                 </div>`);
             safeScroll();
 
-            // ADVANCED SYSTEM PROMPT DIRECTIVE
-            const advancedPrompt = `You are an elite AI. Write the ABSOLUTE BEST, most detailed, modern, and responsive code or text possible. NEVER use or link to polyfill.io under any circumstances. Ensure perfect LaTeX for math. Structure your answer cleanly. Tone: Standard. \n\nUser query: ${q}\n\n${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
+            // ============================================
+            // 🚨 MASTER PROMPT INJECTION SYSTEM 🚨
+            // Here is the strict logic forcing the translation
+            // formatting and enforcing the language choice.
+            // ============================================
+            const advancedPrompt = `You are an elite AI assistant. 
+            
+CRITICAL LANGUAGE INSTRUCTION: You MUST write your ENTIRE response STRICTLY in ${selectedLang}. Do not drift into English unless absolutely necessary for programming code blocks.
+
+BRAND/TERM FORMATTING: If you use any brand names, technical terms, or specific English words in the text, you MUST write the English word first, followed immediately by its ${selectedLang} translation in brackets. Example: Apple(ऐप्पल), crompton(क्रॉम्पटन), or Bluetooth(ब्लूटूथ).
+
+Write the ABSOLUTE BEST, most detailed, modern, and responsive code or text possible. NEVER use or link to polyfill.io under any circumstances. Ensure perfect LaTeX for math. Structure your answer cleanly. Tone: ${toneSelect}. 
+
+User query: ${q}
+
+${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
 
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
                 let body = imageToUseForApi 
                     ? { imageBase64: imageToUseForApi, userPrompt: advancedPrompt, providerOverride: selectedModelValue } 
-                    : { systemPrompt: "You are an elite AI.", userPrompt: advancedPrompt, providerOverride: selectedModelValue };
+                    : { systemPrompt: "You are an elite AI system.", userPrompt: advancedPrompt, providerOverride: selectedModelValue };
                 
                 const response = await fetch(endpoint, { 
                     method: "POST", 
@@ -995,6 +1041,7 @@
                 // Blast text onto screen
                 runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
                     if (window.MathJax) { MathJax.typesetPromise([document.getElementById(loadId)]); }
+                    
                     // Trigger secondary image creation if intent detected
                     if (requiresImageTrigger) {
                         runDirectImageGeneration(q, `attached_image_zone_${loadId}`);
