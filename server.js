@@ -124,8 +124,9 @@ async function processQueue() {
         console.log(`[Queue] Processing prompt: ${currentRequest.prompt}`);
         
         // Launch highly optimized headless browser to save RAM (< 450MB)
-        browser = await puppeteer.launch({
+       browser = await puppeteer.launch({
             headless: "new",
+            executablePath: '/opt/render/.cache/puppeteer/chrome/linux-127.0.6533.88/chrome-linux64/chrome', // 🚀 ADD THIS LINE
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
