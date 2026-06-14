@@ -130,8 +130,6 @@ async function processQueue() {
         });
 
         const page = await browser.newPage();
-        
-        // Navigate and wait for DOM, not network, to avoid 90s hang
         await page.goto('https://aichatbot12321-deep-ai-image-gen.hf.space/?__theme=system', {
             waitUntil: 'domcontentloaded', 
             timeout: 60000
@@ -145,26 +143,20 @@ async function processQueue() {
         await page.waitForSelector(buttonSelector, { timeout: 20000 });
         await page.click(buttonSelector);
 
-        console.log("[Queue] Prompt submitted. Waiting for results...");
+        console.log("[Queue] Waiting for REAL image (ignoring placeholders)...");
 
-        // 🚀 BROADER SELECTOR: Catches the image regardless of the HF internal class name
-        const imgSelector = 'img[src*="gradio-file"], div[data-testid="image"] img, img';
-        
-        // Wait for the image to be added to the DOM
-        await page.waitForSelector(imgSelector, { timeout: 90000 });
-        
-        // Give it an extra 2 seconds to finish rendering the pixels
-        await new Promise(r => setTimeout(r, 2000));
+        // 🚀 THE MAGIC FIX: We wait for a "file" or a "gradio-file" which indicates a finished generation
+        // We use a custom function to check if the image has changed from the gradient placeholder
+        await page.waitForFunction(() => {
+            const img = document.querySelector('div[data-testid="image"] img');
+            return img && img.src && !img.src.includes('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+        }, { timeout: 90000 });
 
-        const imageSrc = await page.evaluate((sel) => {
-            const images = document.querySelectorAll(sel);
-            // Get the last image added to the page, which is usually the result
-            return images[images.length - 1].src;
-        }, imgSelector);
+        const imageSrc = await page.evaluate(() => {
+            return document.querySelector('div[data-testid="image"] img').src;
+        });
 
-        if (!imageSrc) throw new Error("Image element found, but source is empty.");
-
-        console.log("[Queue] Image successfully grabbed!");
+        console.log("[Queue] Real image grabbed!");
         currentRequest.resolve({ imageBase64: imageSrc });
 
     } catch (error) {
@@ -176,7 +168,6 @@ async function processQueue() {
         setTimeout(processQueue, 1000);
     }
 }
-
 async function handleHFSearchImage(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
