@@ -23,6 +23,10 @@
         
         .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
 
+        /* Focus Mode Exit Button */
+        #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        body.focus-mode #exitFocusBtn { display: flex; justify-content: center; align-items: center; }
+
         /* Settings Modal */
         #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
         .settings-content { background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); animation: popIn 0.3s ease; }
@@ -54,6 +58,8 @@
 </head>
 <body class="chat-page-layout">
 
+    <button id="exitFocusBtn" onclick="toggleFocusMode()" title="Exit Focus Mode">✕</button>
+
     <div id="settingsModal">
         <div class="settings-content">
             <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
@@ -61,6 +67,14 @@
                 <button onclick="document.getElementById('settingsModal').style.display='none'" style="background:#ef4444; color:white; border:none; width:25px; height:25px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
             </div>
             
+            <div class="setting-row">
+                <span>🤖 AI Model:</span>
+                <select class="setting-select" id="modelSelector">
+                    <option value="gemini">✨ Gemini</option>
+                    <option value="groq">⚡ Groq</option>
+                </select>
+            </div>
+
             <div class="setting-row">
                 <span>🌍 Language:</span>
                 <select class="setting-select" id="appLang">
@@ -145,13 +159,7 @@
 
     <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1);">
         
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <select id="modelSelector" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--primary); font-weight:bold; cursor:pointer; font-size:12px; padding:6px 12px; border-radius:12px;">
-                <option value="gemini">✨ Model: Gemini</option>
-                <option value="groq">⚡ Model: Groq</option>
-            </select>
-            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🖼️ View Photos (0)</button>
-        </div>
+        <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 10px;">🖼️ View Photos (0)</button>
 
         <div id="multiImageManager" style="display:none; padding:10px; margin-bottom:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:12px; overflow-x:auto;">
             <div id="multiImageList" style="display:flex; gap:10px;"></div>
@@ -193,6 +201,14 @@
         let uploadedImages = []; 
         let aiBrain = []; 
 
+        // THIS IS THE CRITICAL FIX FOR HISTORY SAVING
+        function saveHistorySafe() {
+            if (typeof localforage !== 'undefined') {
+                localforage.setItem('aiHistory', appHistory).catch(err => console.log("DB Error:", err));
+            }
+            try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) {}
+        }
+
         try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
         try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) { aiBrain = []; }
 
@@ -201,6 +217,9 @@
                 showWelcomeMessage();
             }
         });
+
+        window.addEventListener('pagehide', () => saveHistorySafe());
+        window.addEventListener('beforeunload', () => saveHistorySafe());
 
         function showWelcomeMessage() {
             const chatContainer = document.getElementById("searchChatHistory");
@@ -230,7 +249,10 @@
 
         // --- UI UTILS ---
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
-        function toggleFocusMode() { document.body.classList.toggle("focus-mode"); showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Focus Mode ON" : "🧘‍♂️ Focus Mode OFF"); }
+        function toggleFocusMode() { 
+            document.body.classList.toggle("focus-mode"); 
+            showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Focus Mode ON" : "🧘‍♂️ Focus Mode OFF"); 
+        }
         function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px; animation: slideUp 0.3s ease;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
         function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
         function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
@@ -287,7 +309,6 @@
                 let text = document.createTextNode(span.innerText);
                 span.parentNode.replaceChild(text, span);
             });
-            // normalize merges adjacent text nodes back together
             element.normalize(); 
         }
 
@@ -309,23 +330,16 @@
             // Highlight logic using word indexing
             currentUtterance.onboundary = (e) => {
                 if(e.name === 'word') {
-                    // Clear previous highlights
                     ttsWordElements.forEach(el => el.classList.remove('tts-highlight'));
-                    
-                    // Approximate the word index based on character position
                     let passedText = pureText.substring(0, e.charIndex);
                     let wordIndex = passedText.trim().split(/\s+/).length - 1;
-                    
                     if(ttsWordElements[wordIndex]) {
                         ttsWordElements[wordIndex].classList.add('tts-highlight');
                     }
                 }
             };
 
-            currentUtterance.onend = () => { 
-                closeTts(); 
-                unwrapTextNodesForTTS(textEl); 
-            };
+            currentUtterance.onend = () => { closeTts(); unwrapTextNodesForTTS(textEl); };
             currentUtterance.onerror = () => { closeTts(); unwrapTextNodesForTTS(textEl); };
 
             window.speechSynthesis.speak(currentUtterance);
@@ -346,7 +360,7 @@
             return text.replace(/```([\s\S]*?)```/g, function(match, code) {
                 let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
                 let lines = safeCode.split('\n');
-                if(lines[0] && !lines[0].includes(' ') && lines.length > 1) lines.shift(); // remove lang identifier
+                if(lines[0] && !lines[0].includes(' ') && lines.length > 1) lines.shift(); 
                 safeCode = lines.join('\n');
                 
                 return `<div class="code-box" style="background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace;">
@@ -437,6 +451,9 @@
             document.getElementById("sendSearchBtn").innerHTML = "🛑";
             
             const chatContainer = document.getElementById("searchChatHistory");
+            
+            // Retrieve settings
+            const model = document.getElementById("modelSelector").value;
             const lang = document.getElementById("appLang").options[document.getElementById("appLang").selectedIndex].text;
             const tone = document.getElementById("aiTone").value;
             const webFocus = document.getElementById("webPriority").checked ? "PRIORITIZE LIVE WEB DATA." : "";
@@ -449,8 +466,7 @@
             
             // If no image uploaded, check if user asks to "remember the image" and fetch from memory
             let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
-            if (!imageToUseForApi && q.toLowerCase().includes('image') || q.toLowerCase().includes('photo')) {
-                // Find latest image in session
+            if (!imageToUseForApi && (q.toLowerCase().includes('image') || q.toLowerCase().includes('photo'))) {
                 for(let i=sessionMessages.length-1; i>=0; i--) {
                     if(sessionMessages[i].imgs && sessionMessages[i].imgs.length > 0) {
                         imageToUseForApi = sessionMessages[i].imgs[0];
@@ -474,12 +490,13 @@
             let brainInstruction = `If the user tells you a specific fact about themselves or explicitly says "remember that [fact]", output the exact tag [MEMORY_SAVE: fact] at the VERY END of your response.`;
 
             let sysInstructions = `You are a highly intelligent AI. ${brainInstruction} ${brainContext} YOU MUST ANSWER ENTIRELY IN ${lang}. ${webFocus} Tone: ${tone}.`;
-            let contextStr = sessionMessages.slice(-5).map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n'); // Keep last 5 for context limit
+            let contextStr = sessionMessages.slice(-5).map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n'); 
             let finalPrompt = `${contextStr}\n\nCurrent Request: ${q}\n\n${persistentPdfMemory ? 'Context Document:\n'+persistentPdfMemory : ''}`;
 
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
-                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: sysInstructions + "\n" + finalPrompt } : { systemPrompt: sysInstructions, userPrompt: finalPrompt };
+                // Properly use the selected model
+                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: sysInstructions + "\n" + finalPrompt, providerOverride: model } : { systemPrompt: sysInstructions, userPrompt: finalPrompt, providerOverride: model };
                 
                 const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: activeAbortController.signal });
                 const data = await response.json();
