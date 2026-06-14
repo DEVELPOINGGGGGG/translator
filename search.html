@@ -11,13 +11,6 @@
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
-    <script type="module">
-        // Importing the Gradio Client directly from the CDN to bypass the NPM requirement
-        import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.8.2/dist/index.min.js";
-        // Making it available globally so our functions can use it!
-        window.HfClient = Client; 
-    </script>
-    
     <script>
         MathJax = { 
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
@@ -265,18 +258,15 @@
                 </div>`);
         }
 
-        // --- BRAIN CONTROLS ---
         function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
         function clearBrain() { if(confirm("Erase AI's memory of you?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
 
-        // --- FONT & SETTINGS CONTROLS ---
         function setFont(scale, btn) {
             document.documentElement.style.setProperty('--app-font-scale', scale);
             document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
 
-        // --- UI UTILS ---
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function toggleFocusMode() { 
             document.body.classList.toggle("focus-mode"); 
@@ -286,7 +276,6 @@
         function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
         function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
 
-        // --- FULLSCREEN VIEWER ---
         let currentFullscreenBase64 = null;
         window.openFullscreenImage = function(imgId) {
             const imgEl = document.getElementById(imgId); if(!imgEl) return;
@@ -299,7 +288,6 @@
             document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
         }
 
-        // --- TTS WITH WORD HIGHLIGHTING ---
         let currentUtterance = null;
         let ttsWordElements = [];
 
@@ -359,12 +347,10 @@
 
         window.closeTts = function() { window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none"; };
 
-        // --- MATH PROCESSOR ---
         function processMath(text) {
             return text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
         }
 
-        // --- CODE BOX FORMATTING ---
         function formatCodeBlocks(text) {
             return text.replace(/```([\s\S]*?)```/g, function(match, code) {
                 let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
@@ -381,7 +367,6 @@
             });
         }
 
-        // --- FILE & IMAGE HANDLING ---
         function toggleMultiImage() { const m = document.getElementById("multiImageManager"); m.style.display = m.style.display === "none" ? "block" : "none"; }
 
         function updateImageUI() {
@@ -400,7 +385,7 @@
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
         // ============================================================
-        // 🚀 EXACT HUGGING FACE GRADIO INTEGRATION 🚀
+        // 🚀 SECURE BACKEND IMAGE GENERATOR (NO CORS/GRADIO ERRORS) 🚀
         // ============================================================
         async function runFloatingImageCreator() {
             const q = document.getElementById("photoPromptInput").value.trim();
@@ -416,34 +401,39 @@
                 <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting via Hugging Face...</span></div>
+                        <div class="ai-signature">✨ BY FLUX (SECURE BACKEND API)</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting securely...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
             try {
-                if (!window.HfClient) {
-                    throw new Error("Gradio client is still loading. Please check your internet or refresh.");
+                // Calls your brand new server.js endpoint!
+                const response = await fetch("/api/hf-search-image", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: q })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Server failed to generate image.");
                 }
 
-                // YOUR EXACT CODE SNIPPET FROM HUGGING FACE DOCS:
-                const client = await window.HfClient.connect("Aichatbot12321/deep-ai-image-gen");
-                const result = await client.predict("/generate_artwork", {
-                    prompt: q,
-                });
-                
-                let generatedImgUrl = result.data[0].url || result.data[0];
-                
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div>
-                    <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to expand">
-                        <img src="${generatedImgUrl}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}">
-                    </div>`;
-                saveHistorySafe(); safeScroll();
+                if (result.imageBase64) {
+                    document.getElementById(loadId).querySelector('.bubble').innerHTML = `
+                        <div class="ai-signature">✨ BY FLUX (SECURE BACKEND API)</div>
+                        <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to expand">
+                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}" alt="Generated Image" onload="safeScroll()">
+                        </div>`;
+                    saveHistorySafe();
+                } else {
+                    throw new Error("Invalid image format received from server.");
+                }
             } catch (error) {
-                console.error(error);
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Hugging Face Generation Failed: ${error.message}</span>`;
+                console.error("Backend Error:", error);
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Image Generation Failed: ${error.message}</span>`;
             }
         }
 
