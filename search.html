@@ -11,11 +11,6 @@
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
-    <script type="module">
-        import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.8.2/dist/index.min.js";
-        window.hfClient = client;
-    </script>
-    
     <script>
         MathJax = { 
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
@@ -153,9 +148,18 @@
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
-      <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close</button>
+      <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
       <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
       <button onclick="window.location.href='search.html'" class="active">🔎 Deep Search</button>
+      <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
+      <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+      <button onclick="window.location.href='code.html'">💻 Code Assistant</button>
+      <button onclick="window.location.href='translator.html'">🌍 Translator</button>
+      <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
+      <button onclick="window.location.href='youtube.html'">📺 YouTube AI</button>
+      <button onclick="window.location.href='tutor.html'">🧠 AI Tutor</button>
+      <button onclick="window.location.href='quiz.html'">📝 Quiz Maker</button>
+      <button onclick="window.location.href='essay.html'">✍️ Essay Writer</button>
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
@@ -380,25 +384,35 @@
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
         // --- CORE SEARCH & BRAIN SYSTEM ---
+        
+        // 🚀 DYNAMIC IMPORT FIX FOR GRADIO ERROR 🚀
         async function runFloatingImageCreator() {
             const q = document.getElementById("photoPromptInput").value.trim();
             if(!q) return showToast("Please describe the image first.");
-            document.getElementById("photoCreatorModal").style.display = 'none'; document.getElementById("photoPromptInput").value = "";
-            const chatContainer = document.getElementById("searchChatHistory"); const loadId = "load_" + Date.now();
             
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div><div class="chat-msg chat-ai" id="${loadId}"><div class="bubble"><div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div><div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting via Hugging Face...</span></div></div></div>`);
+            document.getElementById("photoCreatorModal").style.display = 'none'; 
+            document.getElementById("photoPromptInput").value = "";
+            
+            const chatContainer = document.getElementById("searchChatHistory"); 
+            const loadId = "load_" + Date.now();
+            
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
+                <div class="chat-msg chat-ai" id="${loadId}">
+                    <div class="bubble">
+                        <div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting via Hugging Face...</span></div>
+                    </div>
+                </div>`);
             safeScroll();
 
-            // CONNECT TO YOUR HUGGING FACE SPACE
             const hfSpaceIdentifier = "Aichatbot12321/deep-ai-image-gen"; 
 
-            if(!window.hfClient) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Error: Gradio Client not loaded yet. Check internet connection.</span>`;
-                return;
-            }
-
             try {
-                const app = await window.hfClient(hfSpaceIdentifier);
+                // Dynamically load the client exactly when needed so it NEVER fails!
+                const gradioModule = await import("https://cdn.jsdelivr.net/npm/@gradio/client@1.8.2/dist/index.min.js");
+                const app = await gradioModule.client(hfSpaceIdentifier);
+                
                 const result = await app.predict("/generate_artwork", [q]);
                 
                 if (result && result.data && result.data[0]) {
@@ -459,7 +473,6 @@
             let brainContext = aiBrain.length > 0 ? `USER PROFILE FACTS: ${aiBrain.join('. ')}.` : '';
             let brainInstruction = `If the user tells you a specific fact about themselves or explicitly says "remember that [fact]", output the exact tag [MEMORY_SAVE: fact] at the VERY END of your response.`;
             
-            // MATH & FRACTION INSTRUCTION INJECTED HERE
             let mathInstruction = `IMPORTANT: If the user asks a math calculation or equation, act as an expert Math Solver. Provide step-by-step solutions and ALWAYS use LaTeX formatting for mathematical expressions, equations, and fractions (e.g., use \\frac{num}{den} or $$x^2$$). DO NOT use standard slashes like 1/2 for fractions, convert them to LaTeX fractions.`;
 
             let sysInstructions = `You are a highly intelligent AI. ${mathInstruction} ${brainInstruction} ${brainContext} YOU MUST ANSWER ENTIRELY IN ${lang}. ${webFocus} Tone: ${tone}.`;
