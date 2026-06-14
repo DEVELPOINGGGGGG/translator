@@ -5,14 +5,13 @@ const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
 const puppeteer = require('puppeteer'); 
-const express = require('express'); // <--- THIS IS THE LINE YOU ARE MISSING!
-const cors = require('cors');        // <--- MAKE SURE THIS IS HERE TOO!
+const express = require('express');
+const cors = require('cors');
 
-// 🚨 THE MAGIC FIX: Forces Render to bypass its broken IPv6 network 🚨
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first'); 
 
-const app = express(); // Now this will work!
+const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
