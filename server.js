@@ -4,6 +4,7 @@ const path = require("path");
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
+const puppeteer = require('puppeteer'); // 🚀 NEW: Headless Browser Engine
 
 // 🚨 THE MAGIC FIX: Forces Render to bypass its broken IPv6 network 🚨
 const dns = require('dns');
@@ -15,13 +16,12 @@ const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
-// 🛑 GLOBAL AI INSTRUCTIONS (FIXES CHINESE/JAPANESE BUGS & HINDI BRAND NAMES) 🛑
+// 🛑 GLOBAL AI INSTRUCTIONS 🛑
 const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 1. NO FOREIGN GARBAGE: Never output Chinese, Japanese, Korean, or random unreadable symbols. If the image or text has illegible noise, completely ignore it.
 2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Do NOT transliterate them into Hindi. Keep sentences natural but preserve English nouns.`;
 
 // 🛑 STRICT MASTER WATERFALL HIERARCHY 🛑
-// ORDER: 3x 3.1 Flash Lite -> 2x 3.5 Pro -> Cloudflare -> Groq
 const VISION_PROVIDERS = [
     { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
     { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
@@ -101,12 +101,114 @@ async function tryProviders(providers, requestFn, override = null) {
         } catch (error) { 
             lastError = error; 
             console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
-            
-            // 🛡️ Delay to prevent 503 Overload chaining (kept at 800ms)
             await new Promise(resolve => setTimeout(resolve, 800));
         } 
     }
     throw lastError;
+}
+
+// ==========================================
+// 🛡️ ULTRA-LOW RAM HEADLESS BROWSER QUEUE
+// ==========================================
+let imageQueue = [];
+let isProcessingQueue = false;
+
+async function processQueue() {
+    if (imageQueue.length === 0 || isProcessingQueue) return;
+    
+    isProcessingQueue = true;
+    const currentRequest = imageQueue.shift();
+    let browser = null;
+    
+    try {
+        console.log(`[Queue] Processing prompt: ${currentRequest.prompt}`);
+        
+        // Launch highly optimized headless browser to save RAM (< 450MB)
+        browser = await puppeteer.launch({
+            headless: "new",
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process', // Forces single process to crash-proof memory
+                '--disable-extensions'
+            ]
+        });
+
+        const page = await browser.newPage();
+        
+        // Block heavy resources like CSS fonts and analytics to save bandwidth and memory
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            const type = req.resourceType();
+            if (type === 'font' || type === 'stylesheet' || req.url().includes('analytics')) {
+                req.abort();
+            } else {
+                req.continue();
+            }
+        });
+
+        await page.goto('https://aichatbot12321-deep-ai-image-gen.hf.space/?__theme=system', {
+            waitUntil: 'networkidle2',
+            timeout: 60000
+        });
+
+        const textareaSelector = 'textarea[data-testid="textbox"]';
+        await page.waitForSelector(textareaSelector, { timeout: 15000 });
+        await page.type(textareaSelector, currentRequest.prompt);
+
+        const buttonSelector = 'button.primary';
+        await page.waitForSelector(buttonSelector, { timeout: 15000 });
+        await page.click(buttonSelector);
+
+        console.log("[Queue] Prompt submitted. Waiting for image generation...");
+
+        const imgSelector = 'div[data-testid="image"] img, .output-image img, .gallery img';
+        await page.waitForSelector(imgSelector, { timeout: 90000 });
+
+        const imageSrc = await page.evaluate((sel) => {
+            const img = document.querySelector(sel);
+            return img ? img.src : null;
+        }, imgSelector);
+
+        if (!imageSrc) throw new Error("Image source element found but was empty.");
+
+        console.log("[Queue] Image successfully generated!");
+        currentRequest.resolve({ imageBase64: imageSrc });
+
+    } catch (error) {
+        console.error("[Queue Error]:", error.message);
+        currentRequest.reject(error);
+    } finally {
+        if (browser) {
+            await browser.close();
+            console.log("[Queue] Browser closed cleanly to free RAM.");
+        }
+        isProcessingQueue = false;
+        setTimeout(processQueue, 1000); // Move to next in queue
+    }
+}
+
+async function handleHFSearchImage(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        const prompt = body.prompt;
+        if (!prompt) return sendJson(res, 400, { error: "Prompt is required" });
+
+        // Push to queue and wait for resolution
+        new Promise((resolve, reject) => {
+            imageQueue.push({ prompt, resolve, reject });
+            processQueue();
+        })
+        .then(result => sendJson(res, 200, result))
+        .catch(err => sendJson(res, 500, { error: "Headless generation failed: " + err.message }));
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
 }
 
 // ==========================================
@@ -290,77 +392,6 @@ async function handleCloudflareImage(req, res) {
 }
 
 // ==========================================
-// 🛡️ SECURE HUGGING FACE IMAGE GENERATOR 🛡️
-// ==========================================
-async function handleGenerateImage(req, res) {
-    try {
-        const body = JSON.parse(await readRequestBody(req));
-        const prompt = body.prompt || "";
-        
-        // This line pulls the token from the Render Dashboard ENV tab!
-        const token = process.env.HF_TOKEN; 
-
-        if (!token) {
-            console.error("CRITICAL: HF_TOKEN is missing in Environment Variables!");
-            return sendJson(res, 500, { error: "Server Configuration Error: Token missing." });
-        }
-
-        const response = await axios.post(
-            "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
-            { inputs: prompt },
-            { 
-                headers: { 
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }, 
-                responseType: 'arraybuffer' 
-            }
-        );
-
-        const base64Image = `data:image/jpeg;base64,${Buffer.from(response.data).toString('base64')}`;
-        return sendJson(res, 200, { imageBase64: base64Image });
-    } catch (error) {
-        console.error("Backend Error:", error.message);
-        return sendJson(res, 502, { error: "Backend failed. Check logs." });
-    }
-}
-
-// ==========================================
-// 🚀 DEDICATED HUGGING FACE ROUTE FOR SEARCH.HTML 🚀
-// ==========================================
-async function handleHFSearchImage(req, res) {
-    try {
-        const body = JSON.parse(await readRequestBody(req));
-        const prompt = body.prompt || "";
-        const token = process.env.HF_TOKEN;
-
-        if (!token) {
-            console.error("CRITICAL: HF_TOKEN is missing in Environment Variables!");
-            return sendJson(res, 500, { error: "Server Configuration Error: HF_TOKEN missing." });
-        }
-
-        // Direct server-side call to the FLUX.1-schnell API
-        const response = await axios.post(
-            "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
-            { inputs: prompt },
-            {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                responseType: 'arraybuffer'
-            }
-        );
-
-        const base64Image = `data:image/jpeg;base64,${Buffer.from(response.data).toString('base64')}`;
-        return sendJson(res, 200, { imageBase64: base64Image });
-    } catch (error) {
-        console.error("HF Search Image Error:", error.response?.data?.error || error.message);
-        return sendJson(res, 502, { error: "Hugging Face backend failed. Check logs or token." });
-    }
-}
-
-// ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
 const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "")
@@ -427,8 +458,7 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
-        if (req.url === "/api/generate-image") return handleGenerateImage(req, res);
-        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); // ✨ NEW ENDPOINT FOR SEARCH.HTML ✨
+        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); // ✨ THE HEADLESS BROWSER ENDPOINT ✨
     }
     
     if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
