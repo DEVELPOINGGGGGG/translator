@@ -419,7 +419,47 @@ function serveStatic(req, res) {
         res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); res.end(data);
     });
 }
+// ==========================================
+// 🚨 DEDICATED FEEDBACK ROUTE (ONLY FOR FEEDBACK)
+// ==========================================
+app.post('/api/feedback', async (req, res) => {
+    const { message } = req.body;
 
+    if (!message) {
+        return sendJson(res, 400, { error: "Message payload is empty." });
+    }
+
+    const devNumber = process.env.FEEDBACK_NUMBER;
+    if (!devNumber) {
+        console.error("[Feedback Engine] ERROR: FEEDBACK_NUMBER missing in .env");
+        return sendJson(res, 500, { error: "Feedback destination not configured." });
+    }
+
+    try {
+        const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
+        const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
+        const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
+        
+        const payload = {
+            chatId: `${devNumber.replace(/\D/g, '')}@c.us`,
+            message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}`
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        console.log(`[Feedback Engine] Successfully dispatched to Dev.`);
+        return sendJson(res, 200, data);
+
+    } catch (error) {
+        console.error("[Feedback Engine Error]:", error.message);
+        return sendJson(res, 502, { error: "Failed to dispatch feedback." });
+    }
+});
 // ==========================================
 // MASTER ROUTER
 // ==========================================
