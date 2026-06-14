@@ -254,18 +254,15 @@
                 </div>`);
         }
 
-        // --- BRAIN CONTROLS ---
         function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
         function clearBrain() { if(confirm("Erase AI's memory of you?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
 
-        // --- FONT & SETTINGS CONTROLS ---
         function setFont(scale, btn) {
             document.documentElement.style.setProperty('--app-font-scale', scale);
             document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
 
-        // --- UI UTILS ---
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function toggleFocusMode() { 
             document.body.classList.toggle("focus-mode"); 
@@ -275,7 +272,6 @@
         function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
         function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
 
-        // --- FULLSCREEN VIEWER ---
         let currentFullscreenBase64 = null;
         window.openFullscreenImage = function(imgId) {
             const imgEl = document.getElementById(imgId); if(!imgEl) return;
@@ -288,7 +284,6 @@
             document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
         }
 
-        // --- TTS WITH WORD HIGHLIGHTING ---
         let currentUtterance = null;
         let ttsWordElements = [];
 
@@ -348,7 +343,6 @@
 
         window.closeTts = function() { window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none"; };
 
-        // --- CODE BOX FORMATTING ---
         function formatCodeBlocks(text) {
             return text.replace(/```([\s\S]*?)```/g, function(match, code) {
                 let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
@@ -365,7 +359,6 @@
             });
         }
 
-        // --- FILE & IMAGE HANDLING ---
         function toggleMultiImage() { const m = document.getElementById("multiImageManager"); m.style.display = m.style.display === "none" ? "block" : "none"; }
 
         function updateImageUI() {
@@ -383,9 +376,9 @@
         function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); }; r.readAsArrayBuffer(f); e.target.value = ""; }
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
-        // --- CORE SEARCH & BRAIN SYSTEM ---
-        
-        // 🚀 DYNAMIC IMPORT FIX FOR GRADIO ERROR 🚀
+        // ==========================================
+        // 🚀 BULLETPROOF NATIVE FETCH GENERATOR 🚀
+        // ==========================================
         async function runFloatingImageCreator() {
             const q = document.getElementById("photoPromptInput").value.trim();
             if(!q) return showToast("Please describe the image first.");
@@ -400,31 +393,34 @@
                 <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting via Hugging Face...</span></div>
+                        <div class="ai-signature">✨ BY FLUX (NATIVE HF API)</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting natively...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
-            const hfSpaceIdentifier = "Aichatbot12321/deep-ai-image-gen"; 
-
+            // Native fetch circumvents all module blocking errors
             try {
-                // Dynamically load the client exactly when needed so it NEVER fails!
-                const gradioModule = await import("https://cdn.jsdelivr.net/npm/@gradio/client@1.8.2/dist/index.min.js");
-                const app = await gradioModule.client(hfSpaceIdentifier);
-                
-                const result = await app.predict("/generate_artwork", [q]);
+                const response = await fetch("https://aichatbot12321-deep-ai-image-gen.hf.space/api/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ data: [q] })
+                });
+
+                if (!response.ok) throw new Error("Network error. Make sure your Hugging Face space is currently running.");
+
+                const result = await response.json();
                 
                 if (result && result.data && result.data[0]) {
                     let generatedImgUrl = result.data[0].url || result.data[0];
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                        <div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div>
+                        <div class="ai-signature">✨ BY FLUX (NATIVE HF API)</div>
                         <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to expand">
                             <img src="${generatedImgUrl}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}">
                         </div>`;
                     saveHistorySafe(); safeScroll();
                 } else {
-                    throw new Error("Invalid format received from space");
+                    throw new Error("Invalid format received from Hugging Face Space.");
                 }
             } catch (error) {
                 console.error(error);
@@ -456,7 +452,6 @@
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
             inp.value = ""; safeScroll();
 
-            // Set up AI Signature variables
             let displayModel = model === 'gemini' ? 'GEMINI 1.5' : 'GROQ FAST API';
             let displayApi = imageToUseForApi ? 'VISION API' : 'TEXT API';
 
