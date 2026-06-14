@@ -4,16 +4,18 @@ const path = require("path");
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
-const puppeteer = require('puppeteer'); // 🚀 NEW: Headless Browser Engine
+const puppeteer = require('puppeteer'); 
+const express = require('express'); // <--- THIS IS THE LINE YOU ARE MISSING!
+const cors = require('cors');        // <--- MAKE SURE THIS IS HERE TOO!
 
 // 🚨 THE MAGIC FIX: Forces Render to bypass its broken IPv6 network 🚨
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first'); 
-// -------------------------------------------------------------------
 
-const port = process.env.PORT || 10000;
-const app = express(); // <--- THIS LINE WAS MISSING
+const app = express(); // Now this will work!
 app.use(express.json({ limit: '50mb' }));
+app.use(cors());
+
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
