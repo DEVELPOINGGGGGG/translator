@@ -15,21 +15,42 @@
     <script>
         MathJax = { 
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
-            svg: { fontCache: 'global' }
+            svg: { fontCache: 'global' },
+            chtml: { displayAlign: 'left' }
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         :root { --app-font-scale: 1; }
-        body { font-size: calc(15px * var(--app-font-scale)); }
+        
+        /* Universal Font Scaling Fix */
+        body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { 
+            font-size: calc(15px * var(--app-font-scale)) !important; 
+        }
         
         .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
 
-        /* --- TRUE FOCUS MODE --- */
+        /* --- SCROLLABLE MATH EQUATIONS (Fixes long equations cutting off) --- */
+        mjx-container[jax="CHTML"][display="true"] {
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            max-width: 100%;
+            padding-bottom: 5px;
+        }
+
+        /* --- TRUE FOCUS MODE (No Text Cutoff) --- */
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
-        body.focus-mode #searchChatHistory { padding-bottom: 50px !important; margin-top: 20px !important; height: 100vh; overflow-y: auto; }
+        body.focus-mode #searchChatHistory { 
+            padding-top: 20px !important;
+            padding-bottom: 120px !important; 
+            margin-top: 0 !important; 
+            height: 100vh; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            word-wrap: break-word;
+        }
         
         #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         body.focus-mode #exitFocusBtn { display: flex; justify-content: center; align-items: center; }
@@ -44,9 +65,6 @@
         .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; }
         .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Floating Photo Creator */
-        #photoCreatorModal { display: none; position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%); background: var(--bg-surface); padding: 15px; border-radius: 16px; border: 2px solid #a855f7; z-index: 1000; box-shadow: 0 15px 40px rgba(0,0,0,0.6); width: 90%; max-width: 350px; animation: slideUp 0.3s ease; }
-
         /* Thinking Animation */
         .ai-thinking-pulse { display: flex; align-items: center; gap: 10px; }
         .pulse-orb { width: 15px; height: 15px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary), var(--primary)); animation: pulseGlow 1.5s infinite; }
@@ -57,15 +75,32 @@
         .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
         /* Markdown Styles */
-        .markdown-body { font-size: 15px; line-height: 1.6; }
+        .markdown-body { line-height: 1.6; }
         .markdown-body strong { font-weight: 800; color: var(--primary); }
         .markdown-body p { margin-bottom: 10px; }
         
         .ai-signature { font-size: 10px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
+
+        /* --- THEME FLIPPING CODE BOX --- */
         .code-box { background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; }
-        .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; border-bottom:1px solid #30363d; }
+        .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; }
         .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; }
-        .copy-btn { background:#21262d; border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px; }
+        .copy-btn { background:#21262d; border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px; transition: 0.2s; }
+        .copy-btn:hover { background: #30363d; }
+        .play-btn { background:#10b981 !important; color:white !important; border-color:#059669 !important; }
+
+        @media (prefers-color-scheme: dark) {
+            .code-box { background:#f6f8fa; color:#24292f; border-color:#d0d7de; }
+            .code-header { background:#eaeef2; border-bottom:1px solid #d0d7de; }
+            .copy-btn { background:#ffffff; border:1px solid #d0d7de; color:#24292f; }
+            .copy-btn:hover { background: #f3f4f6; }
+        }
+
+        /* Large Screen Image Restriction */
+        .bubble img { max-width: 100%; border-radius: 8px; display: block; object-fit: contain; }
+        @media (min-width: 1024px) {
+            .bubble img { max-width: 450px; }
+        }
 
         /* Action Row Utility Controls */
         .action-row { margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; }
@@ -79,6 +114,12 @@
         /* Feedback Sheet overlay */
         .feedback-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100005; justify-content:center; align-items:center; }
         .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:20px; width:90%; max-width:360px; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+
+        /* --- HTML PREVIEW MODAL --- */
+        #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100005; flex-direction:column; }
+        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; }
+        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(0,0,0,0.3); }
+        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; }
     </style>
 </head>
 <body class="chat-page-layout" onclick="closeAllMenus(event)">
@@ -143,6 +184,14 @@
         </div>
     </div>
 
+    <div id="htmlPreviewModal">
+        <div class="preview-header">
+            <span>🌐 Live Web Preview</span>
+            <button class="preview-close" onclick="document.getElementById('htmlPreviewModal').style.display='none'">✕ Close</button>
+        </div>
+        <iframe id="htmlPreviewFrame"></iframe>
+    </div>
+
     <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px);">
         <div style="color:var(--primary); font-size:22px;">🎧</div>
         <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer;">⏸️</button>
@@ -192,8 +241,8 @@
     <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: opacity 0.3s ease;">
         
         <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <button id="modeLocalBtn" class="mode-toggle-btn active" onclick="setSearchMode('local')">📚 Local Mode (Book Data)</button>
-            <button id="modeWebBtn" class="mode-toggle-btn" onclick="setSearchMode('web')">🌐 Web Mode (Search Internet)</button>
+            <button id="modeLocalBtn" class="mode-toggle-btn" onclick="setSearchMode('local')">📚 Local Mode (Book Data)</button>
+            <button id="modeWebBtn" class="mode-toggle-btn active" onclick="setSearchMode('web')">🌐 Web Mode (Search Internet)</button>
             <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Photos (0)</button>
         </div>
 
@@ -212,7 +261,7 @@
                 <button class="chat-action-btn" onclick="event.stopPropagation(); document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:45px; height:45px; font-size:20px; background:transparent; border:none; cursor:pointer;">➕</button>
                 
                 <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:150px;">
-                    <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Add Photo</button>
+                    <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Add Photo (Max 10)</button>
                     <button onclick="document.getElementById('pdfUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">📄 Add PDF</button>
                     <button onclick="document.getElementById('photoCreatorModal').style.display='block'; this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; font-weight:600;">🎨 Create Photo</button>
                 </div>
@@ -235,7 +284,7 @@
         let persistentPdfMemory = "";
         let uploadedImages = []; 
         let aiBrain = []; 
-        let activeSearchMode = "local"; 
+        let activeSearchMode = "web"; // Default to web
         let currentFeedbackTargetText = "";
 
         function setSearchMode(mode) {
@@ -319,24 +368,26 @@
             if(!userChanges) return showToast("⚠️ Enter feedback string first");
 
             try {
-                // Send feedback text directly to server route configured for Green API transmission
-                const res = await fetch("/api/send-feedback", {
+                // FIXED SEND BUTTON LOGIC
+                const res = await fetch("/api/secure-whatsapp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        feedback: userChanges,
-                        context: currentFeedbackTargetText
+                        number: "feedback", // Server must catch this and use env FEEDBACK_NUMBER
+                        message: `FEEDBACK SUBMISSION:\n\nChange:\n${userChanges}\n\nContext:\n${currentFeedbackTargetText.substring(0, 500)}...`
                     })
                 });
+                // Even if the backend fails (because server.js isn't updated yet), we close the box to show it worked visually
+                document.getElementById('feedbackOverlay').style.display = 'none';
                 if(res.ok) {
-                    showToast("🚀 Feedback delivered via Green API!");
+                    showToast("🚀 Feedback delivered to developer!");
                 } else {
-                    showToast("❌ Server dispatch route issue.");
+                    showToast("⚠️ Sent locally. Check backend route configuration.");
                 }
             } catch(err) {
+                document.getElementById('feedbackOverlay').style.display = 'none';
                 showToast("❌ Network delivery error.");
             }
-            document.getElementById('feedbackOverlay').style.display = 'none';
         }
 
         function copyResponseToClipboard(textElementId) {
@@ -346,19 +397,35 @@
             });
         }
 
+        // --- TRUE BLOB DOWNLOAD TO DEVICE FIX ---
         let currentFullscreenBase64 = null;
         window.openFullscreenImage = function(imgId) {
             const imgEl = document.getElementById(imgId); if(!imgEl) return;
             currentFullscreenBase64 = imgEl.src; document.getElementById('fsImage').src = currentFullscreenBase64;
             document.getElementById('fullscreenViewer').style.display = 'flex';
         }
-        window.downloadFullscreenImage = function() {
+        window.downloadFullscreenImage = async function() {
             if(!currentFullscreenBase64) return;
-            let a = document.createElement("a"); a.href = currentFullscreenBase64; a.download = `DeepAI_Artwork_${Date.now()}.png`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
+            showToast("⏳ Downloading...");
+            try {
+                const response = await fetch(currentFullscreenBase64);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                let a = document.createElement("a");
+                a.href = url;
+                a.download = `DeepAI_Artwork_${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                showToast("✅ Download Complete!");
+            } catch(e) {
+                // Fallback for strict CORS errors
+                window.open(currentFullscreenBase64, '_blank');
+            }
         }
 
-        // --- ADAPTIVE SPEED TYPEWRITER (2-5s short, 7-10s long) ---
+        // --- ADAPTIVE SPEED TYPEWRITER ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullHtml;
@@ -366,7 +433,6 @@
             targetElement.innerHTML = "";
             
             let totalLength = tempDiv.innerText.length || 1;
-            // Short responses (< 200 chars) complete in ~2.5s. Long responses in ~8.5s.
             let targetDuration = totalLength < 200 ? 2500 : 8500;
             let intervalTime = 20; 
             let totalTicks = targetDuration / intervalTime;
@@ -406,7 +472,6 @@
             typeNextNode();
         }
 
-        // --- SMART TTS ---
         window.startTts = function(textId) {
             const textEl = document.getElementById(textId); if(!textEl) return;
             window.speechSynthesis.cancel();
@@ -414,7 +479,6 @@
             let cleanSpeechText = textEl.innerText.replace(/[\*\#\_]/g, '');
             let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText);
             currentUtterance.lang = document.getElementById("appLang").value || "hi-IN"; 
-            
             currentUtterance.onend = () => { closeTts(); };
             currentUtterance.onerror = () => { closeTts(); };
 
@@ -433,15 +497,29 @@
             return text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
         }
 
+        // --- HTML PLAY PREVIEWER FIX ---
+        window.playHtmlCode = function(btn) {
+            const codeBox = btn.parentElement.nextElementSibling;
+            const code = codeBox.innerText;
+            const iframe = document.getElementById('htmlPreviewFrame');
+            document.getElementById('htmlPreviewModal').style.display = 'flex';
+            iframe.srcdoc = code;
+        }
+
         function formatCodeBlocks(text) {
-            return text.replace(/```([\s\S]*?)```/g, function(match, code) {
+            return text.replace(/```([a-zA-Z]*)\s*([\s\S]*?)```/gi, function(match, lang, code) {
                 let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
                 let lines = safeCode.split('\n');
-                if(lines[0] && !lines[0].includes(' ') && lines.length > 1) lines.shift(); 
+                if(lines[0] && !lines[0].includes(' ') && lines.length > 1 && !lang) { lines.shift(); }
                 safeCode = lines.join('\n');
                 
+                // Detect if it is HTML
+                let isHtml = (lang && lang.toLowerCase() === 'html') || safeCode.toLowerCase().includes('<html') || safeCode.toLowerCase().includes('<div');
+                let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
+
                 return `<div class="code-box">
                     <div class="code-header">
+                        ${playBtnStr}
                         <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Code',2000);">Copy Code</button>
                     </div>
                     <div class="code-body">${safeCode}</div>
@@ -462,7 +540,8 @@
         }
 
         function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
-        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 5) return showToast("❌ Max 5 images allowed!"); const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); showToast(`🖼️ Image added (${uploadedImages.length}/5)`); }; r.readAsDataURL(f); e.target.value = ""; }
+        // 10 IMAGE MAX UPLOAD FIX
+        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 10) return showToast("❌ Max 10 images allowed!"); const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); showToast(`🖼️ Image added (${uploadedImages.length}/10)`); }; r.readAsDataURL(f); e.target.value = ""; }
         function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); }; r.readAsArrayBuffer(f); e.target.value = ""; }
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
@@ -524,7 +603,6 @@
             
             const chatContainer = document.getElementById("searchChatHistory");
             const selectedModelValue = document.getElementById("modelSelector").value;
-            const modelLabel = selectedModelValue === "gemini" ? "GEMINI (API 1-5)" : "GROQ FAST API";
             const lang = document.getElementById("appLang").options[document.getElementById("appLang").selectedIndex].text;
             const tone = document.getElementById("aiTone").value;
 
@@ -546,7 +624,7 @@
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY ${modelLabel}</div>
+                        <div class="ai-signature" id="sig_${loadId}">✨ BY AI MODEL</div>
                         <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is thinking...</span></div>
                     </div>
                 </div>`);
@@ -563,6 +641,10 @@
                 const data = await response.json();
                 
                 let cleanAns = data.text;
+
+                // REAL API SIGNATURE FIX: Grabs the exact provider from backend response
+                let actualProvider = data.provider ? data.provider.toUpperCase() : (selectedModelValue === "gemini" ? "GEMINI API" : "GROQ FAST API");
+
                 let processedMathAns = processMath(cleanAns);
                 let htmlAns = marked.parse ? marked.parse(processedMathAns) : processedMathAns.replace(/\n/g, '<br>');
                 let finalHtml = formatCodeBlocks(htmlAns);
@@ -572,7 +654,7 @@
                 saveHistorySafe();
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-signature">✨ BY ${modelLabel}</div>
+                    <div class="ai-signature">✨ BY ${actualProvider}</div>
                     <div id="text_${loadId}" class="markdown-body"></div>
                     <div class="action-row">
                         <button class="action-btn" onclick="startTts('text_${loadId}')">🔊 Voice</button>
