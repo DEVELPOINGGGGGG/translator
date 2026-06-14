@@ -14,7 +14,8 @@
     "express": "^4.19.2",
     "yt-search": "^2.11.1",
     "tesseract.js": "^5.0.0",
-    "axios": "^1.7.0"
+    "axios": "^1.7.0",
+    "puppeteer": "^22.0.0"
   },
   "engines": {
     "node": ">=18"
