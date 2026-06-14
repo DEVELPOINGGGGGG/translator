@@ -326,6 +326,41 @@ async function handleGenerateImage(req, res) {
 }
 
 // ==========================================
+// 🚀 DEDICATED HUGGING FACE ROUTE FOR SEARCH.HTML 🚀
+// ==========================================
+async function handleHFSearchImage(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        const prompt = body.prompt || "";
+        const token = process.env.HF_TOKEN;
+
+        if (!token) {
+            console.error("CRITICAL: HF_TOKEN is missing in Environment Variables!");
+            return sendJson(res, 500, { error: "Server Configuration Error: HF_TOKEN missing." });
+        }
+
+        // Direct server-side call to the FLUX.1-schnell API
+        const response = await axios.post(
+            "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell",
+            { inputs: prompt },
+            {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                responseType: 'arraybuffer'
+            }
+        );
+
+        const base64Image = `data:image/jpeg;base64,${Buffer.from(response.data).toString('base64')}`;
+        return sendJson(res, 200, { imageBase64: base64Image });
+    } catch (error) {
+        console.error("HF Search Image Error:", error.response?.data?.error || error.message);
+        return sendJson(res, 502, { error: "Hugging Face backend failed. Check logs or token." });
+    }
+}
+
+// ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
 const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "")
@@ -392,7 +427,8 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
-        if (req.url === "/api/generate-image") return handleGenerateImage(req, res); // ✨ NEW ENDPOINT ADDED HERE ✨
+        if (req.url === "/api/generate-image") return handleGenerateImage(req, res);
+        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); // ✨ NEW ENDPOINT FOR SEARCH.HTML ✨
     }
     
     if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
