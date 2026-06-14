@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Search & AI Creator Pro</title>
+    <title>Deep Search & AI Creator Pro - Ultra Edition</title>
     
     <link rel="stylesheet" href="style.css">
     
@@ -41,8 +41,10 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; padding: 0;
+            margin: 0; 
+            padding: 0;
             overflow-x: hidden;
+            background-color: var(--bg-main);
         }
 
         body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { 
@@ -58,17 +60,24 @@
             opacity: 0.7; 
         }
 
-        /* --- Scrollable Math Equations --- */
+        /* --- Scrollable Math Equations (Fixes layout breaks) --- */
         mjx-container[jax="CHTML"][display="true"] {
             overflow-x: auto !important;
             overflow-y: hidden !important;
             max-width: 100%;
             padding-bottom: 5px;
-            /* Custom scrollbar for math */
             scrollbar-width: thin;
         }
+        
+        mjx-container[jax="CHTML"][display="true"]::-webkit-scrollbar {
+            height: 6px;
+        }
+        mjx-container[jax="CHTML"][display="true"]::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 10px;
+        }
 
-        /* --- TRUE FOCUS MODE --- */
+        /* --- TRUE FOCUS MODE (Hides UI for distraction-free reading) --- */
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
         body.focus-mode #searchChatHistory { 
@@ -101,8 +110,12 @@
             align-items: center; 
             transition: transform 0.2s ease;
         }
-        #exitFocusBtn:hover { transform: scale(1.1); }
-        body.focus-mode #exitFocusBtn { display: flex; }
+        #exitFocusBtn:hover { 
+            transform: scale(1.1); 
+        }
+        body.focus-mode #exitFocusBtn { 
+            display: flex; 
+        }
 
         /* --- Global Settings Modal --- */
         #settingsModal { 
@@ -115,6 +128,7 @@
             justify-content: center; 
             align-items: center; 
         }
+        
         .settings-content { 
             background: var(--bg-surface); 
             border: 2px solid var(--primary); 
@@ -124,12 +138,17 @@
             box-shadow: 0 15px 40px rgba(0,0,0,0.5); 
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
-        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        @keyframes popIn { 
+            0% { transform: scale(0.8); opacity: 0; } 
+            100% { transform: scale(1); opacity: 1; } 
+        }
         
         .setting-row { 
             display: flex; align-items: center; justify-content: space-between; 
             margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; 
         }
+        
         .setting-select, .setting-input { 
             background: var(--input-bg); border: 1px solid var(--border-light); 
             color: var(--text-main); padding: 8px; border-radius: 8px; 
@@ -142,7 +161,11 @@
             color: var(--text-main); padding: 6px; border-radius: 6px; 
             font-size: 11px; cursor: pointer; transition: 0.2s;
         }
-        .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .font-btn.active { 
+            background: var(--primary); 
+            color: white; 
+            border-color: var(--primary); 
+        }
 
         /* --- AI Thinking Animation --- */
         .ai-thinking-pulse { display: flex; align-items: center; gap: 10px; }
@@ -164,7 +187,12 @@
             font-size: 11px; font-weight: bold; cursor: pointer; transition: var(--transition-speed);
         }
         .mode-toggle-btn:hover { border-color: var(--primary); }
-        .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .mode-toggle-btn.active { 
+            background: var(--primary); 
+            color: white; 
+            border-color: var(--primary); 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+        }
 
         /* Markdown Styles */
         .markdown-body { line-height: 1.6; }
@@ -190,15 +218,23 @@
             background:#161b22; padding:8px 15px; display:flex; 
             justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; 
         }
-        .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; line-height: 1.5; }
+        .code-body { 
+            padding:15px; overflow-x:auto; font-size:13px; 
+            white-space:pre-wrap; line-height: 1.5; 
+        }
         .copy-btn { 
             background:#21262d; border:1px solid #30363d; color:#c9d1d9; 
             padding:5px 12px; border-radius:6px; cursor:pointer; 
             font-weight:bold; font-size:11px; transition: 0.2s; 
         }
-        .copy-btn:hover { background: #30363d; transform: translateY(-1px); }
-        .play-btn { background:#10b981 !important; color:white !important; border-color:#059669 !important; }
+        .copy-btn:hover { 
+            background: #30363d; transform: translateY(-1px); 
+        }
+        .play-btn { 
+            background:#10b981 !important; color:white !important; border-color:#059669 !important; 
+        }
 
+        /* Automatic Dark Mode Override for System Preferences */
         @media (prefers-color-scheme: dark) {
             .code-box { background:#f6f8fa; color:#24292f; border-color:#d0d7de; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
             .code-header { background:#eaeef2; border-bottom:1px solid #d0d7de; }
@@ -206,9 +242,37 @@
             .copy-btn:hover { background: #f3f4f6; }
         }
 
-        /* Large Screen Image Restriction */
-        .bubble img { max-width: 100%; border-radius: 8px; display: block; object-fit: contain; }
-        @media (min-width: 1024px) { .bubble img { max-width: 450px; } }
+        /* COMPACT OPTIMIZED IMAGE RENDERING CONTAINER */
+        .ai-generated-img-container {
+            max-width: 320px; /* Forces generated images to not be too huge */
+            width: 100%;
+            border-radius: 12px; 
+            overflow: hidden; 
+            margin-top: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border: 2px solid var(--border-light);
+            transition: transform 0.2s ease;
+        }
+        .ai-generated-img-container:hover {
+            transform: scale(1.02);
+        }
+        .ai-generated-img-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* User Uploaded Chips Clickable Style */
+        .uploaded-thumbnail-frame {
+            position: relative;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .uploaded-thumbnail-frame:hover {
+            opacity: 0.85;
+        }
 
         /* Action Row Utility Controls */
         .action-row { 
@@ -221,7 +285,10 @@
             font-size:12px; cursor:pointer; font-weight:bold; 
             display:flex; align-items:center; gap:4px; transition: 0.2s;
         }
-        .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .action-btn:hover { 
+            background: var(--primary); color: white; 
+            border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
+        }
 
         /* --- GLOBAL TOP-CORNER FEEDBACK SYSTEM --- */
         .global-options-btn {
@@ -237,14 +304,19 @@
             z-index: 99999; flex-direction: column; min-width: 140px; overflow: hidden;
             animation: slideDown 0.2s ease;
         }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { 
+            from { opacity: 0; transform: translateY(-10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
         
         #globalOptionsMenu button { 
             background: transparent; border: none; color: var(--text-main); 
             padding: 12px 15px; font-size: 13px; font-weight: bold; 
             text-align: left; cursor: pointer; width: 100%; transition: 0.2s;
         }
-        #globalOptionsMenu button:hover { background: var(--input-bg); color: var(--primary); }
+        #globalOptionsMenu button:hover { 
+            background: var(--input-bg); color: var(--primary); 
+        }
 
         /* Compact Feedback Overlay */
         .feedback-overlay { 
@@ -258,11 +330,26 @@
         }
 
         /* --- SANDBOXED HTML PREVIEW MODAL --- */
-        #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100005; flex-direction:column; }
-        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; border-bottom: 1px solid #30363d; }
-        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
-        .preview-close:hover { background:#dc2626; transform: translateY(-1px); }
-        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; } 
+        #htmlPreviewModal { 
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); 
+            z-index:100005; flex-direction:column; 
+        }
+        .preview-header { 
+            display:flex; justify-content:space-between; align-items:center; 
+            padding:12px 20px; background:#161b22; color:white; font-weight:bold; 
+            font-family:sans-serif; border-bottom: 1px solid #30363d; 
+        }
+        .preview-close { 
+            background:#ef4444; color:white; border:none; border-radius:8px; 
+            padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; 
+            box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; 
+        }
+        .preview-close:hover { 
+            background:#dc2626; transform: translateY(-1px); 
+        }
+        #htmlPreviewFrame { 
+            flex:1; width:100%; border:none; background:white; 
+        } 
 
         /* Floating Image Chip */
         #floatingModeChip { 
@@ -325,10 +412,11 @@
             </div>
             
             <div class="setting-row">
-                <span>🤖 AI Model:</span>
+                <span>🤖 Smart Router Base:</span>
                 <select class="setting-select" id="modelSelector">
-                    <option value="gemini" selected>✨ Gemini Pro</option>
-                    <option value="groq">⚡ Groq Fast API</option>
+                    <option value="auto" selected>⚡ Auto (Saves Quota)</option>
+                    <option value="api_5">🔥 Force API 5 (Pro)</option>
+                    <option value="api_2">🔋 Force API 2 (Light)</option>
                 </select>
             </div>
 
@@ -380,10 +468,10 @@
         <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
     </div>
 
-    <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column;">
-        <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#e11d48; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; transition: 0.2s;">✕</button>
-        <img id="fsImage" style="max-width:90%; max-height:75%; border-radius:16px; object-fit:contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
-        <button id="fsDownloadBtn" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:15px 40px; border-radius:30px; font-weight:800; cursor:pointer; font-size:18px; box-shadow: 0 10px 20px rgba(16,185,129,0.4);" onclick="downloadFullscreenImage()">📥 Force Download</button>
+    <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); backdrop-filter:blur(15px); z-index:999999; justify-content:center; align-items:center; flex-direction:column;">
+        <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#ef4444; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; transition: 0.2s; font-weight:bold; display:flex; justify-content:center; align-items:center; box-shadow:0 5px 15px rgba(0,0,0,0.5);">✕</button>
+        <img id="fsImage" style="max-width:92%; max-height:75%; border-radius:12px; object-fit:contain; box-shadow: 0 15px 50px rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.2);">
+        <button id="fsDownloadBtn" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:14px 35px; border-radius:30px; font-weight:800; cursor:pointer; font-size:16px; box-shadow: 0 10px 25px rgba(16,185,129,0.4); transition:transform 0.2s;" onclick="downloadFullscreenImage()">📥 Download Photo</button>
     </div>
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
@@ -412,7 +500,7 @@
         <div style="display:flex; gap:10px; margin-bottom:10px; overflow-x: auto; padding-bottom: 5px;">
             <button id="modeLocalBtn" class="mode-toggle-btn" onclick="setSearchMode('local')">📚 Local Book Data</button>
             <button id="modeWebBtn" class="mode-toggle-btn active" onclick="setSearchMode('web')">🌐 Live Web Data</button>
-            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 12px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Photos (0)</button>
+            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 12px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Uploads Thumbnail View</button>
         </div>
 
         <div id="multiImageManager" style="display:none; padding:10px; margin-bottom:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:12px; overflow-x:auto;">
@@ -448,33 +536,27 @@
     <script>
         /**
          * GLOBAL STATE VARIABLES
-         * Declared at top level to prevent initialization crashing.
          */
         let appHistory = [];
         let sessionMessages = [];
         let isProcessing = false;
-        let activeAbortController = null;
         let persistentPdfMemory = "";
         let uploadedImages = []; 
         let aiBrain = []; 
         let activeSearchMode = "web"; 
-        let currentFeedbackContext = "General UI";
         let imageGenerationModeActive = false; 
+        let currentFullscreenBase64 = "";
 
         // --------------------------------------------
         // MARKDOWN & CODE BOX RENDERING SYSTEM
         // --------------------------------------------
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
-            // Encode brackets to prevent accidental HTML execution outside the sandbox
             let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
-            
-            // Intelligently detect if the AI wrote HTML
             let isHtml = (language && language.toLowerCase() === 'html') || 
                          safeCode.toLowerCase().includes('&lt;html') || 
                          safeCode.toLowerCase().includes('&lt;!doctype html');
             
-            // Only add play button if it's safe renderable HTML
             let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)" title="Open in Sandboxed Preview">▶ Play HTML</button>` : '';
 
             return `
@@ -488,7 +570,6 @@
         };
         marked.setOptions({ renderer: renderer });
 
-        // Enhanced Copy Engine for Code Boxes
         function copyToClipboardEngine(btn) {
             const codeText = btn.parentElement.nextElementSibling.innerText;
             navigator.clipboard.writeText(codeText).then(() => {
@@ -502,19 +583,58 @@
             });
         }
 
-        // --------------------------------------------
-        // SECURE HTML PREVIEWER (POLYFILL.IO BLOCKER)
-        // --------------------------------------------
         window.playHtmlCode = function(btn) {
             const rawCode = btn.parentElement.nextElementSibling.innerText;
-            
-            // SECURITY LAYER: Rip out malicious or dead CDN links that cause popups
             let sanitizedCode = rawCode.replace(/<script\s+src=["'][^>]*polyfill\.io[^>]*>[\s\S]*?<\/script>/gi, '');
-            
             const iframe = document.getElementById('htmlPreviewFrame');
-            // Inject sanitized code into sandboxed iframe
             iframe.srcdoc = sanitizedCode;
             document.getElementById('htmlPreviewModal').style.display = 'flex';
+        }
+
+        // --------------------------------------------
+        // ENHANCED FLOATING FULLSCREEN VIEWER
+        // --------------------------------------------
+        window.openFullscreenImage = function(sourceDataOrId) {
+            let src = "";
+            if(document.getElementById(sourceDataOrId)) {
+                src = document.getElementById(sourceDataOrId).src;
+            } else {
+                src = sourceDataOrId; 
+            }
+            if(!src) return;
+            currentFullscreenBase64 = src;
+            document.getElementById("fsImage").src = src;
+            document.getElementById("fullscreenViewer").style.display = "flex";
+        }
+
+        window.downloadFullscreenImage = async function() {
+            if(!currentFullscreenBase64) return;
+            showToast("⏳ Fetching original file...");
+            try {
+                if (currentFullscreenBase64.startsWith('data:')) {
+                    let a = document.createElement("a");
+                    a.href = currentFullscreenBase64;
+                    a.download = `DeepAI_Capture_${Date.now()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showToast("✅ Download Complete!");
+                } else {
+                    const response = await fetch(currentFullscreenBase64);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    let a = document.createElement("a");
+                    a.href = url;
+                    a.download = `DeepAI_Capture_${Date.now()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showToast("✅ Download Complete!");
+                }
+            } catch(e) {
+                window.open(currentFullscreenBase64, '_blank');
+            }
         }
 
         // --------------------------------------------
@@ -541,9 +661,6 @@
             document.getElementById("searchInput").placeholder = "Ask anything, solve maths, write HTML code...";
         }
 
-        // --------------------------------------------
-        // SESSION & HISTORY MANAGEMENT
-        // --------------------------------------------
         function saveHistorySafe() {
             if (typeof localforage !== 'undefined') {
                 localforage.setItem('aiHistory', appHistory).catch(err => console.warn(err));
@@ -551,7 +668,6 @@
             try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) {}
         }
 
-        // Load existing history on boot
         try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
         try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
 
@@ -561,32 +677,23 @@
             }
         });
 
-        // --------------------------------------------
-        // WELCOME MESSAGE GENERATOR
-        // --------------------------------------------
         function showWelcomeMessage() {
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
                     <div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));">
                         <div class="ai-signature">✨ DEEP AI PRO SYSTEM</div>
-                        <b style="color:var(--primary); font-size:18px;">👋 System is fully online.</b><br><br>
+                        <b style="color:var(--primary); font-size:18px;">👋 Dynamic Routing Enabled.</b><br><br>
                         <div style="font-size:14px; line-height: 1.6;">
-                        • <b>Language Enforcement:</b> Deep AI will strictly force output in your selected language.<br>
-                        • <b>Brand Formatting:</b> Technical terms and brands will auto-format as <code>English(Translated)</code>.<br>
-                        • <b>Global Feedback:</b> Access the feedback menu via the three dots (⋮) in the top-right corner. It will never clip or cut off.<br>
-                        • <b>Polyfill Hijack Blocked:</b> The HTML Previewer now features a dynamic regex scanner that rips out malicious <i>polyfill.io</i> tags before they load.<br>
-                        • <b>Code Box Engine:</b> Code will perfectly wrap in themed boxes, safe from MathJax parsing interference.<br>
-                        • <b>Force Download:</b> The image download engine utilizes Blob fetching to bypass redirects.<br>
+                        • <b>Smart Quota Saver:</b> System now scans your prompt automatically. Standard chat uses fast APIs (1, 2). HTML/CSS Code requests automatically switch to Heavy APIs (5, 4, 3) to protect your Pro limits!<br>
+                        • <b>Click to Fullscreen:</b> Click any photo (Uploaded thumbnails or AI generated results) to view full screen with instant download support.<br>
+                        • <b>Bracket Localization Engine:</b> Technical references translate inside <code>English(Translated)</code> layout masks.<br>
                         </div>
                     </div>
                 </div>`);
             safeScroll();
         }
 
-        // --------------------------------------------
-        // GLOBAL FEEDBACK SYSTEM (THE FIX)
-        // --------------------------------------------
         function toggleGlobalMenu(e) {
             e.stopPropagation();
             const menu = document.getElementById('globalOptionsMenu');
@@ -604,17 +711,12 @@
             document.getElementById('feedbackOverlay').style.display = 'flex';
         }
 
-        // API Submission logic for Feedback
         async function submitFeedbackApi() {
             const userChanges = document.getElementById('feedbackText').value.trim();
             if(!userChanges) return showToast("⚠️ Please type your feedback first.");
 
             try {
                 showToast("⏳ Delivering to dev server...");
-                
-                // --- GREEN API CONFIGURATION ---
-                // We send the flag "USE_ENV_FEEDBACK" so your server.js knows
-                // to swap it out for the real .env phone number securely.
                 const payload = { 
                     number: "USE_ENV_FEEDBACK", 
                     message: `SYSTEM FEEDBACK REPORT:\n\nUser Notes:\n${userChanges}` 
@@ -630,8 +732,7 @@
                     showToast("🚀 Feedback delivered securely!");
                     document.getElementById('feedbackOverlay').style.display = 'none';
                 } else {
-                    const errorData = await res.json();
-                    showToast("❌ Server Block: " + (errorData.error || "Route /api/secure-whatsapp failed"));
+                    showToast("❌ Server Block. Check configuration route.");
                 }
             } catch(err) {
                 showToast("❌ Network error. Backend offline.");
@@ -639,9 +740,6 @@
             }
         }
 
-        // --------------------------------------------
-        // UTILITY FUNCTIONS
-        // --------------------------------------------
         function setFont(scale, btn) {
             document.documentElement.style.setProperty('--app-font-scale', scale);
             document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
@@ -655,7 +753,7 @@
         
         function toggleFocusMode() { 
             document.body.classList.toggle("focus-mode"); 
-            showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Entering Focus Mode" : "🧘‍♂️ Exiting Focus Mode");
+            showToast(document.body.classList.contains("focus-mode") ? "Entering Focus Mode" : "Exiting Focus Mode");
         }
         
         function showToast(msg) { 
@@ -693,39 +791,6 @@
             showToast("📋 Response text copied!");
         }
 
-        // --------------------------------------------
-        // IMAGE DOWNLOAD ENGINE (FORCE BLOB)
-        // --------------------------------------------
-        window.downloadFullscreenImage = async function() {
-            if(!currentFullscreenBase64) return;
-            showToast("⏳ Fetching original file...");
-            try {
-                // Fetch the image as a raw data blob to bypass browser redirect tendencies
-                const response = await fetch(currentFullscreenBase64);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                
-                // Create invisible anchor, trigger download, destroy anchor
-                let a = document.createElement("a");
-                a.style.display = "none";
-                a.href = url;
-                a.download = `DeepAI_Artwork_${Date.now()}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                
-                // Free memory
-                window.URL.revokeObjectURL(url);
-                showToast("✅ Download Complete!");
-            } catch(e) {
-                console.error("Blob fetch failed (CORS), falling back to new tab.", e);
-                window.open(currentFullscreenBase64, '_blank');
-            }
-        }
-
-        // --------------------------------------------
-        // ADAPTIVE TEXT ANIMATION (TYPEWRITER)
-        // --------------------------------------------
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullHtml;
@@ -733,9 +798,8 @@
             targetElement.innerHTML = "";
             let nodeIndex = 0;
 
-            // Mathematical speed scaling based on text payload volume
             let totalLength = tempDiv.innerText.length || 1;
-            let targetDuration = totalLength < 200 ? 2500 : 7500;
+            let targetDuration = totalLength < 200 ? 2000 : 6000;
             let intervalTime = 15; 
             let totalTicks = targetDuration / intervalTime;
             let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
@@ -771,12 +835,8 @@
             typeNextNode();
         }
 
-        // --------------------------------------------
-        // TEXT-TO-SPEECH (TTS) ENGINE
-        // --------------------------------------------
         window.startTts = function(textId) {
             window.speechSynthesis.cancel();
-            // Sanitize markdown artifacts so the engine doesn't say "star star"
             let cleanSpeechText = document.getElementById(textId).innerText.replace(/[\*\#\_\`]/g, '');
             let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText);
             currentUtterance.lang = document.getElementById("appLang").value;
@@ -785,17 +845,10 @@
 
         window.closeTts = function() { window.speechSynthesis.cancel(); };
 
-        // --------------------------------------------
-        // MATH PROCESSING PIPELINE
-        // --------------------------------------------
         function processMath(text) {
-            // Automatically convert simple 1/2 fractions to LaTeX fractions for gorgeous rendering
             return text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
         }
 
-        // --------------------------------------------
-        // FILE UPLOAD MANAGERS
-        // --------------------------------------------
         function toggleMultiImage() { 
             const m = document.getElementById("multiImageManager"); 
             m.style.display = m.style.display === "none" ? "block" : "none"; 
@@ -806,13 +859,13 @@
             const btn = document.getElementById("viewPhotosBtn");
             if (uploadedImages.length > 0) {
                 btn.style.display = "block"; 
-                btn.innerText = `🖼️ View Photos (${uploadedImages.length})`; 
+                btn.innerText = `🖼️ View Active Uploads (${uploadedImages.length})`; 
                 list.innerHTML = "";
                 uploadedImages.forEach((imgSrc, index) => {
                     list.innerHTML += `
-                    <div style="position:relative; flex-shrink:0;">
-                        <button onclick="removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.5);">✕</button>
-                        <img src="${imgSrc}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:2px solid var(--border-light);">
+                    <div class="uploaded-thumbnail-frame" style="position:relative;">
+                        <button onclick="event.stopPropagation(); removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:#ef4444; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold; z-index:10; box-shadow:0 2px 5px rgba(0,0,0,0.5);">✕</button>
+                        <img src="${imgSrc}" onclick="openFullscreenImage('${imgSrc}')" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:2px solid var(--border-light);" title="Click to view full size">
                     </div>`;
                 });
             } else { 
@@ -829,16 +882,15 @@
         function handleImageUpload(e) { 
             const f = e.target.files[0]; 
             if(!f) return; 
-            // 10 Image limit enforced here
             if(uploadedImages.length >= 10) return showToast("❌ Maximum 10 photos reached!"); 
             const r = new FileReader(); 
             r.onload = () => { 
                 uploadedImages.push(r.result); 
                 updateImageUI(); 
-                showToast(`📸 Photo attached (${uploadedImages.length}/10)`);
+                showToast(`📸 Photo added (${uploadedImages.length}/10). Click thumb to verify full size!`);
             }; 
             r.readAsDataURL(f); 
-            e.target.value = ''; // Reset input
+            e.target.value = ''; 
         }
         
         function handlePdfUpload(e) { 
@@ -865,7 +917,7 @@
                 }
             }; 
             r.readAsArrayBuffer(f); 
-            e.target.value = ''; // Reset input
+            e.target.value = ''; 
         }
         
         function clearPdfFile() { 
@@ -874,9 +926,6 @@
             showToast("🗑️ PDF cleared from memory.");
         }
 
-        // --------------------------------------------
-        // CENTRAL ROUTING PIPELINE
-        // --------------------------------------------
         function runMainPipeline() {
             const inp = document.getElementById("searchInput");
             const textValue = inp.value.trim();
@@ -893,8 +942,6 @@
         // --------------------------------------------
         async function runDirectImageGeneration(promptText) {
             if(!promptText) return;
-            
-            // Revert submit button icon
             document.getElementById("sendSearchBtn").innerHTML = "🚀";
             
             const chatContainer = document.getElementById("searchChatHistory"); 
@@ -923,8 +970,8 @@
                 if (result.imageBase64) {
                     document.getElementById(loadId).querySelector('.bubble').innerHTML = `
                         <div class="ai-signature">✨ BY FLUX ENGINE (RENDER API)</div>
-                        <div style="border-radius:12px; overflow:hidden; margin-top:10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);" onclick="openFullscreenImage('img_src_${loadId}')">
-                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_src_${loadId}" title="Click to expand" onload="safeScroll()">
+                        <div class="ai-generated-img-container" onclick="openFullscreenImage('img_src_${loadId}')">
+                            <img src="${result.imageBase64}" id="img_src_${loadId}" title="Click to view full screen with download" onload="safeScroll()">
                         </div>`;
                     saveHistorySafe();
                 } else {
@@ -936,7 +983,77 @@
         }
 
         // --------------------------------------------
-        // MASTER TEXT & VISION AI ENGINE
+        // 🚨 DYNAMIC INTENT PARSER & FALLBACK ROUTER 🚨
+        // This is the core fix to protect the user's Pro Quota.
+        // If code is requested -> Try Tiers 5, 4, 3 first.
+        // If normal text is requested -> Try Tiers 2, 1 first.
+        // --------------------------------------------
+        async function executeWithSmartFallbackLoop(endpoint, requestBody, initialTier) {
+            
+            let userPromptText = requestBody.userPrompt ? requestBody.userPrompt.toLowerCase() : "";
+            
+            // 1. NLP Scanner for Coding Activity
+            const codingKeywords = ['code', 'html', 'css', 'javascript', 'js', 'python', 'java', 'c++', 'script', 'function', 'debug', 'error', 'programming', 'developer', 'react', 'node', 'tailwind'];
+            let isCodingRequest = codingKeywords.some(keyword => userPromptText.includes(keyword));
+
+            // 2. Build the Execution Priority Array based on Intent
+            let tierExecutionSequence = [];
+            
+            // If the user manually forced a setting in the dashboard dropdown, respect it first
+            if (initialTier !== "auto") {
+                tierExecutionSequence.push(initialTier);
+            }
+
+            // Populate the rest of the fallback array based on the NLP scanner
+            if (isCodingRequest) {
+                console.log("🛠️ Code Request Detected: Routing to High-Performance APIs (5, 4, 3)...");
+                tierExecutionSequence.push("api_5", "api_4", "api_3", "api_2", "api_1");
+            } else {
+                console.log("📝 Standard Request Detected: Routing to Quota-Saver APIs (2, 1)...");
+                tierExecutionSequence.push("api_2", "api_1", "api_3", "api_4", "api_5");
+            }
+
+            // Clean up any duplicates if the user manually selected one that is also in the auto-list
+            tierExecutionSequence = [...new Set(tierExecutionSequence)];
+
+            // Execute the API waterfall sequence
+            for (let i = 0; i < tierExecutionSequence.length; i++) {
+                let activeTier = tierExecutionSequence[i];
+                console.log(`📡 Attempting pipeline processing on channel: ${activeTier}`);
+                
+                try {
+                    // Inject routing target payload flag
+                    requestBody.providerOverride = activeTier;
+
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
+                    const response = await fetch(endpoint, { 
+                        method: "POST", 
+                        headers: { "Content-Type": "application/json" }, 
+                        body: JSON.stringify(requestBody),
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        const parsedData = await response.json();
+                        if(parsedData && parsedData.text) {
+                            parsedData.provider = activeTier; // Inject tracker for signature UI
+                            return parsedData;
+                        }
+                    }
+                    console.warn(`⚠️ Channel ${activeTier} dropped request. Looping down to next tier...`);
+                } catch(e) {
+                    console.warn(`⚠️ Execution failure on ${activeTier}. Error log:`, e.message);
+                }
+            }
+            throw new Error("All pipeline execution channels exhausted.");
+        }
+
+        // --------------------------------------------
+        // STANDALONE ROUTER PIPELINE DRIVER
         // --------------------------------------------
         async function runStandaloneTextSearch() {
             const inp = document.getElementById("searchInput"); 
@@ -944,31 +1061,27 @@
             
             if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
             
-            if(isProcessing) return; // Prevent spam clicking
+            if(isProcessing) return; 
             isProcessing = true; 
             document.getElementById("sendSearchBtn").innerHTML = "🛑";
             
             const chatContainer = document.getElementById("searchChatHistory");
-            const selectedModelValue = document.getElementById("modelSelector").value;
+            const selectedTierOnStartup = document.getElementById("modelSelector").value;
             
-            // Extract the selected language explicitly from dropdown
             const langSelect = document.getElementById("appLang");
             const selectedLang = langSelect.options[langSelect.selectedIndex].text;
             const toneSelect = document.getElementById("aiTone").value;
 
-            // Render user attachments in chat bubble
             let userImgHtml = ''; 
             uploadedImages.forEach(img => { 
-                userImgHtml += `<img src="${img}" style="max-height:80px; margin-right:5px; margin-bottom:5px; border-radius:8px; border:1px solid var(--border-light); display:inline-block;">`; 
+                userImgHtml += `<img src="${img}" onclick="openFullscreenImage('${img}')" style="max-height:80px; margin-right:5px; margin-bottom:5px; border-radius:8px; border:1px solid var(--border-light); display:inline-block; cursor:pointer;" title="Click to expand">`; 
             });
-            let currentImagesToSave = [...uploadedImages];
             let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
 
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
             inp.value = ""; 
             safeScroll();
 
-            // Auto-detect if user wants a diagram generated
             let requiresImageTrigger = false;
             let lowercaseQ = q.toLowerCase();
             if(lowercaseQ.includes("चित्र") || lowercaseQ.includes("नक्शा") || lowercaseQ.includes("map") || lowercaseQ.includes("diagram") || lowercaseQ.includes("picture")) {
@@ -979,17 +1092,12 @@
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ AI IS PROCESSING</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Compiling response...</span></div>
+                        <div class="ai-signature">✨ AI SMART ROUTER INITIALIZING</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Analyzing intent & engaging optimal pipelines...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
-            // ============================================
-            // 🚨 MASTER PROMPT INJECTION SYSTEM 🚨
-            // Here is the strict logic forcing the translation
-            // formatting and enforcing the language choice.
-            // ============================================
             const advancedPrompt = `You are an elite AI assistant. 
             
 CRITICAL LANGUAGE INSTRUCTION: You MUST write your ENTIRE response STRICTLY in ${selectedLang}. Do not drift into English unless absolutely necessary for programming code blocks.
@@ -1004,33 +1112,25 @@ ${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
 
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
-                let body = imageToUseForApi 
-                    ? { imageBase64: imageToUseForApi, userPrompt: advancedPrompt, providerOverride: selectedModelValue } 
-                    : { systemPrompt: "You are an elite AI system.", userPrompt: advancedPrompt, providerOverride: selectedModelValue };
+                let basePayload = imageToUseForApi 
+                    ? { imageBase64: imageToUseForApi, userPrompt: advancedPrompt } 
+                    : { systemPrompt: "You are an elite AI system.", userPrompt: advancedPrompt };
                 
-                const response = await fetch(endpoint, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify(body) 
-                });
+                // Route query through the new Dynamic Intent Parser
+                const data = await executeWithSmartFallbackLoop(endpoint, basePayload, selectedTierOnStartup);
                 
-                const data = await response.json();
-                
-                // Real API Signature Extraction
-                let actualProvider = data.provider ? data.provider.toUpperCase() : "GEMINI ENGINE";
+                let activeResolvedChannel = data.provider ? data.provider.toUpperCase() : "SYSTEM ROUTER";
                 let cleanAns = data.text;
 
-                // Safety check: Ensure raw HTML gets wrapped so it goes into a safe Code Box
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
                     cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
                 }
 
-                // Math formatting and markdown parsing
                 let processedMathAns = processMath(cleanAns);
                 let finalHtml = marked.parse(processedMathAns);
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-signature">✨ BY ${actualProvider}</div>
+                    <div class="ai-signature">✨ RESOLVED VIA CHANNEL: ${activeResolvedChannel.replace('_', ' ')}</div>
                     <div id="text_${loadId}" class="markdown-body"></div>
                     <div class="action-row">
                         <button class="action-btn" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button>
@@ -1038,17 +1138,14 @@ ${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
                     </div>
                     <div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
                 
-                // Blast text onto screen
                 runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
                     if (window.MathJax) { MathJax.typesetPromise([document.getElementById(loadId)]); }
-                    
-                    // Trigger secondary image creation if intent detected
                     if (requiresImageTrigger) {
                         runDirectImageGeneration(q, `attached_image_zone_${loadId}`);
                     }
                 });
             } catch (err) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Error: Network timeout or server failure.</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Pipeline Failure: All routing paths dropped connection or server is experiencing an outage.</span>`;
             } finally {
                 isProcessing = false; 
                 document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
