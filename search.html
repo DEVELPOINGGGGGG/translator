@@ -3,211 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Search & Image Creator</title>
+    <title>Deep Search & AI Creator</title>
     
     <link rel="stylesheet" href="style.css">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    
     <script src="https://js.puter.com/v2/"></script>
-    
-    <script>
-      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
-    </script>
-    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+    <script>MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };</script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* JS ANIMATION UTILITIES ONLY */
-        .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple-anim 0.6s linear; background-color: rgba(255, 255, 255, 0.4); pointer-events: none; }
-        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
-        .btn-relative { position: relative; overflow: hidden; }
+        /* ULTRA-CLEAN UI ADDITIONS */
+        body.focus-mode .topbar { transform: translateY(-100%); }
+        body.focus-mode #searchChatHistory { margin-top: 20px; }
         
-        .api-badge { position: absolute; top: 12px; right: 16px; font-size: 9px; color: #10b981; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .quick-chips-container { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 10px 0; margin-bottom: 5px; scrollbar-width: none; }
+        .quick-chips-container::-webkit-scrollbar { display: none; }
+        .quick-chip { background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 15px; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .quick-chip:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-        @keyframes slideDownPlayer { 0% { transform: translate(-50%, -50px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
-        @keyframes pulse-red { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .recording-mic { animation: pulse-red 1.5s infinite; background: rgba(239, 68, 68, 0.2) !important; border: 1px solid #ef4444 !important; color: white !important; }
+        .pro-tools-drawer { display: none; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 16px; padding: 15px; margin-bottom: 10px; box-shadow: var(--glass-shadow); animation: slideUp 0.3s ease; }
+        .pro-tools-drawer.active { display: block; }
+        
+        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: var(--text-main); }
+        .setting-select { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 5px 10px; border-radius: 8px; outline: none; font-size: 12px; }
+        
+        .format-toolbar { display: flex; gap: 5px; padding: 5px; background: transparent; border-bottom: 1px solid var(--border-light); margin-bottom: 5px; }
+        .format-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 4px 8px; border-radius: 5px; transition: 0.2s; }
+        .format-btn:hover { background: var(--border-light); color: var(--text-main); }
 
-        mjx-container[display="true"] { overflow-x: auto !important; overflow-y: hidden !important; max-width: 100% !important; padding-bottom: 8px !important; padding-top: 5px !important; }
-        mjx-container:not([display="true"]) { white-space: normal; }
+        .input-footer { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px 0 10px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
+        
+        .toggle-switch { position: relative; width: 34px; height: 18px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
-        .gradient-image-chip { background: linear-gradient(135deg, #a855f7, #06b6d4) !important; border: 2px solid #22d3ee !important; box-shadow: 0 8px 20px rgba(6, 182, 212, 0.4) !important; color: white !important; font-weight: bold !important; }
+        .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
 
         /* Multi-Image Slider Styling */
-        .img-thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; border: 2px solid var(--border-light); position: relative; }
+        .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid var(--border-light); position: relative; }
         .img-thumb-container { position: relative; display: inline-block; margin-right: 10px; }
         .img-thumb-remove { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; border: none; }
+        .api-badge { position: absolute; top: 12px; right: 16px; font-size: 9px; color: #10b981; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+        /* TTS Animations */
+        @keyframes slideDownPlayer { 0% { transform: translate(-50%, -50px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
     </style>
 </head>
 <body class="chat-page-layout">
 
-    <div id="micLangModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10002; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
-        <div style="background:var(--bg-surface); border:1px solid var(--primary); border-radius:20px; padding:20px; width:80%; max-width:300px; box-shadow:0 10px 30px rgba(0,0,0,0.8); text-align:center; animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-            <h3 style="color:var(--text-main); margin-top:0; margin-bottom:20px; font-size:16px;">Speak In Which Language?</h3>
-            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('hi-IN')" style="width:100%; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:var(--text-main); padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:10px; cursor:pointer;">🇮🇳 Hindi</button>
-            <button class="btn-relative" onclick="createRipple(event); startVoiceRecognition('en-US')" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:var(--text-main); padding:12px; border-radius:12px; font-size:16px; font-weight:bold; margin-bottom:15px; cursor:pointer;">🇺🇸 English</button>
-            <button class="btn-relative" onclick="createRipple(event); closeMicModal()" style="width:100%; background:transparent; border:none; color:var(--text-muted); font-size:14px; cursor:pointer; text-decoration:underline;">Cancel</button>
-        </div>
-    </div>
-
-    <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px); animation:slideDownPlayer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+    <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px); animation:slideDownPlayer 0.4s ease;">
         <div style="color:var(--primary); font-size:22px; filter: drop-shadow(0 0 5px var(--primary));">🎧</div>
-        <button class="btn-relative" id="ttsPlayPauseBtn" onclick="createRipple(event); toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border-radius:50%;">⏸️</button>
-        <button class="btn-relative" id="ttsBracketBtn" onclick="createRipple(event); toggleBracketReading()" style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:var(--text-main); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:12px; font-weight:bold; transition:all 0.3s;">[x] Read Brackets</button>
-        <button class="btn-relative" onclick="createRipple(event); closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(225,29,72,0.5);">✕</button>
+        <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border-radius:50%;">⏸️</button>
+        <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(225,29,72,0.5);">✕</button>
     </div>
 
-    <div id="fullscreenViewer" style="display:none; position:fixed; top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column; animation: popIn 0.3s ease;">
-        <button onclick="closeFullscreenImage()" class="btn-relative" style="position:absolute; top:30px; right:30px; background:#e11d48; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; font-weight:bold; cursor:pointer; box-shadow:0 5px 15px rgba(0,0,0,0.5); z-index:100000;">✕</button>
-        <img id="fsImage" style="max-width:90%; max-height:75%; border-radius:16px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); object-fit:contain;">
-        <button id="fsDownloadBtn" class="btn-relative" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:15px 40px; border-radius:30px; font-weight:800; cursor:pointer; font-size:18px; box-shadow:0 10px 25px rgba(16,185,129,0.4);" onclick="downloadFullscreenImage(event)">📥 Download Original</button>
+    <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column;">
+        <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#e11d48; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer;">✕</button>
+        <img id="fsImage" style="max-width:90%; max-height:75%; border-radius:16px; object-fit:contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+        <button id="fsDownloadBtn" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:15px 40px; border-radius:30px; font-weight:800; cursor:pointer; font-size:18px;" onclick="downloadFullscreenImage()">📥 Download Original</button>
     </div>
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
       <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
       <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-      <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-      <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+      <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+      <button onclick="window.location.href='search.html'" class="active">🔎 Deep Search</button>
       <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-      <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+      <button onclick="window.location.href='translator.html'">🌍 Translator</button>
+      <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
+      <button onclick="window.location.href='youtube.html'">📺 YouTube AI</button>
+      <button onclick="window.location.href='quiz.html'">📝 Quiz Maker</button>
+      <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
-    <div class="topbar">
+    <div class="topbar" style="transition: transform 0.4s ease;">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-        <div class="appTitle">Deep Search</div>
+        <div class="appTitle" style="font-size: 18px;">Deep AI</div>
         
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-            <button id="langToggleBtn" onclick="toggleSearchLanguage()" style="background: linear-gradient(135deg, var(--secondary), var(--primary)); border: none; color: white; border-radius: 20px; padding: 4px 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 10px var(--primary-glow); transition: 0.2s;">
-                🌍 <span id="langText" style="color: white !important;">HI</span>
-            </button>
-            <div class="menuBtn btn-relative" style="font-size: 20px; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border-radius: 50%;" onclick="createRipple(event); clearSearchChat();" title="Clear Chat">🗑️</div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-main);">🧘‍♂️</button>
+            <button onclick="exportChat()" title="Export Chat" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-main);">📥</button>
+            <button onclick="window.print()" title="Print Chat" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-main);">🖨️</button>
+            <button onclick="summarizeChat()" title="Summarize Chat" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--primary);">📑</button>
+            <div class="menuBtn" style="font-size: 18px; padding: 5px;" onclick="clearSearchChat();" title="Clear All">🗑️</div>
         </div>
     </div>
 
-    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 75px; padding-bottom: 120px;"></div>
+    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 75px; padding-bottom: 250px; transition: margin 0.4s ease;"></div>
 
-    <div class="chat-input-area" style="flex-direction: column;">
-        
-        <div id="multiImageManager" style="display:none; position:absolute; top:-100px; left:10px; right:10px; background:var(--bg-surface); padding:10px; border-radius:15px; border:1px solid var(--border-light); box-shadow:0 10px 25px rgba(0,0,0,0.5); overflow-x:auto; white-space:nowrap; z-index:50;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; color:var(--text-main); font-size:12px; font-weight:bold;">
-                <span>Uploaded Images (<span id="imgCount">0</span>/5)</span>
-                <button onclick="document.getElementById('multiImageManager').style.display='none'" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">✕ Close</button>
-            </div>
-            <div id="multiImageList" style="display:flex; gap:10px;"></div>
-        </div>
-        
-        <div class="image-preview-chip" id="pdfPreviewChip" style="display:none; position:absolute; top:-85px; left:10px; background:var(--bg-surface); border-color:var(--primary); flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: all 0.3s ease;">
-            <div style="font-size:24px; margin-bottom:2px;">📄</div>
-            <div id="pdfName" style="font-size:10px; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center; padding: 0 4px;">doc.pdf</div>
-            <div class="closeBtn" style="position:absolute; top:-10px; right:-10px; width:28px; height:28px; font-size:12px; background:#e11d48; color:white; display:flex; justify-content:center; align-items:center; border-radius:50%;" onclick="clearPdfFile(event)">✕</div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; padding-left: 5px; margin-bottom: 8px; width: 100%; align-items:center;">
-            <select id="modelSelector" style="background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); border-radius: 15px; padding: 5px 12px; outline: none; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: var(--glass-shadow); backdrop-filter: blur(10px);">
-                <option value="gemini">✨ Model: Gemini</option>
-                <option value="groq">⚡ Model: Groq</option>
-            </select>
+    <div class="chat-input-area" style="background: transparent; border: none; padding: 10px;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 24px; padding: 12px; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); backdrop-filter: blur(15px);">
             
-            <div id="viewImagesBadge" style="display:none; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:800; cursor:pointer; box-shadow:0 4px 10px var(--primary-glow); transition:0.2s; align-items:center; gap:5px;" onclick="document.getElementById('multiImageManager').style.display='block'">
-                🖼️ View Images (<span id="badgeImgCount">0</span>)
+            <div class="quick-chips-container">
+                <div class="quick-chip" onclick="insertPrompt('Summarize this in bullet points: ')">📝 Summarize</div>
+                <div class="quick-chip" onclick="insertPrompt('Explain this simply like I am 5: ')">👶 Explain Simply</div>
+                <div class="quick-chip" onclick="insertPrompt('Fix the grammar and rewrite professionally: ')">✍️ Fix Grammar</div>
+                <div class="quick-chip" onclick="insertPrompt('Write code for: ')">💻 Code</div>
+                <div class="quick-chip" onclick="clearContextOnly()" style="background:rgba(239, 68, 68, 0.1); color:#ef4444; border-color:#ef4444;">🧠 Forget Memory</div>
             </div>
-        </div>
 
-        <div class="chat-input-wrapper" style="width: 100%;">
-            <div style="position:relative;">
-                <button class="chat-action-btn btn-relative" id="attachBtn" onclick="createRipple(event); toggleAttachmentMenu();" title="Attach File">➕</button>
+            <div class="pro-tools-drawer" id="proTools">
+                <div class="setting-row">
+                    <span>🎭 Tone:</span>
+                    <select class="setting-select" id="aiTone">
+                        <option value="Standard">Standard</option>
+                        <option value="Professional">Professional</option>
+                        <option value="Casual">Casual</option>
+                        <option value="Academic">Academic</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <span>📏 Length:</span>
+                    <select class="setting-select" id="aiLength">
+                        <option value="Auto">Auto</option>
+                        <option value="Concise">Concise</option>
+                        <option value="Detailed">Detailed</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <span>🌐 Force Web Data:</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="webPriority">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span>🔒 Lock Scroll:</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="lockScroll">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <input type="text" id="sysPrompt" placeholder="Custom System Instructions (Optional)" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-light); background:var(--input-bg); color:var(--text-main); font-size:12px; margin-top:5px;">
+            </div>
+
+            <div class="chat-input-wrapper" style="flex-direction: column; align-items: stretch; border: none; padding: 0; box-shadow: none; background: transparent;">
                 
-                <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); backdrop-filter:blur(15px); border-radius:20px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:160px; animation:slideUp 0.2s ease-out;">
-                    <button class="btn-relative" style="background:var(--input-bg); border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('imageUploadInput').click(), 200); toggleAttachmentMenu();">🖼️ Upload Image</button>
-                    <button class="btn-relative" style="background:var(--input-bg); border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(()=>document.getElementById('pdfUploadInput').click(), 200); toggleAttachmentMenu();">📄 Upload PDF</button>
-                    <button class="btn-relative" style="background:var(--input-bg); border:none; color:var(--text-main); cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%;" onclick="createRipple(event); setTimeout(openStandaloneCamera, 200); toggleAttachmentMenu();">📸 Camera</button>
-                    <button class="btn-relative" style="background:linear-gradient(135deg, #a855f7, #06b6d4); border:none; color:white; cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:12px; font-size:15px; text-align:left; font-weight:600; width:100%; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);" onclick="createRipple(event); activateImageCreatorMode(); toggleAttachmentMenu();">🎨 Create Image</button>
+                <div class="format-toolbar">
+                    <button class="format-btn" onclick="formatText('**', '**')" title="Bold"><b>B</b></button>
+                    <button class="format-btn" onclick="formatText('_', '_')" title="Italic"><i>I</i></button>
+                    <button class="format-btn" onclick="formatText('```\n', '\n```')" title="Code">{' '}</button>
+                    <div style="flex:1;"></div>
+                    <button class="format-btn" onclick="document.getElementById('proTools').classList.toggle('active')" title="Settings" style="color:var(--primary);">⚙️ Settings</button>
+                </div>
+
+                <div id="multiImageManager" style="display:none; padding:5px; margin-bottom:5px; border-bottom:1px solid var(--border-light);">
+                    <div id="multiImageList" style="display:flex; gap:10px; overflow-x:auto;"></div>
+                </div>
+
+                <div id="pdfPreviewChip" style="display:none; align-items:center; background:var(--input-bg); padding:5px 10px; border-radius:8px; margin-bottom:8px; font-size:11px; color:var(--primary); border:1px solid var(--primary);">
+                    📄 <span id="pdfName" style="margin:0 10px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">doc.pdf</span>
+                    <button onclick="clearPdfFile()" style="background:none; border:none; color:red; cursor:pointer;">✕</button>
+                </div>
+
+                <div style="display: flex; align-items: flex-end; gap: 10px;">
+                    <div style="position:relative;">
+                        <button class="chat-action-btn" onclick="document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:40px; height:40px; font-size:18px;">➕</button>
+                        
+                        <div id="attachmentMenu" style="display:none; position:absolute; bottom:50px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:15px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.5); flex-direction:column; gap:8px; z-index:100; min-width:140px;">
+                            <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:10px; border-radius:8px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Upload Image</button>
+                            <button onclick="document.getElementById('pdfUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:10px; border-radius:8px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">📄 Upload PDF</button>
+                            <button onclick="activateImageCreatorMode(); this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; text-align:left; font-weight:600;">🎨 Create Image</button>
+                        </div>
+                    </div>
+                    
+                    <input type="file" id="pdfUploadInput" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
+                    <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+                    
+                    <textarea id="searchInput" placeholder="Ask a question or type '/' for commands..." style="flex:1; background:var(--input-bg); border:1px solid var(--border-light); border-radius:16px; padding:12px; font-size:14px; min-height:40px; color:var(--text-main); outline:none;" oninput="updateCharCount()"></textarea>
+                    
+                    <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" style="width:45px; height:45px; font-size:20px;">🚀</button>
+                </div>
+
+                <div class="input-footer">
+                    <span id="charCount">0 chars</span>
+                    <select id="modelSelector" style="background:transparent; border:none; color:var(--primary); font-weight:bold; cursor:pointer; font-size:11px;">
+                        <option value="gemini">✨ Gemini</option>
+                        <option value="groq">⚡ Groq</option>
+                    </select>
                 </div>
             </div>
-            
-            <input type="file" id="pdfUploadInput" accept="application/pdf" style="display: none;" onchange="handlePdfUpload(event)">
-            <input type="file" id="imageUploadInput" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-            <textarea id="searchInput" placeholder="Search web, ask a question..." rows="1"></textarea>
-            
-            <button class="chat-action-btn btn-relative" id="micBtn" onclick="createRipple(event); openMicModal();" title="Voice Input" style="font-size: 20px; transition: 0.3s;">🎙️</button>
-            <button class="chat-action-btn send btn-relative" id="sendSearchBtn" onclick="createRipple(event); runStandaloneSearch();" title="Send">🚀</button>
-        </div>
-    </div>
-
-    <div id="standaloneCameraModal" class="cameraModal">
-        <button onclick="closeStandaloneCamera()" class="closeBtn btn-relative" style="position:absolute; top:30px; left:20px; z-index:1000;">✕</button>
-        <video id="standaloneVideo" autoplay playsinline style="flex:1; width:100%; height:100%; object-fit:cover;"></video>
-        <canvas id="standaloneCanvas" style="display:none;"></canvas>
-        <div class="cameraControls">
-            <button class="closeBtn btn-relative" id="standaloneFlashBtn" onclick="createRipple(event); toggleStandaloneFlash();" style="width:60px; height:60px; font-size:24px;">💡</button>
-            <div class="cameraCircle btn-relative" onclick="createRipple(event); captureStandalonePhoto();" title="Capture"></div>
-            <button class="closeBtn btn-relative" onclick="createRipple(event); switchStandaloneCamera();" style="width:60px; height:60px; font-size:24px;">🔄</button>
         </div>
     </div>
 
     <script>
-        // --- 1. STATE VARIABLES, HISTORY, & CONTROLLERS ---
+        // --- BASE STATE & HISTORY (FULLY RESTORED) ---
         let appHistory = [];
-        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
         let sessionCache = { search: null }; 
-
-        // Multi-Image & Abort Controllers
-        let uploadedImages = []; // Stores up to 5 base64 images
-        let persistentPdfMemory = "";
-        let sessionMessages = []; // Crucial for Context Memory!
+        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
+        
+        let sessionMessages = [];
         let isProcessing = false;
         let activeAbortController = null;
-        
         let isImageGenMode = false;
-        const DAILY_IMAGE_LIMIT = 20;
-        let currentSearchLang = "Hindi";
+        let persistentPdfMemory = "";
+        let uploadedImages = []; // Array for multi-images
+        let autoScroll = true;
 
-        window.toggleSearchLanguage = function() {
-            const langText = document.getElementById('langText');
-            if (currentSearchLang === "Hindi") {
-                currentSearchLang = "English"; langText.innerText = "EN";
-                showStandaloneToast("🌍 Language changed to English");
-            } else {
-                currentSearchLang = "Hindi"; langText.innerText = "HI";
-                showStandaloneToast("🌍 Language changed to Hindi");
-            }
-        };
-
-        window.activateImageCreatorMode = async function() {
-            isImageGenMode = true;
-            document.getElementById("searchInput").placeholder = "Describe the image to create (e.g. A futuristic city...)";
-            showStandaloneToast("🎨 Image Creator Active! Type your prompt.");
-            const chip = document.getElementById("pdfPreviewChip");
-            chip.style.display = "flex"; chip.classList.add("gradient-image-chip");
-            document.getElementById("pdfName").innerText = "Image Mode Active";
-            chip.querySelector('div').innerText = "🎨";
-        };
-
-        // --- 2. DB LOGIC (UPGRADED UNLIMITED STORAGE) ---
+        // --- HISTORY SAVING SYSTEM ---
         function saveHistorySafe() { 
             if (typeof localforage !== 'undefined') {
                 localforage.setItem('aiHistory', appHistory).catch(err => console.log("History DB Error:", err));
             }
             try { 
                 let historyString = JSON.stringify(appHistory);
-                if(historyString.length < 4500000) localStorage.setItem('aiHistory', historyString); 
+                localStorage.setItem('aiHistory', historyString); 
             } catch(e) {} 
         }
 
-        function persistHistoryOnChatClose(reason = "page-close") { try { saveHistorySafe(); } catch(e) {} }
-        window.addEventListener('pagehide', persistHistoryOnChatClose);
-        window.addEventListener('beforeunload', persistHistoryOnChatClose);
-        
         function saveToHistory(type, q, a, imagesArr = [], provider = "AI") {
             let sessionId = sessionCache[type];
             let histItem = appHistory.find(i => i.id === sessionId);
-            // We save the first image as the thumbnail if multiple exist
             let primaryImg = (imagesArr && imagesArr.length > 0) ? imagesArr[0] : null;
 
             if (!histItem) {
@@ -221,120 +234,116 @@
             saveHistorySafe();
         }
 
-        // --- ✨ SEND -> CANCEL UI CONTROLLER ✨ ---
-        function setCancelState(isActive) {
-            const btn = document.getElementById("sendSearchBtn");
-            if (isActive) {
-                btn.innerHTML = "🛑";
-                btn.style.background = "#ef4444";
-                btn.onclick = (e) => { createRipple(e); abortSearch(); };
-            } else {
-                btn.innerHTML = "🚀";
-                btn.style.background = ""; 
-                btn.onclick = (e) => { createRipple(e); runStandaloneSearch(); };
-            }
+        window.addEventListener('pagehide', () => saveHistorySafe());
+        window.addEventListener('beforeunload', () => saveHistorySafe());
+
+        // --- UI & NEW FEATURE FUNCTIONS ---
+        function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
+        function toggleFocusMode() { document.body.classList.toggle("focus-mode"); showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Focus Mode ON" : "🧘‍♂️ Focus Mode OFF"); }
+        function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px; animation: slideUp 0.3s ease;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
+        function updateCharCount() { document.getElementById('charCount').innerText = document.getElementById('searchInput').value.length + " chars"; }
+        function insertPrompt(text) { const inp = document.getElementById("searchInput"); inp.value = text + inp.value; inp.focus(); updateCharCount(); }
+        
+        function formatText(open, close) {
+            const inp = document.getElementById("searchInput"); const start = inp.selectionStart; const end = inp.selectionEnd;
+            const text = inp.value; inp.value = text.slice(0, start) + open + text.slice(start, end) + close + text.slice(end);
+            inp.focus(); inp.selectionEnd = end + open.length;
         }
 
-        function abortSearch() {
-            if (activeAbortController) {
-                activeAbortController.abort();
-                activeAbortController = null;
-                showStandaloneToast("🛑 Generation Cancelled");
-            }
-            isProcessing = false;
-            setCancelState(false);
-            const typingMsg = document.querySelector('.typing-indicator');
-            if(typingMsg) typingMsg.closest('.chat-msg').remove();
+        function exportChat() {
+            const chatText = document.getElementById("searchChatHistory").innerText;
+            if(!chatText.trim()) return showToast("No chat to export!");
+            const blob = new Blob([chatText], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href = url; a.download = `Chat_Export_${new Date().toLocaleDateString()}.txt`;
+            a.click(); URL.revokeObjectURL(url);
         }
 
-        // --- 3. ANIMATIONS & EFFECTS ---
-        function createRipple(event) {
-            const button = event.currentTarget; const circle = document.createElement("span");
-            const diameter = Math.max(button.clientWidth, button.clientHeight); const radius = diameter / 2;
-            circle.style.width = circle.style.height = `${diameter}px`;
-            circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
-            circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
-            circle.classList.add("ripple");
-            const ripple = button.getElementsByClassName("ripple")[0];
-            if (ripple) ripple.remove(); button.appendChild(circle);
+        function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; sessionCache['search'] = null; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
+        function clearContextOnly() { sessionMessages = []; showToast("🧠 Memory Cleared. AI forgot previous context."); }
+        
+        function summarizeChat() {
+            if(sessionMessages.length < 2) return showToast("Not enough chat to summarize.");
+            document.getElementById("searchInput").value = "Please summarize our entire conversation above in 3 bullet points.";
+            runStandaloneSearch();
         }
 
-        function typeWriterEffect(element, text) {
-            element.innerHTML = ""; let i = 0; let tickRate = 20; 
-            let timer = setInterval(() => {
-                if (i < text.length) {
-                    let c = text.charAt(i);
-                    if(c === '\n') element.appendChild(document.createElement('br')); else element.appendChild(document.createTextNode(c));
-                    i++;
-                } else { 
-                    clearInterval(timer);
-                    if (window.MathJax) MathJax.typesetPromise([element]).catch(e => console.log(e));
-                }
-            }, tickRate);
-        }
+        document.getElementById('lockScroll').addEventListener('change', (e) => { autoScroll = !e.target.checked; });
+        function safeScroll() { if(autoScroll) { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; } }
 
-        function showStandaloneToast(msg) {
-            let t = document.createElement('div'); t.innerText = msg;
-            t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background: linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:14px 28px; border-radius:30px; box-shadow:0 10px 30px rgba(6,182,212,0.5); z-index:10000; font-weight:800; font-size: 14px; text-align:center; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid #22d3ee;";
-            document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
-        }
-
-        // --- ✨ FULLSCREEN VIEWER CONTROLLERS ✨ ---
+        // --- FULLSCREEN VIEWER ---
         let currentFullscreenBase64 = null;
         window.openFullscreenImage = function(imgId) {
-            const imgEl = document.getElementById(imgId);
-            if(!imgEl) return;
-            currentFullscreenBase64 = imgEl.src;
-            document.getElementById('fsImage').src = currentFullscreenBase64;
+            const imgEl = document.getElementById(imgId); if(!imgEl) return;
+            currentFullscreenBase64 = imgEl.src; document.getElementById('fsImage').src = currentFullscreenBase64;
             document.getElementById('fullscreenViewer').style.display = 'flex';
         }
-        window.closeFullscreenImage = function() {
-            document.getElementById('fullscreenViewer').style.display = 'none';
-        }
-        window.downloadFullscreenImage = function(e) {
-            createRipple(e);
+        window.downloadFullscreenImage = function() {
             if(!currentFullscreenBase64) return;
-            let a = document.createElement("a");
-            a.href = currentFullscreenBase64;
-            a.download = `DeepSearch_Artwork_${Date.now()}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            showStandaloneToast("✅ Download Complete!");
-        }
-        window.copyToClipboard = function(textId) { 
-            navigator.clipboard.writeText(document.getElementById(textId).innerText).then(() => showStandaloneToast("✅ Copied to clipboard!")); 
+            let a = document.createElement("a"); a.href = currentFullscreenBase64; a.download = `DeepSearch_Artwork_${Date.now()}.png`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
         }
 
-        // --- 4. SPEECH RECOGNITION & TTS (Omitted for brevity, assume existing works fine) ---
-        // (Speech code remains unchanged)
-        window.openMicModal = function() { document.getElementById("micLangModal").style.display = "flex"; }
-        window.closeMicModal = function() { document.getElementById("micLangModal").style.display = "none"; }
-        window.startVoiceRecognition = function(lang) { closeMicModal(); showStandaloneToast(`🎤 Voice Input: ${lang}`); }
+        // --- TTS (TEXT TO SPEECH) FLOATING CONTROLS RESTORED ---
+        let currentUtterance = null;
         
-        window.startTts = function(id) { showStandaloneToast("🔊 TTS Started"); }
-        window.closeTts = function() { document.getElementById("ttsPlayer").style.display = "none"; }
+        window.startTts = function(textId) {
+            const textEl = document.getElementById(textId);
+            if(!textEl) return;
+            
+            // Clean text before reading
+            let cleanText = textEl.innerText.replace(/[\*#_\[\]]/g, '').trim();
+            if(!cleanText) return;
 
-        function toggleSidebar() { const sidebar = document.getElementById("sidebar"); const overlay = document.getElementById("overlay"); const active = !sidebar.classList.contains("active"); sidebar.classList.toggle("active", active); overlay.classList.toggle("active", active); document.body.classList.toggle("sidebar-open", active); }
-        function toggleAttachmentMenu() { const menu = document.getElementById('attachmentMenu'); menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'; }
-        function scrollToBottom() { const c = document.getElementById("searchChatHistory"); if (!c) return; requestAnimationFrame(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" })); setTimeout(() => c.scrollTo({ top: c.scrollHeight, behavior: "auto" }), 80); }
-        function clearSearchChat() {
-            if(confirm("Are you sure you want to clear this chat and memory?")) {
-                document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai"><div class="bubble">Chat and memory cleared. How can I help you next?</div></div>`;
-                persistHistoryOnChatClose('manual-clear'); uploadedImages = []; updateImageUI(); clearPdfFile(); persistentPdfMemory = ""; sessionMessages = []; sessionCache['search'] = null; closeTts();
+            window.speechSynthesis.cancel();
+            currentUtterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Defaulting to Hindi or English based on browser voices
+            currentUtterance.lang = "hi-IN"; 
+            let availableVoices = window.speechSynthesis.getVoices();
+            let premiumVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || availableVoices.find(v => v.lang.includes('hi')) || availableVoices[0];
+            if (premiumVoice) currentUtterance.voice = premiumVoice;
+            
+            currentUtterance.onend = () => closeTts();
+            currentUtterance.onerror = () => closeTts();
+
+            window.speechSynthesis.speak(currentUtterance);
+            document.getElementById("ttsPlayer").style.display = "flex";
+            document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
+        };
+
+        window.toggleTts = function() {
+            if(window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+                document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
+            } else if(window.speechSynthesis.speaking) {
+                window.speechSynthesis.pause();
+                document.getElementById("ttsPlayPauseBtn").innerText = "▶️";
             }
+        };
+
+        window.closeTts = function() {
+            window.speechSynthesis.cancel();
+            document.getElementById("ttsPlayer").style.display = "none";
+        };
+
+        // Ensure voices are loaded
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+
+
+        // --- FILE & IMAGE HANDLING ---
+        function activateImageCreatorMode() { 
+            isImageGenMode = true; 
+            document.getElementById("searchInput").placeholder = "Describe image to create..."; 
+            document.getElementById("searchInput").style.borderColor = "#a855f7";
+            showToast("🎨 Image Mode Active! Type your prompt."); 
         }
 
-        // --- ✨ MULTI-IMAGE MANAGER (Up to 5) ✨ ---
         function updateImageUI() {
-            const badge = document.getElementById("viewImagesBadge");
             const list = document.getElementById("multiImageList");
-            
-            document.getElementById("imgCount").innerText = uploadedImages.length;
-            document.getElementById("badgeImgCount").innerText = uploadedImages.length;
-
+            const manager = document.getElementById("multiImageManager");
             if (uploadedImages.length > 0) {
-                badge.style.display = "flex";
+                manager.style.display = "block";
                 list.innerHTML = "";
                 uploadedImages.forEach((imgSrc, index) => {
                     list.innerHTML += `
@@ -344,147 +353,85 @@
                         </div>`;
                 });
             } else {
-                badge.style.display = "none";
-                document.getElementById("multiImageManager").style.display = "none";
+                manager.style.display = "none";
             }
         }
 
-        function removeUploadedImage(index) {
-            uploadedImages.splice(index, 1);
-            updateImageUI();
+        function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
+
+        function handleImageUpload(e) { 
+            const f = e.target.files[0]; if(!f) return; 
+            if(uploadedImages.length >= 5) return showToast("❌ Max 5 images allowed!");
+            const r = new FileReader(); 
+            r.onload = () => { uploadedImages.push(r.result); updateImageUI(); showToast(`🖼️ Image added (${uploadedImages.length}/5)`); }; 
+            r.readAsDataURL(f); 
+            e.target.value = "";
         }
 
-        function addImageToStack(base64Str) {
-            if (uploadedImages.length >= 5) {
-                return showStandaloneToast("❌ Maximum 5 images allowed!");
-            }
-            uploadedImages.push(base64Str);
-            updateImageUI();
-            showStandaloneToast(`🖼️ Image added (${uploadedImages.length}/5)`);
+        function handlePdfUpload(e) { 
+            const f = e.target.files[0]; if(!f) return; 
+            const r = new FileReader(); r.onload = async function() { 
+                const typedarray = new Uint8Array(this.result); 
+                const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; 
+                for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } 
+                persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); 
+            }; r.readAsArrayBuffer(f); 
+            e.target.value = "";
         }
+        function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
-        // Handle File Upload Image
-        async function handleImageUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onloadend = () => { addImageToStack(reader.result); };
-            reader.readAsDataURL(file);
-            document.getElementById("imageUploadInput").value = "";
-        }
-
-        async function handlePdfUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            if (file.type !== "application/pdf") return showStandaloneToast("⚠️ Only PDF files are supported!");
-            isImageGenMode = false; showStandaloneToast("📄 Reading PDF..."); 
-            const fileReader = new FileReader();
-            fileReader.onload = async function() {
-                const typedarray = new Uint8Array(this.result);
-                try {
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise; let fullText = `DOCUMENT NAME: ${file.name}\n`;
-                    for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const textContent = await page.getTextContent(); fullText += `\n--- Page ${i} ---\n` + textContent.items.map(item => item.str).join(' '); }
-                    persistentPdfMemory = fullText; const chip = document.getElementById("pdfPreviewChip");
-                    chip.classList.remove("gradient-image-chip"); chip.style.display = "flex"; document.getElementById("pdfName").innerText = file.name;
-                    chip.querySelector('div').innerText = "📄"; showStandaloneToast(`✅ PDF Attached!`);
-                } catch(e) { showStandaloneToast("❌ Error reading PDF."); }
-            }; fileReader.readAsArrayBuffer(file);
-        }
-        window.clearPdfFile = function(e) { if(e) e.stopPropagation(); persistentPdfMemory = ""; isImageGenMode = false; document.getElementById("pdfUploadInput").value = ""; const chip = document.getElementById("pdfPreviewChip"); chip.style.display = "none"; chip.classList.remove("gradient-image-chip"); document.getElementById("searchInput").placeholder = "Search web, ask a question..."; chip.querySelector('div').innerText = "📄"; };
-
-        // --- ✨ PRO CAMERA ENGINE (FLASHLIGHT ON BY DEFAULT) ✨ ---
-        let standaloneStream = null; let standaloneFacingMode = "environment"; let isStandaloneFlashOn = false;
-        async function startCameraTrack() {
-            if (standaloneStream) { standaloneStream.getTracks().forEach(t => t.stop()); }
-            try {
-                standaloneStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: standaloneFacingMode, width: {ideal: 1920}, height: {ideal: 1080} } });
-                document.getElementById("standaloneVideo").srcObject = standaloneStream;
-                
-                // FLASH AUTO-ON LOGIC
-                setTimeout(async () => { 
-                    if (standaloneFacingMode === "environment") { 
-                        const track = standaloneStream.getVideoTracks()[0]; 
-                        try { 
-                            const cap = track.getCapabilities(); 
-                            if (cap.torch) { 
-                                isStandaloneFlashOn = true; 
-                                await track.applyConstraints({ advanced: [{ torch: true }] }); 
-                                updateFlashUI(); 
-                            } 
-                        } catch(err) {} 
-                    } 
-                }, 500);
-            } catch(e) { showStandaloneToast("⚠️ Camera Error."); }
-        }
-        async function openStandaloneCamera() { isImageGenMode = false; document.getElementById("standaloneCameraModal").classList.add("active"); await startCameraTrack(); }
-        function closeStandaloneCamera() { document.getElementById("standaloneCameraModal").classList.remove("active"); if (standaloneStream) { const track = standaloneStream.getVideoTracks()[0]; try { if (track && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} standaloneStream.getTracks().forEach(t => t.stop()); standaloneStream = null; } isStandaloneFlashOn = false; updateFlashUI(); }
-        async function switchStandaloneCamera() { standaloneFacingMode = standaloneFacingMode === "environment" ? "user" : "environment"; await startCameraTrack(); }
-        async function toggleStandaloneFlash() { if (!standaloneStream) return; const track = standaloneStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isStandaloneFlashOn = !isStandaloneFlashOn; await track.applyConstraints({ advanced: [{ torch: isStandaloneFlashOn }] }); updateFlashUI(); } } catch(err){} }
-        function updateFlashUI() { const btn = document.getElementById("standaloneFlashBtn"); if (btn) { btn.innerText = isStandaloneFlashOn ? "💡" : "🔦"; btn.style.background = isStandaloneFlashOn ? "rgba(239, 68, 68, 0.8)" : "rgba(255,255,255,0.15)"; } }
-        
-        function captureStandalonePhoto() {
-            const v = document.getElementById("standaloneVideo"); const c = document.getElementById("standaloneCanvas");
-            let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-            let b64 = c.toDataURL("image/jpeg", 0.7); 
-            addImageToStack(b64); // Push to multi-image array
-            closeStandaloneCamera();
-        }
-
-        // --- 10. CORE SEARCH & IMAGE GEN LOGIC ---
+        // --- CORE SEARCH & COMPOSITE LOGIC ---
         async function runStandaloneSearch() {
-            const inp = document.getElementById("searchInput"); const q = inp.value.trim(); 
+            const inp = document.getElementById("searchInput"); let q = inp.value.trim(); 
             if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
-            if(isProcessing) return; 
+            if(isProcessing) { activeAbortController.abort(); isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; return; }
             
-            isProcessing = true;
-            activeAbortController = new AbortController();
-            setCancelState(true);
-
+            isProcessing = true; activeAbortController = new AbortController();
+            document.getElementById("sendSearchBtn").innerHTML = "🛑";
+            
             const chatContainer = document.getElementById("searchChatHistory");
-            const selectedModel = document.getElementById("modelSelector").value;
+            const model = document.getElementById("modelSelector").value;
+            const tone = document.getElementById("aiTone").value;
+            const length = document.getElementById("aiLength").value;
+            const webFocus = document.getElementById("webPriority").checked ? "PRIORITIZE LIVE WEB KNOWLEDGE." : "";
+            const customSys = document.getElementById("sysPrompt").value;
 
             // Display multiple images in user bubble
             let userImgHtml = '';
             uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" class="bubble-img" style="max-height: 80px; border-radius: 8px; margin-right: 5px; margin-bottom: 5px; display:inline-block;">`; });
             if (userImgHtml) userImgHtml += '<br>';
 
+            // Display User Message
+            let timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml}${isImageGenMode?'🎨 <b>Generate Image:</b><br>':''}${q.replace(/\n/g, '<br>')}<div class="chat-time">${timeStr}</div></div></div>`);
+            inp.value = ""; document.getElementById('charCount').innerText = "0 chars"; safeScroll();
+
             // ==========================================
-            // 🎨 IMAGE COMPOSITOR & GENERATOR 🎨
+            // 🎨 COMPOSITE IMAGE GENERATOR 🎨
             // ==========================================
             if (isImageGenMode) {
-                showStandaloneToast("🎨 छवि बनाई जा रही है... कृपया प्रतीक्षा करें (Generating Image...)");
-
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml}🎨 <b>Generate Image:</b><br>${q}</div></div>`);
-                inp.value = ""; scrollToBottom();
-
                 const loadId = "load_" + Date.now();
-                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">AI Sandbox is building your artwork...</span></div></div>`);
-                scrollToBottom();
+                chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--text-muted); font-size:12px; font-weight:600;">AI Studio is building your artwork...</span></div></div>`);
+                safeScroll();
 
                 try {
                     let finalPrompt = q;
 
-                    // ✨ IMAGE-TO-IMAGE BACKGROUND COMPOSITING ✨
                     if (uploadedImages.length > 0) {
-                        showStandaloneToast("👁️ Analyzing uploaded image for background compositing...");
+                        showToast("👁️ Analyzing image for background compositing...");
                         try {
                             const visionResponse = await fetch("/api/gemini-vision", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    imageBase64: uploadedImages[0], // Analyze the first image to set the scene
-                                    userPrompt: "Analyze the background, color palette, lighting, and overall aesthetic style of this image perfectly. Describe it so an image generator can recreate the exact same vibe and background."
-                                }),
+                                method: "POST", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ imageBase64: uploadedImages[0], userPrompt: "Analyze the background, color palette, lighting, and overall aesthetic style of this image perfectly. Describe it so an image generator can recreate the exact same vibe and background." }),
                                 signal: activeAbortController.signal
                             });
                             if (visionResponse.ok) {
                                 const visionData = await visionResponse.json();
-                                if (visionData.text) {
-                                    finalPrompt = `Recreate an image using EXACTLY this background environment, lighting, and style: (${visionData.text}). Insert the following subject/request seamlessly into that exact background: [${q}]. Ensure flawless compositing.`;
-                                }
+                                if (visionData.text) finalPrompt = `Recreate an image using EXACTLY this background environment, lighting, and style: (${visionData.text}). Insert the following subject/request seamlessly into that exact background: [${q}]. Ensure flawless compositing.`;
                             }
-                        } catch(err) { console.log("Vision analysis skipped or aborted."); }
+                        } catch(err) { console.log("Vision analysis skipped."); }
                     }
 
-                    // Boost prompt
                     let sysPrompt = "You are an elite prompt engineer. Rewrite this concept into a highly detailed, cinematic prompt. Reply ONLY with the English prompt text. No quotes.";
                     let enhancedPrompt = finalPrompt;
                     try {
@@ -496,165 +443,134 @@
                         if (pResponse.ok) { const pData = await pResponse.json(); if (pData.text) enhancedPrompt = pData.text.replace(/['"]/g, '').trim(); }
                     } catch(e) {}
 
-                    // Execute Puter Sandbox
                     puter.ai.txt2img(enhancedPrompt, { model: "flux-1-schnell" })
                         .then((imgElement) => {
-                            let b64Image = imgElement.src; // Capture src for fullscreen click
-
                             let wrapperHtml = `
-                                <div class="api-badge" style="background: linear-gradient(135deg, #a855f7, #06b6d4); border-color:#22d3ee; color:white; padding: 4px 10px;">✨ COMPOSITE STUDIO</div>
-                                <div style="margin-top:20px; font-size:13px; color:var(--text-main); font-weight:600;">Engineered Concept:</div>
-                                <div style="font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
-                                
-                                <div style="margin-top:10px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.5); cursor:pointer; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to open Fullscreen">
-                                    <img src="${b64Image}" style="max-width:100%; display:block; transition:transform 0.3s ease;" id="img_${loadId}" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <div class="api-badge" style="background: linear-gradient(135deg, #a855f7, #06b6d4); border-color:#22d3ee; color:white;">✨ COMPOSITE STUDIO</div>
+                                <div style="margin-top:20px; font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:10px;">"${enhancedPrompt}"</div>
+                                <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Fullscreen">
+                                    <img src="${imgElement.src}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}">
                                 </div>
+                                <div class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                             `;
-
-                            const bubble = document.getElementById(loadId).querySelector('.bubble');
-                            bubble.innerHTML = wrapperHtml;
-
-                            // Save to DB memory
-                            saveToHistory('search', `Composite Image: ${q}`, bubble.innerHTML, uploadedImages, "Flux Composite Studio");
+                            document.getElementById(loadId).querySelector('.bubble').innerHTML = wrapperHtml;
                             
-                            // Cleanup
-                            uploadedImages = []; updateImageUI(); clearPdfFile();
-                            isProcessing = false; setCancelState(false);
+                            // Save to global DB history
+                            saveToHistory('search', `Composite Image: ${q}`, wrapperHtml, uploadedImages, "Flux AI");
+
+                            isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
+                            isImageGenMode = false; document.getElementById("searchInput").placeholder = "Ask a question..."; document.getElementById("searchInput").style.borderColor = "";
+                            uploadedImages = []; updateImageUI(); safeScroll();
                         })
                         .catch((err) => {
                             if(err.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Generation Error</span>`;
-                            isProcessing = false; setCancelState(false);
+                            isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀";
                         });
 
                 } catch (error) { 
                     if(error.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error</span>`; 
-                    isProcessing = false; setCancelState(false);
+                    isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀";
                 }
                 return; 
             }
-            // =========================================================
+            // ==========================================
 
-            // Standard Text Search Route
-            let displayQ = q || "Analyze the uploaded images/document."; 
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml}<div>${displayQ.replace(/\n/g, '<br>')}</div></div></div>`);
-            inp.value = ""; scrollToBottom(); 
-
+            // STANDARD TEXT ROUTE
             const loadId = "load_" + Date.now();
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="display:flex; align-items:center; gap:12px;"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div><span style="color:var(--muted); font-size:14px; font-weight:600;">AI is analyzing...</span></div></div>`);
-            scrollToBottom();
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`);
+            safeScroll();
 
-            // ✨ SESSION MEMORY INJECTION ✨
-            let memoryContextString = "";
-            if (sessionMessages.length > 0) {
-                memoryContextString = "--- PREVIOUS CHAT HISTORY (MEMORY) ---\n";
-                let recent = sessionMessages.slice(-8); // Remember last 8 interactions
-                recent.forEach(msg => { memoryContextString += `User: ${msg.q}\nAI: ${msg.a}\n\n`; });
-                memoryContextString += "--- CURRENT QUESTION ---\n";
-            }
-
-            let sysPrompt = `You are an expert AI Assistant. 
-            CRITICAL RULES:
-            1. ANSWER ENTIRELY IN ${currentSearchLang.toUpperCase()}.
-            2. Remember the user's previous context from the Chat History provided.
-            3. Use standard LaTeX formatting ($...$) for Math/Physics.`;
-
-            let finalPrompt = memoryContextString + `User Question: ${q || 'Analyze these items.'}\n\n`;
-            if (persistentPdfMemory) finalPrompt += `[BACKGROUND PDF CONTEXT]:\n${persistentPdfMemory}`;
+            // Build Enhanced Prompt
+            let sysInstructions = `You are a helpful AI. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). ${webFocus} Tone: ${tone}. Length constraint: ${length}. ${customSys}`;
+            let contextStr = sessionMessages.map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n');
+            let finalPrompt = `${contextStr}\n\nCurrent Request: ${q}\n\n${persistentPdfMemory ? 'Context Document:\n'+persistentPdfMemory : ''}`;
 
             try {
                 let endpoint = uploadedImages.length > 0 ? "/api/gemini-vision" : "/api/gemini-text";
-                let bodyData = uploadedImages.length > 0 
-                    ? { imageBase64: uploadedImages[0], userPrompt: `${sysPrompt}\n\n${finalPrompt}`, providerOverride: selectedModel } 
-                    : { systemPrompt: sysPrompt, userPrompt: finalPrompt, providerOverride: selectedModel };
-
-                const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyData), signal: activeAbortController.signal });
+                let body = uploadedImages.length > 0 ? { imageBase64: uploadedImages[0], userPrompt: sysInstructions + "\n" + finalPrompt, providerOverride: model } : { systemPrompt: sysInstructions, userPrompt: finalPrompt, providerOverride: model };
+                
+                const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: activeAbortController.signal });
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || "Server Error");
+                
+                let cleanAns = data.text.replace(/[\*&#_]/g, '');
+                
+                // Add to Context Memory
+                sessionMessages.push({ q: q, a: cleanAns });
+                
+                // Save to Global DB History
+                saveToHistory('search', q || "[Document Analysis]", cleanAns, uploadedImages, data.provider || model.toUpperCase());
 
-                let cleanAns = data.text.replace(/[\*&#_]/g, ''); let apiProvider = data.provider || selectedModel.toUpperCase(); 
-                
-                // Save context so AI Remembers!
-                sessionMessages.push({ q: q || "[Image/PDF Upload]", a: cleanAns });
-                saveToHistory('search', q || "[Document Analysis]", cleanAns, [...uploadedImages], apiProvider);
-                
-                uploadedImages = []; updateImageUI(); clearPdfFile(); document.getElementById("pdfPreviewChip").style.display = "none";
-                
-                const finalBubble = document.getElementById(loadId).querySelector('.bubble');
-                finalBubble.innerHTML = `
-                    <div class="api-badge">✨ BY ${apiProvider}</div>
-                    <div id="text_${loadId}" style="margin-top:10px; line-height: 1.6;"></div>
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `
+                    <div id="text_${loadId}" style="font-size:14px; line-height:1.6;">${cleanAns.replace(/\n/g, '<br>')}</div>
+                    <div class="chat-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                        <button class="btn-relative" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); startTts('text_${loadId}')">🔊 Listen</button>
-                        <button class="btn-relative" style="background:rgba(255,255,255,0.05); color:var(--text-main); border:1px solid var(--border-light); padding:8px 20px; border-radius:20px; font-size:14px; cursor:pointer; font-weight:bold; flex: 1;" onclick="createRipple(event); copyToClipboard('text_${loadId}')">📋 Copy</button>
-                    </div>
-                `;
-                typeWriterEffect(document.getElementById(`text_${loadId}`), cleanAns);
+                        <button onclick="startTts('text_${loadId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Listen</button>
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('text_${loadId}').innerText)" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold;">📋 Copy</button>
+                    </div>`;
+                
+                // MathJax re-render for math formulas
+                if (window.MathJax) { MathJax.typesetClear([document.getElementById(loadId)]); MathJax.typesetPromise([document.getElementById(loadId)]); }
 
-            } catch (error) { 
-                if(error.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`; 
-            } finally { isProcessing = false; setCancelState(false); }
-        }
-    </script>
-
-    <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const restoreId = urlParams.get('restore');
-        if (!restoreId) return;
-
-        setTimeout(() => {
-            let container = document.querySelector('.chat-scroll-area') || document.getElementById('searchChatHistory');
-            if (!container) return;
-
-            const forceInjectData = (historyData) => {
-                let item = historyData.find(i => i.id == restoreId);
-                if (!item) return;
-
-                // INJECT HISTORY INTO SESSION MEMORY SO AI REMEMBERS PREVIOUS CHAT
-                if (item.interactions) {
-                    sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer }));
-                    sessionCache['search'] = item.id;
-                    showStandaloneToast("🧠 AI Restored Session Memory!");
-                }
-
-                if (item.interactions && item.interactions.length > 0 && container.classList.contains('chat-scroll-area')) {
-                    container.innerHTML = ''; 
-                    
-                    item.interactions.forEach((inter, index) => {
-                        let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-height:120px; border-radius:12px; margin-bottom:10px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">` : '';
-                        let textId = `restored_text_${index}`;
-                        
-                        container.insertAdjacentHTML('beforeend', `
-                            <div class="chat-msg chat-user" style="animation: slideInUp 0.5s ease-out;">
-                                <div class="bubble" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 6px; box-shadow: 0 8px 25px var(--primary-glow);">
-                                    ${imgHtml}
-                                    <div>${inter.question.replace(/\n/g, '<br>')}</div>
-                                </div>
-                            </div>
-                            <div class="chat-msg chat-ai" style="animation: bounceInBubble 0.6s ease-out;">
-                                <div class="bubble" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 6px; box-shadow: var(--glass-shadow); display: flex; flex-direction: column;">
-                                    <div id="${textId}" style="margin-top:0; width:100%; overflow-x:auto;">${inter.answer}</div>
-                                </div>
-                            </div>
-                        `);
-                    });
-                    
-                    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
-                } 
-                if (window.MathJax) { MathJax.typesetPromise([container]).catch(e => console.log(e)); }
-            };
-
-            if (typeof localforage !== 'undefined') {
-                localforage.getItem('aiHistory').then(data => {
-                    if (data && data.length > 0) forceInjectData(data);
-                    else forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
-                }).catch(() => forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]')));
-            } else {
-                forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
+            } catch (err) {
+                if(err.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Error: ${err.message}</span>`;
+            } finally {
+                isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImages = []; updateImageUI(); safeScroll();
             }
-        }, 800); 
-    });
+        }
+        
+        // --- RESTORE SESSION LOGIC ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const restoreId = urlParams.get('restore');
+            if (!restoreId) return;
+
+            setTimeout(() => {
+                const forceInjectData = (historyData) => {
+                    let item = historyData.find(i => i.id == restoreId);
+                    if (!item) return;
+
+                    if (item.interactions) {
+                        sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer }));
+                        sessionCache['search'] = item.id;
+                        showToast("🧠 Session Memory Restored!");
+                    }
+
+                    const container = document.getElementById('searchChatHistory');
+                    if (item.interactions && item.interactions.length > 0 && container) {
+                        container.innerHTML = ''; 
+                        item.interactions.forEach((inter, index) => {
+                            let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-height:80px; border-radius:8px; margin-bottom:5px;">` : '';
+                            let textId = `restored_text_${index}`;
+                            
+                            container.insertAdjacentHTML('beforeend', `
+                                <div class="chat-msg chat-user">
+                                    <div class="bubble">${imgHtml}<div>${inter.question.replace(/\n/g, '<br>')}</div></div>
+                                </div>
+                                <div class="chat-msg chat-ai">
+                                    <div class="bubble">
+                                        <div id="${textId}">${inter.answer.replace(/\n/g, '<br>')}</div>
+                                        <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
+                                            <button onclick="startTts('${textId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Listen</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                        setTimeout(() => safeScroll(), 100);
+                    } 
+                    if (window.MathJax) { MathJax.typesetPromise([container]); }
+                };
+
+                if (typeof localforage !== 'undefined') {
+                    localforage.getItem('aiHistory').then(data => {
+                        if (data && data.length > 0) forceInjectData(data);
+                        else forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
+                    }).catch(() => forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]')));
+                } else {
+                    forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
+                }
+            }, 800); 
+        });
     </script>
-    <script src="ui-controls.js" defer></script>
 </body>
 </html>
