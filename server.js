@@ -121,7 +121,7 @@ async function processQueue() {
     let browser = null;
     
     try {
-        console.log(`[Queue] Processing prompt: ${currentRequest.prompt}`);
+        console.log(`[Queue] Processing: ${currentRequest.prompt}`);
         
         browser = await puppeteer.launch({
             headless: "new",
@@ -131,32 +131,28 @@ async function processQueue() {
 
         const page = await browser.newPage();
         await page.goto('https://aichatbot12321-deep-ai-image-gen.hf.space/?__theme=system', {
-            waitUntil: 'domcontentloaded', 
+            waitUntil: 'domcontentloaded',
             timeout: 60000
         });
 
         const textareaSelector = 'textarea[data-testid="textbox"]';
         await page.waitForSelector(textareaSelector, { timeout: 20000 });
         await page.type(textareaSelector, currentRequest.prompt);
+        await page.click('button.primary');
 
-        const buttonSelector = 'button.primary';
-        await page.waitForSelector(buttonSelector, { timeout: 20000 });
-        await page.click(buttonSelector);
+        console.log("[Queue] Waiting for the 'gradio_api/file' image tag...");
 
-        console.log("[Queue] Waiting for REAL image (ignoring placeholders)...");
-
-        // 🚀 THE MAGIC FIX: We wait for a "file" or a "gradio-file" which indicates a finished generation
-        // We use a custom function to check if the image has changed from the gradient placeholder
+        // 🚀 THE EXACT FIX: Wait for the image tag containing 'gradio_api/file'
         await page.waitForFunction(() => {
-            const img = document.querySelector('div[data-testid="image"] img');
-            return img && img.src && !img.src.includes('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+            const img = document.querySelector('img[src*="gradio_api/file"]');
+            return img && img.src; 
         }, { timeout: 90000 });
 
         const imageSrc = await page.evaluate(() => {
-            return document.querySelector('div[data-testid="image"] img').src;
+            return document.querySelector('img[src*="gradio_api/file"]').src;
         });
 
-        console.log("[Queue] Real image grabbed!");
+        console.log("[Queue] Found it! Image grabbed.");
         currentRequest.resolve({ imageBase64: imageSrc });
 
     } catch (error) {
