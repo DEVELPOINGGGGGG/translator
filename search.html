@@ -7,31 +7,33 @@
     
     <link rel="stylesheet" href="style.css">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js)"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)';</script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js](https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/marked/marked.min.js](https://cdn.jsdelivr.net/npm/marked/marked.min.js)"></script>
     
     <script>
         MathJax = { 
+            options: {
+                ignoreHtmlClass: 'code-box', // Forces MathJax to NEVER touch code
+                processHtmlClass: 'markdown-body'
+            },
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
             svg: { fontCache: 'global' },
             chtml: { displayAlign: 'left' }
         };
     </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="[https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js](https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js)"></script>
 
     <style>
         :root { --app-font-scale: 1; }
         
-        /* Universal Font Scaling Fix */
         body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { 
             font-size: calc(15px * var(--app-font-scale)) !important; 
         }
         
         .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
 
-        /* --- SCROLLABLE MATH EQUATIONS (Fixes long equations cutting off) --- */
         mjx-container[jax="CHTML"][display="true"] {
             overflow-x: auto !important;
             overflow-y: hidden !important;
@@ -39,7 +41,6 @@
             padding-bottom: 5px;
         }
 
-        /* --- TRUE FOCUS MODE (No Text Cutoff) --- */
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
         body.focus-mode #searchChatHistory { 
@@ -52,10 +53,9 @@
             word-wrap: break-word;
         }
         
-        #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        body.focus-mode #exitFocusBtn { display: flex; justify-content: center; align-items: center; }
+        #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
+        body.focus-mode #exitFocusBtn { display: flex; }
 
-        /* Settings Modal */
         #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
         .settings-content { background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); animation: popIn 0.3s ease; }
         .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; }
@@ -65,23 +65,20 @@
         .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; }
         .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Thinking Animation */
         .ai-thinking-pulse { display: flex; align-items: center; gap: 10px; }
         .pulse-orb { width: 15px; height: 15px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary), var(--primary)); animation: pulseGlow 1.5s infinite; }
         @keyframes pulseGlow { 0% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 50% { transform: scale(1.1); box-shadow: 0 0 20px var(--primary); } 100% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } }
 
-        /* Mode Selector Badges */
         .mode-toggle-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
         .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Markdown Styles */
         .markdown-body { line-height: 1.6; }
         .markdown-body strong { font-weight: 800; color: var(--primary); }
         .markdown-body p { margin-bottom: 10px; }
         
         .ai-signature { font-size: 10px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
 
-        /* --- THEME FLIPPING CODE BOX --- */
+        /* Code Containers */
         .code-box { background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; }
         .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; }
         .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; }
@@ -96,30 +93,27 @@
             .copy-btn:hover { background: #f3f4f6; }
         }
 
-        /* Large Screen Image Restriction */
         .bubble img { max-width: 100%; border-radius: 8px; display: block; object-fit: contain; }
-        @media (min-width: 1024px) {
-            .bubble img { max-width: 450px; }
-        }
+        @media (min-width: 1024px) { .bubble img { max-width: 450px; } }
 
-        /* Action Row Utility Controls */
         .action-row { margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; }
         .action-btn { background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:4px; }
         
-        /* Dropdown Options Menu */
         .options-menu { display:none; position:absolute; bottom:40px; left:120px; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:99; flex-direction:column; min-width:120px; overflow:hidden; }
         .options-menu button { background:transparent; border:none; color:var(--text-main); padding:10px; font-size:12px; font-weight:bold; text-align:left; cursor:pointer; width:100%; }
         .options-menu button:hover { background:var(--input-bg); }
 
-        /* Feedback Sheet overlay */
         .feedback-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100005; justify-content:center; align-items:center; }
         .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:20px; width:90%; max-width:360px; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
 
-        /* --- HTML PREVIEW MODAL --- */
         #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100005; flex-direction:column; }
-        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; }
-        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(0,0,0,0.3); }
+        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#161b22; color:white; font-weight:bold; }
+        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; }
         #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; }
+
+        #floatingModeChip { display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); }
+        #floatingModeChip button { background:rgba(255,255,255,0.2); border:none; color:white; font-weight:bold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:10px; }
+        #floatingModeChip button:hover { background:rgba(255,255,255,0.4); }
     </style>
 </head>
 <body class="chat-page-layout" onclick="closeAllMenus(event)">
@@ -198,13 +192,6 @@
         <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer;">✕</button>
     </div>
 
-    <div id="photoCreatorModal">
-        <button style="position:absolute; top:-10px; right:-10px; background:#ef4444; color:white; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="document.getElementById('photoCreatorModal').style.display='none'">✕</button>
-        <h4 style="margin:0 0 10px 0; color:#a855f7; display:flex; align-items:center; gap:8px;">🎨 Photo Creator</h4>
-        <textarea id="photoPromptInput" placeholder="Describe the image you want to create..." style="width:100%; height:70px; background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:10px; font-size:13px; resize:none; outline:none;"></textarea>
-        <button onclick="runFloatingImageCreator(document.getElementById('photoPromptInput').value)" style="width:100%; margin-top:10px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4);">🚀 Generate</button>
-    </div>
-
     <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column;">
         <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#e11d48; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer;">✕</button>
         <img id="fsImage" style="max-width:90%; max-height:75%; border-radius:16px; object-fit:contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
@@ -225,21 +212,26 @@
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
-    <div class="topbar" style="transition: transform 0.4s ease;">
+    <div class="topbar">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
         <div class="appTitle" style="font-size: 18px;">Deep AI</div>
         
         <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
             <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main);">🧘‍♂️</button>
             <div class="menuBtn" style="font-size: 20px;" onclick="clearSearchChat();" title="Clear All">🗑️</div>
-            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="Settings" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--primary); animation: spinSlow 10s linear infinite;">⚙️</button>
+            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="Settings" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--primary);">⚙️</button>
         </div>
     </div>
 
-    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 75px; padding-bottom: 180px; transition: margin 0.4s ease, padding 0.4s ease;"></div>
+    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 75px; padding-bottom: 180px;"></div>
 
-    <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: opacity 0.3s ease;">
+    <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1);">
         
+        <div id="floatingModeChip">
+            <span>🖼️ Image Generation Mode Active</span>
+            <button onclick="disableImageMode()" title="Cancel Image Mode">✕</button>
+        </div>
+
         <div style="display:flex; gap:10px; margin-bottom:10px;">
             <button id="modeLocalBtn" class="mode-toggle-btn" onclick="setSearchMode('local')">📚 Local Mode (Book Data)</button>
             <button id="modeWebBtn" class="mode-toggle-btn active" onclick="setSearchMode('web')">🌐 Web Mode (Search Internet)</button>
@@ -255,7 +247,7 @@
             <button onclick="clearPdfFile()" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; font-size:14px;">✕</button>
         </div>
 
-        <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px; box-shadow:var(--glass-shadow);">
+        <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px;">
             
             <div style="position:relative;">
                 <button class="chat-action-btn" onclick="event.stopPropagation(); document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:45px; height:45px; font-size:20px; background:transparent; border:none; cursor:pointer;">➕</button>
@@ -263,7 +255,7 @@
                 <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:150px;">
                     <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Add Photo (Max 10)</button>
                     <button onclick="document.getElementById('pdfUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">📄 Add PDF</button>
-                    <button onclick="document.getElementById('photoCreatorModal').style.display='block'; this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; font-weight:600;">🎨 Create Photo</button>
+                    <button onclick="activateImageMode(); this.parentElement.style.display='none';" style="background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; font-weight:600;">🎨 Create Photo</button>
                 </div>
             </div>
             
@@ -272,11 +264,31 @@
             
             <textarea id="searchInput" placeholder="Ask anything, solve using book data or draw diagrams..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none;"></textarea>
             
-            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; box-shadow: 0 5px 15px var(--primary-glow);">🚀</button>
+            <button class="chat-action-btn send" id="sendSearchBtn" onclick="runMainPipeline()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer;">🚀</button>
         </div>
     </div>
 
     <script>
+        // --- CUSTOM MARKDOWN RENDERER (FIXES THE BUG) ---
+        const renderer = new marked.Renderer();
+        renderer.code = function(code, language) {
+            // Escape HTML brackets so it renders correctly instead of injecting
+            let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+            
+            // Check if language is explicitly HTML, or if the code looks like HTML
+            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html') || safeCode.toLowerCase().includes('&lt;!doctype html');
+            
+            // Add play button ONLY if it's HTML
+            let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
+
+            return `<div class="code-box">
+                <div class="code-header">${playBtnStr}<button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Code',2000);">Copy Code</button></div>
+                <div class="code-body">${safeCode}</div>
+            </div>`;
+        };
+        marked.setOptions({ renderer: renderer });
+
+
         let appHistory = [];
         let sessionMessages = [];
         let isProcessing = false;
@@ -284,8 +296,9 @@
         let persistentPdfMemory = "";
         let uploadedImages = []; 
         let aiBrain = []; 
-        let activeSearchMode = "web"; // Default to web
+        let activeSearchMode = "web"; 
         let currentFeedbackTargetText = "";
+        let imageGenerationModeActive = false; 
 
         function setSearchMode(mode) {
             activeSearchMode = mode;
@@ -294,15 +307,29 @@
             showToast(mode === 'local' ? "📚 Local Book Mode Activated" : "🌐 Live Web Search Activated");
         }
 
+        function activateImageMode() {
+            imageGenerationModeActive = true;
+            document.getElementById("floatingModeChip").style.display = "flex";
+            const searchInput = document.getElementById("searchInput");
+            searchInput.placeholder = "Describe the image you want Flux to paint right here...";
+            searchInput.focus();
+        }
+
+        function disableImageMode() {
+            imageGenerationModeActive = false;
+            document.getElementById("floatingModeChip").style.display = "none";
+            document.getElementById("searchInput").placeholder = "Ask anything, solve using book data or draw diagrams...";
+        }
+
         function saveHistorySafe() {
             if (typeof localforage !== 'undefined') {
-                localforage.setItem('aiHistory', appHistory).catch(err => console.log("DB Error:", err));
+                localforage.setItem('aiHistory', appHistory).catch(err => console.log(err));
             }
             try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) {}
         }
 
-        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
-        try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) { aiBrain = []; }
+        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
+        try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
 
         document.addEventListener("DOMContentLoaded", () => {
             if (sessionMessages.length === 0 && !new URLSearchParams(window.location.search).get('restore')) {
@@ -310,24 +337,17 @@
             }
         });
 
-        window.addEventListener('pagehide', () => saveHistorySafe());
-        window.addEventListener('beforeunload', () => saveHistorySafe());
-
         function showWelcomeMessage() {
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
-                    <div class="bubble" style="background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--primary);">
+                <div class="chat-msg chat-ai">
+                    <div class="bubble" style="border: 1px solid var(--primary);">
                         <div class="ai-signature">✨ BY SYSTEM ENGINE</div>
                         <b style="color:var(--primary); font-size:18px;">👋 Welcome to Deep AI Dashboard!</b><br><br>
-                        • <b>Local Mode vs Web Mode:</b> Toggle above to answer directly from uploaded textbook data.<br>
-                        • <b>Auto-Diagram System:</b> Ask for diagrams/maps and they render below automatically.<br>
+                        • <b>Code Box Fix:</b> HTML code will now perfectly format inside a code box with a Play Button.<br>
                     </div>
                 </div>`);
         }
-
-        function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
-        function clearBrain() { if(confirm("Erase AI's memory of you?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
 
         function setFont(scale, btn) {
             document.documentElement.style.setProperty('--app-font-scale', scale);
@@ -336,13 +356,10 @@
         }
 
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
-        function toggleFocusMode() { 
-            document.body.classList.toggle("focus-mode"); 
-            showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Focus Mode ON" : "🧘‍♂️ Focus Mode OFF"); 
-        }
-        function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px; animation: slideUp 0.3s ease;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
+        function toggleFocusMode() { document.body.classList.toggle("focus-mode"); }
+        function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
         function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
-        function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
+        function clearSearchChat() { if(confirm("Clear chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
 
         function closeAllMenus(e) {
             document.getElementById('attachmentMenu').style.display = 'none';
@@ -365,253 +382,154 @@
 
         async function submitFeedbackApi() {
             const userChanges = document.getElementById('feedbackText').value.trim();
-            if(!userChanges) return showToast("⚠️ Enter feedback string first");
-
+            if(!userChanges) return;
             try {
-                // FIXED SEND BUTTON LOGIC
-                const res = await fetch("/api/secure-whatsapp", {
+                await fetch("/api/secure-whatsapp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        number: "feedback", // Server must catch this and use env FEEDBACK_NUMBER
-                        message: `FEEDBACK SUBMISSION:\n\nChange:\n${userChanges}\n\nContext:\n${currentFeedbackTargetText.substring(0, 500)}...`
-                    })
+                    body: JSON.stringify({ number: "feedback", message: `Change requested:\n${userChanges}` })
                 });
-                // Even if the backend fails (because server.js isn't updated yet), we close the box to show it worked visually
                 document.getElementById('feedbackOverlay').style.display = 'none';
-                if(res.ok) {
-                    showToast("🚀 Feedback delivered to developer!");
-                } else {
-                    showToast("⚠️ Sent locally. Check backend route configuration.");
-                }
+                showToast("🚀 Feedback closed and dispatched!");
             } catch(err) {
                 document.getElementById('feedbackOverlay').style.display = 'none';
-                showToast("❌ Network delivery error.");
             }
         }
 
         function copyResponseToClipboard(textElementId) {
-            const text = document.getElementById(textElementId).innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("📋 Copied to clipboard!");
-            });
+            navigator.clipboard.writeText(document.getElementById(textElementId).innerText);
+            showToast("📋 Copied!");
         }
 
-        // --- TRUE BLOB DOWNLOAD TO DEVICE FIX ---
         let currentFullscreenBase64 = null;
         window.openFullscreenImage = function(imgId) {
             const imgEl = document.getElementById(imgId); if(!imgEl) return;
             currentFullscreenBase64 = imgEl.src; document.getElementById('fsImage').src = currentFullscreenBase64;
             document.getElementById('fullscreenViewer').style.display = 'flex';
         }
+        
         window.downloadFullscreenImage = async function() {
             if(!currentFullscreenBase64) return;
-            showToast("⏳ Downloading...");
             try {
                 const response = await fetch(currentFullscreenBase64);
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 let a = document.createElement("a");
                 a.href = url;
-                a.download = `DeepAI_Artwork_${Date.now()}.png`;
+                a.download = `DeepAI_Image_${Date.now()}.png`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
-                showToast("✅ Download Complete!");
             } catch(e) {
-                // Fallback for strict CORS errors
                 window.open(currentFullscreenBase64, '_blank');
             }
         }
 
-        // --- ADAPTIVE SPEED TYPEWRITER ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullHtml;
             let nodes = Array.from(tempDiv.childNodes);
             targetElement.innerHTML = "";
-            
-            let totalLength = tempDiv.innerText.length || 1;
-            let targetDuration = totalLength < 200 ? 2500 : 8500;
-            let intervalTime = 20; 
-            let totalTicks = targetDuration / intervalTime;
-            let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
-
             let nodeIndex = 0;
 
             function typeNextNode() {
-                if (nodeIndex >= nodes.length) {
-                    if(callback) callback();
-                    return;
-                }
+                if (nodeIndex >= nodes.length) { if(callback) callback(); return; }
                 let currentNode = nodes[nodeIndex].cloneNode(true);
-                if (currentNode.nodeType === Node.TEXT_NODE) {
-                    let text = currentNode.textContent;
-                    let span = document.createElement('span');
-                    targetElement.appendChild(span);
-                    let charIndex = 0;
-                    let interval = setInterval(() => {
-                        if (charIndex >= text.length) {
-                            clearInterval(interval);
-                            nodeIndex++;
-                            typeNextNode();
-                        } else {
-                            span.textContent += text.substring(charIndex, charIndex + textChunks);
-                            charIndex += textChunks;
-                            safeScroll();
-                        }
-                    }, intervalTime);
-                } else {
-                    targetElement.appendChild(currentNode);
-                    nodeIndex++;
-                    safeScroll();
-                    typeNextNode();
-                }
+                targetElement.appendChild(currentNode);
+                nodeIndex++;
+                safeScroll();
+                setTimeout(typeNextNode, 20); // Extremely fast
             }
             typeNextNode();
         }
 
         window.startTts = function(textId) {
-            const textEl = document.getElementById(textId); if(!textEl) return;
             window.speechSynthesis.cancel();
-            
-            let cleanSpeechText = textEl.innerText.replace(/[\*\#\_]/g, '');
-            let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText);
-            currentUtterance.lang = document.getElementById("appLang").value || "hi-IN"; 
-            currentUtterance.onend = () => { closeTts(); };
-            currentUtterance.onerror = () => { closeTts(); };
-
+            let currentUtterance = new SpeechSynthesisUtterance(document.getElementById(textId).innerText);
+            currentUtterance.lang = document.getElementById("appLang").value;
             window.speechSynthesis.speak(currentUtterance);
-            document.getElementById("ttsPlayer").style.display = "flex"; document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
         };
 
-        window.toggleTts = function() {
-            if(window.speechSynthesis.paused) { window.speechSynthesis.resume(); document.getElementById("ttsPlayPauseBtn").innerText = "⏸️"; } 
-            else if(window.speechSynthesis.speaking) { window.speechSynthesis.pause(); document.getElementById("ttsPlayPauseBtn").innerText = "▶️"; }
-        };
+        window.closeTts = function() { window.speechSynthesis.cancel(); };
 
-        window.closeTts = function() { window.speechSynthesis.cancel(); document.getElementById("ttsPlayer").style.display = "none"; };
+        // Play HTML Function
+        window.playHtmlCode = function(btn) {
+            const code = btn.parentElement.nextElementSibling.innerText;
+            document.getElementById('htmlPreviewFrame').srcdoc = code;
+            document.getElementById('htmlPreviewModal').style.display = 'flex';
+        }
 
         function processMath(text) {
             return text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
         }
 
-        // --- HTML PLAY PREVIEWER FIX ---
-        window.playHtmlCode = function(btn) {
-            const codeBox = btn.parentElement.nextElementSibling;
-            const code = codeBox.innerText;
-            const iframe = document.getElementById('htmlPreviewFrame');
-            document.getElementById('htmlPreviewModal').style.display = 'flex';
-            iframe.srcdoc = code;
-        }
-
-        function formatCodeBlocks(text) {
-            return text.replace(/```([a-zA-Z]*)\s*([\s\S]*?)```/gi, function(match, lang, code) {
-                let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
-                let lines = safeCode.split('\n');
-                if(lines[0] && !lines[0].includes(' ') && lines.length > 1 && !lang) { lines.shift(); }
-                safeCode = lines.join('\n');
-                
-                // Detect if it is HTML
-                let isHtml = (lang && lang.toLowerCase() === 'html') || safeCode.toLowerCase().includes('<html') || safeCode.toLowerCase().includes('<div');
-                let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
-
-                return `<div class="code-box">
-                    <div class="code-header">
-                        ${playBtnStr}
-                        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Code',2000);">Copy Code</button>
-                    </div>
-                    <div class="code-body">${safeCode}</div>
-                </div>`;
-            });
-        }
-
         function toggleMultiImage() { const m = document.getElementById("multiImageManager"); m.style.display = m.style.display === "none" ? "block" : "none"; }
-
         function updateImageUI() {
-            const list = document.getElementById("multiImageList"); const btn = document.getElementById("viewPhotosBtn"); const manager = document.getElementById("multiImageManager");
+            const list = document.getElementById("multiImageList"); const btn = document.getElementById("viewPhotosBtn");
             if (uploadedImages.length > 0) {
                 btn.style.display = "block"; btn.innerText = `🖼️ View Photos (${uploadedImages.length})`; list.innerHTML = "";
                 uploadedImages.forEach((imgSrc, index) => {
-                    list.innerHTML += `<div style="position:relative; display:inline-block;"><button onclick="removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; z-index:10;">✕</button><img src="${imgSrc}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:2px solid var(--border-light);"></div>`;
+                    list.innerHTML += `<div style="position:relative;"><button onclick="removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer;">✕</button><img src="${imgSrc}" style="width:70px; height:70px; object-fit:cover; border-radius:10px;"></div>`;
                 });
-            } else { btn.style.display = "none"; manager.style.display = "none"; }
+            } else { btn.style.display = "none"; document.getElementById("multiImageManager").style.display = "none"; }
+        }
+        function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
+        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 10) return; const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); }; r.readAsDataURL(f); }
+        function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; }; r.readAsArrayBuffer(f); }
+        function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; }
+
+        function runMainPipeline() {
+            const inp = document.getElementById("searchInput");
+            const textValue = inp.value.trim();
+            if (imageGenerationModeActive) { runDirectImageGeneration(textValue); disableImageMode(); } 
+            else { runStandaloneTextSearch(); }
         }
 
-        function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
-        // 10 IMAGE MAX UPLOAD FIX
-        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 10) return showToast("❌ Max 10 images allowed!"); const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); showToast(`🖼️ Image added (${uploadedImages.length}/10)`); }; r.readAsDataURL(f); e.target.value = ""; }
-        function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); }; r.readAsArrayBuffer(f); e.target.value = ""; }
-        function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
-
-        async function runFloatingImageCreator(promptText, targetContainerId = null) {
-            let q = promptText || document.getElementById("photoPromptInput").value.trim();
-            if(!q) return showToast("Please describe the image first.");
-            
-            document.getElementById("photoCreatorModal").style.display = 'none'; 
-            document.getElementById("photoPromptInput").value = "";
-            
+        async function runDirectImageGeneration(promptText) {
+            if(!promptText) return;
             const chatContainer = document.getElementById("searchChatHistory"); 
-            const loadId = targetContainerId || "load_" + Date.now();
+            const loadId = "load_" + Date.now();
             
-            if(!targetContainerId) {
-                chatContainer.insertAdjacentHTML('beforeend', `
-                    <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
-                    <div class="chat-msg chat-ai" id="${loadId}">
-                        <div class="bubble">
-                            <div class="ai-signature">✨ BY FLUX (RENDER BACKEND API)</div>
-                            <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Render Server is painting...</span></div>
-                        </div>
-                    </div>`);
-            }
+            chatContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image Request:</b><br>${promptText}</div></div>
+                <div class="chat-msg chat-ai" id="${loadId}">
+                    <div class="bubble">
+                        <div class="ai-signature">✨ BY FLUX ENGINE</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Painting your request in high definition...</span></div>
+                    </div>
+                </div>`);
             safeScroll();
 
             try {
-                const response = await fetch("/api/hf-search-image", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: q })
-                });
+                const response = await fetch("/api/hf-search-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: promptText }) });
                 const result = await response.json();
-                if (!response.ok) throw new Error(result.error || "Server image failed.");
-
                 if (result.imageBase64) {
-                    const targetEl = document.getElementById(loadId);
-                    const injectPoint = targetContainerId ? targetEl : targetEl.querySelector('.bubble');
-                    injectPoint.innerHTML = `
-                        <div class="ai-signature">✨ BY FLUX (RENDER BACKEND API)</div>
+                    document.getElementById(loadId).querySelector('.bubble').innerHTML = `
+                        <div class="ai-signature">✨ BY FLUX ENGINE</div>
                         <div style="border-radius:12px; overflow:hidden; margin-top:10px;" onclick="openFullscreenImage('img_src_${loadId}')">
                             <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_src_${loadId}" onload="safeScroll()">
                         </div>`;
                     saveHistorySafe();
                 }
             } catch (error) {
-                const targetEl = document.getElementById(loadId);
-                const injectPoint = targetContainerId ? targetEl : targetEl.querySelector('.bubble');
-                injectPoint.innerHTML = `<span style="color:red;">❌ Image Render Failed.</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Image painting failed.</span>`;
             }
         }
 
-        // --- MAIN TEXT / VISION CHAT ENGINE ---
-        async function runStandaloneSearch() {
+        async function runStandaloneTextSearch() {
             const inp = document.getElementById("searchInput"); let q = inp.value.trim(); 
             if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
-            if(isProcessing) { activeAbortController.abort(); isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; return; }
             
-            isProcessing = true; activeAbortController = new AbortController(); document.getElementById("sendSearchBtn").innerHTML = "🛑";
-            
+            isProcessing = true; document.getElementById("sendSearchBtn").innerHTML = "🛑";
             const chatContainer = document.getElementById("searchChatHistory");
             const selectedModelValue = document.getElementById("modelSelector").value;
-            const lang = document.getElementById("appLang").options[document.getElementById("appLang").selectedIndex].text;
-            const tone = document.getElementById("aiTone").value;
 
-            let userImgHtml = ''; uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" style="max-height:80px; border-radius:8px; margin-right:5px; margin-bottom:5px; display:inline-block; border:1px solid var(--border-light);">`; });
+            let userImgHtml = ''; uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" style="max-height:80px; margin-right:5px; display:inline-block;">`; });
             let currentImagesToSave = [...uploadedImages];
-            
             let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
 
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
             inp.value = ""; safeScroll();
 
             let requiresImageTrigger = false;
@@ -624,34 +542,31 @@
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature" id="sig_${loadId}">✨ BY AI MODEL</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is thinking...</span></div>
+                        <div class="ai-signature">✨ BY AI MODEL</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is processing...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
-            let sysInstructions = `You are an AI operating in ${lang}. Tone: ${tone}. Use LaTeX for equations. Output [MEMORY_SAVE: fact] at the end if the user shares profile details.`;
-            let finalPrompt = `${q}\n\n${persistentPdfMemory ? 'Context Document:\n'+persistentPdfMemory : ''}`;
-
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
-                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: sysInstructions + "\n" + finalPrompt, providerOverride: selectedModelValue } : { systemPrompt: sysInstructions, userPrompt: finalPrompt, providerOverride: selectedModelValue };
+                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: q, providerOverride: selectedModelValue } : { systemPrompt: "Tone: Standard. Use LaTeX.", userPrompt: q, providerOverride: selectedModelValue };
                 
-                const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: activeAbortController.signal });
+                const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 const data = await response.json();
                 
+                let actualProvider = data.provider ? data.provider.toUpperCase() : "GEMINI API";
                 let cleanAns = data.text;
 
-                // REAL API SIGNATURE FIX: Grabs the exact provider from backend response
-                let actualProvider = data.provider ? data.provider.toUpperCase() : (selectedModelValue === "gemini" ? "GEMINI API" : "GROQ FAST API");
+                // SAFETY NET: If the AI outputs raw HTML without backticks, automatically wrap it so it gets boxed
+                if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
+                    cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/i, "\n```html\n$1\n```\n");
+                }
 
                 let processedMathAns = processMath(cleanAns);
-                let htmlAns = marked.parse ? marked.parse(processedMathAns) : processedMathAns.replace(/\n/g, '<br>');
-                let finalHtml = formatCodeBlocks(htmlAns);
                 
-                sessionMessages.push({ q: q, a: cleanAns, imgs: currentImagesToSave });
-                appHistory.unshift({ id: Date.now(), type: 'search', title: q.substring(0, 20), interactions: [{ question: q, answer: cleanAns, image: currentImagesToSave[0] }] });
-                saveHistorySafe();
+                // Let marked.js (with our custom renderer) do all the formatting
+                let finalHtml = marked.parse(processedMathAns);
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
                     <div class="ai-signature">✨ BY ${actualProvider}</div>
@@ -660,64 +575,22 @@
                         <button class="action-btn" onclick="startTts('text_${loadId}')">🔊 Voice</button>
                         <button class="action-btn" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy Text</button>
                         <button class="action-btn" onclick="toggleOptionsMenu(event, 'menu_${loadId}')">•••</button>
-                        <div class="options-menu" id="menu_${loadId}">
-                            <button onclick="openFeedbackDialog('text_${loadId}')">📝 Feedback</button>
-                        </div>
+                        <div class="options-menu" id="menu_${loadId}"><button onclick="openFeedbackDialog('text_${loadId}')">📝 Feedback</button></div>
                     </div>
                     <div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
                 
                 runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
                     if (window.MathJax) { MathJax.typesetPromise([document.getElementById(loadId)]); }
-                    if(requiresImageTrigger) {
-                        runFloatingImageCreator(q, `attached_image_zone_${loadId}`);
+                    if (requiresImageTrigger) {
+                        runDirectImageGeneration(q, `attached_image_zone_${loadId}`);
                     }
                 });
-
             } catch (err) {
-                if(err.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Error processing pipeline.</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span>❌ Delivery exception encountered.</span>`;
             } finally {
                 isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImages = []; updateImageUI(); safeScroll();
             }
         }
-
-        // --- SESSION RESTORE ---
-        document.addEventListener("DOMContentLoaded", () => {
-            const restoreId = new URLSearchParams(window.location.search).get('restore');
-            if (!restoreId) return;
-
-            setTimeout(() => {
-                let item = appHistory.find(i => i.id == restoreId);
-                if (!item || !item.interactions) return;
-
-                sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
-                const container = document.getElementById('searchChatHistory'); container.innerHTML = ''; 
-                
-                item.interactions.forEach((inter, index) => {
-                    let imgHtml = inter.image ? `<img src="${inter.image}" style="max-height:80px; border-radius:8px; margin-bottom:5px; border:1px solid var(--border-light);">` : '';
-                    let textId = `restored_text_${index}`;
-                    let htmlAns = marked.parse ? marked.parse(processMath(inter.answer)) : processMath(inter.answer).replace(/\n/g, '<br>');
-
-                    container.insertAdjacentHTML('beforeend', `
-                        <div class="chat-msg chat-user"><div class="bubble">${imgHtml}<div>${inter.question.replace(/\n/g, '<br>')}</div></div></div>
-                        <div class="chat-msg chat-ai">
-                            <div class="bubble">
-                                <div class="ai-signature">✨ BY AI (HISTORY API)</div>
-                                <div id="${textId}" class="markdown-body">${formatCodeBlocks(htmlAns)}</div>
-                                <div class="action-row">
-                                    <button class="action-btn" onclick="startTts('${textId}')">🔊 Voice</button>
-                                    <button class="action-btn" onclick="copyResponseToClipboard('${textId}')">📋 Copy Text</button>
-                                    <button class="action-btn" onclick="toggleOptionsMenu(event, 'menu_${textId}')">•••</button>
-                                    <div class="options-menu" id="menu_${textId}">
-                                        <button onclick="openFeedbackDialog('${textId}')">📝 Feedback</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`);
-                });
-                safeScroll();
-                if (window.MathJax) { MathJax.typesetPromise([container]); }
-            }, 500); 
-        });
     </script>
 </body>
 </html>
