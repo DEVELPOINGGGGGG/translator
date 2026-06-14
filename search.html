@@ -44,13 +44,6 @@
         .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; }
         .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .toggle-switch { position: relative; width: 34px; height: 18px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(16px); }
-
         /* Floating Photo Creator */
         #photoCreatorModal { display: none; position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%); background: var(--bg-surface); padding: 15px; border-radius: 16px; border: 2px solid #a855f7; z-index: 1000; box-shadow: 0 15px 40px rgba(0,0,0,0.6); width: 90%; max-width: 350px; animation: slideUp 0.3s ease; }
 
@@ -73,9 +66,22 @@
         .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; border-bottom:1px solid #30363d; }
         .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; }
         .copy-btn { background:#21262d; border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px; }
+
+        /* Action Row Utility Controls */
+        .action-row { margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; }
+        .action-btn { background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:4px; }
+        
+        /* Dropdown Options Menu */
+        .options-menu { display:none; position:absolute; bottom:40px; left:120px; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:99; flex-direction:column; min-width:120px; overflow:hidden; }
+        .options-menu button { background:transparent; border:none; color:var(--text-main); padding:10px; font-size:12px; font-weight:bold; text-align:left; cursor:pointer; width:100%; }
+        .options-menu button:hover { background:var(--input-bg); }
+
+        /* Feedback Sheet overlay */
+        .feedback-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100005; justify-content:center; align-items:center; }
+        .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:20px; width:90%; max-width:360px; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
     </style>
 </head>
-<body class="chat-page-layout">
+<body class="chat-page-layout" onclick="closeAllMenus(event)">
 
     <button id="exitFocusBtn" onclick="toggleFocusMode()" title="Exit Focus Mode">✕</button>
 
@@ -125,6 +131,18 @@
         </div>
     </div>
 
+    <div id="feedbackOverlay" class="feedback-overlay" onclick="document.getElementById('feedbackOverlay').style.display='none'">
+        <div class="feedback-box" onclick="event.stopPropagation()">
+            <h4 style="margin:0 0 10px 0; color:var(--primary);">📝 Submit Feedback</h4>
+            <p style="margin:0 0 10px 0; font-size:13px; color:var(--text-main);">What do you want to change?</p>
+            <textarea id="feedbackText" style="width:100%; height:80px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-main); padding:10px; font-size:13px; resize:none; outline:none; margin-bottom:12px;" placeholder="Type system requested changes here..."></textarea>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="document.getElementById('feedbackOverlay').style.display='none'" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px;">Cancel</button>
+                <button onclick="submitFeedbackApi()" style="background:#10b981; color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:13px;">Send</button>
+            </div>
+        </div>
+    </div>
+
     <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px);">
         <div style="color:var(--primary); font-size:22px;">🎧</div>
         <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer;">⏸️</button>
@@ -147,17 +165,14 @@
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
       <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
+      <button onclick="window.location.href='maths.html'" style="border-left: 4px solid #3b82f6; font-weight: bold;">🧮 Math Solver</button>
       <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
       <button onclick="window.location.href='search.html'" class="active">🔎 Deep Search</button>
       <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-      <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-      <button onclick="window.location.href='code.html'">💻 Code Assistant</button>
       <button onclick="window.location.href='translator.html'">🌍 Translator</button>
       <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
       <button onclick="window.location.href='youtube.html'">📺 YouTube AI</button>
-      <button onclick="window.location.href='tutor.html'">🧠 AI Tutor</button>
       <button onclick="window.location.href='quiz.html'">📝 Quiz Maker</button>
-      <button onclick="window.location.href='essay.html'">✍️ Essay Writer</button>
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
@@ -194,7 +209,7 @@
         <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px; box-shadow:var(--glass-shadow);">
             
             <div style="position:relative;">
-                <button class="chat-action-btn" onclick="document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:45px; height:45px; font-size:20px; background:transparent; border:none; cursor:pointer;">➕</button>
+                <button class="chat-action-btn" onclick="event.stopPropagation(); document.getElementById('attachmentMenu').style.display = document.getElementById('attachmentMenu').style.display === 'flex' ? 'none' : 'flex';" style="width:45px; height:45px; font-size:20px; background:transparent; border:none; cursor:pointer;">➕</button>
                 
                 <div id="attachmentMenu" style="display:none; position:absolute; bottom:60px; left:0; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width:150px;">
                     <button onclick="document.getElementById('imageUploadInput').click(); this.parentElement.style.display='none';" style="background:var(--input-bg); border:none; padding:12px; border-radius:10px; cursor:pointer; text-align:left; color:var(--text-main); font-weight:600;">🖼️ Add Photo</button>
@@ -213,7 +228,6 @@
     </div>
 
     <script>
-        // --- BASE STATE & PERSISTENT BRAIN ---
         let appHistory = [];
         let sessionMessages = [];
         let isProcessing = false;
@@ -222,6 +236,7 @@
         let uploadedImages = []; 
         let aiBrain = []; 
         let activeSearchMode = "local"; 
+        let currentFeedbackTargetText = "";
 
         function setSearchMode(mode) {
             activeSearchMode = mode;
@@ -256,8 +271,8 @@
                     <div class="bubble" style="background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--primary);">
                         <div class="ai-signature">✨ BY SYSTEM ENGINE</div>
                         <b style="color:var(--primary); font-size:18px;">👋 Welcome to Deep AI Dashboard!</b><br><br>
-                        • <b>Local Mode vs Web Mode:</b> Toggle above to answer directly from uploaded textbook files or from live web data.<br>
-                        • <b>Auto-Diagram System:</b> Ask things like <i>"नामांकित चित्र से घर्षण के कारणों का संक्षिप्त वर्णन करें"</i> and it will write the text AND auto-generate the map/diagram below it!<br>
+                        • <b>Local Mode vs Web Mode:</b> Toggle above to answer directly from uploaded textbook data.<br>
+                        • <b>Auto-Diagram System:</b> Ask for diagrams/maps and they render below automatically.<br>
                     </div>
                 </div>`);
         }
@@ -274,11 +289,62 @@
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function toggleFocusMode() { 
             document.body.classList.toggle("focus-mode"); 
-            showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Focus Mode ON - UI Hidden" : "🧘‍♂️ Focus Mode OFF"); 
+            showToast(document.body.classList.contains("focus-mode") ? "🧘‍♂️ Focus Mode ON" : "🧘‍♂️ Focus Mode OFF"); 
         }
         function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px; animation: slideUp 0.3s ease;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
         function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
         function clearSearchChat() { if(confirm("Clear this chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; persistentPdfMemory = ""; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
+
+        function closeAllMenus(e) {
+            document.getElementById('attachmentMenu').style.display = 'none';
+            document.querySelectorAll('.options-menu').forEach(m => m.style.display = 'none');
+        }
+
+        function toggleOptionsMenu(e, menuId) {
+            e.stopPropagation();
+            const targetMenu = document.getElementById(menuId);
+            const currentState = targetMenu.style.display;
+            document.querySelectorAll('.options-menu').forEach(m => m.style.display = 'none');
+            targetMenu.style.display = currentState === 'flex' ? 'none' : 'flex';
+        }
+
+        function openFeedbackDialog(textElementId) {
+            currentFeedbackTargetText = document.getElementById(textElementId).innerText;
+            document.getElementById('feedbackText').value = "";
+            document.getElementById('feedbackOverlay').style.display = 'flex';
+        }
+
+        async function submitFeedbackApi() {
+            const userChanges = document.getElementById('feedbackText').value.trim();
+            if(!userChanges) return showToast("⚠️ Enter feedback string first");
+
+            try {
+                // Send feedback text directly to server route configured for Green API transmission
+                const res = await fetch("/api/send-feedback", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        feedback: userChanges,
+                        context: currentFeedbackTargetText
+                    })
+                });
+                if(res.ok) {
+                    showToast("🚀 Feedback delivered via Green API!");
+                } else {
+                    showToast("❌ Server dispatch route issue.");
+                }
+            } catch(err) {
+                showToast("❌ Network delivery error.");
+            }
+            document.getElementById('feedbackOverlay').style.display = 'none';
+        }
+
+        function copyResponseToClipboard(textElementId) {
+            const text = document.getElementById(textElementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("📋 Copied to clipboard!");
+            });
+        }
 
         let currentFullscreenBase64 = null;
         window.openFullscreenImage = function(imgId) {
@@ -292,12 +358,20 @@
             document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
         }
 
-        // --- INSANE SPEED TYPEWRITER ---
+        // --- ADAPTIVE SPEED TYPEWRITER (2-5s short, 7-10s long) ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullHtml;
             let nodes = Array.from(tempDiv.childNodes);
             targetElement.innerHTML = "";
+            
+            let totalLength = tempDiv.innerText.length || 1;
+            // Short responses (< 200 chars) complete in ~2.5s. Long responses in ~8.5s.
+            let targetDuration = totalLength < 200 ? 2500 : 8500;
+            let intervalTime = 20; 
+            let totalTicks = targetDuration / intervalTime;
+            let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
+
             let nodeIndex = 0;
 
             function typeNextNode() {
@@ -317,11 +391,11 @@
                             nodeIndex++;
                             typeNextNode();
                         } else {
-                            span.textContent += text.substring(charIndex, charIndex + 5);
-                            charIndex += 5;
+                            span.textContent += text.substring(charIndex, charIndex + textChunks);
+                            charIndex += textChunks;
                             safeScroll();
                         }
-                    }, 1);
+                    }, intervalTime);
                 } else {
                     targetElement.appendChild(currentNode);
                     nodeIndex++;
@@ -337,9 +411,7 @@
             const textEl = document.getElementById(textId); if(!textEl) return;
             window.speechSynthesis.cancel();
             
-            // Remove markdown syntax completely before reading so it doesn't say "star"
             let cleanSpeechText = textEl.innerText.replace(/[\*\#\_]/g, '');
-            
             let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText);
             currentUtterance.lang = document.getElementById("appLang").value || "hi-IN"; 
             
@@ -394,7 +466,6 @@
         function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); }; r.readAsArrayBuffer(f); e.target.value = ""; }
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
-        // --- RENDER BACKEND IMAGE GENERATOR ---
         async function runFloatingImageCreator(promptText, targetContainerId = null) {
             let q = promptText || document.getElementById("photoPromptInput").value.trim();
             if(!q) return showToast("Please describe the image first.");
@@ -411,7 +482,7 @@
                     <div class="chat-msg chat-ai" id="${loadId}">
                         <div class="bubble">
                             <div class="ai-signature">✨ BY FLUX (RENDER BACKEND API)</div>
-                            <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Render Server is painting (Queue System Active)...</span></div>
+                            <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Render Server is painting...</span></div>
                         </div>
                     </div>`);
             }
@@ -423,30 +494,23 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ prompt: q })
                 });
-
                 const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || "Server failed to generate image.");
-                }
+                if (!response.ok) throw new Error(result.error || "Server image failed.");
 
                 if (result.imageBase64) {
                     const targetEl = document.getElementById(loadId);
                     const injectPoint = targetContainerId ? targetEl : targetEl.querySelector('.bubble');
                     injectPoint.innerHTML = `
                         <div class="ai-signature">✨ BY FLUX (RENDER BACKEND API)</div>
-                        <div style="border-radius:12px; overflow:hidden; margin-top:10px;" onclick="openFullscreenImage('img_src_${loadId}')" title="Click to expand">
-                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_src_${loadId}" alt="Generated Image" onload="safeScroll()">
+                        <div style="border-radius:12px; overflow:hidden; margin-top:10px;" onclick="openFullscreenImage('img_src_${loadId}')">
+                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_src_${loadId}" onload="safeScroll()">
                         </div>`;
                     saveHistorySafe();
-                } else {
-                    throw new Error("Invalid image format received from server.");
                 }
             } catch (error) {
-                console.error("Backend Error:", error);
                 const targetEl = document.getElementById(loadId);
                 const injectPoint = targetContainerId ? targetEl : targetEl.querySelector('.bubble');
-                injectPoint.innerHTML = `<span style="color:red;">❌ Render Backend Generation Failed: ${error.message}</span>`;
+                injectPoint.innerHTML = `<span style="color:red;">❌ Image Render Failed.</span>`;
             }
         }
 
@@ -460,7 +524,7 @@
             
             const chatContainer = document.getElementById("searchChatHistory");
             const selectedModelValue = document.getElementById("modelSelector").value;
-            const modelLabel = document.getElementById("modelSelector").options[document.getElementById("modelSelector").selectedIndex].text;
+            const modelLabel = selectedModelValue === "gemini" ? "GEMINI (API 1-5)" : "GROQ FAST API";
             const lang = document.getElementById("appLang").options[document.getElementById("appLang").selectedIndex].text;
             const tone = document.getElementById("aiTone").value;
 
@@ -468,17 +532,13 @@
             let currentImagesToSave = [...uploadedImages];
             
             let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
-            if (!imageToUseForApi && (q.toLowerCase().includes('image') || q.toLowerCase().includes('photo'))) {
-                for(let i=sessionMessages.length-1; i>=0; i--) { if(sessionMessages[i].imgs && sessionMessages[i].imgs.length > 0) { imageToUseForApi = sessionMessages[i].imgs[0]; break; } }
-            }
 
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
             inp.value = ""; safeScroll();
 
-            // Check if user is asking for a picture/map/diagram to trigger auto-image generator
             let requiresImageTrigger = false;
             let lowercaseQ = q.toLowerCase();
-            if(lowercaseQ.includes("चित्र") || lowercaseQ.includes("नक्शा") || lowercaseQ.includes("map") || lowercaseQ.includes("diagram") || lowercaseQ.includes("picture") || lowercaseQ.includes("photo")) {
+            if(lowercaseQ.includes("चित्र") || lowercaseQ.includes("नक्शा") || lowercaseQ.includes("map") || lowercaseQ.includes("diagram") || lowercaseQ.includes("picture")) {
                 requiresImageTrigger = true;
             }
 
@@ -486,20 +546,14 @@
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY ${modelLabel.toUpperCase()}</div>
+                        <div class="ai-signature">✨ BY ${modelLabel}</div>
                         <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is thinking...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
-            let brainContext = aiBrain.length > 0 ? `USER PROFILE FACTS: ${aiBrain.join('. ')}.` : '';
-            let brainInstruction = `If the user tells you a specific fact about themselves, output the exact tag [MEMORY_SAVE: fact] at the VERY END.`;
-            let mathInstruction = `Use LaTeX formatting for mathematical expressions.`;
-            let modeInstruction = activeSearchMode === "web" ? "PRIORITIZE LIVE WEB INTERNET KNOWLEDGE." : "PRIORITIZE MATCHING FACTS DIRECTLY FROM UPLOADED PDF DATA.";
-
-            let sysInstructions = `You are a highly intelligent AI. Answer entirely in ${lang}. Tone: ${tone}. ${modeInstruction} ${mathInstruction} ${brainInstruction} ${brainContext}`;
-            let contextStr = sessionMessages.slice(-5).map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n'); 
-            let finalPrompt = `${contextStr}\n\nCurrent Request: ${q}\n\n${persistentPdfMemory ? 'Context Document:\n'+persistentPdfMemory : ''}`;
+            let sysInstructions = `You are an AI operating in ${lang}. Tone: ${tone}. Use LaTeX for equations. Output [MEMORY_SAVE: fact] at the end if the user shares profile details.`;
+            let finalPrompt = `${q}\n\n${persistentPdfMemory ? 'Context Document:\n'+persistentPdfMemory : ''}`;
 
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
@@ -509,14 +563,6 @@
                 const data = await response.json();
                 
                 let cleanAns = data.text;
-                
-                let memoryMatch = cleanAns.match(/\[MEMORY_SAVE:(.*?)\]/i);
-                if(memoryMatch) {
-                    let newFact = memoryMatch[1].trim(); aiBrain.push(newFact); localStorage.setItem('aiBrain', JSON.stringify(aiBrain));
-                    cleanAns = cleanAns.replace(memoryMatch[0], '').trim(); showToast("🧠 AI memorized a new fact!");
-                }
-
-                // Process Markdown properly
                 let processedMathAns = processMath(cleanAns);
                 let htmlAns = marked.parse ? marked.parse(processedMathAns) : processedMathAns.replace(/\n/g, '<br>');
                 let finalHtml = formatCodeBlocks(htmlAns);
@@ -526,26 +572,27 @@
                 saveHistorySafe();
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-signature">✨ BY ${modelLabel.toUpperCase()}</div>
+                    <div class="ai-signature">✨ BY ${modelLabel}</div>
                     <div id="text_${loadId}" class="markdown-body"></div>
-                    <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                        <button onclick="startTts('text_${loadId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 15px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Play Voice</button>
+                    <div class="action-row">
+                        <button class="action-btn" onclick="startTts('text_${loadId}')">🔊 Voice</button>
+                        <button class="action-btn" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy Text</button>
+                        <button class="action-btn" onclick="toggleOptionsMenu(event, 'menu_${loadId}')">•••</button>
+                        <div class="options-menu" id="menu_${loadId}">
+                            <button onclick="openFeedbackDialog('text_${loadId}')">📝 Feedback</button>
+                        </div>
                     </div>
                     <div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
                 
-                // Fire INSANE Typewriter
                 runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
-                    if (window.MathJax) { MathJax.typesetClear([document.getElementById(loadId)]); MathJax.typesetPromise([document.getElementById(loadId)]); }
-                    
-                    // Auto-trigger diagram generation if the user asked for one
+                    if (window.MathJax) { MathJax.typesetPromise([document.getElementById(loadId)]); }
                     if(requiresImageTrigger) {
-                        document.getElementById(`attached_image_zone_${loadId}`).innerHTML = `<div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="font-size:12px; color:var(--text-muted);">Auto-triggering diagram rendering pipeline...</span></div>`;
                         runFloatingImageCreator(q, `attached_image_zone_${loadId}`);
                     }
                 });
 
             } catch (err) {
-                if(err.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Error: ${err.message}</span>`;
+                if(err.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Error processing pipeline.</span>`;
             } finally {
                 isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImages = []; updateImageUI(); safeScroll();
             }
@@ -561,13 +608,11 @@
                 if (!item || !item.interactions) return;
 
                 sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
-                showToast("🧠 Session Restored!");
-
                 const container = document.getElementById('searchChatHistory'); container.innerHTML = ''; 
+                
                 item.interactions.forEach((inter, index) => {
-                    let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-height:80px; border-radius:8px; margin-bottom:5px; border:1px solid var(--border-light);">` : '';
+                    let imgHtml = inter.image ? `<img src="${inter.image}" style="max-height:80px; border-radius:8px; margin-bottom:5px; border:1px solid var(--border-light);">` : '';
                     let textId = `restored_text_${index}`;
-                    
                     let htmlAns = marked.parse ? marked.parse(processMath(inter.answer)) : processMath(inter.answer).replace(/\n/g, '<br>');
 
                     container.insertAdjacentHTML('beforeend', `
@@ -576,8 +621,13 @@
                             <div class="bubble">
                                 <div class="ai-signature">✨ BY AI (HISTORY API)</div>
                                 <div id="${textId}" class="markdown-body">${formatCodeBlocks(htmlAns)}</div>
-                                <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
-                                    <button onclick="startTts('${textId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 15px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Play Voice</button>
+                                <div class="action-row">
+                                    <button class="action-btn" onclick="startTts('${textId}')">🔊 Voice</button>
+                                    <button class="action-btn" onclick="copyResponseToClipboard('${textId}')">📋 Copy Text</button>
+                                    <button class="action-btn" onclick="toggleOptionsMenu(event, 'menu_${textId}')">•••</button>
+                                    <div class="options-menu" id="menu_${textId}">
+                                        <button onclick="openFeedbackDialog('${textId}')">📝 Feedback</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>`);
