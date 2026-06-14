@@ -123,74 +123,57 @@ async function processQueue() {
     try {
         console.log(`[Queue] Processing prompt: ${currentRequest.prompt}`);
         
-        // Launch highly optimized headless browser to save RAM (< 450MB)
-       browser = await puppeteer.launch({
+        browser = await puppeteer.launch({
             headless: "new",
-            executablePath: '/opt/render/project/src/.puppeteer_cache/chrome/linux-127.0.6533.88/chrome-linux64/chrome', // 🚀 ADD THIS LINE
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--disable-gpu',
-                '--no-first-run',
-                '--no-zygote',
-                '--single-process', // Forces single process to crash-proof memory
-                '--disable-extensions'
-            ]
+            executablePath: '/opt/render/project/src/.puppeteer_cache/chrome/linux-127.0.6533.88/chrome-linux64/chrome',
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process']
         });
 
         const page = await browser.newPage();
         
-        // Block heavy resources like CSS fonts and analytics to save bandwidth and memory
-        await page.setRequestInterception(true);
-        page.on('request', (req) => {
-            const type = req.resourceType();
-            if (type === 'font' || type === 'stylesheet' || req.url().includes('analytics')) {
-                req.abort();
-            } else {
-                req.continue();
-            }
-        });
-
+        // Navigate and wait for DOM, not network, to avoid 90s hang
         await page.goto('https://aichatbot12321-deep-ai-image-gen.hf.space/?__theme=system', {
-            waitUntil: 'networkidle2',
+            waitUntil: 'domcontentloaded', 
             timeout: 60000
         });
 
         const textareaSelector = 'textarea[data-testid="textbox"]';
-        await page.waitForSelector(textareaSelector, { timeout: 15000 });
+        await page.waitForSelector(textareaSelector, { timeout: 20000 });
         await page.type(textareaSelector, currentRequest.prompt);
 
         const buttonSelector = 'button.primary';
-        await page.waitForSelector(buttonSelector, { timeout: 15000 });
+        await page.waitForSelector(buttonSelector, { timeout: 20000 });
         await page.click(buttonSelector);
 
-        console.log("[Queue] Prompt submitted. Waiting for image generation...");
+        console.log("[Queue] Prompt submitted. Waiting for results...");
 
-        const imgSelector = 'div[data-testid="image"] img, .output-image img, .gallery img';
+        // 🚀 BROADER SELECTOR: Catches the image regardless of the HF internal class name
+        const imgSelector = 'img[src*="gradio-file"], div[data-testid="image"] img, img';
+        
+        // Wait for the image to be added to the DOM
         await page.waitForSelector(imgSelector, { timeout: 90000 });
+        
+        // Give it an extra 2 seconds to finish rendering the pixels
+        await new Promise(r => setTimeout(r, 2000));
 
         const imageSrc = await page.evaluate((sel) => {
-            const img = document.querySelector(sel);
-            return img ? img.src : null;
+            const images = document.querySelectorAll(sel);
+            // Get the last image added to the page, which is usually the result
+            return images[images.length - 1].src;
         }, imgSelector);
 
-        if (!imageSrc) throw new Error("Image source element found but was empty.");
+        if (!imageSrc) throw new Error("Image element found, but source is empty.");
 
-        console.log("[Queue] Image successfully generated!");
+        console.log("[Queue] Image successfully grabbed!");
         currentRequest.resolve({ imageBase64: imageSrc });
 
     } catch (error) {
         console.error("[Queue Error]:", error.message);
         currentRequest.reject(error);
     } finally {
-        if (browser) {
-            await browser.close();
-            console.log("[Queue] Browser closed cleanly to free RAM.");
-        }
+        if (browser) await browser.close();
         isProcessingQueue = false;
-        setTimeout(processQueue, 1000); // Move to next in queue
+        setTimeout(processQueue, 1000);
     }
 }
 
