@@ -11,6 +11,13 @@
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
+    <script type="module">
+        import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.8.2/dist/index.min.js";
+        // Attach it to the window so our main scripts can use it instantly
+        window.GradioClient = Client; 
+        console.log("✅ Gradio Client successfully loaded into the browser.");
+    </script>
+    
     <script>
         MathJax = { 
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
@@ -385,7 +392,7 @@
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
         // ============================================================
-        // 🚀 SECURE BACKEND IMAGE GENERATOR (NO CORS/GRADIO ERRORS) 🚀
+        // 🚀 EXACT HUGGING FACE GRADIO INTEGRATION 🚀
         // ============================================================
         async function runFloatingImageCreator() {
             const q = document.getElementById("photoPromptInput").value.trim();
@@ -401,39 +408,35 @@
                 <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY FLUX (SECURE BACKEND API)</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting securely...</span></div>
+                        <div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div>
+                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is painting via Hugging Face...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
             try {
-                // Calls your brand new server.js endpoint!
-                const response = await fetch("/api/hf-search-image", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: q })
+                if (!window.GradioClient) {
+                    throw new Error("Gradio Client is not loaded yet. Please wait a moment or check your internet connection.");
+                }
+
+                // EXACT CODE YOU REQUESTED:
+                const client = await window.GradioClient.connect("Aichatbot12321/deep-ai-image-gen");
+                const result = await client.predict("/generate_artwork", {
+                    prompt: q,
                 });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || "Server failed to generate image.");
-                }
-
-                if (result.imageBase64) {
-                    document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                        <div class="ai-signature">✨ BY FLUX (SECURE BACKEND API)</div>
-                        <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to expand">
-                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}" alt="Generated Image" onload="safeScroll()">
-                        </div>`;
-                    saveHistorySafe();
-                } else {
-                    throw new Error("Invalid image format received from server.");
-                }
+                
+                // The image url is in result.data[0].url (or result.data[0] if it's base64)
+                let generatedImgUrl = result.data[0]?.url || result.data[0];
+                
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `
+                    <div class="ai-signature">✨ BY FLUX (HUGGING FACE API)</div>
+                    <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to expand">
+                        <img src="${generatedImgUrl}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}">
+                    </div>`;
+                saveHistorySafe(); safeScroll();
             } catch (error) {
-                console.error("Backend Error:", error);
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Image Generation Failed: ${error.message}</span>`;
+                console.error(error);
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Hugging Face Generation Failed: ${error.message}</span>`;
             }
         }
 
