@@ -7,15 +7,15 @@
     
     <link rel="stylesheet" href="style.css">
     
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js)"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)';</script>
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js](https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js)"></script>
-    <script src="[https://cdn.jsdelivr.net/npm/marked/marked.min.js](https://cdn.jsdelivr.net/npm/marked/marked.min.js)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     
     <script>
         MathJax = { 
             options: {
-                ignoreHtmlClass: 'code-box', // Forces MathJax to NEVER touch code
+                ignoreHtmlClass: 'code-box', 
                 processHtmlClass: 'markdown-body'
             },
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
@@ -23,7 +23,7 @@
             chtml: { displayAlign: 'left' }
         };
     </script>
-    <script id="MathJax-script" async src="[https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js](https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js)"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         :root { --app-font-scale: 1; }
@@ -107,8 +107,8 @@
         .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:20px; width:90%; max-width:360px; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
 
         #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100005; flex-direction:column; }
-        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#161b22; color:white; font-weight:bold; }
-        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; }
+        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; }
+        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow:0 4px 10px rgba(0,0,0,0.3); }
         #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; }
 
         #floatingModeChip { display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); }
@@ -269,26 +269,7 @@
     </div>
 
     <script>
-        // --- CUSTOM MARKDOWN RENDERER (FIXES THE BUG) ---
-        const renderer = new marked.Renderer();
-        renderer.code = function(code, language) {
-            // Escape HTML brackets so it renders correctly instead of injecting
-            let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
-            
-            // Check if language is explicitly HTML, or if the code looks like HTML
-            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html') || safeCode.toLowerCase().includes('&lt;!doctype html');
-            
-            // Add play button ONLY if it's HTML
-            let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
-
-            return `<div class="code-box">
-                <div class="code-header">${playBtnStr}<button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Code',2000);">Copy Code</button></div>
-                <div class="code-body">${safeCode}</div>
-            </div>`;
-        };
-        marked.setOptions({ renderer: renderer });
-
-
+        // 1. ABSOLUTE TOP: ALL GLOBAL VARIABLES DECLARED HERE FIRST (Fixes crashes)
         let appHistory = [];
         let sessionMessages = [];
         let isProcessing = false;
@@ -300,6 +281,21 @@
         let currentFeedbackTargetText = "";
         let imageGenerationModeActive = false; 
 
+        // 2. MARKDOWN CONFIGURATION
+        const renderer = new marked.Renderer();
+        renderer.code = function(code, language) {
+            let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html') || safeCode.toLowerCase().includes('&lt;!doctype html');
+            let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
+
+            return `<div class="code-box">
+                <div class="code-header">${playBtnStr}<button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Code',2000);">Copy Code</button></div>
+                <div class="code-body">${safeCode}</div>
+            </div>`;
+        };
+        marked.setOptions({ renderer: renderer });
+
+        // 3. UI AND INTERACTION FUNCTIONS
         function setSearchMode(mode) {
             activeSearchMode = mode;
             document.getElementById('modeLocalBtn').classList.toggle('active', mode === 'local');
@@ -337,17 +333,26 @@
             }
         });
 
+        // MASSIVE WELCOME MESSAGE RESTORED
         function showWelcomeMessage() {
             const chatContainer = document.getElementById("searchChatHistory");
             chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-ai">
-                    <div class="bubble" style="border: 1px solid var(--primary);">
+                <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
+                    <div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));">
                         <div class="ai-signature">✨ BY SYSTEM ENGINE</div>
                         <b style="color:var(--primary); font-size:18px;">👋 Welcome to Deep AI Dashboard!</b><br><br>
+                        • <b>Local Mode vs Web Mode:</b> Toggle above to answer directly from uploaded textbook files or from live web data.<br>
+                        • <b>Auto-Diagram System:</b> Ask things like <i>"नामांकित चित्र से घर्षण के कारणों का संक्षिप्त वर्णन करें"</i> and it will write the text AND auto-generate the map/diagram below it!<br>
                         • <b>Code Box Fix:</b> HTML code will now perfectly format inside a code box with a Play Button.<br>
+                        • <b>Math Scroll Fix:</b> Long equations now scroll horizontally instead of breaking the layout.<br>
+                        • <b>Direct Download:</b> The image download button now force-downloads the actual image file to your device instantly.<br>
                     </div>
                 </div>`);
+            safeScroll();
         }
+
+        function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
+        function clearBrain() { if(confirm("Erase AI's memory of you?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
 
         function setFont(scale, btn) {
             document.documentElement.style.setProperty('--app-font-scale', scale);
@@ -359,7 +364,17 @@
         function toggleFocusMode() { document.body.classList.toggle("focus-mode"); }
         function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:10000; font-weight:bold; font-size:12px;"; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); }
         function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
-        function clearSearchChat() { if(confirm("Clear chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; uploadedImages = []; updateImageUI(); clearPdfFile(); } }
+        
+        function clearSearchChat() { 
+            if(confirm("Clear chat?")) { 
+                document.getElementById("searchChatHistory").innerHTML = ''; 
+                sessionMessages = []; 
+                uploadedImages = []; 
+                updateImageUI(); 
+                clearPdfFile(); 
+                showWelcomeMessage(); 
+            } 
+        }
 
         function closeAllMenus(e) {
             document.getElementById('attachmentMenu').style.display = 'none';
@@ -380,19 +395,35 @@
             document.getElementById('feedbackOverlay').style.display = 'flex';
         }
 
+        // --- FIXED FEEDBACK SEND TO BACKEND ENV VARIABLE ---
         async function submitFeedbackApi() {
             const userChanges = document.getElementById('feedbackText').value.trim();
-            if(!userChanges) return;
+            if(!userChanges) return showToast("⚠️ Please type your feedback first.");
+
             try {
-                await fetch("/api/secure-whatsapp", {
+                showToast("⏳ Sending feedback...");
+                
+                // CRITICAL FIX: Frontend sends a unique target string. 
+                // Your server.js must map this string to process.env.FEEDBACK
+                const res = await fetch("/api/secure-whatsapp", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ number: "feedback", message: `Change requested:\n${userChanges}` })
+                    body: JSON.stringify({ 
+                        number: "USE_ENV_FEEDBACK", // Tell backend to use the environment variable
+                        message: `FEEDBACK SUBMISSION:\n\nRequested Change:\n${userChanges}\n\nContext Fragment:\n${currentFeedbackTargetText.substring(0, 200)}...` 
+                    })
                 });
-                document.getElementById('feedbackOverlay').style.display = 'none';
-                showToast("🚀 Feedback closed and dispatched!");
+                
+                const data = await res.json();
+                
+                if(res.ok) {
+                    showToast("🚀 Feedback delivered via Green API!");
+                    document.getElementById('feedbackOverlay').style.display = 'none';
+                } else {
+                    showToast("❌ Server Issue: " + (data.error || "Ensure server handles USE_ENV_FEEDBACK"));
+                }
             } catch(err) {
-                document.getElementById('feedbackOverlay').style.display = 'none';
+                showToast("❌ Network error. Backend unreachable.");
             }
         }
 
@@ -410,6 +441,7 @@
         
         window.downloadFullscreenImage = async function() {
             if(!currentFullscreenBase64) return;
+            showToast("⏳ Processing Download...");
             try {
                 const response = await fetch(currentFullscreenBase64);
                 const blob = await response.blob();
@@ -421,6 +453,7 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
+                showToast("✅ Download Complete!");
             } catch(e) {
                 window.open(currentFullscreenBase64, '_blank');
             }
@@ -433,27 +466,52 @@
             targetElement.innerHTML = "";
             let nodeIndex = 0;
 
+            let totalLength = tempDiv.innerText.length || 1;
+            let targetDuration = totalLength < 200 ? 2500 : 8500;
+            let intervalTime = 20; 
+            let totalTicks = targetDuration / intervalTime;
+            let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
+
             function typeNextNode() {
                 if (nodeIndex >= nodes.length) { if(callback) callback(); return; }
                 let currentNode = nodes[nodeIndex].cloneNode(true);
-                targetElement.appendChild(currentNode);
-                nodeIndex++;
-                safeScroll();
-                setTimeout(typeNextNode, 20); // Extremely fast
+                
+                if (currentNode.nodeType === Node.TEXT_NODE) {
+                    let text = currentNode.textContent;
+                    let span = document.createElement('span');
+                    targetElement.appendChild(span);
+                    let charIndex = 0;
+                    let interval = setInterval(() => {
+                        if (charIndex >= text.length) {
+                            clearInterval(interval);
+                            nodeIndex++;
+                            typeNextNode();
+                        } else {
+                            span.textContent += text.substring(charIndex, charIndex + textChunks);
+                            charIndex += textChunks;
+                            safeScroll();
+                        }
+                    }, intervalTime);
+                } else {
+                    targetElement.appendChild(currentNode);
+                    nodeIndex++;
+                    safeScroll();
+                    typeNextNode();
+                }
             }
             typeNextNode();
         }
 
         window.startTts = function(textId) {
             window.speechSynthesis.cancel();
-            let currentUtterance = new SpeechSynthesisUtterance(document.getElementById(textId).innerText);
+            let cleanSpeechText = document.getElementById(textId).innerText.replace(/[\*\#\_]/g, '');
+            let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText);
             currentUtterance.lang = document.getElementById("appLang").value;
             window.speechSynthesis.speak(currentUtterance);
         };
 
         window.closeTts = function() { window.speechSynthesis.cancel(); };
 
-        // Play HTML Function
         window.playHtmlCode = function(btn) {
             const code = btn.parentElement.nextElementSibling.innerText;
             document.getElementById('htmlPreviewFrame').srcdoc = code;
@@ -475,10 +533,11 @@
             } else { btn.style.display = "none"; document.getElementById("multiImageManager").style.display = "none"; }
         }
         function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
-        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 10) return; const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); }; r.readAsDataURL(f); }
+        function handleImageUpload(e) { const f = e.target.files[0]; if(!f) return; if(uploadedImages.length >= 10) return showToast("❌ Max 10 photos allowed!"); const r = new FileReader(); r.onload = () => { uploadedImages.push(r.result); updateImageUI(); }; r.readAsDataURL(f); }
         function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; }; r.readAsArrayBuffer(f); }
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; }
 
+        // 4. MAIN PIPELINE LOGIC
         function runMainPipeline() {
             const inp = document.getElementById("searchInput");
             const textValue = inp.value.trim();
@@ -558,14 +617,11 @@
                 let actualProvider = data.provider ? data.provider.toUpperCase() : "GEMINI API";
                 let cleanAns = data.text;
 
-                // SAFETY NET: If the AI outputs raw HTML without backticks, automatically wrap it so it gets boxed
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
                     cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/i, "\n```html\n$1\n```\n");
                 }
 
                 let processedMathAns = processMath(cleanAns);
-                
-                // Let marked.js (with our custom renderer) do all the formatting
                 let finalHtml = marked.parse(processedMathAns);
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
