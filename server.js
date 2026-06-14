@@ -140,19 +140,21 @@ async function processQueue() {
         await page.type(textareaSelector, currentRequest.prompt);
         await page.click('button.primary');
 
-        console.log("[Queue] Waiting for the 'gradio_api/file' image tag...");
+        console.log("[Queue] Submitted. Waiting for image to appear...");
 
-        // 🚀 THE EXACT FIX: Wait for the image tag containing 'gradio_api/file'
-        await page.waitForFunction(() => {
-            const img = document.querySelector('img[src*="gradio_api/file"]');
-            return img && img.src; 
-        }, { timeout: 90000 });
+        // 1. Wait for the image tag to exist
+        await page.waitForSelector('img[src*="gradio_api/file"]', { timeout: 90000 });
 
+        // 2. 🚀 THE BUFFER: Wait exactly 10 seconds for the image to finish rendering
+        console.log("[Queue] Image detected. Waiting 10 seconds for final render...");
+        await new Promise(r => setTimeout(r, 10000)); 
+
+        // 3. Grab the source
         const imageSrc = await page.evaluate(() => {
             return document.querySelector('img[src*="gradio_api/file"]').src;
         });
 
-        console.log("[Queue] Found it! Image grabbed.");
+        console.log("[Queue] Success! Final image grabbed.");
         currentRequest.resolve({ imageBase64: imageSrc });
 
     } catch (error) {
