@@ -10,6 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <script>
         MathJax = { 
@@ -30,7 +31,6 @@
         body.focus-mode .chat-input-area { display: none !important; }
         body.focus-mode #searchChatHistory { padding-bottom: 50px !important; margin-top: 20px !important; height: 100vh; overflow-y: auto; }
         
-        /* Focus Mode Exit Button */
         #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         body.focus-mode #exitFocusBtn { display: flex; justify-content: center; align-items: center; }
 
@@ -59,10 +59,15 @@
         .pulse-orb { width: 15px; height: 15px; border-radius: 50%; background: linear-gradient(135deg, var(--secondary), var(--primary)); animation: pulseGlow 1.5s infinite; }
         @keyframes pulseGlow { 0% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 50% { transform: scale(1.1); box-shadow: 0 0 20px var(--primary); } 100% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } }
 
-        /* TTS Word Highlight */
-        .tts-highlight { color: #3b82f6 !important; font-weight: bold; background: rgba(59, 130, 246, 0.2); border-radius: 4px; padding: 0 2px; transition: background 0.2s; }
+        /* Mode Selector Badges */
+        .mode-toggle-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 5px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Markdown Styles */
+        .markdown-body { font-size: 15px; line-height: 1.6; }
+        .markdown-body strong { font-weight: 800; color: var(--primary); }
+        .markdown-body p { margin-bottom: 10px; }
         
-        /* AI Signature & Code Boxes */
         .ai-signature { font-size: 10px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
         .code-box { background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; }
         .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; border-bottom:1px solid #30363d; }
@@ -84,8 +89,8 @@
             <div class="setting-row">
                 <span>🤖 AI Model:</span>
                 <select class="setting-select" id="modelSelector">
-                    <option value="gemini">✨ Gemini</option>
-                    <option value="groq">⚡ Groq</option>
+                    <option value="gemini" selected>✨ Gemini Pro</option>
+                    <option value="groq">⚡ Groq Fast API</option>
                 </select>
             </div>
 
@@ -94,9 +99,6 @@
                 <select class="setting-select" id="appLang">
                     <option value="hi-IN" selected>Hindi (Default)</option>
                     <option value="en-US">English</option>
-                    <option value="es-ES">Spanish</option>
-                    <option value="fr-FR">French</option>
-                    <option value="de-DE">German</option>
                 </select>
             </div>
             
@@ -106,8 +108,6 @@
                     <button class="font-btn" onclick="setFont(0.85, this)">Small</button>
                     <button class="font-btn active" onclick="setFont(1, this)">Normal</button>
                     <button class="font-btn" onclick="setFont(1.15, this)">Large</button>
-                    <button class="font-btn" onclick="setFont(1.3, this)">XL</button>
-                    <button class="font-btn" onclick="setFont(1.5, this)">Max</button>
                 </div>
             </div>
 
@@ -116,32 +116,26 @@
                 <select class="setting-select" id="aiTone">
                     <option value="Standard">Standard</option>
                     <option value="Professional">Professional</option>
-                    <option value="Casual">Casual</option>
                 </select>
             </div>
 
-            <div class="setting-row">
-                <span>🌐 Web Data:</span>
-                <label class="toggle-switch"><input type="checkbox" id="webPriority"><span class="slider"></span></label>
-            </div>
-            
             <div style="margin-top:20px; font-size:12px; color:var(--text-muted); font-weight:bold;">🧠 AI Memory (Brain)</div>
-            <textarea id="aiBrainDisplay" readonly style="width:100%; height:60px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-muted); font-size:11px; padding:8px; margin-top:5px; resize:none;" placeholder="Facts AI has learned about you will appear here..."></textarea>
+            <textarea id="aiBrainDisplay" readonly style="width:100%; height:60px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-muted); font-size:11px; padding:8px; margin-top:5px; resize:none;" placeholder="Facts AI has learned about you..."></textarea>
             <button onclick="clearBrain()" style="width:100%; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; padding:8px; border-radius:8px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:12px;">Wipe Memory</button>
         </div>
     </div>
 
     <div id="ttsPlayer" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--bg-surface); border:1px solid var(--primary); border-radius:30px; padding:10px 20px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:10001; align-items:center; gap:15px; backdrop-filter:blur(10px);">
         <div style="color:var(--primary); font-size:22px;">🎧</div>
-        <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer; width:35px; height:35px;">⏸️</button>
-        <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
+        <button id="ttsPlayPauseBtn" onclick="toggleTts()" style="background:none; border:none; color:var(--text-main); font-size:24px; cursor:pointer;">⏸️</button>
+        <button onclick="closeTts()" style="background:#e11d48; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer;">✕</button>
     </div>
 
     <div id="photoCreatorModal">
         <button style="position:absolute; top:-10px; right:-10px; background:#ef4444; color:white; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="document.getElementById('photoCreatorModal').style.display='none'">✕</button>
         <h4 style="margin:0 0 10px 0; color:#a855f7; display:flex; align-items:center; gap:8px;">🎨 Photo Creator</h4>
-        <textarea id="photoPromptInput" placeholder="Describe the image you want to create (Use quotes for exact text)..." style="width:100%; height:70px; background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:10px; font-size:13px; resize:none; outline:none;"></textarea>
-        <button onclick="runFloatingImageCreator()" style="width:100%; margin-top:10px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4);">🚀 Generate</button>
+        <textarea id="photoPromptInput" placeholder="Describe the image you want to create..." style="width:100%; height:70px; background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:10px; font-size:13px; resize:none; outline:none;"></textarea>
+        <button onclick="runFloatingImageCreator(document.getElementById('photoPromptInput').value)" style="width:100%; margin-top:10px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:14px; box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4);">🚀 Generate</button>
     </div>
 
     <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:99999; justify-content:center; align-items:center; flex-direction:column;">
@@ -182,7 +176,11 @@
 
     <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: opacity 0.3s ease;">
         
-        <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 10px;">🖼️ View Photos (0)</button>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <button id="modeLocalBtn" class="mode-toggle-btn active" onclick="setSearchMode('local')">📚 Local Mode (Book Data)</button>
+            <button id="modeWebBtn" class="mode-toggle-btn" onclick="setSearchMode('web')">🌐 Web Mode (Search Internet)</button>
+            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Photos (0)</button>
+        </div>
 
         <div id="multiImageManager" style="display:none; padding:10px; margin-bottom:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:12px; overflow-x:auto;">
             <div id="multiImageList" style="display:flex; gap:10px;"></div>
@@ -208,7 +206,7 @@
             <input type="file" id="pdfUploadInput" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
             <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
             
-            <textarea id="searchInput" placeholder="Ask anything or solve math..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none;"></textarea>
+            <textarea id="searchInput" placeholder="Ask anything, solve using book data or draw diagrams..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none;"></textarea>
             
             <button class="chat-action-btn send" id="sendSearchBtn" onclick="runStandaloneSearch()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; box-shadow: 0 5px 15px var(--primary-glow);">🚀</button>
         </div>
@@ -223,6 +221,14 @@
         let persistentPdfMemory = "";
         let uploadedImages = []; 
         let aiBrain = []; 
+        let activeSearchMode = "local"; 
+
+        function setSearchMode(mode) {
+            activeSearchMode = mode;
+            document.getElementById('modeLocalBtn').classList.toggle('active', mode === 'local');
+            document.getElementById('modeWebBtn').classList.toggle('active', mode === 'web');
+            showToast(mode === 'local' ? "📚 Local Book Mode Activated" : "🌐 Live Web Search Activated");
+        }
 
         function saveHistorySafe() {
             if (typeof localforage !== 'undefined') {
@@ -248,12 +254,10 @@
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
                     <div class="bubble" style="background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1)); border: 1px solid var(--primary);">
-                        <div class="ai-signature">✨ BY DEEP AI (SYSTEM)</div>
-                        <b style="color:var(--primary); font-size:18px;">👋 Welcome to Deep AI!</b><br><br>
-                        • <b>Ask anything</b> or upload photos/PDFs using the ➕ button.<br>
-                        • <b>Math Solver & LaTeX:</b> Ask me math equations, I will solve them step-by-step with perfect fraction formatting.<br>
-                        • <b>Focus Mode:</b> Click 🧘‍♂️ to hide all buttons/text boxes and just read.<br>
-                        • <b>Code Boxes:</b> If I write code, it will be in a black box with a Copy button.<br>
+                        <div class="ai-signature">✨ BY SYSTEM ENGINE</div>
+                        <b style="color:var(--primary); font-size:18px;">👋 Welcome to Deep AI Dashboard!</b><br><br>
+                        • <b>Local Mode vs Web Mode:</b> Toggle above to answer directly from uploaded textbook files or from live web data.<br>
+                        • <b>Auto-Diagram System:</b> Ask things like <i>"नामांकित चित्र से घर्षण के कारणों का संक्षिप्त वर्णन करें"</i> and it will write the text AND auto-generate the map/diagram below it!<br>
                     </div>
                 </div>`);
         }
@@ -288,53 +292,59 @@
             document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
         }
 
-        let currentUtterance = null;
-        let ttsWordElements = [];
+        // --- INSANE SPEED TYPEWRITER ---
+        function runInsaneTypewriter(targetElement, fullHtml, callback) {
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = fullHtml;
+            let nodes = Array.from(tempDiv.childNodes);
+            targetElement.innerHTML = "";
+            let nodeIndex = 0;
 
-        function wrapTextNodesForTTS(element) {
-            let wordId = 0;
-            ttsWordElements = [];
-            function traverse(node) {
-                if(node.nodeType === 3 && node.nodeValue.trim().length > 0) {
-                    let words = node.nodeValue.split(/(\s+)/);
-                    let frag = document.createDocumentFragment();
-                    words.forEach(w => {
-                        if(w.trim().length > 0) {
-                            let span = document.createElement('span'); span.className = 'tts-word'; span.id = 'tts_w_' + wordId; span.innerText = w; ttsWordElements.push(span); wordId++; frag.appendChild(span);
-                        } else { frag.appendChild(document.createTextNode(w)); }
-                    });
-                    node.parentNode.replaceChild(frag, node);
-                } else if(node.nodeType === 1 && node.className !== 'code-box' && !node.classList.contains('MathJax')) {
-                    Array.from(node.childNodes).forEach(traverse);
+            function typeNextNode() {
+                if (nodeIndex >= nodes.length) {
+                    if(callback) callback();
+                    return;
+                }
+                let currentNode = nodes[nodeIndex].cloneNode(true);
+                if (currentNode.nodeType === Node.TEXT_NODE) {
+                    let text = currentNode.textContent;
+                    let span = document.createElement('span');
+                    targetElement.appendChild(span);
+                    let charIndex = 0;
+                    let interval = setInterval(() => {
+                        if (charIndex >= text.length) {
+                            clearInterval(interval);
+                            nodeIndex++;
+                            typeNextNode();
+                        } else {
+                            span.textContent += text.substring(charIndex, charIndex + 5);
+                            charIndex += 5;
+                            safeScroll();
+                        }
+                    }, 1);
+                } else {
+                    targetElement.appendChild(currentNode);
+                    nodeIndex++;
+                    safeScroll();
+                    typeNextNode();
                 }
             }
-            traverse(element);
+            typeNextNode();
         }
 
-        function unwrapTextNodesForTTS(element) {
-            element.querySelectorAll('.tts-word').forEach(span => { let text = document.createTextNode(span.innerText); span.parentNode.replaceChild(text, span); });
-            element.normalize(); 
-        }
-
+        // --- SMART TTS ---
         window.startTts = function(textId) {
             const textEl = document.getElementById(textId); if(!textEl) return;
             window.speechSynthesis.cancel();
-            unwrapTextNodesForTTS(textEl);
-            let pureText = textEl.innerText; 
-            wrapTextNodesForTTS(textEl); 
-            currentUtterance = new SpeechSynthesisUtterance(pureText);
+            
+            // Remove markdown syntax completely before reading so it doesn't say "star"
+            let cleanSpeechText = textEl.innerText.replace(/[\*\#\_]/g, '');
+            
+            let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText);
             currentUtterance.lang = document.getElementById("appLang").value || "hi-IN"; 
             
-            currentUtterance.onboundary = (e) => {
-                if(e.name === 'word') {
-                    ttsWordElements.forEach(el => el.classList.remove('tts-highlight'));
-                    let passedText = pureText.substring(0, e.charIndex);
-                    let wordIndex = passedText.trim().split(/\s+/).length - 1;
-                    if(ttsWordElements[wordIndex]) ttsWordElements[wordIndex].classList.add('tts-highlight');
-                }
-            };
-            currentUtterance.onend = () => { closeTts(); unwrapTextNodesForTTS(textEl); };
-            currentUtterance.onerror = () => { closeTts(); unwrapTextNodesForTTS(textEl); };
+            currentUtterance.onend = () => { closeTts(); };
+            currentUtterance.onerror = () => { closeTts(); };
 
             window.speechSynthesis.speak(currentUtterance);
             document.getElementById("ttsPlayer").style.display = "flex"; document.getElementById("ttsPlayPauseBtn").innerText = "⏸️";
@@ -384,27 +394,27 @@
         function handlePdfUpload(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = async function() { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const page = await pdf.getPage(i); const content = await page.getTextContent(); text += content.items.map(i=>i.str).join(' '); } persistentPdfMemory = text; document.getElementById('pdfPreviewChip').style.display='flex'; document.getElementById('pdfName').innerText = f.name; showToast("📄 PDF Read!"); }; r.readAsArrayBuffer(f); e.target.value = ""; }
         function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; document.getElementById('pdfUploadInput').value = ""; }
 
-        // ============================================================
-        // 🚀 SECURE BACKEND IMAGE GENERATOR (RENDER ENDPOINT) 🚀
-        // ============================================================
-        async function runFloatingImageCreator() {
-            const q = document.getElementById("photoPromptInput").value.trim();
+        // --- RENDER BACKEND IMAGE GENERATOR ---
+        async function runFloatingImageCreator(promptText, targetContainerId = null) {
+            let q = promptText || document.getElementById("photoPromptInput").value.trim();
             if(!q) return showToast("Please describe the image first.");
             
             document.getElementById("photoCreatorModal").style.display = 'none'; 
             document.getElementById("photoPromptInput").value = "";
             
             const chatContainer = document.getElementById("searchChatHistory"); 
-            const loadId = "load_" + Date.now();
+            const loadId = targetContainerId || "load_" + Date.now();
             
-            chatContainer.insertAdjacentHTML('beforeend', `
-                <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
-                <div class="chat-msg chat-ai" id="${loadId}">
-                    <div class="bubble">
-                        <div class="ai-signature">✨ BY FLUX (RENDER BACKEND API)</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Render Server is painting (Queue System Active)...</span></div>
-                    </div>
-                </div>`);
+            if(!targetContainerId) {
+                chatContainer.insertAdjacentHTML('beforeend', `
+                    <div class="chat-msg chat-user"><div class="bubble">🎨 <b>Create Image:</b><br>${q}</div></div>
+                    <div class="chat-msg chat-ai" id="${loadId}">
+                        <div class="bubble">
+                            <div class="ai-signature">✨ BY FLUX (RENDER BACKEND API)</div>
+                            <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Render Server is painting (Queue System Active)...</span></div>
+                        </div>
+                    </div>`);
+            }
             safeScroll();
 
             try {
@@ -421,10 +431,12 @@
                 }
 
                 if (result.imageBase64) {
-                    document.getElementById(loadId).querySelector('.bubble').innerHTML = `
+                    const targetEl = document.getElementById(loadId);
+                    const injectPoint = targetContainerId ? targetEl : targetEl.querySelector('.bubble');
+                    injectPoint.innerHTML = `
                         <div class="ai-signature">✨ BY FLUX (RENDER BACKEND API)</div>
-                        <div style="border-radius:12px; overflow:hidden;" onclick="openFullscreenImage('img_${loadId}')" title="Click to expand">
-                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_${loadId}" alt="Generated Image" onload="safeScroll()">
+                        <div style="border-radius:12px; overflow:hidden; margin-top:10px;" onclick="openFullscreenImage('img_src_${loadId}')" title="Click to expand">
+                            <img src="${result.imageBase64}" style="max-width:100%; display:block; cursor:pointer;" id="img_src_${loadId}" alt="Generated Image" onload="safeScroll()">
                         </div>`;
                     saveHistorySafe();
                 } else {
@@ -432,13 +444,13 @@
                 }
             } catch (error) {
                 console.error("Backend Error:", error);
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Render Backend Generation Failed: ${error.message}</span>`;
+                const targetEl = document.getElementById(loadId);
+                const injectPoint = targetContainerId ? targetEl : targetEl.querySelector('.bubble');
+                injectPoint.innerHTML = `<span style="color:red;">❌ Render Backend Generation Failed: ${error.message}</span>`;
             }
         }
 
-        // ============================================================
-        // 🚀 MAIN TEXT / VISION CHAT ENGINE 🚀
-        // ============================================================
+        // --- MAIN TEXT / VISION CHAT ENGINE ---
         async function runStandaloneSearch() {
             const inp = document.getElementById("searchInput"); let q = inp.value.trim(); 
             if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
@@ -447,10 +459,10 @@
             isProcessing = true; activeAbortController = new AbortController(); document.getElementById("sendSearchBtn").innerHTML = "🛑";
             
             const chatContainer = document.getElementById("searchChatHistory");
-            const model = document.getElementById("modelSelector").value;
+            const selectedModelValue = document.getElementById("modelSelector").value;
+            const modelLabel = document.getElementById("modelSelector").options[document.getElementById("modelSelector").selectedIndex].text;
             const lang = document.getElementById("appLang").options[document.getElementById("appLang").selectedIndex].text;
             const tone = document.getElementById("aiTone").value;
-            const webFocus = document.getElementById("webPriority").checked ? "PRIORITIZE LIVE WEB DATA." : "";
 
             let userImgHtml = ''; uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" style="max-height:80px; border-radius:8px; margin-right:5px; margin-bottom:5px; display:inline-block; border:1px solid var(--border-light);">`; });
             let currentImagesToSave = [...uploadedImages];
@@ -463,30 +475,35 @@
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
             inp.value = ""; safeScroll();
 
-            let displayModel = model === 'gemini' ? 'GEMINI 1.5' : 'GROQ FAST API';
-            let displayApi = imageToUseForApi ? 'VISION API' : 'TEXT API';
+            // Check if user is asking for a picture/map/diagram to trigger auto-image generator
+            let requiresImageTrigger = false;
+            let lowercaseQ = q.toLowerCase();
+            if(lowercaseQ.includes("चित्र") || lowercaseQ.includes("नक्शा") || lowercaseQ.includes("map") || lowercaseQ.includes("diagram") || lowercaseQ.includes("picture") || lowercaseQ.includes("photo")) {
+                requiresImageTrigger = true;
+            }
 
             const loadId = "load_" + Date.now();
             chatContainer.insertAdjacentHTML('beforeend', `
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
-                        <div class="ai-signature">✨ BY ${displayModel} (${displayApi})</div>
+                        <div class="ai-signature">✨ BY ${modelLabel.toUpperCase()}</div>
                         <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">AI is thinking...</span></div>
                     </div>
                 </div>`);
             safeScroll();
 
             let brainContext = aiBrain.length > 0 ? `USER PROFILE FACTS: ${aiBrain.join('. ')}.` : '';
-            let brainInstruction = `If the user tells you a specific fact about themselves or explicitly says "remember that [fact]", output the exact tag [MEMORY_SAVE: fact] at the VERY END of your response.`;
-            let mathInstruction = `IMPORTANT: If the user asks a math calculation or equation, act as an expert Math Solver. Provide step-by-step solutions and ALWAYS use LaTeX formatting for mathematical expressions, equations, and fractions (e.g., use \\frac{num}{den} or $$x^2$$).`;
+            let brainInstruction = `If the user tells you a specific fact about themselves, output the exact tag [MEMORY_SAVE: fact] at the VERY END.`;
+            let mathInstruction = `Use LaTeX formatting for mathematical expressions.`;
+            let modeInstruction = activeSearchMode === "web" ? "PRIORITIZE LIVE WEB INTERNET KNOWLEDGE." : "PRIORITIZE MATCHING FACTS DIRECTLY FROM UPLOADED PDF DATA.";
 
-            let sysInstructions = `You are a highly intelligent AI. ${mathInstruction} ${brainInstruction} ${brainContext} YOU MUST ANSWER ENTIRELY IN ${lang}. ${webFocus} Tone: ${tone}.`;
+            let sysInstructions = `You are a highly intelligent AI. Answer entirely in ${lang}. Tone: ${tone}. ${modeInstruction} ${mathInstruction} ${brainInstruction} ${brainContext}`;
             let contextStr = sessionMessages.slice(-5).map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n'); 
             let finalPrompt = `${contextStr}\n\nCurrent Request: ${q}\n\n${persistentPdfMemory ? 'Context Document:\n'+persistentPdfMemory : ''}`;
 
             try {
                 let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
-                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: sysInstructions + "\n" + finalPrompt, providerOverride: model } : { systemPrompt: sysInstructions, userPrompt: finalPrompt, providerOverride: model };
+                let body = imageToUseForApi ? { imageBase64: imageToUseForApi, userPrompt: sysInstructions + "\n" + finalPrompt, providerOverride: selectedModelValue } : { systemPrompt: sysInstructions, userPrompt: finalPrompt, providerOverride: selectedModelValue };
                 
                 const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: activeAbortController.signal });
                 const data = await response.json();
@@ -499,22 +516,33 @@
                     cleanAns = cleanAns.replace(memoryMatch[0], '').trim(); showToast("🧠 AI memorized a new fact!");
                 }
 
-                // Process Math Fractions and Format Code Blocks
+                // Process Markdown properly
                 let processedMathAns = processMath(cleanAns);
-                let formattedAns = formatCodeBlocks(processedMathAns).replace(/\n/g, '<br>');
+                let htmlAns = marked.parse ? marked.parse(processedMathAns) : processedMathAns.replace(/\n/g, '<br>');
+                let finalHtml = formatCodeBlocks(htmlAns);
                 
                 sessionMessages.push({ q: q, a: cleanAns, imgs: currentImagesToSave });
                 appHistory.unshift({ id: Date.now(), type: 'search', title: q.substring(0, 20), interactions: [{ question: q, answer: cleanAns, image: currentImagesToSave[0] }] });
                 saveHistorySafe();
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-signature">✨ BY ${displayModel} (${displayApi})</div>
-                    <div id="text_${loadId}" style="font-size:15px; line-height:1.7;">${formattedAns}</div>
+                    <div class="ai-signature">✨ BY ${modelLabel.toUpperCase()}</div>
+                    <div id="text_${loadId}" class="markdown-body"></div>
                     <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
                         <button onclick="startTts('text_${loadId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 15px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Play Voice</button>
-                    </div>`;
+                    </div>
+                    <div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
                 
-                if (window.MathJax) { MathJax.typesetClear([document.getElementById(loadId)]); MathJax.typesetPromise([document.getElementById(loadId)]); }
+                // Fire INSANE Typewriter
+                runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
+                    if (window.MathJax) { MathJax.typesetClear([document.getElementById(loadId)]); MathJax.typesetPromise([document.getElementById(loadId)]); }
+                    
+                    // Auto-trigger diagram generation if the user asked for one
+                    if(requiresImageTrigger) {
+                        document.getElementById(`attached_image_zone_${loadId}`).innerHTML = `<div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="font-size:12px; color:var(--text-muted);">Auto-triggering diagram rendering pipeline...</span></div>`;
+                        runFloatingImageCreator(q, `attached_image_zone_${loadId}`);
+                    }
+                });
 
             } catch (err) {
                 if(err.name !== 'AbortError') document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red;">❌ Error: ${err.message}</span>`;
@@ -540,12 +568,14 @@
                     let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-height:80px; border-radius:8px; margin-bottom:5px; border:1px solid var(--border-light);">` : '';
                     let textId = `restored_text_${index}`;
                     
+                    let htmlAns = marked.parse ? marked.parse(processMath(inter.answer)) : processMath(inter.answer).replace(/\n/g, '<br>');
+
                     container.insertAdjacentHTML('beforeend', `
                         <div class="chat-msg chat-user"><div class="bubble">${imgHtml}<div>${inter.question.replace(/\n/g, '<br>')}</div></div></div>
                         <div class="chat-msg chat-ai">
                             <div class="bubble">
                                 <div class="ai-signature">✨ BY AI (HISTORY API)</div>
-                                <div id="${textId}">${formatCodeBlocks(processMath(inter.answer)).replace(/\n/g, '<br>')}</div>
+                                <div id="${textId}" class="markdown-body">${formatCodeBlocks(htmlAns)}</div>
                                 <div style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap: 10px;">
                                     <button onclick="startTts('${textId}')" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 15px; font-size:12px; cursor:pointer; font-weight:bold;">🔊 Play Voice</button>
                                 </div>
