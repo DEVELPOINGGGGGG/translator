@@ -596,54 +596,73 @@ async function executeMathFlow() {
     
     let uiImage = capturedImage;
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
-    inp.value = ""; let lId = appendAiLoading("mathChatHistory");
+    inp.value = ""; 
+    
+    // If NOT in image mode, show typing bubble
+    let lId;
+    if (!window.isImageGenerationMode) {
+        lId = appendAiLoading("mathChatHistory");
+    } else {
+        showToast("⏳ Generating Solution Image...");
+    }
 
     window.toggleChatButton(true);
 
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
+    // BRAND NEW STRICT PROMPT (Fixes complexity, ignores unasked questions, uses 'x')
+    const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
-1. QUESTION SELECTION (CRITICAL): Read the user's prompt carefully! 
-   - If the user asks for a SPECIFIC question (e.g., "Solve 12" or "Q 10"), you MUST ONLY solve that specific question and completely ignore the others.
-   - If the user asks to solve "all" or provides no specific number, you MUST solve EVERY question visible.
-2. KEEP IT SIMPLE: Provide extremely clear, school-level step-by-step solutions. Do not use overly complex university-level theorems unless necessary.
-3. MATH SYMBOLS & MULTIPLICATION: 
-   - STRICT RULE: ALWAYS use the letter 'x' or 'X' for multiplication (e.g., 2 x 3 = 6). DO NOT use \\times, *, or \\cdot.
-   - Use standard proper formatting for fractions (e.g., \\frac{a}{b}) and powers (e.g., x^2).
-4. EXPLANATION LENGTH:
-   - ONE question: Deep explanation of 8 to 15 lines.
-   - MULTIPLE questions: Concise explanation of 6 to 8 lines EACH.
-5. MATH QUESTIONS ONLY FORMAT: You MUST format your answer EXACTLY like this template. Everything must be in clean Detected Question Language.
+1. READ CAREFULLY & TARGET EXACTLY: 
+   - If the user asks for a specific question number (e.g., "Solve 12", "Question 10", etc.), YOU MUST ONLY SOLVE THAT EXACT QUESTION. Completely ignore everything else on the page.
+   - If the user says "Solve all" or doesn't specify a number, solve every visible question.
+2. KEEP IT SIMPLE: Provide extremely clear, basic, school-level step-by-step solutions. DO NOT use complex university-level theorems or abstract algebra unless requested.
+3. MATH SYMBOLS (CRITICAL): 
+   - ALWAYS use the standard letter 'x' or 'X' for multiplication (e.g., 2 x 3 = 6). NEVER use \\times, *, or \\cdot.
+   - Use proper formatting for fractions (e.g., \\frac{a}{b}) and powers (e.g., x^2). NO MATH TAGS.
+4. DRAWINGS/DIAGRAMS: If the question involves area, geometry, or diagrams, describe the shape clearly using text geometry instructions within your explanation.
+5. FORMAT: You MUST format your answer EXACTLY like this template. Everything must be in clean Hindi.
 
 [Write the exact question here]
 
 SOLUTION:-
-[Step-by-step simple math solution in HINDI language. Keep it mathematically flawless and easy to understand.]
+[Step-by-step simple math solution in HINDI language. Use 'x' for multiplication.]
 
 EXPLANATION-
-[Provide the explanation in HINDI language based on the length rules above. Use bullet points.]
-
-[If multiple questions were requested, do the exact same format for question 2, etc.]`;
+[Provide a short, easy-to-understand explanation using bullet points in HINDI.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
-    window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
+    // Only save cache if not in image mode
+    if (!window.isImageGenerationMode) {
+        window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
+    }
 
     try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         
         saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
-        updateAiBubble(lId, cleanSol, resObj.provider, true);
         clearMathImage();
+
+        // ROUTING LOGIC: Image Mode vs Standard Chat
+        if (window.isImageGenerationMode) {
+            window.toggleChatButton(false);
+            openImageModeViewer(cleanSol);
+        } else {
+            updateAiBubble(lId, cleanSol, resObj.provider, true);
+        }
     } catch(e) { 
         window.toggleChatButton(false);
-        const el = document.getElementById(lId); 
-        if(el) {
-             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
-             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
+        if (!window.isImageGenerationMode) {
+            const el = document.getElementById(lId); 
+            if(el) {
+                 if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
+                 else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
+            }
+        } else {
+            showToast("❌ Error: " + e.message);
         }
     }
 }
@@ -1680,5 +1699,149 @@ async function shareChatHistory() {
         }
     }
 }
+// ==========================================
+// 🖼️ IMAGE GENERATION MODE ENGINE
+// ==========================================
+window.isImageGenerationMode = false;
+window.imagePages = [];
+window.currentImagePage = 0;
+window.imageControlsVisible = true;
+
+window.toggleImageModeBtn = function() {
+    window.isImageGenerationMode = !window.isImageGenerationMode;
+    const btn = document.getElementById("imgModeBtn");
+    if (window.isImageGenerationMode) {
+        btn.style.background = "linear-gradient(135deg, #f43f5e, #be123c)"; // Red active color
+        btn.innerHTML = "🖼️ Image Mode: ON";
+        showToast("🖼️ Image Generation Mode Enabled");
+    } else {
+        btn.style.background = "rgba(255,255,255,0.2)";
+        btn.innerHTML = "🖼️ Image Mode";
+        showToast("🖼️ Image Generation Mode Disabled");
+    }
+};
+
+window.openImageModeViewer = function(text) {
+    // Advanced Pagination: Split text roughly every 800-1000 characters to fit nicely on a page
+    let chunks = text.split('\n\n');
+    window.imagePages = [];
+    let currentPageStr = "";
+    
+    for(let chunk of chunks) {
+        if ((currentPageStr + chunk).length > 900) {
+            window.imagePages.push(currentPageStr);
+            currentPageStr = chunk + "\n\n";
+        } else {
+            currentPageStr += chunk + "\n\n";
+        }
+    }
+    if(currentPageStr.trim()) window.imagePages.push(currentPageStr);
+    
+    window.currentImagePage = 0;
+    const modal = document.getElementById("imageModeModal");
+    modal.style.display = "flex";
+    setTimeout(() => modal.style.opacity = "1", 10);
+    
+    // Inject custom animation styles for slides
+    if (!document.getElementById("imgModeStyles")) {
+        document.head.insertAdjacentHTML("beforeend", `
+            <style id="imgModeStyles">
+                @keyframes slideImgRight { from{ transform:translateX(50px); opacity:0; } to{ transform:translateX(0); opacity:1; } }
+                @keyframes slideImgLeft { from{ transform:translateX(-50px); opacity:0; } to{ transform:translateX(0); opacity:1; } }
+            </style>
+        `);
+    }
+    
+    updateImageModeDisplay();
+};
+
+window.updateImageModeDisplay = function(direction = "") {
+    const paper = document.getElementById("imageModePaper");
+    const wrapper = document.getElementById("imageModePaperWrapper");
+    
+    // Render text with MathJax so No raw LaTeX is visible
+    paper.innerHTML = window.imagePages[window.currentImagePage].replace(/\n/g, '<br>');
+    if(window.MathJax) { 
+        MathJax.typesetClear([paper]); 
+        MathJax.typesetPromise([paper]); 
+    }
+    
+    // Trigger Slide Animation
+    if (direction === "next") { wrapper.style.animation = "slideImgRight 0.4s ease-out"; }
+    if (direction === "prev") { wrapper.style.animation = "slideImgLeft 0.4s ease-out"; }
+    setTimeout(() => wrapper.style.animation = "", 400);
+    
+    // Update Indicators & Buttons
+    document.getElementById("imageModePageIndicator").innerText = `Page ${window.currentImagePage + 1} / ${window.imagePages.length}`;
+    document.getElementById("imgPrevBtn").style.display = window.currentImagePage > 0 ? "block" : "none";
+    document.getElementById("imgNextBtn").style.display = window.currentImagePage < window.imagePages.length - 1 ? "block" : "none";
+};
+
+window.nextImagePage = function(e) { 
+    if(e) e.stopPropagation(); 
+    if(window.currentImagePage < window.imagePages.length - 1) { 
+        window.currentImagePage++; 
+        updateImageModeDisplay("next"); 
+    } 
+};
+
+window.prevImagePage = function(e) { 
+    if(e) e.stopPropagation(); 
+    if(window.currentImagePage > 0) { 
+        window.currentImagePage--; 
+        updateImageModeDisplay("prev"); 
+    } 
+};
+
+window.toggleImageControls = function() {
+    window.imageControlsVisible = !window.imageControlsVisible;
+    const controls = document.getElementById("imageModeControls");
+    const indicator = document.getElementById("imageModePageIndicator");
+    const prev = document.getElementById("imgPrevBtn");
+    const next = document.getElementById("imgNextBtn");
+    
+    const op = window.imageControlsVisible ? "1" : "0";
+    controls.style.opacity = op;
+    indicator.style.opacity = op;
+    controls.style.pointerEvents = window.imageControlsVisible ? "auto" : "none";
+    
+    if(prev.style.display !== "none") prev.style.opacity = op;
+    if(next.style.display !== "none") next.style.opacity = op;
+};
+
+window.closeImageMode = function() {
+    const modal = document.getElementById("imageModeModal");
+    modal.style.opacity = "0";
+    setTimeout(() => modal.style.display = "none", 300);
+};
+
+window.downloadImageMode = function() {
+    if (typeof html2canvas === 'undefined') return showToast("❌ html2canvas is loading or blocked.");
+    const paper = document.getElementById("imageModePaperWrapper");
+    
+    // Temporarily disable overflow so html2canvas captures the FULL height of the paper
+    const originalHeight = paper.style.maxHeight;
+    const originalOverflow = paper.style.overflowY;
+    paper.style.maxHeight = "none";
+    paper.style.overflowY = "visible";
+    
+    showToast("⏳ Snapshotting Image...");
+    
+    html2canvas(paper, { scale: 2, backgroundColor: "#fdfbf7", useCORS: true }).then(canvas => {
+        // Restore CSS
+        paper.style.maxHeight = originalHeight;
+        paper.style.overflowY = originalOverflow;
+        
+        const link = document.createElement("a");
+        link.download = `AI_Math_Solution_Page_${window.currentImagePage + 1}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        showToast("✅ Image Downloaded Successfully!");
+    }).catch(err => {
+        showToast("❌ Failed to create image.");
+        paper.style.maxHeight = originalHeight;
+        paper.style.overflowY = originalOverflow;
+    });
+};
 // --- GLOBAL EXPORTS ---
 window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest; window.handlePdfUpload = handlePdfUpload; window.clearPdfFile = clearPdfFile;
