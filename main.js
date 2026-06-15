@@ -620,36 +620,15 @@ window.showGeneratedImageGUI = function(src) {
     setTimeout(() => modal.style.opacity = '1', 10);
 };
 
-// 🧮 FULLY ISOLATED SHAPE & TEXT ENGINE
+// 🧮 FULLY DYNAMIC MATH ENGINE (Syntax Error Fixed)
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     
-    // 🛑 FIX: Changed capturedImage to currentMathImage
+    // 🛑 FIX: currentMathImage correctly implemented
     const instruction = inp.value.trim(); if (!currentMathImage && !instruction) return;
     
-    // 🛑 FIX: Changed capturedImage to currentMathImage
     let uiImage = currentMathImage;
     
-    appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
-    inp.value = ""; 
-    
-    let lId = appendAiLoading("mathChatHistory");
-    window.toggleChatButton(true);
-
-    let activeImage = uiImage || getLastContextImage('math');
-    let memoryContext = getSessionContext('math');
-
-    // Tells AI exactly what mode we are in
-    const modeStatus = window.isImageGenerationMode 
-        ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS]" 
-        : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
-
-// 🧮 FULLY DYNAMIC MATH ENGINE (Image bypass, Smart Wrappers, Line Breaks)
-async function executeMathFlow() {
-    const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
-    const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
-    
-    let uiImage = capturedImage;
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; 
     
@@ -663,17 +642,21 @@ async function executeMathFlow() {
         ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS AND PUT IT IN THE TEXT BLOCK]" 
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
-    // 🌟 SUPER STRICT PROMPT: Fixes "Hi" bug, forces line breaks, fixes HTML wrappers
+    // 🌟 SUPER STRICT PROMPT: Fractions, Line Breaks, and Shape Splitting
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
 1. CONVERSATION DETECTOR (CRITICAL): If the user just says "Hi", "Hello", or asks a non-math question, you MUST write "IS_MATH:- NO" at the top and just write a polite text response in the TEXT block. DO NOT generate fake math questions or shapes!
 2. MODE AWARENESS: ${modeStatus}
 3. EQUATION LINE BREAKS (CRITICAL): Every single mathematical step or equation in the SOLUTION MUST be on a completely new line. Use <br><br> to force spacing!
-4. PROPER FRACTIONS: Use proper LaTeX fractions wrapped in block math tags (e.g., $$\\frac{4}{2}$$).
+4. PROPER FRACTIONS: Use proper LaTeX fractions wrapped in block math tags (e.g., $$\\frac{4}{2}$$). ALWAYS use 'x' for multiplication.
 5. QUESTION LABELS: If you are solving 2 OR MORE questions, use this exact wrapper for the questions: <div style="position:relative;"><span style="position:absolute; left:-45px; font-weight:bold;">Q1.</span>[Question Text]</div>
    WARNING: IF IT IS ONLY 1 QUESTION, DO NOT USE THAT HTML WRAPPER. Just write the question normally.
-6. SHAPES: Only generate <svg> for geometry/shape questions.
-7. OUTPUT FORMAT: 
+6. EXPLANATION LENGTH:
+   - IF [IMAGE MODE OFF] and SINGLE question: Exactly 7 to 12 lines.
+   - IF [IMAGE MODE OFF] and MULTIPLE questions: Exactly 5 to 10 lines for EACH question.
+   - IF [IMAGE MODE ON]: Keep it concise.
+7. SHAPES: Only generate <svg> for geometry/shape questions. You MUST include xmlns="http://www.w3.org/2000/svg" inside the <svg> tag.
+8. OUTPUT FORMAT: 
 
 IS_MATH:-
 [YES or NO]
@@ -687,7 +670,7 @@ TEXT:-
 SOLUTION:
 [If YES: Step-by-step math. Break lines with <br><br>]
 EXPLANATION:
-[If YES: Short explanation]
+[If YES: Explanation following length rules]
 
 SVG:-
 [Your <svg> code. Leave blank if no shape.]
@@ -836,7 +819,7 @@ FINAL_ANSWER:-
              else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
         }
     }
-}
+} // <--- THIS BRACKET WAS LIKELY MISSING AND CAUSING YOUR SYNTAX ERROR
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); 
