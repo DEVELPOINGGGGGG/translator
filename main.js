@@ -603,26 +603,29 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI ANGUAGE.STRICT RULES:
+const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
-1. SOLVE ALL QUESTIONS: You MUST solve EVERY single question as USER PROVIDES in HINDI LANGUAGE. Do not skip any any question.
-
-2. EXPLANATION LENGTH:
-   - If there is ONLY ONE question: Provide a deep, detailed explanation of 8 to 15 lines.
-   - If there are MULTIPLE questions: Provide a concise explanation of 6 to 8 lines for EACH question.
-3. Do not output any warnings, rules, or agreements. Just solve the problem.
-4. MATH QUESTIONS ONLY FORMAT: You MUST format your answer EXACTLY like this template. Explain using bullet points. Everything must be in clean Detected Question Language. Use properly formatted LaTeX for math formulas (e.g., use $\\frac{a}{b}$ instead of a/b, and $x^2$ for powers).
+1. QUESTION SELECTION (CRITICAL): Read the user's prompt carefully! 
+   - If the user asks for a SPECIFIC question (e.g., "Solve 12" or "Q 10"), you MUST ONLY solve that specific question and completely ignore the others.
+   - If the user asks to solve "all" or provides no specific number, you MUST solve EVERY question visible.
+2. KEEP IT SIMPLE: Provide extremely clear, school-level step-by-step solutions. Do not use overly complex university-level theorems unless necessary.
+3. MATH SYMBOLS & MULTIPLICATION: 
+   - STRICT RULE: ALWAYS use the letter 'x' or 'X' for multiplication (e.g., 2 x 3 = 6). DO NOT use \\times, *, or \\cdot.
+   - Use standard proper formatting for fractions (e.g., \\frac{a}{b}) and powers (e.g., x^2).
+4. EXPLANATION LENGTH:
+   - ONE question: Deep explanation of 8 to 15 lines.
+   - MULTIPLE questions: Concise explanation of 6 to 8 lines EACH.
+5. MATH QUESTIONS ONLY FORMAT: You MUST format your answer EXACTLY like this template. Everything must be in clean Detected Question Language.
 
 [Write the exact question here]
 
 SOLUTION:-
-[Step-by-step and LINE BY LINE math solution in HINDI language for question use $ for inline math and $$ for display math. Keep it mathematically flawless.]
+[Step-by-step simple math solution in HINDI language. Keep it mathematically flawless and easy to understand.]
 
 EXPLANATION-
 [Provide the explanation in HINDI language based on the length rules above. Use bullet points.]
 
-[Write the exact second question here]
-Do like question 1 but value of question 2`;
+[If multiple questions were requested, do the exact same format for question 2, etc.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
@@ -715,7 +718,58 @@ async function runGroqSearch() {
         }
     }
 }
+// 🎯 FOCUS MODE ENGINE
+    window.toggleFocusMode = function(enable) {
+        const topbar = document.getElementById('appTopbar');
+        const apiTracker = document.querySelector('.apiTracker');
+        const inputArea = document.querySelector('.chat-input-area');
+        const exitBtn = document.getElementById('exitFocusBtn');
+        const page = document.querySelector('.page');
+        const scrollArea = document.querySelector('.chat-scroll-area');
 
+        if (enable) {
+            // Fade out UI
+            [topbar, apiTracker, inputArea].forEach(el => {
+                if(el) {
+                    el.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+                    el.style.opacity = "0";
+                    el.style.pointerEvents = "none"; // Disables clicks on hidden items
+                }
+            });
+            if(topbar) topbar.style.transform = "translateY(-20px)";
+            if(apiTracker) apiTracker.style.transform = "translateY(-20px)";
+            if(inputArea) inputArea.style.transform = "translateY(20px)";
+            
+            // Show Exit Button
+            exitBtn.style.display = "block";
+            setTimeout(() => exitBtn.style.opacity = "1", 10);
+
+            // Expand chat area to fill screen
+            if (page) page.style.paddingTop = "20px";
+            if (scrollArea) scrollArea.style.paddingBottom = "20px";
+            
+            if(typeof showToast === 'function') showToast("🎯 Focus Mode Activated! UI Hidden.");
+        } else {
+            // Fade UI back in
+            [topbar, apiTracker, inputArea].forEach(el => {
+                if(el) {
+                    el.style.opacity = "1";
+                    el.style.pointerEvents = "auto";
+                    el.style.transform = "translateY(0)";
+                }
+            });
+            
+            // Hide Exit Button
+            exitBtn.style.opacity = "0";
+            setTimeout(() => exitBtn.style.display = "none", 500);
+
+            // Restore original chat area dimensions
+            if (page) page.style.paddingTop = "105px";
+            if (scrollArea) scrollArea.style.paddingBottom = "280px";
+            
+            if(typeof showToast === 'function') showToast("UI Restored");
+        }
+    };
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 
 function startVideoTimer(totalChars) {
