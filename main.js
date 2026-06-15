@@ -621,12 +621,15 @@ window.showGeneratedImageGUI = function(src) {
 };
 
 // 🧮 FULLY ISOLATED SHAPE & TEXT ENGINE
-// 🧮 FULLY DYNAMIC MATH ENGINE: Handles Image Modes, Standalone Shapes & CSS Fixes
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
-    const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
     
-    let uiImage = capturedImage;
+    // 🛑 FIX: Changed capturedImage to currentMathImage
+    const instruction = inp.value.trim(); if (!currentMathImage && !instruction) return;
+    
+    // 🛑 FIX: Changed capturedImage to currentMathImage
+    let uiImage = currentMathImage;
+    
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; 
     
