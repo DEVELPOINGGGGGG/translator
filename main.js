@@ -590,6 +590,37 @@ async function retryRequest(lId, targetProvider) {
 }
 
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
+// 🖼️ NEW: Dedicated GUI for viewing & downloading generated images
+window.showGeneratedImageGUI = function(src) {
+    let modal = document.getElementById('genImageModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'genImageModal';
+        modal.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999999; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s;";
+        modal.innerHTML = `
+            <div style="position:absolute; top:20px; right:20px; display:flex; gap:15px; z-index:100;">
+                <button id="genImgDownloadBtn" style="background:#3b82f6; color:white; border:2px solid white; padding:8px 15px; border-radius:12px; font-size:14px; font-weight:bold; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">📥 Download</button>
+                <button onclick="document.getElementById('genImageModal').style.opacity='0'; setTimeout(()=>document.getElementById('genImageModal').style.display='none',300);" style="background:#ef4444; color:white; border:2px solid white; width:40px; height:40px; border-radius:50%; font-weight:bold; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✖</button>
+            </div>
+            <img id="genImageDisplay" style="max-width:95%; max-height:85vh; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.8); object-fit:contain;">
+        `;
+        document.body.appendChild(modal);
+        
+        document.getElementById('genImgDownloadBtn').onclick = function() {
+            const link = document.createElement('a');
+            link.download = 'AI_Math_Solution.png';
+            link.href = document.getElementById('genImageDisplay').src;
+            link.click();
+            if(typeof showToast === 'function') showToast("✅ Image Downloaded!");
+        };
+    }
+    
+    document.getElementById('genImageDisplay').src = src;
+    modal.style.display = 'flex';
+    setTimeout(() => modal.style.opacity = '1', 10);
+};
+
+// 🧮 UPDATED: execution flow with small thumbnails & clean shape logic
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
@@ -604,8 +635,7 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // 🌟 BRAND NEW PROMPT (Forces Shapes & Multiplication rules)
-    const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
+    const sysPrompt = `You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
 1. TARGET EXACTLY: Solve ONLY the specific question requested. If no specific number is asked, solve them all.
 2. KEEP IT SIMPLE: Provide clear, school-level step-by-step solutions.
@@ -634,42 +664,43 @@ EXPLANATION-
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
         clearMathImage();
 
-        // 🖼️ IMAGE MODE: Generates picture in background, drops into chat, saves to history!
         if (window.isImageGenerationMode) {
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Digital Paper...`;
 
-            // Build hidden paper off-screen
             const offscreen = document.createElement('div');
             offscreen.style.position = 'absolute';
             offscreen.style.left = '-9999px';
             offscreen.style.width = '700px'; 
             offscreen.innerHTML = `
-                <div class="digital-paper" style="background-color:#fdfbf7; background-image:repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px); line-height:30px; padding:40px 30px 40px 70px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:#1e3a8a; white-space:pre-wrap;">
+                <div class="digital-paper" style="background-color:#fdfbf7; background-image:repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px); line-height:30px; padding:40px 30px 40px 70px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:#1e3a8a; white-space:pre-wrap; display:flex; flex-direction:column; align-items:flex-start;">
                     <div style="position:absolute; top:0; bottom:0; left:45px; width:2px; background:#fca5a5;"></div>
                     ${cleanSol.replace(/\n/g, '<br>')}
                 </div>
             `;
             document.body.appendChild(offscreen);
 
-            // Wait for MathJax to render the math on the hidden paper
             if (window.MathJax) await MathJax.typesetPromise([offscreen]);
 
             try {
-                // Snapshot the paper
                 const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true });
                 const base64Img = canvas.toDataURL("image/png");
                 
-                const finalImgHtml = `<img src="${base64Img}" class="bubble-img" style="width:100%; border-radius:12px; border:2px solid var(--border-light); cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.3);" onclick="viewPhotoFullscreen(this.src)">`;
+                // THUMBNAIL UI: Makes the image small in the chat, opens GUI on click
+                const finalImgHtml = `
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                        <img src="${base64Img}" style="width:140px; height:180px; object-fit:cover; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px;">🔍 Tap to open</span>
+                    </div>
+                `;
                 
                 if (loadingBubble) {
                     loadingBubble.querySelector('.bubble').innerHTML = `
-                        <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ GENERATED IMAGE</div>
+                        <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ GENERATED</div>
                         ${finalImgHtml}
                     `;
                 }
                 
-                // Saves the IMAGE tag straight to history so it restores instantly!
                 saveToHistory('math', instruction || "Solve this", finalImgHtml, uiImage, resObj.provider);
                 
             } catch (err) {
@@ -680,7 +711,6 @@ EXPLANATION-
                 window.toggleChatButton(false);
             }
         } else {
-            // Standard Text Mode
             saveToHistory('math', instruction || "Solve this", cleanSol, uiImage, resObj.provider); 
             updateAiBubble(lId, cleanSol, resObj.provider, true);
         }
@@ -693,7 +723,6 @@ EXPLANATION-
         }
     }
 }
-
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); 
