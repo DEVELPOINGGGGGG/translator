@@ -641,39 +641,56 @@ async function executeMathFlow() {
         ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS]" 
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
-    // 🌟 STRICT PARSING PROMPT: Forces AI to split data so we can build UI
-   // 🌟 THE ULTIMATE DETAILED PROMPT (Explanation Lengths + UI Formatting + Math Rules)
+// 🧮 FULLY DYNAMIC MATH ENGINE (Image bypass, Smart Wrappers, Line Breaks)
+async function executeMathFlow() {
+    const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
+    const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
+    
+    let uiImage = capturedImage;
+    appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
+    inp.value = ""; 
+    
+    let lId = appendAiLoading("mathChatHistory");
+    window.toggleChatButton(true);
+
+    let activeImage = uiImage || getLastContextImage('math');
+    let memoryContext = getSessionContext('math');
+
+    const modeStatus = window.isImageGenerationMode 
+        ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS AND PUT IT IN THE TEXT BLOCK]" 
+        : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
+
+    // 🌟 SUPER STRICT PROMPT: Fixes "Hi" bug, forces line breaks, fixes HTML wrappers
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
-1. MODE AWARENESS: ${modeStatus}
-2. PROPER FRACTIONS (CRITICAL): NEVER write fractions side-by-side like 4/2 or a/b. You MUST use proper LaTeX fractions wrapped in block math tags (e.g., $$\\frac{4}{2}$$) so they render vertically. ALWAYS use 'x' for multiplication.
-3. EQUATION LINE BREAKS (CRITICAL): Every single mathematical equation or step MUST be on a completely new line. 
-   - Example format: 
-   Agar hum maan 2 rakhenge toh:<br>$$2 + 3 = 5$$
-4. QUESTION NUMBERS LEFT OF MARGIN: If you are solving multiple questions, you MUST format the question text exactly like this so the number hangs outside the red margin:
-   <div style="position:relative;"><span style="position:absolute; left:-45px; font-weight:bold;">Q1.</span>[Question Text]</div>
-5. SHAPES & GEOMETRY: If asked for a shape, generate an <svg> snippet (xmlns="http://www.w3.org/2000/svg"). Use 'currentColor' for lines.
-6. EXPLANATION LENGTH RULES (CRITICAL):
-   - IF [IMAGE MODE OFF] and it is a SINGLE question: Give a detailed but brief explanation of exactly 7 to 12 lines.
-   - IF [IMAGE MODE OFF] and there are MULTIPLE questions: Give a concise explanation of exactly 5 to 10 lines for EACH question.
-   - IF [IMAGE MODE ON]: Keep the explanation concise and beautifully formatted so it fits inside the generated image without overflowing.
+1. CONVERSATION DETECTOR (CRITICAL): If the user just says "Hi", "Hello", or asks a non-math question, you MUST write "IS_MATH:- NO" at the top and just write a polite text response in the TEXT block. DO NOT generate fake math questions or shapes!
+2. MODE AWARENESS: ${modeStatus}
+3. EQUATION LINE BREAKS (CRITICAL): Every single mathematical step or equation in the SOLUTION MUST be on a completely new line. Use <br><br> to force spacing!
+4. PROPER FRACTIONS: Use proper LaTeX fractions wrapped in block math tags (e.g., $$\\frac{4}{2}$$).
+5. QUESTION LABELS: If you are solving 2 OR MORE questions, use this exact wrapper for the questions: <div style="position:relative;"><span style="position:absolute; left:-45px; font-weight:bold;">Q1.</span>[Question Text]</div>
+   WARNING: IF IT IS ONLY 1 QUESTION, DO NOT USE THAT HTML WRAPPER. Just write the question normally.
+6. SHAPES: Only generate <svg> for geometry/shape questions.
 7. OUTPUT FORMAT: 
 
+IS_MATH:-
+[YES or NO]
+
 COUNT:-
-[Number of questions]
+[Number of questions. 0 if IS_MATH is NO]
 
 TEXT:-
-[Questions formatted with the margin-hang <div> if multiple]
+[If IS_MATH is NO: Write your polite greeting here.]
+[If YES: Write Question here]
 SOLUTION:
-[Step-by-step math with strict line breaks before equations]
+[If YES: Step-by-step math. Break lines with <br><br>]
 EXPLANATION:
-[Explanation following the exact length rules above]
+[If YES: Short explanation]
 
 SVG:-
-[Your <svg> code]
+[Your <svg> code. Leave blank if no shape.]
 
 FINAL_ANSWER:-
-[Answer value]`;
+[Answer value or blank]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
@@ -685,7 +702,8 @@ FINAL_ANSWER:-
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let rawText = resObj.text;
         
-        // ✂️ PARSE THE DATA BLOCKS
+        // ✂️ PARSE THE DATA BLOCKS SAFELY
+        let isMath = !rawText.toUpperCase().includes("IS_MATH:- NO") && !rawText.toUpperCase().includes("IS_MATH: NO");
         let countStr = "1";
         let textBlock = rawText;
         let svgBlock = "";
@@ -714,21 +732,22 @@ FINAL_ANSWER:-
 
         clearMathImage();
         let generatedImgHtml = "";
-        let generateStandaloneShape = (!window.isImageGenerationMode && svgBlock.length > 10);
+        
+        // Only consider shapes if it's actually math
+        let generateStandaloneShape = (isMath && !window.isImageGenerationMode && svgBlock.length > 10);
 
         // 🛑 MULTIPLE QUESTION PROTECTION
         let warningText = "";
         if (generateStandaloneShape && questionCount > 1) {
-            generateStandaloneShape = false; // Disable shape drawing
+            generateStandaloneShape = false;
             warningText = "<br><br><small style='color:#ef4444; font-weight:bold;'>⚠️ Multiple questions detected. Diagram generation disabled. Please ask one question at a time to generate geometry shapes.</small>";
         }
 
-        // 🖼️ GENERATE IMAGE (Image Mode ON OR Standalone Shape requested)
-        if (window.isImageGenerationMode || generateStandaloneShape) {
+        // 🖼️ GENERATE IMAGE (ONLY if IS_MATH is YES and a mode is active)
+        if (isMath && (window.isImageGenerationMode || generateStandaloneShape)) {
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Visuals...`;
 
-            // Theme Detection
             const computedStyles = getComputedStyle(document.body);
             let bgColor = computedStyles.getPropertyValue('--bg-surface').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#0f172a' : '#ffffff');
             let textColor = computedStyles.getPropertyValue('--text-main').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#f8fafc' : '#0f172a');
@@ -742,7 +761,7 @@ FINAL_ANSWER:-
             offscreen.style.zIndex = '-9999'; 
 
             if (generateStandaloneShape) {
-                // MODE: Standalone Shape (Image Mode OFF) - Only Shape & Answer
+                // Standalone Shape (Image Mode OFF)
                 offscreen.innerHTML = `
                     <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px; font-family:'Poppins', sans-serif;">
                         ${svgBlock}
@@ -750,10 +769,8 @@ FINAL_ANSWER:-
                     </div>
                 `;
             } else if (window.isImageGenerationMode) {
-                // MODE: Full Image Generation (Image Mode ON) - Text + Shape inside
-                // ⚙️ CSS SQUISH FIX: word-wrap, overflow-wrap, block display
+                // Full Image Generation (Image Mode ON)
                 let formattedText = textBlock.replace(/\n/g, '<br>');
-                
                 offscreen.innerHTML = `
                     <div class="digital-paper" style="background-color:${bgColor}; line-height:35px; padding:40px 30px 40px 60px; position:relative; font-family:'Kalam', cursive; font-size:22px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; word-wrap: break-word; overflow-wrap: break-word;">
                         <div style="width:100%; display:block;">
@@ -787,8 +804,8 @@ FINAL_ANSWER:-
         // 📤 FINAL OUTPUT ROUTING
         let finalOutputText = textBlock + warningText;
 
-        if (window.isImageGenerationMode) {
-            // Image Mode ON: Show ONLY the image in the chat
+        if (isMath && window.isImageGenerationMode) {
+            // Image Mode ON & It is Math: Show ONLY the image
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble && generatedImgHtml) {
                 loadingBubble.querySelector('.bubble').innerHTML = `
@@ -798,7 +815,7 @@ FINAL_ANSWER:-
             }
             saveToHistory('math', instruction || "Solve this", generatedImgHtml, uiImage, resObj.provider);
         } else {
-            // Image Mode OFF: Show text normally, and put standalone shape at the top if it was drawn
+            // Image Mode OFF OR It's just a greeting: Show text normally
             saveToHistory('math', instruction || "Solve this", finalOutputText, uiImage, resObj.provider); 
             updateAiBubble(lId, finalOutputText, resObj.provider, true); 
             
