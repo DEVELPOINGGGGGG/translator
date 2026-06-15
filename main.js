@@ -620,7 +620,7 @@ window.showGeneratedImageGUI = function(src) {
     setTimeout(() => modal.style.opacity = '1', 10);
 };
 
-// 🧮 UPDATED: execution flow with Theme-Aware Image Generation & SVG crash fixes
+// 🧮 FULLY ISOLATED SHAPE & TEXT ENGINE
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
@@ -635,22 +635,27 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // 🌟 PROMPT UPDATED: Added xmlns to SVG to prevent html2canvas crashes
-    const sysPrompt = ` You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
+    // 🌟 STRICT SEPARATION PROMPT: Forces AI to split SVG and Text
+    const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
 1. TARGET EXACTLY: Solve ONLY the specific question requested.
 2. KEEP IT SIMPLE: Provide clear, school-level step-by-step solutions.
-3. MATH SYMBOLS: ALWAYS use 'x' or 'X' for multiplication. Use proper LaTeX fractions and powers. NO raw MATH TAGS.
-4. DRAW SHAPES NEATLY: If the question involves geometry, generate a clean HTML <svg> snippet. YOU MUST include xmlns="http://www.w3.org/2000/svg" inside the <svg> tag. Example: <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" ...>. Place it at the bottom.
-5. FORMAT:
-[Write the exact question here]
+3. MATH SYMBOLS: ALWAYS use 'x' or 'X' for multiplication. Use proper LaTeX.
+4. ISOLATED SHAPE GENERATION (CRITICAL): If the user asks about geometry, area, or to "make a shape/triangle", you MUST generate a clean HTML <svg> snippet. 
+   - You MUST include xmlns="http://www.w3.org/2000/svg" inside the <svg> tag.
+   - Use 'currentColor' for strokes so it matches the app theme.
+   - You MUST separate the text from the SVG using EXACTLY this marker: |||SVG|||
+   
+   FORMAT:
+   [Write the exact question here]
 
-SOLUTION:-
-[Step-by-step simple math solution in HINDI. Use 'x' for multiplication.]
+   SOLUTION:-
+   [Step-by-step simple math solution in HINDI.]
 
-EXPLANATION-
-[Provide a short explanation using bullet points in HINDI.]
-[Your SVG Shape here if applicable]`;
+   EXPLANATION-
+   [Explanation in HINDI.]
+   |||SVG|||
+   <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" ...></svg>`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
@@ -660,75 +665,88 @@ EXPLANATION-
 
     try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
-        let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
+        
+        let rawText = resObj.text;
+        let cleanSol = rawText;
+        let svgCode = "";
+        
+        // ✂️ SPLIT THE SHAPE FROM THE TEXT
+        if (rawText.includes("|||SVG|||")) {
+            let parts = rawText.split("|||SVG|||");
+            cleanSol = parts[0].replace(/[\*&#_]/g, '').trim();
+            svgCode = parts[1].trim();
+        } else {
+            cleanSol = rawText.replace(/[\*&#_]/g, '').trim();
+        }
+
         clearMathImage();
+        let generatedImgHtml = "";
 
-        if (window.isImageGenerationMode) {
+        // 🖼️ GENERATE IMAGE (If Shape requested OR Image Mode is ON)
+        if (window.isImageGenerationMode || svgCode) {
             const loadingBubble = document.getElementById(lId);
-            if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Digital Paper...`;
+            if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Visuals...`;
 
-            // 🎨 DYNAMIC THEME DETECTOR: Grabs Light/Dark mode colors automatically
+            // Theme Detector
             const computedStyles = getComputedStyle(document.body);
             let bgColor = computedStyles.getPropertyValue('--bg-surface').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#0f172a' : '#ffffff');
             let textColor = computedStyles.getPropertyValue('--text-main').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#f8fafc' : '#0f172a');
             let primaryColor = computedStyles.getPropertyValue('--primary').trim() || '#8b5cf6';
 
-            // ⚙️ RENDER BUG FIX: Position fixed keeps it in viewport for html2canvas
             const offscreen = document.createElement('div');
             offscreen.style.position = 'fixed';
             offscreen.style.top = '0';
             offscreen.style.left = '0';
-            offscreen.style.width = '700px'; 
-            offscreen.style.zIndex = '-9999'; // Hides it behind everything
-            
-            // Applies dynamic colors to the paper
-            offscreen.innerHTML = `
-                <div class="digital-paper" style="background-color:${bgColor}; line-height:30px; padding:40px 30px 40px 40px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:${textColor}; white-space:pre-wrap; display:flex; flex-direction:column; align-items:flex-start; border: 4px solid ${primaryColor}; border-radius: 15px;">
-                    ${cleanSol.replace(/\n/g, '<br>')}
-                </div>
-            `;
-            document.body.appendChild(offscreen);
+            offscreen.style.width = svgCode ? '400px' : '700px'; 
+            offscreen.style.zIndex = '-9999'; 
 
-            if (window.MathJax) await MathJax.typesetPromise([offscreen]);
-
-            try {
-                // Snapshot the paper using html2canvas
-                const canvas = await html2canvas(offscreen, { 
-                    scale: 2, 
-                    useCORS: true, 
-                    backgroundColor: bgColor // Force background color
-                });
-                
-                const base64Img = canvas.toDataURL("image/png");
-                
-                const finalImgHtml = `
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-                        <img src="${base64Img}" style="width:140px; height:180px; object-fit:cover; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px;">🔍 Tap to open</span>
+            if (svgCode) {
+                // JUST THE SHAPE: No text, no explanation in the image
+                offscreen.innerHTML = `
+                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; justify-content:center; align-items:center; border: 4px solid ${primaryColor}; border-radius: 15px;">
+                        ${svgCode}
                     </div>
                 `;
+            } else {
+                // NORMAL TEXT (If Image mode is ON but no shape was requested)
+                offscreen.innerHTML = `
+                    <div class="digital-paper" style="background-color:${bgColor}; line-height:30px; padding:40px 30px 40px 40px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:${textColor}; display:flex; flex-direction:column; align-items:flex-start; border: 4px solid ${primaryColor}; border-radius: 15px;">
+                        ${cleanSol.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            }
+            document.body.appendChild(offscreen);
+
+            if (window.MathJax && !svgCode) await MathJax.typesetPromise([offscreen]);
+
+            try {
+                // Snapshot the visual
+                const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true, backgroundColor: bgColor });
+                const base64Img = canvas.toDataURL("image/png");
                 
-                if (loadingBubble) {
-                    loadingBubble.querySelector('.bubble').innerHTML = `
-                        <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ GENERATED</div>
-                        ${finalImgHtml}
-                    `;
-                }
-                
-                saveToHistory('math', instruction || "Solve this", finalImgHtml, uiImage, resObj.provider);
-                
+                generatedImgHtml = `
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-light);">
+                        <img src="${base64Img}" style="width:160px; height:auto; max-height:220px; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px;">🔍 Tap Shape to Enlarge</span>
+                    </div>
+                `;
             } catch (err) {
                 console.error("Canvas Render Error:", err);
-                updateAiBubble(lId, "❌ Image Generation Failed. Here is the text:\n" + cleanSol, resObj.provider, false);
             } finally {
-                // Clean up the hidden div
                 offscreen.remove();
-                window.toggleChatButton(false);
             }
-        } else {
-            saveToHistory('math', instruction || "Solve this", cleanSol, uiImage, resObj.provider); 
-            updateAiBubble(lId, cleanSol, resObj.provider, true);
         }
+
+        // 📤 OUTPUT TO CHAT: Text always goes to chat bubble
+        saveToHistory('math', instruction || "Solve this", cleanSol, uiImage, resObj.provider); 
+        updateAiBubble(lId, cleanSol, resObj.provider, true); // Starts typewriting the text explanation
+        
+        // Inject the generated image above the typing text
+        if (generatedImgHtml) {
+            const bbl = document.getElementById(lId)?.querySelector('.bubble');
+            if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml);
+        }
+
     } catch(e) { 
         window.toggleChatButton(false);
         const el = document.getElementById(lId); 
