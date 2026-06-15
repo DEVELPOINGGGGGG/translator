@@ -598,43 +598,33 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; 
     
-    // If NOT in image mode, show typing bubble
-    let lId;
-    if (!window.isImageGenerationMode) {
-        lId = appendAiLoading("mathChatHistory");
-    } else {
-        showToast("⏳ Generating Solution Image...");
-    }
-
+    let lId = appendAiLoading("mathChatHistory");
     window.toggleChatButton(true);
 
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // BRAND NEW STRICT PROMPT (Fixes complexity, ignores unasked questions, uses 'x')
+    // 🌟 BRAND NEW PROMPT (Forces Shapes & Multiplication rules)
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
-1. READ CAREFULLY & TARGET EXACTLY: 
-   - If the user asks for a specific question number (e.g., "Solve 12", "Question 10", etc.), YOU MUST ONLY SOLVE THAT EXACT QUESTION. Completely ignore everything else on the page.
-   - If the user says "Solve all" or doesn't specify a number, solve every visible question.
-2. KEEP IT SIMPLE: Provide extremely clear, basic, school-level step-by-step solutions. DO NOT use complex university-level theorems or abstract algebra unless requested.
-3. MATH SYMBOLS (CRITICAL): 
-   - ALWAYS use the standard letter 'x' or 'X' for multiplication (e.g., 2 x 3 = 6). NEVER use \\times, *, or \\cdot.
-   - Use proper formatting for fractions (e.g., \\frac{a}{b}) and powers (e.g., x^2). NO MATH TAGS.
-4. DRAWINGS/DIAGRAMS: If the question involves area, geometry, or diagrams, describe the shape clearly using text geometry instructions within your explanation.
-5. FORMAT: You MUST format your answer EXACTLY like this template. Everything must be in clean Hindi.
-
+1. TARGET EXACTLY: Solve ONLY the specific question requested. If no specific number is asked, solve them all.
+2. KEEP IT SIMPLE: Provide clear, school-level step-by-step solutions.
+3. MATH SYMBOLS: ALWAYS use 'x' or 'X' for multiplication. Use proper LaTeX fractions and powers. NO raw MATH TAGS.
+4. DRAW SHAPES (CRITICAL): If the question involves geometry, area, perimeter, or shapes (triangle, circle, rectangle, cylinder, etc.), you MUST generate a clean HTML <svg> snippet to draw it visually. 
+   - Example Triangle: <svg width="150" height="150" viewBox="0 0 150 150"><polygon points="75,10 140,140 10,140" fill="lightblue" stroke="blue" stroke-width="2"/></svg>
+   - Place this SVG right before the EXPLANATION section.
+5. FORMAT:
 [Write the exact question here]
 
 SOLUTION:-
-[Step-by-step simple math solution in HINDI language. Use 'x' for multiplication.]
+[Step-by-step simple math solution in HINDI. Use 'x' for multiplication.]
+[Your SVG Shape here if applicable]
 
 EXPLANATION-
-[Provide a short, easy-to-understand explanation using bullet points in HINDI.]`;
+[Provide a short explanation using bullet points in HINDI.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
-    // Only save cache if not in image mode
     if (!window.isImageGenerationMode) {
         window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
     }
@@ -642,27 +632,64 @@ EXPLANATION-
     try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); 
-        
-        saveToHistory('math', instruction || "Solve this image", cleanSol, uiImage, resObj.provider); 
         clearMathImage();
 
-        // ROUTING LOGIC: Image Mode vs Standard Chat
+        // 🖼️ IMAGE MODE: Generates picture in background, drops into chat, saves to history!
         if (window.isImageGenerationMode) {
-            window.toggleChatButton(false);
-            openImageModeViewer(cleanSol);
+            const loadingBubble = document.getElementById(lId);
+            if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Digital Paper...`;
+
+            // Build hidden paper off-screen
+            const offscreen = document.createElement('div');
+            offscreen.style.position = 'absolute';
+            offscreen.style.left = '-9999px';
+            offscreen.style.width = '700px'; 
+            offscreen.innerHTML = `
+                <div class="digital-paper" style="background-color:#fdfbf7; background-image:repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px); line-height:30px; padding:40px 30px 40px 70px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:#1e3a8a; white-space:pre-wrap;">
+                    <div style="position:absolute; top:0; bottom:0; left:45px; width:2px; background:#fca5a5;"></div>
+                    ${cleanSol.replace(/\n/g, '<br>')}
+                </div>
+            `;
+            document.body.appendChild(offscreen);
+
+            // Wait for MathJax to render the math on the hidden paper
+            if (window.MathJax) await MathJax.typesetPromise([offscreen]);
+
+            try {
+                // Snapshot the paper
+                const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true });
+                const base64Img = canvas.toDataURL("image/png");
+                
+                const finalImgHtml = `<img src="${base64Img}" class="bubble-img" style="width:100%; border-radius:12px; border:2px solid var(--border-light); cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.3);" onclick="viewPhotoFullscreen(this.src)">`;
+                
+                if (loadingBubble) {
+                    loadingBubble.querySelector('.bubble').innerHTML = `
+                        <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ GENERATED IMAGE</div>
+                        ${finalImgHtml}
+                    `;
+                }
+                
+                // Saves the IMAGE tag straight to history so it restores instantly!
+                saveToHistory('math', instruction || "Solve this", finalImgHtml, uiImage, resObj.provider);
+                
+            } catch (err) {
+                console.error(err);
+                updateAiBubble(lId, "❌ Image Generation Failed. Here is the text:\n" + cleanSol, resObj.provider, false);
+            } finally {
+                offscreen.remove();
+                window.toggleChatButton(false);
+            }
         } else {
+            // Standard Text Mode
+            saveToHistory('math', instruction || "Solve this", cleanSol, uiImage, resObj.provider); 
             updateAiBubble(lId, cleanSol, resObj.provider, true);
         }
     } catch(e) { 
         window.toggleChatButton(false);
-        if (!window.isImageGenerationMode) {
-            const el = document.getElementById(lId); 
-            if(el) {
-                 if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
-                 else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
-            }
-        } else {
-            showToast("❌ Error: " + e.message);
+        const el = document.getElementById(lId); 
+        if(el) {
+             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
+             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
         }
     }
 }
