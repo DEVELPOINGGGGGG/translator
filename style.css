@@ -314,3 +314,14 @@ mjx-container:not([display="true"]) {
 .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-light); }
 .img-thumb-container { position: relative; display: inline-block; margin-right: 10px; }
 .img-thumb-remove { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; }
+/* VIDEO TUTOR DARK/LIGHT MODE FIX */
+body.dark-mode #youtubePage,
+body.dark-mode .video-container,
+body.dark-mode .yt-result-card {
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .yt-result-card h3,
+body.dark-mode .yt-result-card p {
+    color: #ffffff !important;
+}
