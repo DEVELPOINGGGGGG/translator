@@ -1983,5 +1983,49 @@ window.downloadImageMode = function() {
         paper.style.overflowY = originalOverflow;
     });
 };
+// ==========================================
+// 📋 USER BUBBLE COPY BUTTON OVERRIDE
+// ==========================================
+window.appendUserBubble = function(text, img, containerId) {
+    const historyDiv = document.getElementById(containerId);
+    if (!historyDiv) return;
+    
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "chat-msg chat-user";
+    
+    // Safely escape text for the clipboard
+    let escapedText = text.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+    
+    let contentHtml = `<div class="bubble" style="position:relative;">`;
+    
+    // 📋 The Copy Button
+    contentHtml += `<button onclick="navigator.clipboard.writeText('${escapedText}'); typeof showToast === 'function' ? showToast('✅ Copied!') : alert('Copied!');" style="position:absolute; top:-10px; right:-10px; background:var(--primary); color:white; border:2px solid var(--bg-surface); border-radius:50%; width:28px; height:28px; font-size:12px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.3); display:flex; justify-content:center; align-items:center; transition:0.2s;">📋</button>`;
+    
+    if (img) {
+        contentHtml += `<img src="${img}" class="bubble-img" style="max-width:200px; border-radius:10px; margin-bottom:10px;"><br>`;
+    }
+    
+    contentHtml += `<div>${text.replace(/\n/g, '<br>')}</div></div>`;
+    msgDiv.innerHTML = contentHtml;
+    historyDiv.appendChild(msgDiv);
+    
+    const scrollArea = document.getElementById(containerId.replace('ChatHistory', 'ScrollArea'));
+    if (scrollArea) scrollArea.scrollTop = 99999;
+};
+
+// ==========================================
+// 🌐 OFFLINE INTERNET DETECTOR
+// ==========================================
+window.addEventListener('offline', () => {
+    if(typeof showToast === 'function') {
+        showToast("⚠️ Internet not working. AI will not respond due to inactivity of internet.");
+    } else {
+        alert("⚠️ Internet not working. AI will not respond due to inactivity of internet.");
+    }
+});
+
+window.addEventListener('online', () => {
+    if(typeof showToast === 'function') showToast("✅ Internet restored!");
+});
 // --- GLOBAL EXPORTS ---
 window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest; window.handlePdfUpload = handlePdfUpload; window.clearPdfFile = clearPdfFile;
