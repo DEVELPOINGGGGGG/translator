@@ -621,6 +621,7 @@ window.showGeneratedImageGUI = function(src) {
 };
 
 // 🧮 FULLY ISOLATED SHAPE & TEXT ENGINE
+// 🧮 FULLY DYNAMIC MATH ENGINE: Handles Image Modes, Standalone Shapes & CSS Fixes
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
@@ -635,27 +636,34 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    // 🌟 STRICT SEPARATION PROMPT: Forces AI to split SVG and Text
+    // Tells AI exactly what mode we are in
+    const modeStatus = window.isImageGenerationMode 
+        ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS]" 
+        : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
+
+    // 🌟 STRICT PARSING PROMPT: Forces AI to split data so we can build UI
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
-1. TARGET EXACTLY: Solve ONLY the specific question requested.
-2. KEEP IT SIMPLE: Provide clear, school-level step-by-step solutions.
-3. MATH SYMBOLS: ALWAYS use 'x' or 'X' for multiplication. Use proper LaTeX.
-4. ISOLATED SHAPE GENERATION (CRITICAL): If the user asks about geometry, area, or to "make a shape/triangle", you MUST generate a clean HTML <svg> snippet. 
-   - You MUST include xmlns="http://www.w3.org/2000/svg" inside the <svg> tag.
-   - Use 'currentColor' for strokes so it matches the app theme.
-   - You MUST separate the text from the SVG using EXACTLY this marker: |||SVG|||
-   
-   FORMAT:
-   [Write the exact question here]
+1. MODE AWARENESS: ${modeStatus}
+2. MATH SYMBOLS: ALWAYS use 'x' or 'X' for multiplication. Use proper LaTeX. Keep steps simple.
+3. SHAPES & GEOMETRY (CRITICAL): If the question involves geometry, area, or shapes, you MUST generate an <svg> snippet (xmlns="http://www.w3.org/2000/svg"). If sides/angles are given, add text labels inside the SVG. Use 'currentColor' for lines.
+4. OUTPUT FORMAT: You MUST format your response EXACTLY like this template. Do not change the section headers.
 
-   SOLUTION:-
-   [Step-by-step simple math solution in HINDI.]
+COUNT:-
+[Write the number of questions detected. e.g., 1 or 3]
 
-   EXPLANATION-
-   [Explanation in HINDI.]
-   |||SVG|||
-   <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" ...></svg>`;
+TEXT:-
+[Write exact question]
+SOLUTION:
+[Step-by-step math in HINDI]
+EXPLANATION:
+[Short explanation in HINDI]
+
+SVG:-
+[Your <svg> code here. Leave completely blank if no shape is needed.]
+
+FINAL_ANSWER:-
+[The final numerical answer (e.g. 15 cm, 45 degrees). Leave blank if none.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
@@ -665,29 +673,52 @@ async function executeMathFlow() {
 
     try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
-        
         let rawText = resObj.text;
-        let cleanSol = rawText;
-        let svgCode = "";
         
-        // ✂️ SPLIT THE SHAPE FROM THE TEXT
-        if (rawText.includes("|||SVG|||")) {
-            let parts = rawText.split("|||SVG|||");
-            cleanSol = parts[0].replace(/[\*&#_]/g, '').trim();
-            svgCode = parts[1].trim();
-        } else {
-            cleanSol = rawText.replace(/[\*&#_]/g, '').trim();
+        // ✂️ PARSE THE DATA BLOCKS
+        let countStr = "1";
+        let textBlock = rawText;
+        let svgBlock = "";
+        let finalAnswerBlock = "";
+
+        if (rawText.includes("TEXT:-")) {
+            let parts = rawText.split("TEXT:-");
+            let topPart = parts[0];
+            let rest = parts[1];
+            
+            if (topPart.includes("COUNT:-")) countStr = topPart.split("COUNT:-")[1].trim();
+            
+            if (rest.includes("SVG:-")) {
+                let textSvgSplit = rest.split("SVG:-");
+                textBlock = textSvgSplit[0].trim();
+                let svgAnswerSplit = textSvgSplit[1].split("FINAL_ANSWER:-");
+                svgBlock = svgAnswerSplit[0].trim();
+                if (svgAnswerSplit.length > 1) finalAnswerBlock = svgAnswerSplit[1].trim();
+            } else {
+                textBlock = rest.trim();
+            }
         }
+        
+        textBlock = textBlock.replace(/[\*&#_]/g, '').trim();
+        const questionCount = parseInt(countStr) || 1;
 
         clearMathImage();
         let generatedImgHtml = "";
+        let generateStandaloneShape = (!window.isImageGenerationMode && svgBlock.length > 10);
 
-        // 🖼️ GENERATE IMAGE (If Shape requested OR Image Mode is ON)
-        if (window.isImageGenerationMode || svgCode) {
+        // 🛑 MULTIPLE QUESTION PROTECTION
+        let warningText = "";
+        if (generateStandaloneShape && questionCount > 1) {
+            generateStandaloneShape = false; // Disable shape drawing
+            warningText = "<br><br><small style='color:#ef4444; font-weight:bold;'>⚠️ Multiple questions detected. Diagram generation disabled. Please ask one question at a time to generate geometry shapes.</small>";
+        }
+
+        // 🖼️ GENERATE IMAGE (Image Mode ON OR Standalone Shape requested)
+        if (window.isImageGenerationMode || generateStandaloneShape) {
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Visuals...`;
 
-            // Theme Detector
+            // Theme Detection
             const computedStyles = getComputedStyle(document.body);
             let bgColor = computedStyles.getPropertyValue('--bg-surface').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#0f172a' : '#ffffff');
             let textColor = computedStyles.getPropertyValue('--text-main').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#f8fafc' : '#0f172a');
@@ -697,37 +728,43 @@ async function executeMathFlow() {
             offscreen.style.position = 'fixed';
             offscreen.style.top = '0';
             offscreen.style.left = '0';
-            offscreen.style.width = svgCode ? '400px' : '700px'; 
+            offscreen.style.width = '750px'; 
             offscreen.style.zIndex = '-9999'; 
 
-            if (svgCode) {
-                // JUST THE SHAPE: No text, no explanation in the image
+            if (generateStandaloneShape) {
+                // MODE: Standalone Shape (Image Mode OFF) - Only Shape & Answer
                 offscreen.innerHTML = `
-                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; justify-content:center; align-items:center; border: 4px solid ${primaryColor}; border-radius: 15px;">
-                        ${svgCode}
+                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px; font-family:'Poppins', sans-serif;">
+                        ${svgBlock}
+                        ${finalAnswerBlock ? `<div style="margin-top:25px; font-size:26px; font-weight:900; padding:12px 25px; background:rgba(59,130,246,0.1); border-radius:12px; border:2px solid ${primaryColor};">ANSWER = ${finalAnswerBlock}</div>` : ''}
                     </div>
                 `;
-            } else {
-                // NORMAL TEXT (If Image mode is ON but no shape was requested)
+            } else if (window.isImageGenerationMode) {
+                // MODE: Full Image Generation (Image Mode ON) - Text + Shape inside
+                // ⚙️ CSS SQUISH FIX: word-wrap, overflow-wrap, block display
+                let formattedText = textBlock.replace(/\n/g, '<br>');
+                
                 offscreen.innerHTML = `
-                    <div class="digital-paper" style="background-color:${bgColor}; line-height:30px; padding:40px 30px 40px 40px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:${textColor}; display:flex; flex-direction:column; align-items:flex-start; border: 4px solid ${primaryColor}; border-radius: 15px;">
-                        ${cleanSol.replace(/\n/g, '<br>')}
+                    <div class="digital-paper" style="background-color:${bgColor}; line-height:35px; padding:40px 30px 40px 60px; position:relative; font-family:'Kalam', cursive; font-size:22px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; word-wrap: break-word; overflow-wrap: break-word;">
+                        <div style="width:100%; display:block;">
+                            ${formattedText}
+                        </div>
+                        ${svgBlock ? `<div style="margin-top:30px; display:flex; justify-content:center; width:100%;">${svgBlock}</div>` : ''}
                     </div>
                 `;
             }
+            
             document.body.appendChild(offscreen);
-
-            if (window.MathJax && !svgCode) await MathJax.typesetPromise([offscreen]);
+            if (window.MathJax) await MathJax.typesetPromise([offscreen]);
 
             try {
-                // Snapshot the visual
-                const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true, backgroundColor: bgColor });
+                const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true, backgroundColor: bgColor, windowWidth: 800 });
                 const base64Img = canvas.toDataURL("image/png");
                 
                 generatedImgHtml = `
                     <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-light);">
-                        <img src="${base64Img}" style="width:160px; height:auto; max-height:220px; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px;">🔍 Tap Shape to Enlarge</span>
+                        <img src="${base64Img}" style="width:180px; height:auto; max-height:240px; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px;">🔍 Tap Image to Enlarge</span>
                     </div>
                 `;
             } catch (err) {
@@ -737,14 +774,28 @@ async function executeMathFlow() {
             }
         }
 
-        // 📤 OUTPUT TO CHAT: Text always goes to chat bubble
-        saveToHistory('math', instruction || "Solve this", cleanSol, uiImage, resObj.provider); 
-        updateAiBubble(lId, cleanSol, resObj.provider, true); // Starts typewriting the text explanation
-        
-        // Inject the generated image above the typing text
-        if (generatedImgHtml) {
-            const bbl = document.getElementById(lId)?.querySelector('.bubble');
-            if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml);
+        // 📤 FINAL OUTPUT ROUTING
+        let finalOutputText = textBlock + warningText;
+
+        if (window.isImageGenerationMode) {
+            // Image Mode ON: Show ONLY the image in the chat
+            const loadingBubble = document.getElementById(lId);
+            if (loadingBubble && generatedImgHtml) {
+                loadingBubble.querySelector('.bubble').innerHTML = `
+                    <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ IMAGE MODE</div>
+                    ${generatedImgHtml}
+                `;
+            }
+            saveToHistory('math', instruction || "Solve this", generatedImgHtml, uiImage, resObj.provider);
+        } else {
+            // Image Mode OFF: Show text normally, and put standalone shape at the top if it was drawn
+            saveToHistory('math', instruction || "Solve this", finalOutputText, uiImage, resObj.provider); 
+            updateAiBubble(lId, finalOutputText, resObj.provider, true); 
+            
+            if (generatedImgHtml) {
+                const bbl = document.getElementById(lId)?.querySelector('.bubble');
+                if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml);
+            }
         }
 
     } catch(e) { 
