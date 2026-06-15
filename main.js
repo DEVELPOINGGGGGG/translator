@@ -620,7 +620,7 @@ window.showGeneratedImageGUI = function(src) {
     setTimeout(() => modal.style.opacity = '1', 10);
 };
 
-// 🧮 UPDATED: execution flow with small thumbnails & clean shape logic
+// 🧮 UPDATED: execution flow with Theme-Aware Image Generation & SVG crash fixes
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!capturedImage && !instruction) return;
@@ -635,23 +635,22 @@ async function executeMathFlow() {
     let activeImage = uiImage || getLastContextImage('math');
     let memoryContext = getSessionContext('math');
 
-    const sysPrompt = `You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
+    // 🌟 PROMPT UPDATED: Added xmlns to SVG to prevent html2canvas crashes
+    const sysPrompt = ` You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
-1. TARGET EXACTLY: Solve ONLY the specific question requested. If no specific number is asked, solve them all.
+1. TARGET EXACTLY: Solve ONLY the specific question requested.
 2. KEEP IT SIMPLE: Provide clear, school-level step-by-step solutions.
 3. MATH SYMBOLS: ALWAYS use 'x' or 'X' for multiplication. Use proper LaTeX fractions and powers. NO raw MATH TAGS.
-4. DRAW SHAPES (CRITICAL): If the question involves geometry, area, perimeter, or shapes (triangle, circle, rectangle, cylinder, etc.), you MUST generate a clean HTML <svg> snippet to draw it visually. 
-   - Example Triangle: <svg width="150" height="150" viewBox="0 0 150 150"><polygon points="75,10 140,140 10,140" fill="lightblue" stroke="blue" stroke-width="2"/></svg>
-   - Place this SVG right before the EXPLANATION section.
+4. DRAW SHAPES NEATLY: If the question involves geometry, generate a clean HTML <svg> snippet. YOU MUST include xmlns="http://www.w3.org/2000/svg" inside the <svg> tag. Example: <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" ...>. Place it at the bottom.
 5. FORMAT:
 [Write the exact question here]
 
 SOLUTION:-
 [Step-by-step simple math solution in HINDI. Use 'x' for multiplication.]
-[Your SVG Shape here if applicable]
 
 EXPLANATION-
-[Provide a short explanation using bullet points in HINDI.]`;
+[Provide a short explanation using bullet points in HINDI.]
+[Your SVG Shape here if applicable]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
@@ -668,13 +667,23 @@ EXPLANATION-
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Digital Paper...`;
 
+            // 🎨 DYNAMIC THEME DETECTOR: Grabs Light/Dark mode colors automatically
+            const computedStyles = getComputedStyle(document.body);
+            let bgColor = computedStyles.getPropertyValue('--bg-surface').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#0f172a' : '#ffffff');
+            let textColor = computedStyles.getPropertyValue('--text-main').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#f8fafc' : '#0f172a');
+            let primaryColor = computedStyles.getPropertyValue('--primary').trim() || '#8b5cf6';
+
+            // ⚙️ RENDER BUG FIX: Position fixed keeps it in viewport for html2canvas
             const offscreen = document.createElement('div');
-            offscreen.style.position = 'absolute';
-            offscreen.style.left = '-9999px';
+            offscreen.style.position = 'fixed';
+            offscreen.style.top = '0';
+            offscreen.style.left = '0';
             offscreen.style.width = '700px'; 
+            offscreen.style.zIndex = '-9999'; // Hides it behind everything
+            
+            // Applies dynamic colors to the paper
             offscreen.innerHTML = `
-                <div class="digital-paper" style="background-color:#fdfbf7; background-image:repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px); line-height:30px; padding:40px 30px 40px 70px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:#1e3a8a; white-space:pre-wrap; display:flex; flex-direction:column; align-items:flex-start;">
-                    <div style="position:absolute; top:0; bottom:0; left:45px; width:2px; background:#fca5a5;"></div>
+                <div class="digital-paper" style="background-color:${bgColor}; line-height:30px; padding:40px 30px 40px 40px; position:relative; font-family:'Kalam', cursive; font-size:20px; color:${textColor}; white-space:pre-wrap; display:flex; flex-direction:column; align-items:flex-start; border: 4px solid ${primaryColor}; border-radius: 15px;">
                     ${cleanSol.replace(/\n/g, '<br>')}
                 </div>
             `;
@@ -683,10 +692,15 @@ EXPLANATION-
             if (window.MathJax) await MathJax.typesetPromise([offscreen]);
 
             try {
-                const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true });
+                // Snapshot the paper using html2canvas
+                const canvas = await html2canvas(offscreen, { 
+                    scale: 2, 
+                    useCORS: true, 
+                    backgroundColor: bgColor // Force background color
+                });
+                
                 const base64Img = canvas.toDataURL("image/png");
                 
-                // THUMBNAIL UI: Makes the image small in the chat, opens GUI on click
                 const finalImgHtml = `
                     <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
                         <img src="${base64Img}" style="width:140px; height:180px; object-fit:cover; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -704,9 +718,10 @@ EXPLANATION-
                 saveToHistory('math', instruction || "Solve this", finalImgHtml, uiImage, resObj.provider);
                 
             } catch (err) {
-                console.error(err);
+                console.error("Canvas Render Error:", err);
                 updateAiBubble(lId, "❌ Image Generation Failed. Here is the text:\n" + cleanSol, resObj.provider, false);
             } finally {
+                // Clean up the hidden div
                 offscreen.remove();
                 window.toggleChatButton(false);
             }
