@@ -642,28 +642,38 @@ async function executeMathFlow() {
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
     // 🌟 STRICT PARSING PROMPT: Forces AI to split data so we can build UI
+   // 🌟 THE ULTIMATE DETAILED PROMPT (Explanation Lengths + UI Formatting + Math Rules)
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
 1. MODE AWARENESS: ${modeStatus}
-2. MATH SYMBOLS: ALWAYS use 'x' or 'X' for multiplication. Use proper LaTeX. Keep steps simple.
-3. SHAPES & GEOMETRY (CRITICAL): If the question involves geometry, area, or shapes, you MUST generate an <svg> snippet (xmlns="http://www.w3.org/2000/svg"). If sides/angles are given, add text labels inside the SVG. Use 'currentColor' for lines.
-4. OUTPUT FORMAT: You MUST format your response EXACTLY like this template. Do not change the section headers.
+2. PROPER FRACTIONS (CRITICAL): NEVER write fractions side-by-side like 4/2 or a/b. You MUST use proper LaTeX fractions wrapped in block math tags (e.g., $$\\frac{4}{2}$$) so they render vertically. ALWAYS use 'x' for multiplication.
+3. EQUATION LINE BREAKS (CRITICAL): Every single mathematical equation or step MUST be on a completely new line. 
+   - Example format: 
+   Agar hum maan 2 rakhenge toh:<br>$$2 + 3 = 5$$
+4. QUESTION NUMBERS LEFT OF MARGIN: If you are solving multiple questions, you MUST format the question text exactly like this so the number hangs outside the red margin:
+   <div style="position:relative;"><span style="position:absolute; left:-45px; font-weight:bold;">Q1.</span>[Question Text]</div>
+5. SHAPES & GEOMETRY: If asked for a shape, generate an <svg> snippet (xmlns="http://www.w3.org/2000/svg"). Use 'currentColor' for lines.
+6. EXPLANATION LENGTH RULES (CRITICAL):
+   - IF [IMAGE MODE OFF] and it is a SINGLE question: Give a detailed but brief explanation of exactly 7 to 12 lines.
+   - IF [IMAGE MODE OFF] and there are MULTIPLE questions: Give a concise explanation of exactly 5 to 10 lines for EACH question.
+   - IF [IMAGE MODE ON]: Keep the explanation concise and beautifully formatted so it fits inside the generated image without overflowing.
+7. OUTPUT FORMAT: 
 
 COUNT:-
-[Write the number of questions detected. e.g., 1 or 3]
+[Number of questions]
 
 TEXT:-
-[Write exact question]
+[Questions formatted with the margin-hang <div> if multiple]
 SOLUTION:
-[Step-by-step math in HINDI]
+[Step-by-step math with strict line breaks before equations]
 EXPLANATION:
-[Short explanation in HINDI]
+[Explanation following the exact length rules above]
 
 SVG:-
-[Your <svg> code here. Leave completely blank if no shape is needed.]
+[Your <svg> code]
 
 FINAL_ANSWER:-
-[The final numerical answer (e.g. 15 cm, 45 degrees). Leave blank if none.]`;
+[Answer value]`;
     
     let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
     
