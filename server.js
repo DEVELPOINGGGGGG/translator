@@ -5,15 +5,10 @@ const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
 const puppeteer = require('puppeteer'); 
-const express = require('express');
-const cors = require('cors');
 
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first'); 
 
-const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(cors());
 const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
@@ -25,40 +20,38 @@ const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 
 // 🛑 STRICT MASTER WATERFALL HIERARCHY 🛑
 const VISION_PROVIDERS = [
-    { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
 const TEXT_PROVIDERS = [
-    { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 1', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
+    { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
+    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
 
-const SEARCH_PROVIDERS = [
-    { type: 'gemini', id: 'API 1 (3.1 Lite)', key: process.env.GEMINI_API_KEY_1, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 2 (3.1 Lite)', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
-    { type: 'gemini', id: 'API 3 (3.1 Lite)', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 4 (3.5 Pro)', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 5 (3.5 Pro)', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
-    { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
-    { type: 'groq', key: process.env.GROQ_API_KEY }                  
-].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
+const SEARCH_PROVIDERS = [...TEXT_PROVIDERS];
 
 const publicDir = __dirname;
 const contentTypes = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
 
 function sendJson(res, statusCode, payload) { 
-    res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" }); 
+    // Handle CORS explicitly for raw HTTP server
+    res.writeHead(statusCode, { 
+        "Content-Type": "application/json; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+        "Access-Control-Allow-Headers": "Content-Type"
+    }); 
     res.end(JSON.stringify(payload)); 
 }
 
@@ -80,10 +73,10 @@ async function tryProviders(providers, requestFn, override = null) {
     let lastError;
     let targetProviders = [...providers]; 
     
-    if (override) {
+    if (override && override !== "auto") {
         targetProviders.sort((a, b) => {
-            const isA = a.type.toLowerCase() === override.toLowerCase();
-            const isB = b.type.toLowerCase() === override.toLowerCase();
+            const isA = a.type.toLowerCase() === override.toLowerCase() || (a.id && a.id.replace(/\s+/g, '').toLowerCase() === override.replace(/\s+/g, '').toLowerCase());
+            const isB = b.type.toLowerCase() === override.toLowerCase() || (b.id && b.id.replace(/\s+/g, '').toLowerCase() === override.replace(/\s+/g, '').toLowerCase());
             if (isA && !isB) return -1;
             if (!isA && isB) return 1;
             return 0;
@@ -102,7 +95,7 @@ async function tryProviders(providers, requestFn, override = null) {
             return { text: textResult, provider: providerName }; 
         } catch (error) { 
             lastError = error; 
-            console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()} failed. Moving to next... Error: ${error.message}`); 
+            console.log(`⚠️ [Engine Fail] ${p.type.toUpperCase()}${p.id ? ` (${p.id})` : ''} failed. Error: ${error.message}`); 
             await new Promise(resolve => setTimeout(resolve, 800));
         } 
     }
@@ -144,14 +137,11 @@ async function processQueue() {
 
         console.log("[Queue] Submitted. Waiting for image to appear...");
 
-        // 1. Wait for the image tag to exist
         await page.waitForSelector('img[src*="gradio_api/file"]', { timeout: 90000 });
 
-        // 2. 🚀 THE BUFFER: Wait exactly 10 seconds for the image to finish rendering
         console.log("[Queue] Image detected. Waiting 10 seconds for final render...");
         await new Promise(r => setTimeout(r, 10000)); 
 
-        // 3. Grab the source
         const imageSrc = await page.evaluate(() => {
             return document.querySelector('img[src*="gradio_api/file"]').src;
         });
@@ -174,7 +164,6 @@ async function handleHFSearchImage(req, res) {
         const prompt = body.prompt;
         if (!prompt) return sendJson(res, 400, { error: "Prompt is required" });
 
-        // Push to queue and wait for resolution
         new Promise((resolve, reject) => {
             imageQueue.push({ prompt, resolve, reject });
             processQueue();
@@ -187,7 +176,102 @@ async function handleHFSearchImage(req, res) {
 }
 
 // ==========================================
-// TEXT ENDPOINT
+// 🚀 NEW: THE BEAST MODE SMART SEARCH ROUTER
+// ==========================================
+async function handleSmartSearch(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        const userText = body.userPrompt || body.prompt || body.text || "Solve this.";
+        const sysText = (body.systemPrompt || "") + MASTER_RULES;
+        const isCode = body.isCode === true;
+        const imgBase64 = body.imageBase64 || null;
+
+        const providersList = imgBase64 ? VISION_PROVIDERS : TEXT_PROVIDERS;
+
+        let orderedProviders = [];
+        const p1 = providersList.find(p => p.id && p.id.includes('API 1'));
+        const p2 = providersList.find(p => p.id && p.id.includes('API 2'));
+        const p3 = providersList.find(p => p.id && p.id.includes('API 3'));
+        const p4 = providersList.find(p => p.id && p.id.includes('API 4'));
+        const p5 = providersList.find(p => p.id && p.id.includes('API 5'));
+        const pCf = providersList.find(p => p.type === 'cloudflare');
+        const pGroq = providersList.find(p => p.type === 'groq');
+
+        if (isCode) {
+            console.log("🛠️ SMART ROUTER: Code Request Detected. Initiating High-Performance Cascade (5->4->3->2->1->CF->GROQ)");
+            orderedProviders = [p5, p4, p3, p2, p1, pCf, pGroq].filter(Boolean);
+        } else {
+            console.log("📝 SMART ROUTER: Text Request Detected. Initiating Quota-Saver Cascade (2->1->3->4->5->CF->GROQ)");
+            orderedProviders = [p2, p1, p3, p4, p5, pCf, pGroq].filter(Boolean);
+        }
+
+        const resultObj = await tryProviders(orderedProviders, async (p) => {
+            if (imgBase64) {
+                let rawBase64 = imgBase64.includes(',') ? imgBase64.substring(imgBase64.indexOf(',') + 1) : imgBase64;
+                rawBase64 = (rawBase64 || "").replace(/\s+/g, '');
+                let formattedBase64 = `data:image/jpeg;base64,${rawBase64}`;
+
+                if (p.type === 'gemini') {
+                    const payload = { contents: [{ parts: [{ text: userText + MASTER_RULES }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed");
+                    if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
+                    return data.candidates[0].content.parts[0].text;
+                } else if (p.type === 'cloudflare') {
+                    const imageBuffer = Buffer.from(rawBase64, 'base64');
+                    const imageArray = Array.from(imageBuffer);
+                    const cloudflarePrompt = "Do your best to read and solve it. " + userText + MASTER_RULES;
+                    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`, {
+                        method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({ prompt: cloudflarePrompt, image: imageArray })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
+                    return data.result?.response || data.result?.description || "No text detected.";
+                } else {
+                    const ocrResult = await Tesseract.recognize(formattedBase64, 'eng');
+                    const extractedText = ocrResult.data.text || "No legible text found.";
+                    const groqPrompt = `OCR extracted this text:\n"${extractedText}"\n\nUser Question: ${userText}\n${MASTER_RULES}`;
+                    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                        method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: groqPrompt }] })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "Groq (Tesseract) failed");
+                    return data.choices[0].message.content;
+                }
+            } else {
+                if (p.type === 'gemini') {
+                    const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
+                    if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed");
+                    if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
+                    return data.candidates[0].content.parts[0].text;
+                } else if (p.type === 'cloudflare') {
+                    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.1-70b-instruct", messages: [ { role: "system", content: sysText || "You are a helpful assistant." }, { role: "user", content: userText } ] }) });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Text Engine failed");
+                    return data.choices[0].message.content;
+                } else if (p.type === 'groq') {
+                    const messages = []; if (sysText) messages.push({ role: "system", content: sysText }); messages.push({ role: "user", content: userText });
+                    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages }) });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "Groq Text failed");
+                    return data.choices[0].message.content;
+                }
+            }
+        });
+        return sendJson(res, 200, resultObj);
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message || "All fallback routing paths exhausted." });
+    }
+}
+
+// ==========================================
+// LEGACY TEXT ENDPOINT
 // ==========================================
 async function handleGeminiText(req, res) {
     try {
@@ -200,30 +284,21 @@ async function handleGeminiText(req, res) {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ role: "user", parts: [{ text: userText }] }] };
                 if (sysText) payload.systemInstruction = { parts: [{ text: sysText }] };
-                
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Text failed"); 
-                
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
-                if (data.candidates[0].finishReason === 'SAFETY') throw new Error("Gemini blocked the request due to safety filters.");
-                if (!data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0].text) throw new Error("Gemini returned an empty text body.");
-                
                 return data.candidates[0].content.parts[0].text;
-            
             } else if (p.type === 'cloudflare') {
                 const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${p.accountId}/ai/v1/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "@cf/meta/llama-3.1-70b-instruct", messages: [ { role: "system", content: sysText || "You are a helpful assistant." }, { role: "user", content: userText } ] }) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Text Engine failed"); 
-                if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Cloudflare returned invalid format.");
                 return data.choices[0].message.content;
-            
             } else {
                 const messages = []; if (sysText) messages.push({ role: "system", content: sysText }); messages.push({ role: "user", content: userText });
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages }) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Groq Text failed"); 
-                if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Groq returned invalid format.");
                 return data.choices[0].message.content;
             }
         }, override);
@@ -232,7 +307,7 @@ async function handleGeminiText(req, res) {
 }
 
 // ==========================================
-// VISION ENDPOINT
+// LEGACY VISION ENDPOINT
 // ==========================================
 async function handleGeminiVision(req, res) {
     try {
@@ -250,15 +325,11 @@ async function handleGeminiVision(req, res) {
         const resultObj = await tryProviders(VISION_PROVIDERS, async (p) => {
             if (p.type === 'gemini') {
                 const payload = { contents: [{ parts: [{ text: userText + MASTER_RULES }, { inlineData: { mimeType: "image/jpeg", data: rawBase64 } }] }] };
-                
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Vision failed"); 
                 if (!data.candidates || data.candidates.length === 0) throw new Error("Gemini returned no response.");
-                if (data.candidates[0].finishReason === 'SAFETY') throw new Error("Gemini blocked the image due to safety filters.");
-                if (!data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0].text) throw new Error("Gemini returned an empty text body.");
                 return data.candidates[0].content.parts[0].text;
-            
            } else if (p.type === 'cloudflare') {
                 const imageBuffer = Buffer.from(rawBase64, 'base64');
                 const imageArray = Array.from(imageBuffer);
@@ -270,25 +341,16 @@ async function handleGeminiVision(req, res) {
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Vision failed");
                 return data.result?.response || data.result?.description || "No text detected.";
-
             } else {
-                console.log("🔍 Running Tesseract OCR for Groq fallback...");
                 const ocrResult = await Tesseract.recognize(formattedBase64, 'eng');
                 const extractedText = ocrResult.data.text || "No legible text found.";
-                
                 const groqPrompt = `OCR extracted this text:\n"${extractedText}"\n\nUser Question: ${userText}\n${MASTER_RULES}`;
-                
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
-                    method: "POST", 
-                    headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ 
-                        model: "llama-3.3-70b-versatile", 
-                        messages: [{ role: "user", content: groqPrompt }] 
-                    }) 
+                    method: "POST", headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: groqPrompt }] }) 
                 });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Groq (Tesseract) failed"); 
-                if (!data.choices || !data.choices[0] || !data.choices[0].message) throw new Error("Groq returned invalid format.");
                 return data.choices[0].message.content;
             }
         }, override);
@@ -319,7 +381,6 @@ async function handleGroqSearch(req, res) {
                 return data.choices[0].message.content;
             } else if (p.type === 'gemini') {
                 const payload = { systemInstruction: { parts: [{ text: sysText }] }, contents: [{ role: "user", parts: [{ text: userText }] }] };
-                
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 if (!response.ok) throw new Error(data.error?.message || "Gemini Search failed"); 
@@ -410,6 +471,57 @@ async function handleSecureWhatsapp(req, res) {
 }
 
 // ==========================================
+// 🚨 DIRECT FEEDBACK ENDPOINT 🚨
+// ==========================================
+async function handleFeedbackRoute(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        const message = body.message;
+
+        if (!message) {
+            return sendJson(res, 400, { error: "Message payload is empty." });
+        }
+
+        const devNumber = process.env.FEEDBACK_NUMBER;
+        if (!devNumber) {
+            console.error("[Feedback Engine] ERROR: FEEDBACK_NUMBER missing in .env");
+            return sendJson(res, 500, { error: "Feedback destination not configured on server." });
+        }
+
+        const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
+        const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
+
+        if (!idInstance || !apiToken) {
+            console.error("[Feedback Engine] ERROR: Green API credentials missing.");
+            return sendJson(res, 500, { error: "Green API credentials missing on server." });
+        }
+
+        // Clean number (remove non-digits to ensure @c.us works cleanly)
+        const cleanNumber = devNumber.replace(/[^0-9]/g, '');
+        const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
+        
+        const payload = {
+            chatId: `${cleanNumber}@c.us`,
+            message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}`
+        };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        console.log(`[Feedback Engine] Successfully dispatched feedback to Dev: ${cleanNumber}`);
+        return sendJson(res, 200, data);
+
+    } catch (error) {
+        console.error("[Feedback Engine Error]:", error.message);
+        return sendJson(res, 502, { error: "Failed to dispatch feedback." });
+    }
+}
+
+// ==========================================
 // STATIC FILE SERVER
 // ==========================================
 function serveStatic(req, res) {
@@ -421,60 +533,31 @@ function serveStatic(req, res) {
         res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); res.end(data);
     });
 }
-// ==========================================
-// 🚨 DEDICATED FEEDBACK ROUTE (ONLY FOR FEEDBACK)
-// ==========================================
-app.post('/api/feedback', async (req, res) => {
-    const { message } = req.body;
 
-    if (!message) {
-        return sendJson(res, 400, { error: "Message payload is empty." });
-    }
-
-    const devNumber = process.env.FEEDBACK_NUMBER;
-    if (!devNumber) {
-        console.error("[Feedback Engine] ERROR: FEEDBACK_NUMBER missing in .env");
-        return sendJson(res, 500, { error: "Feedback destination not configured." });
-    }
-
-    try {
-        const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
-        const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
-        const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-        
-        const payload = {
-            chatId: `${devNumber.replace(/\D/g, '')}@c.us`,
-            message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}`
-        };
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        console.log(`[Feedback Engine] Successfully dispatched to Dev.`);
-        return sendJson(res, 200, data);
-
-    } catch (error) {
-        console.error("[Feedback Engine Error]:", error.message);
-        return sendJson(res, 502, { error: "Failed to dispatch feedback." });
-    }
-});
 // ==========================================
 // MASTER ROUTER
 // ==========================================
 const server = http.createServer((req, res) => {
+    // Handling Preflight CORS requests
+    if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "OPTIONS, POST, GET",
+            "Access-Control-Allow-Headers": "Content-Type"
+        });
+        return res.end();
+    }
+
     if (req.method === "POST") {
+        if (req.url === "/api/smart-search") return handleSmartSearch(req, res);
         if (req.url === "/api/gemini-text") return handleGeminiText(req, res);
         if (req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
         if (req.url === "/api/groq-search") return handleGroqSearch(req, res);
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
-        if (req.url === "/api/feedback") return handleFeedbackRoute(req, res);
-        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); // ✨ THE HEADLESS BROWSER ENDPOINT ✨
+        if (req.url === "/api/feedback") return handleFeedbackRoute(req, res); // 🚨 FIXED ROUTE MAP 🚨
+        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); 
     }
     
     if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
