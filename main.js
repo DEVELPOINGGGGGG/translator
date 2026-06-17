@@ -618,7 +618,7 @@ window.showGeneratedImageGUI = function(src) {
     setTimeout(() => modal.style.opacity = '1', 10);
 };
 
-// 🧮 FULLY DYNAMIC MATH ENGINE (Image Blindness & <br> Bug Fixed)
+// 🧮 FULLY DYNAMIC MATH ENGINE (Master Tutor Formatting & Pre-Wrap SVG Fix)
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     const instruction = inp.value.trim(); if (!currentMathImage && !instruction) return;
@@ -634,44 +634,43 @@ async function executeMathFlow() {
     let memoryContext = getSessionContext('math');
 
     const modeStatus = window.isImageGenerationMode 
-        ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS]" 
+        ? "[IMAGE MODE ON - SOLVE ALL VISIBLE QUESTIONS]" 
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
-    // 🌟 SUPER STRICT PROMPT: Fixed <br> bug, fixed duplication, forces image reading
-    const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
+    // 🌟 THE MASTER TUTOR PROMPT: Forces exact step-by-step logic, tricks, and clean LaTeX
+    const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI. STRICT RULES:
 
-1. IMAGE AWARENESS (CRITICAL): If the user provided an image, YOU MUST READ THE MATH PROBLEM FROM IT. Do not say "I cannot see the image."
-2. MODE: ${modeStatus}
-3. LINE BREAKS (CRITICAL): DO NOT use HTML tags like <br>. Use standard newlines (\\n\\n) to create space between your steps!
-4. NO DUPLICATION: Do not write the same solution twice.
-5. PROPER FRACTIONS: Use proper LaTeX fractions (e.g., $$\\frac{4}{2}$$). ALWAYS use 'x' for multiplication.
-6. QUESTION LABELS: If solving 2+ questions, format like this: <div style="position:relative;"><span style="position:absolute; left:-45px; font-weight:bold;">Q1.</span>[Question Text]</div>
-7. EXPLANATION LENGTH:
-   - IF [IMAGE MODE OFF] & SINGLE question: 7 to 12 lines.
-   - IF [IMAGE MODE OFF] & MULTIPLE questions: 5 to 10 lines EACH.
-8. SHAPES: Generate <svg> for geometry questions only (include xmlns="http://www.w3.org/2000/svg").
+1. NO HTML TAGS: NEVER use <br>, <div>, or <span>. Use standard double newlines (\\n\\n) to break lines!
+2. MATH FORMATTING: 
+   - Use \\( ... \\) for inline math (e.g. \\(2.5\\%\\)).
+   - Use $$ ... $$ for block/standalone equations.
+   - NEVER put newlines inside your math equations!
+3. TEACHING STYLE (CRITICAL): You MUST format your solutions exactly like this structure:
+   
+   [Brief 1-line summary]
+   
+   **1. [Step 1 Heading]**
+   [Step 1 explanation and math]
+   
+   **2. [Step 2 Heading]**
+   [Step 2 explanation and math]
+   
+   **वैकल्पिक आसान तरीका (Short Trick)**
+   [Provide a quick shortcut or formula to solve it faster]
+   
+   **✅ अंतिम उत्तर**
+   [Final explicit answer sentence]
 
-OUTPUT FORMAT:
-IS_MATH:-
-[YES or NO]
+4. DELIMITERS: You MUST format your response using EXACTLY these hidden delimiters:
 
-COUNT:-
-[Number of questions]
-
-TEXT:-
-[If IS_MATH is NO: Write greeting. If YES: Write Question]
-SOLUTION:
-[If YES: Step-by-step math]
-EXPLANATION:
-[If YES: Explanation]
-
-SVG:-
-[Your <svg> code or blank]
-
-FINAL_ANSWER:-
-[Answer or blank]`;
+||MATH||
+[Your full step-by-step math, following the structure above. NO HTML TAGS.]
+||SVG||
+[Your <svg> code here for geometry ONLY, or leave blank]
+||ANSWER||
+[Final short answer, e.g., 2.5%, or leave blank]`;
     
-    let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Analyze the attached image and solve."}`;
+    let finalPrompt = `${sysPrompt}\n\n${modeStatus}\n\n${memoryContext}User: ${instruction || "Analyze the attached image and solve."}`;
     
     if (!window.isImageGenerationMode) { window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage }; }
 
@@ -679,43 +678,41 @@ FINAL_ANSWER:-
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let rawText = resObj.text;
         
-        let isMath = !rawText.toUpperCase().includes("IS_MATH:- NO") && !rawText.toUpperCase().includes("IS_MATH: NO");
-        let countStr = "1"; let textBlock = rawText; let svgBlock = ""; let finalAnswerBlock = "";
+        let mathBlock = rawText;
+        let svgBlock = "";
+        let finalAnswerBlock = "";
 
-        if (rawText.includes("TEXT:-")) {
-            let parts = rawText.split("TEXT:-");
-            let topPart = parts[0]; let rest = parts[1];
+        if (rawText.includes("||MATH||")) {
+            let parts = rawText.split("||MATH||")[1] || rawText;
+            let svgSplit = parts.split("||SVG||");
+            mathBlock = svgSplit[0].trim();
             
-            if (topPart.includes("COUNT:-")) countStr = topPart.split("COUNT:-")[1].trim();
-            if (rest.includes("SVG:-")) {
-                let textSvgSplit = rest.split("SVG:-");
-                textBlock = textSvgSplit[0].trim();
-                let svgAnswerSplit = textSvgSplit[1].split("FINAL_ANSWER:-");
-                svgBlock = svgAnswerSplit[0].trim();
-                if (svgAnswerSplit.length > 1) finalAnswerBlock = svgAnswerSplit[1].trim();
-            } else { textBlock = rest.trim(); }
+            if (svgSplit.length > 1) {
+                let ansSplit = svgSplit[1].split("||ANSWER||");
+                svgBlock = ansSplit[0].trim();
+                if (ansSplit.length > 1) finalAnswerBlock = ansSplit[1].trim();
+            }
         }
         
-        textBlock = textBlock.replace(/[\*&#_]/g, '').trim();
-        const questionCount = parseInt(countStr) || 1;
+        mathBlock = mathBlock.replace(/[\*&#_]/g, '**').trim(); // Convert markdown bold properly
 
         clearMathImage(); let generatedImgHtml = "";
-        let generateStandaloneShape = (isMath && !window.isImageGenerationMode && svgBlock.length > 10);
+        let generateStandaloneShape = (!window.isImageGenerationMode && svgBlock.length > 10);
 
         let warningText = "";
-        if (generateStandaloneShape && questionCount > 1) {
+        if (generateStandaloneShape && mathBlock.includes("**2.")) {
             generateStandaloneShape = false;
-            warningText = "\n\n<small style='color:#ef4444; font-weight:bold;'>⚠️ Multiple questions detected. Diagram generation disabled.</small>";
+            warningText = "\n\n<small style='color:#ef4444; font-weight:bold;'>⚠️ Multiple questions detected. Diagram disabled.</small>";
         }
 
-        if (isMath && (window.isImageGenerationMode || generateStandaloneShape)) {
+        if (window.isImageGenerationMode || generateStandaloneShape) {
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Visuals...`;
 
-            const computedStyles = getComputedStyle(document.body);
-            let bgColor = computedStyles.getPropertyValue('--bg-surface').trim() || '#ffffff';
-            let textColor = computedStyles.getPropertyValue('--text-main').trim() || '#0f172a';
-            let primaryColor = computedStyles.getPropertyValue('--primary').trim() || '#8b5cf6';
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let bgColor = isDark ? '#0f172a' : '#fdfbf7';
+            let textColor = isDark ? '#f8fafc' : '#0f172a';
+            let primaryColor = isDark ? '#8b5cf6' : '#3b82f6';
 
             const offscreen = document.createElement('div');
             offscreen.style.position = 'fixed'; offscreen.style.top = '0'; offscreen.style.left = '0';
@@ -723,40 +720,45 @@ FINAL_ANSWER:-
 
             if (generateStandaloneShape) {
                 offscreen.innerHTML = `
-                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px;">
+                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px; font-family: sans-serif;">
                         ${svgBlock}
                         ${finalAnswerBlock ? `<div style="margin-top:25px; font-size:26px; font-weight:900; padding:12px 25px; background:rgba(59,130,246,0.1); border-radius:12px; border:2px solid ${primaryColor};">ANSWER = ${finalAnswerBlock}</div>` : ''}
                     </div>`;
             } else if (window.isImageGenerationMode) {
-                let formattedText = textBlock.replace(/\n/g, '<br>');
+                // 🛑 SQUISH FIX & MATH FIX: Used white-space: pre-wrap instead of <br> tags!
                 offscreen.innerHTML = `
-                    <div class="digital-paper" style="background-color:${bgColor}; line-height:35px; padding:40px 30px 40px 60px; position:relative; font-family:'Kalam', cursive; font-size:22px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; word-wrap: break-word;">
-                        <div style="width:100%; display:block;">${formattedText}</div>
+                    <div style="background-color:${bgColor}; line-height:35px; padding:40px; position:relative; font-family:'Kalam', sans-serif; font-size:20px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; white-space: pre-wrap; word-wrap: break-word;">
+                        <div style="width:100%; display:block;">${mathBlock}</div>
                         ${svgBlock ? `<div style="margin-top:30px; display:flex; justify-content:center; width:100%;">${svgBlock}</div>` : ''}
                     </div>`;
             }
             
             document.body.appendChild(offscreen);
-            if (window.MathJax) await MathJax.typesetPromise([offscreen]);
+            
+            // Wait for MathJax to render equations BEFORE taking the screenshot
+            if (window.MathJax) {
+                MathJax.typesetClear([offscreen]);
+                await MathJax.typesetPromise([offscreen]);
+            }
 
             try {
                 const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true, backgroundColor: bgColor, windowWidth: 800 });
                 const base64Img = canvas.toDataURL("image/png");
                 
                 generatedImgHtml = `
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-light);">
-                        <img src="${base64Img}" style="width:100%; max-width:280px; height:auto; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)">
-                        <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px;">🔍 Tap Image to Enlarge</span>
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); width:100%;">
+                        <img src="${base64Img}" style="width:100%; max-width:100%; height:auto; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)">
+                        <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px; white-space:nowrap;">🔍 Tap Image to Enlarge</span>
                     </div>`;
             } catch (err) { console.error("Render Error:", err); } finally { offscreen.remove(); }
         }
 
-        let finalOutputText = textBlock + warningText;
+        let finalOutputText = mathBlock + warningText;
 
-        if (isMath && window.isImageGenerationMode) {
+        if (window.isImageGenerationMode) {
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble && generatedImgHtml) {
-                loadingBubble.querySelector('.bubble').innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ IMAGE MODE</div>${generatedImgHtml}`;
+                loadingBubble.querySelector('.bubble').innerHTML = `<div style="display:flex; justify-content:flex-end; margin-bottom:5px;"><span style="font-size:10px; color:var(--text-muted); font-weight:bold; background:var(--bg-surface); padding:4px 8px; border-radius:8px; white-space:nowrap; border: 1px solid var(--border-light);">✨ IMAGE MODE • ${resObj.provider}</span></div>${generatedImgHtml}`;
             }
             saveToHistory('math', instruction || "Solve this", generatedImgHtml, uiImage, resObj.provider);
         } else {
