@@ -2051,5 +2051,28 @@ window.addEventListener('offline', () => {
 window.addEventListener('online', () => {
     if(typeof showToast === 'function') showToast("✅ Internet restored!");
 });
+// 🛑 MASTER HISTORY ROUTER FIX 🛑
+// Forces Search history to open in search.html and Math in maths.html
+window.restoreSession = function(e, id) {
+    if(e) e.stopPropagation();
+    const item = appHistory.find(i => i.id == id);
+    if(!item) return;
+
+    const currentPath = window.location.pathname.toLowerCase();
+    
+    // If it's a Search item, force it to open in search.html
+    if (item.type === 'search' && !currentPath.includes('search.html')) {
+        window.location.href = 'search.html?restore=' + id;
+        return;
+    }
+    // If it's a Math item, force it to open in maths.html
+    if (item.type === 'math' && !currentPath.includes('maths.html')) {
+        window.location.href = 'maths.html?restore=' + id;
+        return;
+    }
+    
+    // If already on the correct page, trigger the load
+    window.location.href = window.location.pathname + '?restore=' + id;
+};
 // --- GLOBAL EXPORTS ---
 window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest; window.handlePdfUpload = handlePdfUpload; window.clearPdfFile = clearPdfFile;
