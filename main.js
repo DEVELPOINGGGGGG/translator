@@ -309,9 +309,7 @@ function getRetryButtonsHtml(lId) {
     </div>`;
 }
 
-// ⚡ LIVE MATH RENDERER: Fast-forwards equations and converts them instantly while typing!
-// ⚡ LIVE MATH RENDERER: Fast-forwards equations and converts them instantly while typing!
-// 🛑 FIXED: Auto-scrolling disabled
+// ⚡ LIVE MATH RENDERER: Fixed Syntax Error (Removed illegal 'await' from setInterval)
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
     const txtEl = document.getElementById(contentId);
@@ -325,17 +323,15 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     
     let i = 0; 
     let currentHtml = "";
-    let needsMathRender = false; // Flag to instantly trigger MathJax
+    let needsMathRender = false;
 
     window.currentTypingTimer = setInterval(() => {
         if (i < rawText.length) {
             let chunk = "";
             needsMathRender = false;
 
-            // 🛑 SMART PARSER: Fast-forwards HTML and Math equations!
             for (let j = 0; j < charsPerTick && i < rawText.length; j++) {
                 
-                // 1. Fast-forward HTML Tags (Like <b>)
                 if (rawText[i] === '<') {
                     let tagEnd = rawText.indexOf('>', i);
                     if (tagEnd !== -1) {
@@ -343,25 +339,22 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
                         i = tagEnd + 1;
                     } else { chunk += rawText[i]; i++; }
                 } 
-                // 2. Fast-forward Block Math ($$ ... $$)
                 else if (rawText.substring(i, i + 2) === '$$') {
                     let mathEnd = rawText.indexOf('$$', i + 2);
                     if (mathEnd !== -1) {
                         chunk += rawText.substring(i, mathEnd + 2);
                         i = mathEnd + 2;
-                        needsMathRender = true; // Mark that we just dropped a math equation
+                        needsMathRender = true; 
                     } else { chunk += rawText[i]; i++; }
                 }
-                // 3. Fast-forward Inline Math (\( ... \))
                 else if (rawText.substring(i, i + 2) === '\\(') {
                     let mathEnd = rawText.indexOf('\\)', i + 2);
                     if (mathEnd !== -1) {
                         chunk += rawText.substring(i, mathEnd + 2);
                         i = mathEnd + 2;
-                        needsMathRender = true; // Mark that we just dropped a math equation
+                        needsMathRender = true; 
                     } else { chunk += rawText[i]; i++; }
                 } 
-                // 4. Normal character typing
                 else {
                     chunk += rawText[i]; i++;
                 }
@@ -370,24 +363,19 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             currentHtml += chunk;
             txtEl.innerHTML = currentHtml.replace(/\n/g, '<br>');
             
-            // ⚡ THE MAGIC: If a full math block was just injected, render it instantly!
             if (needsMathRender && isMath && window.MathJax) {
                 MathJax.typesetClear([txtEl]);
                 MathJax.typesetPromise([txtEl]).catch(err => console.log(err));
             }
             
-            // 🛑 FIXED: Auto-scroll as it types is removed
-            /* const scrollArea = txtEl.closest('.chat-scroll-area');
-            if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight; */
-            
         } else {
             clearInterval(window.currentTypingTimer);
             window.currentTypingTimer = null;
             
-            // Final safety render when completely done
+            // 🛑 FIX: Removed 'await' so it doesn't crash the JS file!
             if (isMath && window.MathJax) { 
                 MathJax.typesetClear([containerEl]); 
-                await MathJax.typesetPromise([containerEl]); 
+                MathJax.typesetPromise([containerEl]).catch(e => console.log(e)); 
             }
             
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
