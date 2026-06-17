@@ -141,19 +141,6 @@
         }
         .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* AI Thinking Animation */
-        .ai-thinking-pulse { display: flex; align-items: center; gap: 10px; }
-        .pulse-orb { 
-            width: 15px; height: 15px; border-radius: 50%; 
-            background: linear-gradient(135deg, var(--secondary), var(--primary)); 
-            animation: pulseGlow 1.5s infinite; 
-        }
-        @keyframes pulseGlow { 
-            0% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 
-            50% { transform: scale(1.1); box-shadow: 0 0 20px var(--primary); } 
-            100% { transform: scale(0.9); box-shadow: 0 0 5px var(--primary); } 
-        }
-
         /* Mode Selector Badges */
         .mode-toggle-btn { 
             background: var(--input-bg); border: 1px solid var(--border-light); 
@@ -163,9 +150,9 @@
         .mode-toggle-btn:hover { border-color: var(--primary); }
         .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
 
-        /* Markdown Styles */
+        /* 🛑 Markdown Styles (Pink Bold Bug Fixed) 🛑 */
         .markdown-body { line-height: 1.6; }
-        .markdown-body strong { font-weight: 800; color: var(--primary); }
+        .markdown-body strong { font-weight: 800; color: inherit; } /* Uses Black/White depending on theme */
         .markdown-body p { margin-bottom: 10px; }
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 15px 0; }
         .markdown-body th, .markdown-body td { border: 1px solid var(--border-light); padding: 8px; }
@@ -382,9 +369,9 @@
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
       <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
-      <button onclick="window.location.href='maths.html'" style="border-left: 4px solid #3b82f6; font-weight: bold;">🧮 Math Solver</button>
+      <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
       <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-      <button onclick="window.location.href='search.html'" class="active">🔎 Deep Search</button>
+      <button onclick="window.location.href='search.html'" class="active" style="border-left: 4px solid #3b82f6; font-weight: bold;">🔎 Deep Search</button>
       <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
       <button onclick="window.location.href='translator.html'">🌍 Translator</button>
       <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
@@ -432,11 +419,13 @@
             <input type="file" id="pdfUploadInput" accept="application/pdf" style="display:none;" onchange="handlePdfUpload(event)">
             <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
             
-            <textarea id="searchInput" placeholder="Ask anything, solve maths, write HTML code..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; font-family: inherit; line-height: 1.5;"></textarea>
+            <textarea id="searchInput" placeholder="Ask anything, write code, solve logic..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; font-family: inherit; line-height: 1.5;"></textarea>
             
             <button class="chat-action-btn send" id="sendSearchBtn" onclick="runMainPipeline()" style="width:50px; height:50px; font-size:22px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">🚀</button>
         </div>
     </div>
+
+    <script src="ui-controls.js"></script>
 
     <script>
         /**
@@ -452,6 +441,14 @@
         let imageGenerationModeActive = false; 
         let currentFullscreenBase64 = "";
         let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
+
+        // 🛑 FIXED: THE PULSING ANIMATION (MR. ANIMATION)
+        const pulsingAnimationHtml = `
+            <div style="display:flex; gap:6px; padding:5px;">
+                <div style="width:8px; height:8px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div>
+                <div style="width:8px; height:8px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div>
+                <div style="width:8px; height:8px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div>
+            </div>`;
 
         // --------------------------------------------
         // MARKDOWN & CODE BOX RENDERING SYSTEM
@@ -564,7 +561,7 @@
         function disableImageMode() {
             imageGenerationModeActive = false;
             document.getElementById("floatingModeChip").style.display = "none";
-            document.getElementById("searchInput").placeholder = "Ask anything, solve maths, write HTML code...";
+            document.getElementById("searchInput").placeholder = "Ask anything, write code, solve logic...";
         }
 
         function saveHistorySafe() {
@@ -574,24 +571,81 @@
             try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) {}
         }
 
-        // --- SESSION RESTORATION LOGIC (FLAWLESS MEMORY) ---
+        // --- 🛑 FIXED SESSION RESTORATION LOGIC (FLAWLESS MEMORY) 🛑 ---
         try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
         try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
+
+        // This intercepts main.js's restoreSession specifically for Search so it renders Markdown perfectly.
+        window.originalRestoreSession = window.restoreSession;
+        window.restoreSession = function(e, id) {
+            if(e) e.stopPropagation(); 
+            const item = appHistory.find(i => i.id == id); 
+            if(!item) return; 
+
+            // If it's NOT a search history, let main.js handle it
+            if (item.type !== 'search') {
+                if (window.originalRestoreSession) window.originalRestoreSession(e, id);
+                return;
+            }
+
+            // It IS a search history - Render it perfectly with Markdown!
+            currentSessionId = item.id;
+            const container = document.getElementById("searchChatHistory");
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
+            
+            // Populating memory so AI doesn't forget!
+            sessionMessages = interactionsToRestore.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
+            
+            interactionsToRestore.forEach((inter, idx) => {
+                // Render User bubble
+                let userImgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" onclick="openFullscreenImage(this.src)" style="max-height:80px; margin-bottom:5px; border-radius:8px;">` : '';
+                container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgHtml}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
+                
+                // Render AI bubble with Markdown
+                let lId = "search_restored_" + Date.now() + "_" + idx;
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="chat-msg chat-ai" id="${lId}">
+                        <div class="bubble">
+                            <div class="ai-signature">✨ BY ${inter.provider || "AI"}</div>
+                            <div id="text_${lId}" class="markdown-body"></div>
+                            <div class="action-row">
+                                <button class="action-btn" onclick="startTts('text_${lId}')" title="Read Aloud">🔊 Listen</button>
+                                <button class="action-btn" onclick="copyResponseToClipboard('text_${lId}')">📋 Copy</button>
+                            </div>
+                        </div>
+                    </div>`);
+                
+                // Parse markdown!
+                let cleanAns = inter.answer;
+                if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
+                    cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
+                }
+                let finalHtml = marked.parse(cleanAns);
+                document.getElementById(`text_${lId}`).innerHTML = finalHtml;
+                if (window.MathJax) MathJax.typesetPromise([document.getElementById(lId)]);
+            });
+            
+            container.scrollTop = container.scrollHeight;
+            showToast("🔄 Deep Search Session Restored!");
+        };
 
         document.addEventListener("DOMContentLoaded", () => {
             const restoreId = new URLSearchParams(window.location.search).get('restore');
             if (restoreId) {
-                setTimeout(() => {
-                    let item = appHistory.find(i => i.id == restoreId);
-                    if (item && item.interactions) {
-                        // Rebuild entire session memory array flawlessly
-                        sessionMessages = item.interactions.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
-                        showToast("🧠 Session memory fully restored.");
-                    }
-                }, 500);
+                currentSessionId = restoreId;
+                // main.js will call window.restoreSession automatically.
             } else if (sessionMessages.length === 0) {
                 showWelcomeMessage();
             }
+            
+            // Attach enter key listener to input
+            document.getElementById("searchInput").addEventListener("keypress", (e) => {
+                if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runMainPipeline(); }
+            });
         });
 
         function showWelcomeMessage() {
@@ -600,16 +654,14 @@
                 <div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;">
                     <div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));">
                         <div class="ai-signature">✨ DEEP AI PRO SYSTEM</div>
-                        <b style="color:var(--primary); font-size:18px;">👋 Memory System & Routing Restored.</b><br><br>
+                        <b style="color:var(--primary); font-size:18px;">👋 Search & Code System Online.</b><br><br>
                         <div style="font-size:14px; line-height: 1.6;">
-                        • <b>No Screen Hijacking:</b> Auto-scrolling during AI generation has been completely disabled. You are in full control.<br>
-                        • <b>True Fallback Reporting:</b> If API 5 fails, the UI will honestly tell you exactly which API (e.g., API 1) handled the request.<br>
-                        • <b>Smart Code Isolation:</b> When asking for code, the system bypasses Hindi translation and writes unified, unbreakable code files.<br>
-                        • <b>True Session Memory:</b> AI will now perfectly remember every message in your current chat array.<br>
+                        • <b>Beast Mode Coding:</b> Ask for code, and the AI routes to the smartest API to deliver a unified, unbreakable file.<br>
+                        • <b>Flawless Memory:</b> I remember our entire conversation history perfectly.<br>
+                        • <b>Markdown Engine:</b> Bold text, tables, and code snippets render flawlessly in Black/White depending on your theme.<br>
                         </div>
                     </div>
                 </div>`);
-            // Only scroll ONCE on load.
             safeScroll();
         }
 
@@ -630,18 +682,16 @@
             document.getElementById('feedbackOverlay').style.display = 'flex';
         }
 
+        // 🛑 FIXED: Hitting the correct /api/feedback route 🛑
         async function submitFeedbackApi() {
             const userChanges = document.getElementById('feedbackText').value.trim();
             if(!userChanges) return showToast("⚠️ Please type your feedback first.");
 
             try {
                 showToast("⏳ Delivering to dev server...");
-                const payload = { 
-                    number: "USE_ENV_FEEDBACK", 
-                    message: `SYSTEM FEEDBACK REPORT:\n\nUser Notes:\n${userChanges}` 
-                };
+                const payload = { message: userChanges };
 
-                const res = await fetch("/api/secure-whatsapp", {
+                const res = await fetch("/api/feedback", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
@@ -687,7 +737,6 @@
             }, 2500); 
         }
         
-        // This is ONLY called when the user hits Send. NEVER during AI generation.
         function safeScroll() { 
             const c = document.getElementById("searchChatHistory"); 
             c.scrollTop = c.scrollHeight; 
@@ -713,7 +762,7 @@
                 uploadedImages = []; 
                 updateImageUI(); 
                 clearPdfFile(); 
-                currentSessionId = Date.now(); // Reset session ID
+                currentSessionId = Date.now(); 
                 showWelcomeMessage(); 
             } 
         }
@@ -731,12 +780,9 @@
             targetElement.innerHTML = "";
             let nodeIndex = 0;
 
-            // Strict Speed Mathematics:
-            // Short response (<500): ~7.5 seconds
-            // Long response (>500): ~22.5 seconds
             let totalLength = tempDiv.innerText.length || 1;
             let targetDuration = totalLength < 500 ? 7500 : 22500; 
-            let intervalTime = 30; // Smooth frame rate
+            let intervalTime = 30; 
             let totalTicks = targetDuration / intervalTime;
             let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
 
@@ -758,13 +804,11 @@
                         } else {
                             span.textContent += text.substring(charIndex, charIndex + textChunks);
                             charIndex += textChunks;
-                            // NO SAFESCROLL HERE! Screen stays perfectly still.
                         }
                     }, intervalTime);
                 } else {
                     targetElement.appendChild(currentNode);
                     nodeIndex++;
-                    // NO SAFESCROLL HERE! 
                     typeNextNode();
                 }
             }
@@ -888,12 +932,12 @@
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
                         <div class="ai-signature">✨ BY FLUX ENGINE (RENDER API)</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Painting your request in high definition...</span></div>
+                        ${pulsingAnimationHtml}
                     </div>
                 </div>`);
             
             document.getElementById("searchInput").value = "";
-            safeScroll(); // Scroll ONLY once when user hits send
+            safeScroll(); 
 
             try {
                 const response = await fetch("/api/hf-search-image", { 
@@ -924,12 +968,10 @@
         async function executeWithSmartFallbackLoop(endpoint, requestBody, initialTier, isCodingRequest) {
             let tierExecutionSequence = [];
             
-            // If user explicitly requests a specific tier, try it first
             if (initialTier !== "auto") {
                 tierExecutionSequence.push(initialTier);
             }
 
-            // Dynamic Intent Router
             if (isCodingRequest) {
                 console.log("🛠️ Code Request: Routing to High-Performance APIs (5, 4, 3)...");
                 tierExecutionSequence.push("api_5", "api_4", "api_3", "api_2", "api_1");
@@ -938,7 +980,6 @@
                 tierExecutionSequence.push("api_2", "api_1", "api_3", "api_4", "api_5");
             }
 
-            // Remove duplicates
             tierExecutionSequence = [...new Set(tierExecutionSequence)];
 
             for (let i = 0; i < tierExecutionSequence.length; i++) {
@@ -946,11 +987,10 @@
                 console.log(`📡 Attempting pipeline processing on channel: ${activeTier}`);
                 
                 try {
-                    // Inject active tier payload override so backend knows exactly what to hit
                     requestBody.providerOverride = activeTier;
                     
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                     const response = await fetch(endpoint, { 
                         method: "POST", 
@@ -964,7 +1004,6 @@
                     if (response.ok) {
                         const parsedData = await response.json();
                         if(parsedData && parsedData.text) {
-                            // CRITICAL FIX: Explicitly report which activeTier actually succeeded
                             parsedData.provider = activeTier;
                             return parsedData;
                         }
@@ -1007,7 +1046,6 @@
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
             inp.value = ""; 
             
-            // Scroll ONCE when user submits prompt. Never during generation.
             safeScroll();
 
             // NLP Scanner
@@ -1025,7 +1063,7 @@
                 <div class="chat-msg chat-ai" id="${loadId}">
                     <div class="bubble">
                         <div class="ai-signature">✨ AI SMART ROUTER INITIALIZING</div>
-                        <div class="ai-thinking-pulse"><div class="pulse-orb"></div><span style="color:var(--text-muted); font-size:13px; font-weight:bold;">Analyzing intent & engaging optimal pipelines...</span></div>
+                        ${pulsingAnimationHtml}
                     </div>
                 </div>`);
             safeScroll();
@@ -1033,16 +1071,14 @@
             // ============================================
             // 🚨 TRUE MEMORY & SMART CODE ISOLATOR 🚨
             // ============================================
-            
-            // Inject complete, unfragmented chat history
             let historyLog = sessionMessages.length > 0 
                 ? "PAST CONVERSATION MEMORY:\n" + sessionMessages.map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n---\n') + "\n\n" 
                 : "";
 
-            // Dynamic Instruction Switcher
+            // 🛑 FIXED: BEAST CODE GENERATION PROMPT 🛑
             let promptDirectives = "";
             if (isCodingRequest) {
-                promptDirectives = `CRITICAL CODING INSTRUCTION: You are generating code. You MUST provide the code as a SINGLE, complete, fully runnable file. DO NOT break it into parts. DO NOT output conversational filler like "Here is your code" or "Yah ek udaharan hai". ALL explanations and comments MUST be in English. NO HINDI allowed when coding. Tone: ${toneSelect}.`;
+                promptDirectives = `CRITICAL CODING INSTRUCTION: You are generating BEAST LEVEL code. Write highly optimized, modern, and production-ready code. Provide the code as a SINGLE, complete, fully runnable file whenever possible. DO NOT output conversational filler. ALL explanations and comments MUST be in English. NO HINDI allowed when coding. Tone: ${toneSelect}.`;
             } else {
                 promptDirectives = `CRITICAL LANGUAGE INSTRUCTION: You MUST write your ENTIRE response STRICTLY in ${selectedLang}. Do not drift into English. BRAND/TERM FORMATTING: If you use any brand names or technical terms, you MUST write the English word first, followed immediately by its ${selectedLang} translation in brackets. Example: Apple(ऐप्पल). Tone: ${toneSelect}.`;
             }
@@ -1057,7 +1093,6 @@
                 
                 const data = await executeWithSmartFallbackLoop(endpoint, basePayload, selectedTierOnStartup, isCodingRequest);
                 
-                // CRITICAL FIX: Transparently report the exact API that succeeded
                 let activeResolvedChannel = data.provider ? data.provider.toUpperCase().replace('_', ' ') : "SYSTEM ROUTER";
                 if (selectedTierOnStartup !== "auto" && activeResolvedChannel !== selectedTierOnStartup.toUpperCase().replace('_', ' ')) {
                     activeResolvedChannel += " (FALLBACK)";
@@ -1074,9 +1109,9 @@
                 
                 let existingSession = appHistory.find(s => s.id == currentSessionId);
                 if (existingSession) {
-                    existingSession.interactions.push({ question: q, answer: cleanAns, image: currentImagesToSave[0] });
+                    existingSession.interactions.push({ question: q, answer: cleanAns, image: currentImagesToSave[0], provider: activeResolvedChannel });
                 } else {
-                    appHistory.unshift({ id: currentSessionId, type: 'search', title: q.substring(0, 20), interactions: [{ question: q, answer: cleanAns, image: currentImagesToSave[0] }] });
+                    appHistory.unshift({ id: currentSessionId, type: 'search', title: q.substring(0, 20), interactions: [{ question: q, answer: cleanAns, image: currentImagesToSave[0], provider: activeResolvedChannel }] });
                 }
                 saveHistorySafe();
 
@@ -1105,9 +1140,9 @@
                 document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
                 uploadedImages = []; 
                 updateImageUI(); 
-                // Do NOT call safeScroll() here. Let user stay where they are reading.
             }
         }
     </script>
 </body>
 </html>
+        
