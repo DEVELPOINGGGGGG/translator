@@ -24,7 +24,7 @@ const VISION_PROVIDERS = [
     { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.1-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
@@ -34,7 +34,7 @@ const TEXT_PROVIDERS = [
     { type: 'gemini', id: 'API 2', key: process.env.GEMINI_API_KEY_2, modelId: 'gemini-3.1-flash-lite' },
     { type: 'gemini', id: 'API 3', key: process.env.GEMINI_API_KEY_3, modelId: 'gemini-3.5-flash' },
     { type: 'gemini', id: 'API 4', key: process.env.GEMINI_API_KEY_4, modelId: 'gemini-3.5-flash' },
-    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.5-pro' },
+    { type: 'gemini', id: 'API 5', key: process.env.GEMINI_API_KEY_5, modelId: 'gemini-3.1-pro' },
     { type: 'cloudflare', key: cfApiKey, accountId: cfAccountId }, 
     { type: 'groq', key: process.env.GROQ_API_KEY }                  
 ].filter(p => p.type === 'cloudflare' ? (p.key && p.accountId) : p.key);
