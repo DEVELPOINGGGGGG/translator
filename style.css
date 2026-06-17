@@ -326,31 +326,31 @@ body.dark-mode .yt-result-card p {
     color: #ffffff !important;
 }
 /* =======================================================
-   MASTER UI FIXES: Left Scrollbar, No Gaps, Dark Mode Bold 
+   MASTER UI FIXES: Scrollbar Back to Right, No Double Scroll
 ======================================================= */
 
-/* 1. Nuke the double scrollbar - body is locked, only chat scrolls */
+/* 🛑 Nuke double scrollbar: body is locked, only chat area scrolls */
 body {
     overflow: hidden !important; 
 }
 
-/* 2. Left-Side Scrollbar & Gap Removal */
+/* 🛑 Scrollbar Back to Right & Gap Removal */
 .chat-scroll-area {
     overflow-y: auto !important;
-    direction: rtl; /* This forces the scrollbar to the LEFT side */
-    padding-left: 10px; /* Adjust padding to fill space perfectly */
+    padding-left: 0;
     padding-right: 0;
     width: 100%;
     height: 100%;
     margin: 0;
+    /* 🛑 Removed left-side hacks (direction: rtl; is GONE) */
 }
 
-/* Ensure text inside the chat area still reads normally (Left-to-Right) */
+/* Ensure text inside the chat area reads normally (L-to-R) */
 .chat-scroll-area > * {
-    direction: ltr; 
+    /* 🛑 Removed left-side text hacks (direction: ltr; is GONE) */
 }
 
-/* 3. Dark Mode Smart Bold Rule */
+/* Dark Mode Smart Bold Rule (Kept) */
 body.dark-mode b, 
 body.dark-mode strong,
 .dark-mode .chat-msg b,
@@ -366,7 +366,7 @@ body:not(.dark-mode) strong,
     font-weight: 800 !important; /* Keeps it strictly bold in white theme */
 }
 
-/* 4. Fix floating badge overlaps on AI chat bubbles */
+/* Fix floating badge overlaps on AI chat bubbles (Kept) */
 .chat-msg.chat-ai {
     position: relative; /* Allows absolute positioned elements inside to stay contained */
     margin-top: 15px; 
