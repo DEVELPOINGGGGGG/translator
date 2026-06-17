@@ -14,172 +14,55 @@
     
     <script>
         MathJax = { 
-            options: {
-                ignoreHtmlClass: 'code-box', 
-                processHtmlClass: 'markdown-body'
-            },
-            tex: { 
-                inlineMath: [['$', '$'], ['\\(', '\\)']], 
-                displayMath: [['$$', '$$'], ['\\[', '\\]']] 
-            },
-            svg: { fontCache: 'global' },
-            chtml: { displayAlign: 'left' }
+            options: { ignoreHtmlClass: 'code-box', processHtmlClass: 'markdown-body' },
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            svg: { fontCache: 'global' }, chtml: { displayAlign: 'left' }
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* Base Variables & Reset */
-        :root { 
-            --app-font-scale: 1; 
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --transition-speed: 0.3s;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; padding: 0;
-            overflow-x: hidden;
-        }
+        :root { --app-font-scale: 1; --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.1); --transition-speed: 0.3s; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { font-size: calc(15px * var(--app-font-scale)) !important; transition: font-size 0.2s ease; }
+        .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
+        mjx-container[jax="CHTML"][display="true"] { overflow-x: auto !important; overflow-y: hidden !important; max-width: 100%; padding-bottom: 5px; scrollbar-width: thin; }
 
-        body, .chat-msg, .bubble, .markdown-body, .markdown-body p, .markdown-body li { 
-            font-size: calc(15px * var(--app-font-scale)) !important; 
-            transition: font-size 0.2s ease;
-        }
-        
-        .chat-time { 
-            font-size: 10px; 
-            color: var(--text-muted); 
-            margin-top: 5px; 
-            text-align: right; 
-            opacity: 0.7; 
-        }
-
-        /* Scrollable Math Equations */
-        mjx-container[jax="CHTML"][display="true"] {
-            overflow-x: auto !important;
-            overflow-y: hidden !important;
-            max-width: 100%;
-            padding-bottom: 5px;
-            scrollbar-width: thin;
-        }
-
-        /* TRUE FOCUS MODE */
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
-        body.focus-mode #searchChatHistory { 
-            padding-top: 20px !important;
-            padding-bottom: 120px !important; 
-            margin-top: 0 !important; 
-            height: 100vh; 
-            overflow-y: auto; 
-            overflow-x: hidden;
-            word-wrap: break-word;
-        }
+        body.focus-mode #searchChatHistory { padding-top: 20px !important; padding-bottom: 120px !important; margin-top: 0 !important; height: 100vh; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; }
         
-        #exitFocusBtn { 
-            display: none; 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            z-index: 100000; 
-            background: #ef4444; 
-            color: white; 
-            border: 2px solid white; 
-            border-radius: 50%; 
-            width: 45px; 
-            height: 45px; 
-            font-weight: bold; 
-            font-size: 18px; 
-            cursor: pointer; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
-            justify-content: center; 
-            align-items: center; 
-            transition: transform 0.2s ease;
-        }
+        #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); justify-content: center; align-items: center; transition: transform 0.2s ease; }
         #exitFocusBtn:hover { transform: scale(1.1); }
         body.focus-mode #exitFocusBtn { display: flex; }
 
-        /* Global Settings Modal */
-        #settingsModal { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.6); 
-            backdrop-filter: blur(5px); 
-            z-index: 100000; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        .settings-content { 
-            background: var(--bg-surface); 
-            border: 2px solid var(--primary); 
-            border-radius: 20px; 
-            padding: 25px; 
-            width: 90%; max-width: 420px; 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5); 
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
+        #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
+        .settings-content { background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 20px; padding: 25px; width: 90%; max-width: 420px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
-        .setting-row { 
-            display: flex; align-items: center; justify-content: space-between; 
-            margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; 
-        }
-        .setting-select, .setting-input { 
-            background: var(--input-bg); border: 1px solid var(--border-light); 
-            color: var(--text-main); padding: 8px; border-radius: 8px; 
-            outline: none; font-size: 13px; width: 140px; 
-        }
-        
+        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; }
+        .setting-select, .setting-input { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; width: 140px; }
         .font-btns { display: flex; gap: 5px; }
-        .font-btn { 
-            background: var(--input-bg); border: 1px solid var(--border-light); 
-            color: var(--text-main); padding: 6px; border-radius: 6px; 
-            font-size: 11px; cursor: pointer; transition: 0.2s;
-        }
+        .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: 0.2s; }
         .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Mode Selector Badges */
-        .mode-toggle-btn { 
-            background: var(--input-bg); border: 1px solid var(--border-light); 
-            color: var(--text-main); padding: 5px 12px; border-radius: 12px; 
-            font-size: 11px; font-weight: bold; cursor: pointer; transition: var(--transition-speed);
-        }
+        .mode-toggle-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; transition: var(--transition-speed); }
         .mode-toggle-btn:hover { border-color: var(--primary); }
         .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
 
-        /* 🛑 Markdown Styles (Pink Bold Bug Fixed) 🛑 */
         .markdown-body { line-height: 1.6; }
-        .markdown-body strong { font-weight: 800; color: inherit; } /* Uses Black/White depending on theme */
+        .markdown-body strong { font-weight: 800; color: inherit; } 
         .markdown-body p { margin-bottom: 10px; }
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 15px 0; }
         .markdown-body th, .markdown-body td { border: 1px solid var(--border-light); padding: 8px; }
         .markdown-body ul, .markdown-body ol { padding-left: 20px; }
         
-        .ai-signature { 
-            font-size: 10px; color: var(--primary); text-transform: uppercase; 
-            font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; 
-            opacity: 0.9; display: flex; align-items: center; gap: 5px; 
-        }
+        .ai-signature { font-size: 10px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
 
-        /* THEME FLIPPING CODE BOX */
-        .code-box { 
-            background:#0d1117; color:#c9d1d9; border-radius:8px; 
-            margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; 
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-        }
-        .code-header { 
-            background:#161b22; padding:8px 15px; display:flex; 
-            justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; 
-        }
+        .code-box { background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; }
         .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; line-height: 1.5; }
-        .copy-btn { 
-            background:#21262d; border:1px solid #30363d; color:#c9d1d9; 
-            padding:5px 12px; border-radius:6px; cursor:pointer; 
-            font-weight:bold; font-size:11px; transition: 0.2s; 
-        }
+        .copy-btn { background:#21262d; border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px; transition: 0.2s; }
         .copy-btn:hover { background: #30363d; transform: translateY(-1px); }
         .play-btn { background:#10b981 !important; color:white !important; border-color:#059669 !important; }
 
@@ -190,69 +73,33 @@
             .copy-btn:hover { background: #f3f4f6; }
         }
 
-        /* COMPACT OPTIMIZED IMAGE RENDERING CONTAINER */
-        .ai-generated-img-container {
-            max-width: 320px; 
-            width: 100%;
-            border-radius: 12px; 
-            overflow: hidden; 
-            margin-top: 10px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            border: 2px solid var(--border-light);
-            transition: transform 0.2s ease;
-        }
+        .ai-generated-img-container { max-width: 320px; width: 100%; border-radius: 12px; overflow: hidden; margin-top: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border: 2px solid var(--border-light); transition: transform 0.2s ease; }
         .ai-generated-img-container:hover { transform: scale(1.02); }
         .ai-generated-img-container img { width: 100%; height: auto; display: block; cursor: pointer; }
 
-        /* User Uploaded Chips */
         .uploaded-thumbnail-frame { position: relative; flex-shrink: 0; cursor: pointer; transition: opacity 0.2s; }
         .uploaded-thumbnail-frame:hover { opacity: 0.85; }
 
-        /* Action Row */
-        .action-row { 
-            margin-top:15px; border-top:1px solid var(--border-light); 
-            padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; 
-        }
-        .action-btn { 
-            background:var(--input-bg); border:1px solid var(--border-light); 
-            color:var(--text-main); border-radius:8px; padding:6px 12px; 
-            font-size:12px; cursor:pointer; font-weight:bold; 
-            display:flex; align-items:center; gap:4px; transition: 0.2s;
-        }
+        .action-row { margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; }
+        .action-btn { background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:4px; transition: 0.2s; }
         .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
-        /* GLOBAL TOP-CORNER FEEDBACK SYSTEM */
         .global-options-btn { background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; padding: 0 5px; transition: color 0.2s; }
         .global-options-btn:hover { color: var(--primary); }
-        
-        #globalOptionsMenu {
-            display: none; position: absolute; top: 60px; right: 15px; 
-            background: var(--bg-surface); border: 1px solid var(--border-light); 
-            border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            z-index: 99999; flex-direction: column; min-width: 140px; overflow: hidden;
-            animation: slideDown 0.2s ease;
-        }
+        #globalOptionsMenu { display: none; position: absolute; top: 60px; right: 15px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 99999; flex-direction: column; min-width: 140px; overflow: hidden; animation: slideDown 0.2s ease; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        #globalOptionsMenu button { 
-            background: transparent; border: none; color: var(--text-main); 
-            padding: 12px 15px; font-size: 13px; font-weight: bold; 
-            text-align: left; cursor: pointer; width: 100%; transition: 0.2s;
-        }
+        #globalOptionsMenu button { background: transparent; border: none; color: var(--text-main); padding: 12px 15px; font-size: 13px; font-weight: bold; text-align: left; cursor: pointer; width: 100%; transition: 0.2s; }
         #globalOptionsMenu button:hover { background: var(--input-bg); color: var(--primary); }
 
-        /* Compact Feedback Overlay */
         .feedback-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index:100005; justify-content:center; align-items:center; }
         .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:20px; width:90%; max-width:320px; box-shadow:0 15px 40px rgba(0,0,0,0.6); animation: popIn 0.2s ease; }
 
-        /* SANDBOXED HTML PREVIEW MODAL */
         #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100005; flex-direction:column; }
         .preview-header { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; border-bottom: 1px solid #30363d; }
         .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
         .preview-close:hover { background:#dc2626; transform: translateY(-1px); }
         #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; } 
 
-        /* Floating Image Chip */
         #floatingModeChip { display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); }
         #floatingModeChip button { background:rgba(255,255,255,0.2); border:none; color:white; font-weight:bold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:10px; }
         #floatingModeChip button:hover { background:rgba(255,255,255,0.4); }
@@ -582,13 +429,11 @@
             const item = appHistory.find(i => i.id == id); 
             if(!item) return; 
 
-            // If it's NOT a search history, let main.js handle it
             if (item.type !== 'search') {
                 if (window.originalRestoreSession) window.originalRestoreSession(e, id);
                 return;
             }
 
-            // It IS a search history - Render it perfectly with Markdown!
             currentSessionId = item.id;
             const container = document.getElementById("searchChatHistory");
             if (!container) return;
@@ -601,11 +446,9 @@
             sessionMessages = interactionsToRestore.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
             
             interactionsToRestore.forEach((inter, idx) => {
-                // Render User bubble
                 let userImgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" onclick="openFullscreenImage(this.src)" style="max-height:80px; margin-bottom:5px; border-radius:8px;">` : '';
                 container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgHtml}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
                 
-                // Render AI bubble with Markdown
                 let lId = "search_restored_" + Date.now() + "_" + idx;
                 container.insertAdjacentHTML('beforeend', `
                     <div class="chat-msg chat-ai" id="${lId}">
@@ -619,7 +462,6 @@
                         </div>
                     </div>`);
                 
-                // Parse markdown!
                 let cleanAns = inter.answer;
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
                     cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
@@ -637,12 +479,10 @@
             const restoreId = new URLSearchParams(window.location.search).get('restore');
             if (restoreId) {
                 currentSessionId = restoreId;
-                // main.js will call window.restoreSession automatically.
             } else if (sessionMessages.length === 0) {
                 showWelcomeMessage();
             }
             
-            // Attach enter key listener to input
             document.getElementById("searchInput").addEventListener("keypress", (e) => {
                 if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runMainPipeline(); }
             });
@@ -963,61 +803,8 @@
         }
 
         // --------------------------------------------
-        // EXECUTIVE MULTI-TIER API FALLBACK ROUTER
-        // --------------------------------------------
-        async function executeWithSmartFallbackLoop(endpoint, requestBody, initialTier, isCodingRequest) {
-            let tierExecutionSequence = [];
-            
-            if (initialTier !== "auto") {
-                tierExecutionSequence.push(initialTier);
-            }
-
-            if (isCodingRequest) {
-                console.log("🛠️ Code Request: Routing to High-Performance APIs (5, 4, 3)...");
-                tierExecutionSequence.push("api_5", "api_4", "api_3", "api_2", "api_1");
-            } else {
-                console.log("📝 Standard Request: Routing to Quota-Saver APIs (2, 1)...");
-                tierExecutionSequence.push("api_2", "api_1", "api_3", "api_4", "api_5");
-            }
-
-            tierExecutionSequence = [...new Set(tierExecutionSequence)];
-
-            for (let i = 0; i < tierExecutionSequence.length; i++) {
-                let activeTier = tierExecutionSequence[i];
-                console.log(`📡 Attempting pipeline processing on channel: ${activeTier}`);
-                
-                try {
-                    requestBody.providerOverride = activeTier;
-                    
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-                    const response = await fetch(endpoint, { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" }, 
-                        body: JSON.stringify(requestBody),
-                        signal: controller.signal
-                    });
-                    
-                    clearTimeout(timeoutId);
-
-                    if (response.ok) {
-                        const parsedData = await response.json();
-                        if(parsedData && parsedData.text) {
-                            parsedData.provider = activeTier;
-                            return parsedData;
-                        }
-                    }
-                    console.warn(`⚠️ Channel ${activeTier} dropped request. Looping down...`);
-                } catch(e) {
-                    console.warn(`⚠️ Execution failure on ${activeTier}. Log:`, e.message);
-                }
-            }
-            throw new Error("All pipeline execution channels exhausted.");
-        }
-
-        // --------------------------------------------
-        // MASTER TEXT, VISION & HISTORY ENGINE
+        // 🚀 MASTER TEXT, VISION & HISTORY ENGINE 🚀
+        // (COMPLETELY REWIRED TO HIT SINGLE BACKEND API)
         // --------------------------------------------
         async function runStandaloneTextSearch() {
             const inp = document.getElementById("searchInput"); 
@@ -1075,7 +862,6 @@
                 ? "PAST CONVERSATION MEMORY:\n" + sessionMessages.map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n---\n') + "\n\n" 
                 : "";
 
-            // 🛑 FIXED: BEAST CODE GENERATION PROMPT 🛑
             let promptDirectives = "";
             if (isCodingRequest) {
                 promptDirectives = `CRITICAL CODING INSTRUCTION: You are generating BEAST LEVEL code. Write highly optimized, modern, and production-ready code. Provide the code as a SINGLE, complete, fully runnable file whenever possible. DO NOT output conversational filler. ALL explanations and comments MUST be in English. NO HINDI allowed when coding. Tone: ${toneSelect}.`;
@@ -1086,25 +872,38 @@
             const advancedPrompt = `You are an elite AI assistant.\n\n${promptDirectives}\n\n${historyLog}CURRENT QUERY: ${q}\n\n${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
 
             try {
-                let endpoint = imageToUseForApi ? "/api/gemini-vision" : "/api/gemini-text";
-                let basePayload = imageToUseForApi 
-                    ? { imageBase64: imageToUseForApi, userPrompt: advancedPrompt } 
-                    : { systemPrompt: "You are an elite AI system.", userPrompt: advancedPrompt };
-                
-                const data = await executeWithSmartFallbackLoop(endpoint, basePayload, selectedTierOnStartup, isCodingRequest);
-                
-                let activeResolvedChannel = data.provider ? data.provider.toUpperCase().replace('_', ' ') : "SYSTEM ROUTER";
-                if (selectedTierOnStartup !== "auto" && activeResolvedChannel !== selectedTierOnStartup.toUpperCase().replace('_', ' ')) {
-                    activeResolvedChannel += " (FALLBACK)";
-                }
+                // 🛑 NUKED THE FRONTEND LOOP: JUST HIT THE SINGLE SMART ROUTE 🛑
+                const payload = {
+                    userPrompt: advancedPrompt,
+                    systemPrompt: "You are an elite AI system.",
+                    imageBase64: imageToUseForApi || null,
+                    isCode: isCodingRequest,
+                    providerOverride: selectedTierOnStartup
+                };
 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 150000); 
+
+                const response = await fetch("/api/smart-search", { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error || "Server cascade failed.");
+
+                // 🛑 THIS IS THE REAL PROVIDER EXTRACTED FROM THE BACKEND SUCCESS 🛑
+                let activeResolvedChannel = data.provider || "SYSTEM ROUTER";
                 let cleanAns = data.text;
 
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) {
                     cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
                 }
 
-                // Add to perfect session memory array
                 sessionMessages.push({ q: q, a: cleanAns, imgs: currentImagesToSave });
                 
                 let existingSession = appHistory.find(s => s.id == currentSessionId);
@@ -1119,7 +918,7 @@
                 let finalHtml = marked.parse(processedMathAns);
 
                 document.getElementById(loadId).querySelector('.bubble').innerHTML = `
-                    <div class="ai-signature">✨ RESOLVED VIA: ${activeResolvedChannel}</div>
+                    <div class="ai-signature">✨ BY ${activeResolvedChannel}</div>
                     <div id="text_${loadId}" class="markdown-body"></div>
                     <div class="action-row">
                         <button class="action-btn" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button>
@@ -1134,7 +933,7 @@
                     }
                 });
             } catch (err) {
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Pipeline Failure: All routing paths dropped connection. Backend may be offline.</span>`;
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Pipeline Failure: ${err.message}</span>`;
             } finally {
                 isProcessing = false; 
                 document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
@@ -1145,4 +944,3 @@
     </script>
 </body>
 </html>
-        
