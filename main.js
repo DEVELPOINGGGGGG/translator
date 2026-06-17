@@ -666,10 +666,10 @@ window.showGeneratedImageGUI = function(src) {
 };
 
 // 🧮 FULLY DYNAMIC MATH ENGINE (Syntax, Lag, Duplication, Fraction & Line Break Fixes)
+// 🧮 FULLY DYNAMIC MATH ENGINE (Fixed Duplicate Math Text Bug)
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
     
-    // 🛑 FIX: currentMathImage correctly implemented
     const instruction = inp.value.trim(); if (!currentMathImage && !instruction) return;
     
     let uiImage = currentMathImage;
@@ -677,7 +677,6 @@ async function executeMathFlow() {
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; 
     
-    // Fixed: Clean single-bubble loading GUI to stop the double-bubble glitch
     let lId = "math_ai_" + Date.now();
     const historyDiv = document.getElementById("mathChatHistory");
     historyDiv.insertAdjacentHTML('beforeend', `
@@ -692,9 +691,6 @@ async function executeMathFlow() {
         </div>
     `);
     
-    // 🛑 FIXED: Unconditional auto-scroll removed
-    // document.getElementById("mathScrollArea").scrollTop = 99999;
-    
     window.toggleChatButton(true);
 
     let activeImage = uiImage || getLastContextImage('math');
@@ -704,11 +700,11 @@ async function executeMathFlow() {
         ? "[IMAGE MODE ON - SOLVE ALL VISIBLE QUESTIONS]" 
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
-    // 🌟 THE ELITE TUTOR PROMPT: Elite step-by-step logic, tricks, and STRICT vertical fractions
+    // 🌟 THE ELITE TUTOR PROMPT
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI. STRICT RULES:
 
 1. NO HTML TAGS: NEVER use <br>, <div>, or <span>. Use standard double newlines (\\n\\n) to break lines!
-2. STRICT FRACTION RULE (CRITICAL): NEVER write fractions using a slash like 1/2 or a/b. You MUST use proper vertical LaTeX fractions like $$\\frac{a}{b}$$. ALWAYS use 'x' for multiplication, not *.
+2. STRICT FRACTION RULE: NEVER write fractions using a slash like 1/2. You MUST use proper vertical LaTeX fractions like $$\\frac{1}{2}$$. ALWAYS use 'x' for multiplication.
 3. DELIMITERS: Format your response using EXACTLY these hidden delimiters:
 COUNT:-
 [Write the exact number of questions here, e.g., 1]
@@ -719,9 +715,9 @@ COUNT:-
 ||ANSWER||
 [Final short answer]
 
-4. ELITE TEACHING STYLE (CRITICAL): You MUST format your ||MATH|| block EXACTLY like this template. Use bold headings and numbered steps:
+4. ELITE TEACHING STYLE: You MUST format your ||MATH|| block EXACTLY like this template. DO NOT rewrite the original question.
 
-[Brief 1-line summary/intro]
+[Brief 1-line summary/intro. DO NOT rewrite the question!]
 
 **1. [Step 1 Heading]**
 [Step 1 explanation]
@@ -748,7 +744,6 @@ $$ [Proper math equation] $$
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let rawText = resObj.text;
         
-        // Safely parse the exact count
         let qCount = 1;
         if (rawText.includes("COUNT:-")) {
             let topPart = rawText.split("COUNT:-")[1];
@@ -769,7 +764,6 @@ $$ [Proper math equation] $$
             }
         }
         
-        // Proper bold parsing for display
         mathBlock = mathBlock.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').trim(); 
 
         clearMathImage(); let generatedImgHtml = "";
@@ -798,7 +792,6 @@ $$ [Proper math equation] $$
                         ${finalAnswerBlock ? `<div style="margin-top:25px; font-size:26px; font-weight:900; padding:12px 25px; background:rgba(59,130,246,0.1); border-radius:12px; border:2px solid ${primaryColor};">ANSWER = ${finalAnswerBlock}</div>` : ''}
                     </div>`;
             } else if (window.isImageGenerationMode) {
-                // 🛑 Fixed duplication: SQUISH FIX & MATH FIX - Used white-space: pre-wrap instead of <br> tags!
                 offscreen.innerHTML = `
                     <div style="background-color:${bgColor}; line-height:35px; padding:40px; position:relative; font-family:'Kalam', sans-serif; font-size:20px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; white-space: pre-wrap; word-wrap: break-word;">
                         <div style="width:100%; display:block;">${mathBlock}</div>
@@ -808,10 +801,13 @@ $$ [Proper math equation] $$
             
             document.body.appendChild(offscreen);
             
-            // Wait for MathJax to render equations BEFORE taking the screenshot
             if (window.MathJax) { 
                 MathJax.typesetClear([offscreen]); 
                 await MathJax.typesetPromise([offscreen]); 
+                
+                // 🛑 FIX: NUKES THE DUPLICATE MATH TEXT BUG BEFORE TAKING THE PHOTO 🛑
+                const assistiveElements = offscreen.querySelectorAll('mjx-assistive-mml');
+                assistiveElements.forEach(el => el.remove());
             }
 
             try {
@@ -831,11 +827,9 @@ $$ [Proper math equation] $$
         if (window.isImageGenerationMode) {
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble && generatedImgHtml) {
-                // SQUISH FIX: Added white-space:nowrap and proper flex justification
                 loadingBubble.querySelector('.bubble').innerHTML = `<div style="display:flex; justify-content:flex-end; margin-bottom:5px;"><span style="font-size:10px; color:var(--text-muted); font-weight:bold; background:var(--bg-surface); padding:4px 8px; border-radius:8px; white-space:nowrap; border: 1px solid var(--border-light);">✨ IMAGE MODE • ${resObj.provider}</span></div>${generatedImgHtml}`;
             }
             saveToHistory('math', instruction || "Analyze image", generatedImgHtml, uiImage, resObj.provider);
-            // 🛑 FIXED: Duplicate/corruption fix - Do not use `updateAiBubble` in Image Mode. The initial innerHTML assignment above is enough.
         } else {
             saveToHistory('math', instruction || "Analyze image", finalOutputText, uiImage, resObj.provider); 
             updateAiBubble(lId, finalOutputText, resObj.provider, true); 
@@ -843,7 +837,6 @@ $$ [Proper math equation] $$
                 const bbl = document.getElementById(lId)?.querySelector('.bubble');
                 if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml);
             }
-            // 🛑 FIXED: Unconditional auto-scroll removed
         }
     } catch(e) { 
         window.toggleChatButton(false);
