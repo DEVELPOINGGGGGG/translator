@@ -321,11 +321,30 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
     let i = 0; 
+    let currentHtml = "";
+
     window.currentTypingTimer = setInterval(() => {
         if (i < rawText.length) {
-            let chunk = rawText.substr(i, charsPerTick);
-            for(let c of chunk) { if (c === '\n') txtEl.appendChild(document.createElement('br')); else txtEl.appendChild(document.createTextNode(c)); }
-            i += charsPerTick;
+            let chunk = "";
+            // 🛑 SMART TAG PARSER: Fast-forwards through HTML tags so they don't break while typing
+            for (let j = 0; j < charsPerTick && i < rawText.length; j++) {
+                if (rawText[i] === '<') {
+                    let tagEnd = rawText.indexOf('>', i);
+                    if (tagEnd !== -1) {
+                        chunk += rawText.substring(i, tagEnd + 1);
+                        i = tagEnd + 1;
+                    } else {
+                        chunk += rawText[i]; i++;
+                    }
+                } else {
+                    chunk += rawText[i]; i++;
+                }
+            }
+            
+            currentHtml += chunk;
+            // Inject as REAL HTML so <b> actually bolds the text!
+            txtEl.innerHTML = currentHtml.replace(/\n/g, '<br>');
+            
         } else {
             clearInterval(window.currentTypingTimer);
             window.currentTypingTimer = null;
@@ -337,7 +356,6 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
         }
     }, tickRate);
 }
-
 function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     const loadingBubble = document.getElementById(lId);
     if (!loadingBubble) return;
