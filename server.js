@@ -16,7 +16,7 @@ const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 // 🛑 GLOBAL AI INSTRUCTIONS 🛑
 const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 1. NO FOREIGN GARBAGE: Never output Chinese, Japanese, Korean, or random unreadable symbols. If the image or text has illegible noise, completely ignore it.
-2. BRAND NAMES IN ENGLISH: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Do NOT transliterate them into Hindi. Keep sentences natural but preserve English nouns.`;
+2. BRAND NAMES IN ENGLISH and HINDI: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Translate them into Hindi and English both. Keep sentences natural but preserve both hindi and english nouns(eg. if you write windmill then you will write पवन चक्की(wind mill)).`;
 
 // 🛑 STRICT MASTER WATERFALL HIERARCHY 🛑
 const VISION_PROVIDERS = [
