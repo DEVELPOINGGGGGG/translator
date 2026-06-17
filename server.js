@@ -45,7 +45,6 @@ const publicDir = __dirname;
 const contentTypes = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
 
 function sendJson(res, statusCode, payload) { 
-    // Handle CORS explicitly for raw HTTP server
     res.writeHead(statusCode, { 
         "Content-Type": "application/json; charset=utf-8",
         "Access-Control-Allow-Origin": "*",
@@ -73,6 +72,7 @@ async function tryProviders(providers, requestFn, override = null) {
     let lastError;
     let targetProviders = [...providers]; 
     
+    // Check if dropdown wants to force a specific provider (like "api_5")
     if (override && override !== "auto") {
         targetProviders.sort((a, b) => {
             const isA = a.type.toLowerCase() === override.toLowerCase() || (a.id && a.id.replace(/\s+/g, '').toLowerCase() === override.replace(/\s+/g, '').toLowerCase());
@@ -185,6 +185,9 @@ async function handleSmartSearch(req, res) {
         const sysText = (body.systemPrompt || "") + MASTER_RULES;
         const isCode = body.isCode === true;
         const imgBase64 = body.imageBase64 || null;
+        
+        // 🛑 FIXED: Pull the exact override setting from the frontend
+        const override = body.providerOverride || null;
 
         const providersList = imgBase64 ? VISION_PROVIDERS : TEXT_PROVIDERS;
 
@@ -263,7 +266,8 @@ async function handleSmartSearch(req, res) {
                     return data.choices[0].message.content;
                 }
             }
-        });
+        }, override); // PASSES THE OVERRIDE HERE!
+        
         return sendJson(res, 200, resultObj);
     } catch (e) {
         return sendJson(res, 502, { error: e.message || "All fallback routing paths exhausted." });
@@ -505,15 +509,10 @@ async function handleFeedbackRoute(req, res) {
             message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}`
         };
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        const response = await axios.post(url, payload, { headers: { 'Content-Type': 'application/json' } });
 
-        const data = await response.json();
         console.log(`[Feedback Engine] Successfully dispatched feedback to Dev: ${cleanNumber}`);
-        return sendJson(res, 200, data);
+        return sendJson(res, 200, response.data);
 
     } catch (error) {
         console.error("[Feedback Engine Error]:", error.message);
