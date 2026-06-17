@@ -280,19 +280,17 @@ function appendUserBubble(txt, img, cid) {
 
 function appendAiLoading(cid) {
     const c = getActiveChatContainer(cid); if(!c) return null;
-    
-    // 🚀 MULTIPLE BUBBLE FIX: Random IDs prevent 12 messages from squashing together
     const id = "loading_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
     
+    // Sleek animated pulsing dots, no boring text
     c.insertAdjacentHTML('beforeend', `
         <div class="chat-msg chat-ai" id="${id}">
-            <div class="bubble" style="display:flex; align-items:center; gap:12px;">
-                <div class="typing-indicator">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
+            <div class="bubble" style="display:flex; align-items:center; background:transparent; box-shadow:none; padding:0;">
+                <div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1);">
+                    <div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div>
+                    <div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div>
+                    <div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div>
                 </div>
-                <span style="color:var(--muted); font-size:14px; font-weight:600; letter-spacing:0.5px;">AI is thinking...</span>
             </div>
         </div>
     `);
@@ -303,11 +301,11 @@ function appendAiLoading(cid) {
 
 function getRetryButtonsHtml(lId) {
     return `
-    <div style="display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:8px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); width:100%; align-items:center; justify-content:flex-start;">
-        <span style="font-size:11px; color:var(--muted);">Retry Model:</span>
-        <button style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid #3b82f6; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'gemini')">Gemini</button>
-        <button style="background:rgba(245,158,11,0.1); color:#f59e0b; border:1px solid #f59e0b; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'cloudflare')">Cloudflare</button>
-        <button style="background:rgba(16,185,129,0.1); color:#10b981; border:1px solid #10b981; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'groq')">Groq</button>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:10px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); width:100%; align-items:center; justify-content:flex-start;">
+        <span style="font-size:11px; color:var(--muted); width:100%; margin-bottom:2px;">Retry Model:</span>
+        <button style="flex:1 1 auto; min-width:80px; background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid #3b82f6; padding:8px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'gemini')">Gemini</button>
+        <button style="flex:1 1 auto; min-width:80px; background:rgba(245,158,11,0.1); color:#f59e0b; border:1px solid #f59e0b; padding:8px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'cloudflare')">Cloudflare</button>
+        <button style="flex:1 1 auto; min-width:80px; background:rgba(16,185,129,0.1); color:#10b981; border:1px solid #10b981; padding:8px 12px; border-radius:12px; font-size:11px; cursor:pointer;" onclick="retryRequest('${lId}', 'groq')">Groq</button>
     </div>`;
 }
 
@@ -620,15 +618,12 @@ window.showGeneratedImageGUI = function(src) {
     setTimeout(() => modal.style.opacity = '1', 10);
 };
 
-// 🧮 FULLY DYNAMIC MATH ENGINE (Syntax Error Fixed)
+// 🧮 FULLY DYNAMIC MATH ENGINE (Image Blindness & <br> Bug Fixed)
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
-    
-    // 🛑 FIX: currentMathImage correctly implemented
     const instruction = inp.value.trim(); if (!currentMathImage && !instruction) return;
     
     let uiImage = currentMathImage;
-    
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; 
     
@@ -639,132 +634,106 @@ async function executeMathFlow() {
     let memoryContext = getSessionContext('math');
 
     const modeStatus = window.isImageGenerationMode 
-        ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS AND PUT IT IN THE TEXT BLOCK]" 
+        ? "[IMAGE MODE ON - YOU MUST SOLVE ALL VISIBLE QUESTIONS]" 
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
-    // 🌟 SUPER STRICT PROMPT: Fractions, Line Breaks, and Shape Splitting
+    // 🌟 SUPER STRICT PROMPT: Fixed <br> bug, fixed duplication, forces image reading
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI LANGUAGE. STRICT RULES:
 
-1. CONVERSATION DETECTOR (CRITICAL): If the user just says "Hi", "Hello", or asks a non-math question, you MUST write "IS_MATH:- NO" at the top and just write a polite text response in the TEXT block. DO NOT generate fake math questions or shapes!
-2. MODE AWARENESS: ${modeStatus}
-3. EQUATION LINE BREAKS (CRITICAL): Every single mathematical step or equation in the SOLUTION MUST be on a completely new line. Use <br><br> to force spacing!
-4. PROPER FRACTIONS: Use proper LaTeX fractions wrapped in block math tags (e.g., $$\\frac{4}{2}$$). ALWAYS use 'x' for multiplication.
-5. QUESTION LABELS: If you are solving 2 OR MORE questions, use this exact wrapper for the questions: <div style="position:relative;"><span style="position:absolute; left:-45px; font-weight:bold;">Q1.</span>[Question Text]</div>
-   WARNING: IF IT IS ONLY 1 QUESTION, DO NOT USE THAT HTML WRAPPER. Just write the question normally.
-6. EXPLANATION LENGTH:
-   - IF [IMAGE MODE OFF] and SINGLE question: Exactly 7 to 12 lines.
-   - IF [IMAGE MODE OFF] and MULTIPLE questions: Exactly 5 to 10 lines for EACH question.
-   - IF [IMAGE MODE ON]: Keep it concise.
-7. SHAPES: Only generate <svg> for geometry/shape questions. You MUST include xmlns="http://www.w3.org/2000/svg" inside the <svg> tag.
-8. OUTPUT FORMAT: 
+1. IMAGE AWARENESS (CRITICAL): If the user provided an image, YOU MUST READ THE MATH PROBLEM FROM IT. Do not say "I cannot see the image."
+2. MODE: ${modeStatus}
+3. LINE BREAKS (CRITICAL): DO NOT use HTML tags like <br>. Use standard newlines (\\n\\n) to create space between your steps!
+4. NO DUPLICATION: Do not write the same solution twice.
+5. PROPER FRACTIONS: Use proper LaTeX fractions (e.g., $$\\frac{4}{2}$$). ALWAYS use 'x' for multiplication.
+6. QUESTION LABELS: If solving 2+ questions, format like this: <div style="position:relative;"><span style="position:absolute; left:-45px; font-weight:bold;">Q1.</span>[Question Text]</div>
+7. EXPLANATION LENGTH:
+   - IF [IMAGE MODE OFF] & SINGLE question: 7 to 12 lines.
+   - IF [IMAGE MODE OFF] & MULTIPLE questions: 5 to 10 lines EACH.
+8. SHAPES: Generate <svg> for geometry questions only (include xmlns="http://www.w3.org/2000/svg").
 
+OUTPUT FORMAT:
 IS_MATH:-
 [YES or NO]
 
 COUNT:-
-[Number of questions. 0 if IS_MATH is NO]
+[Number of questions]
 
 TEXT:-
-[If IS_MATH is NO: Write your polite greeting here.]
-[If YES: Write Question here]
+[If IS_MATH is NO: Write greeting. If YES: Write Question]
 SOLUTION:
-[If YES: Step-by-step math. Break lines with <br><br>]
+[If YES: Step-by-step math]
 EXPLANATION:
-[If YES: Explanation following length rules]
+[If YES: Explanation]
 
 SVG:-
-[Your <svg> code. Leave blank if no shape.]
+[Your <svg> code or blank]
 
 FINAL_ANSWER:-
-[Answer value or blank]`;
+[Answer or blank]`;
     
-    let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Solve this image."}`;
+    let finalPrompt = `${sysPrompt}\n\n${memoryContext}User: ${instruction || "Analyze the attached image and solve."}`;
     
-    if (!window.isImageGenerationMode) {
-        window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage };
-    }
+    if (!window.isImageGenerationMode) { window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage }; }
 
     try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let rawText = resObj.text;
         
-        // ✂️ PARSE THE DATA BLOCKS SAFELY
         let isMath = !rawText.toUpperCase().includes("IS_MATH:- NO") && !rawText.toUpperCase().includes("IS_MATH: NO");
-        let countStr = "1";
-        let textBlock = rawText;
-        let svgBlock = "";
-        let finalAnswerBlock = "";
+        let countStr = "1"; let textBlock = rawText; let svgBlock = ""; let finalAnswerBlock = "";
 
         if (rawText.includes("TEXT:-")) {
             let parts = rawText.split("TEXT:-");
-            let topPart = parts[0];
-            let rest = parts[1];
+            let topPart = parts[0]; let rest = parts[1];
             
             if (topPart.includes("COUNT:-")) countStr = topPart.split("COUNT:-")[1].trim();
-            
             if (rest.includes("SVG:-")) {
                 let textSvgSplit = rest.split("SVG:-");
                 textBlock = textSvgSplit[0].trim();
                 let svgAnswerSplit = textSvgSplit[1].split("FINAL_ANSWER:-");
                 svgBlock = svgAnswerSplit[0].trim();
                 if (svgAnswerSplit.length > 1) finalAnswerBlock = svgAnswerSplit[1].trim();
-            } else {
-                textBlock = rest.trim();
-            }
+            } else { textBlock = rest.trim(); }
         }
         
         textBlock = textBlock.replace(/[\*&#_]/g, '').trim();
         const questionCount = parseInt(countStr) || 1;
 
-        clearMathImage();
-        let generatedImgHtml = "";
-        
-        // Only consider shapes if it's actually math
+        clearMathImage(); let generatedImgHtml = "";
         let generateStandaloneShape = (isMath && !window.isImageGenerationMode && svgBlock.length > 10);
 
-        // 🛑 MULTIPLE QUESTION PROTECTION
         let warningText = "";
         if (generateStandaloneShape && questionCount > 1) {
             generateStandaloneShape = false;
-            warningText = "<br><br><small style='color:#ef4444; font-weight:bold;'>⚠️ Multiple questions detected. Diagram generation disabled. Please ask one question at a time to generate geometry shapes.</small>";
+            warningText = "\n\n<small style='color:#ef4444; font-weight:bold;'>⚠️ Multiple questions detected. Diagram generation disabled.</small>";
         }
 
-        // 🖼️ GENERATE IMAGE (ONLY if IS_MATH is YES and a mode is active)
         if (isMath && (window.isImageGenerationMode || generateStandaloneShape)) {
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble) loadingBubble.querySelector('.bubble').innerHTML = `<div class="spinner"></div> Creating Visuals...`;
 
             const computedStyles = getComputedStyle(document.body);
-            let bgColor = computedStyles.getPropertyValue('--bg-surface').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#0f172a' : '#ffffff');
-            let textColor = computedStyles.getPropertyValue('--text-main').trim() || (window.matchMedia('(prefers-color-scheme: dark)').matches ? '#f8fafc' : '#0f172a');
+            let bgColor = computedStyles.getPropertyValue('--bg-surface').trim() || '#ffffff';
+            let textColor = computedStyles.getPropertyValue('--text-main').trim() || '#0f172a';
             let primaryColor = computedStyles.getPropertyValue('--primary').trim() || '#8b5cf6';
 
             const offscreen = document.createElement('div');
-            offscreen.style.position = 'fixed';
-            offscreen.style.top = '0';
-            offscreen.style.left = '0';
-            offscreen.style.width = '750px'; 
-            offscreen.style.zIndex = '-9999'; 
+            offscreen.style.position = 'fixed'; offscreen.style.top = '0'; offscreen.style.left = '0';
+            offscreen.style.width = '750px'; offscreen.style.zIndex = '-9999'; 
 
             if (generateStandaloneShape) {
-                // Standalone Shape (Image Mode OFF)
                 offscreen.innerHTML = `
-                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px; font-family:'Poppins', sans-serif;">
+                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px;">
                         ${svgBlock}
                         ${finalAnswerBlock ? `<div style="margin-top:25px; font-size:26px; font-weight:900; padding:12px 25px; background:rgba(59,130,246,0.1); border-radius:12px; border:2px solid ${primaryColor};">ANSWER = ${finalAnswerBlock}</div>` : ''}
-                    </div>
-                `;
+                    </div>`;
             } else if (window.isImageGenerationMode) {
-                // Full Image Generation (Image Mode ON)
                 let formattedText = textBlock.replace(/\n/g, '<br>');
                 offscreen.innerHTML = `
-                    <div class="digital-paper" style="background-color:${bgColor}; line-height:35px; padding:40px 30px 40px 60px; position:relative; font-family:'Kalam', cursive; font-size:22px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; word-wrap: break-word; overflow-wrap: break-word;">
-                        <div style="width:100%; display:block;">
-                            ${formattedText}
-                        </div>
+                    <div class="digital-paper" style="background-color:${bgColor}; line-height:35px; padding:40px 30px 40px 60px; position:relative; font-family:'Kalam', cursive; font-size:22px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; word-wrap: break-word;">
+                        <div style="width:100%; display:block;">${formattedText}</div>
                         ${svgBlock ? `<div style="margin-top:30px; display:flex; justify-content:center; width:100%;">${svgBlock}</div>` : ''}
-                    </div>
-                `;
+                    </div>`;
             }
             
             document.body.appendChild(offscreen);
@@ -776,41 +745,28 @@ FINAL_ANSWER:-
                 
                 generatedImgHtml = `
                     <div style="display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-light);">
-                        <img src="${base64Img}" style="width:180px; height:auto; max-height:240px; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <img src="${base64Img}" style="width:100%; max-width:280px; height:auto; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)">
                         <span style="font-size:11px; font-weight:bold; color:var(--text-muted); background:var(--input-bg); padding:4px 10px; border-radius:10px;">🔍 Tap Image to Enlarge</span>
-                    </div>
-                `;
-            } catch (err) {
-                console.error("Canvas Render Error:", err);
-            } finally {
-                offscreen.remove();
-            }
+                    </div>`;
+            } catch (err) { console.error("Render Error:", err); } finally { offscreen.remove(); }
         }
 
-        // 📤 FINAL OUTPUT ROUTING
         let finalOutputText = textBlock + warningText;
 
         if (isMath && window.isImageGenerationMode) {
-            // Image Mode ON & It is Math: Show ONLY the image
             const loadingBubble = document.getElementById(lId);
             if (loadingBubble && generatedImgHtml) {
-                loadingBubble.querySelector('.bubble').innerHTML = `
-                    <div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ IMAGE MODE</div>
-                    ${generatedImgHtml}
-                `;
+                loadingBubble.querySelector('.bubble').innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold;">✨ IMAGE MODE</div>${generatedImgHtml}`;
             }
             saveToHistory('math', instruction || "Solve this", generatedImgHtml, uiImage, resObj.provider);
         } else {
-            // Image Mode OFF OR It's just a greeting: Show text normally
             saveToHistory('math', instruction || "Solve this", finalOutputText, uiImage, resObj.provider); 
             updateAiBubble(lId, finalOutputText, resObj.provider, true); 
-            
             if (generatedImgHtml) {
                 const bbl = document.getElementById(lId)?.querySelector('.bubble');
                 if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml);
             }
         }
-
     } catch(e) { 
         window.toggleChatButton(false);
         const el = document.getElementById(lId); 
@@ -819,7 +775,7 @@ FINAL_ANSWER:-
              else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
         }
     }
-} // <--- THIS BRACKET WAS LIKELY MISSING AND CAUSING YOUR SYNTAX ERROR
+}
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); 
@@ -890,58 +846,41 @@ async function runGroqSearch() {
         }
     }
 }
-// 🎯 FOCUS MODE ENGINE
-    window.toggleFocusMode = function(enable) {
-        const topbar = document.getElementById('appTopbar');
-        const apiTracker = document.querySelector('.apiTracker');
-        const inputArea = document.querySelector('.chat-input-area');
-        const exitBtn = document.getElementById('exitFocusBtn');
-        const page = document.querySelector('.page');
-        const scrollArea = document.querySelector('.chat-scroll-area');
+// 🎯 TRUE FOCUS MODE ENGINE
+window.toggleFocusMode = function(enable) {
+    const topbar = document.getElementById('appTopbar');
+    const inputArea = document.querySelector('.chat-input-area');
+    const exitBtn = document.getElementById('exitFocusBtn');
+    const page = document.querySelector('.page');
 
-        if (enable) {
-            // Fade out UI
-            [topbar, apiTracker, inputArea].forEach(el => {
-                if(el) {
-                    el.style.transition = "opacity 0.5s ease, transform 0.5s ease";
-                    el.style.opacity = "0";
-                    el.style.pointerEvents = "none"; // Disables clicks on hidden items
-                }
-            });
-            if(topbar) topbar.style.transform = "translateY(-20px)";
-            if(apiTracker) apiTracker.style.transform = "translateY(-20px)";
-            if(inputArea) inputArea.style.transform = "translateY(20px)";
-            
-            // Show Exit Button
-            exitBtn.style.display = "block";
-            setTimeout(() => exitBtn.style.opacity = "1", 10);
-
-            // Expand chat area to fill screen
-            if (page) page.style.paddingTop = "20px";
-            if (scrollArea) scrollArea.style.paddingBottom = "20px";
-            
-            if(typeof showToast === 'function') showToast("🎯 Focus Mode Activated! UI Hidden.");
-        } else {
-            // Fade UI back in
-            [topbar, apiTracker, inputArea].forEach(el => {
-                if(el) {
-                    el.style.opacity = "1";
-                    el.style.pointerEvents = "auto";
-                    el.style.transform = "translateY(0)";
-                }
-            });
-            
-            // Hide Exit Button
-            exitBtn.style.opacity = "0";
-            setTimeout(() => exitBtn.style.display = "none", 500);
-
-            // Restore original chat area dimensions
-            if (page) page.style.paddingTop = "105px";
-            if (scrollArea) scrollArea.style.paddingBottom = "280px";
-            
-            if(typeof showToast === 'function') showToast("UI Restored");
+    if (enable) {
+        if(topbar) topbar.style.display = "none"; // Completely gone
+        if(inputArea) {
+            inputArea.style.opacity = "0";
+            inputArea.style.pointerEvents = "none";
+            inputArea.style.transform = "translateY(20px)";
         }
-    };
+        exitBtn.style.display = "block";
+        setTimeout(() => exitBtn.style.opacity = "1", 10);
+        
+        if (page) page.style.paddingTop = "15px"; // Text goes all the way to the top!
+        
+        if(typeof showToast === 'function') showToast("🎯 Focus Mode Activated!");
+    } else {
+        if(topbar) topbar.style.display = "flex"; // Bring it back
+        if(inputArea) {
+            inputArea.style.opacity = "1";
+            inputArea.style.pointerEvents = "auto";
+            inputArea.style.transform = "translateY(0)";
+        }
+        exitBtn.style.opacity = "0";
+        setTimeout(() => exitBtn.style.display = "none", 500);
+        
+        if (page) page.style.paddingTop = "105px"; // Restore padding
+        
+        if(typeof showToast === 'function') showToast("UI Restored");
+    }
+};
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 
 function startVideoTimer(totalChars) {
@@ -1125,10 +1064,14 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
         if (premium) u.voice = premium;
         u.lang = 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume;
 
-        let lineDiv = document.querySelector(`[data-video-line="${i}"]`);
+       let lineDiv = document.querySelector(`[data-video-line="${i}"]`);
         if (!lineDiv) {
             lineDiv = document.createElement("div");
-            lineDiv.dataset.videoLine = i; lineDiv.className = "video-line-card"; 
+            lineDiv.dataset.videoLine = i; 
+            lineDiv.className = "video-line-card"; 
+            // 🛑 BUG FIX: FORCE PURE WHITE TEXT OVER DARK BACKGROUND
+            lineDiv.style.color = "#ffffff"; 
+            lineDiv.style.textShadow = "0 2px 5px rgba(0,0,0,1)";
             content.appendChild(lineDiv);
         }
         
