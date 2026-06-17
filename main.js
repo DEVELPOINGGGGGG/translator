@@ -310,6 +310,8 @@ function getRetryButtonsHtml(lId) {
 }
 
 // ⚡ LIVE MATH RENDERER: Fast-forwards equations and converts them instantly while typing!
+// ⚡ LIVE MATH RENDERER: Fast-forwards equations and converts them instantly while typing!
+// 🛑 FIXED: Auto-scrolling disabled
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
     const txtEl = document.getElementById(contentId);
@@ -374,9 +376,9 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
                 MathJax.typesetPromise([txtEl]).catch(err => console.log(err));
             }
             
-            // Auto-scroll as it types
-            const scrollArea = txtEl.closest('.chat-scroll-area');
-            if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+            // 🛑 FIXED: Auto-scroll as it types is removed
+            /* const scrollArea = txtEl.closest('.chat-scroll-area');
+            if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight; */
             
         } else {
             clearInterval(window.currentTypingTimer);
@@ -385,7 +387,7 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             // Final safety render when completely done
             if (isMath && window.MathJax) { 
                 MathJax.typesetClear([containerEl]); 
-                MathJax.typesetPromise([containerEl]); 
+                await MathJax.typesetPromise([containerEl]); 
             }
             
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
@@ -675,15 +677,19 @@ window.showGeneratedImageGUI = function(src) {
     setTimeout(() => modal.style.opacity = '1', 10);
 };
 
-// 🧮 FULLY DYNAMIC MATH ENGINE (Dynamic Question Generator & No Copy-Pasting)
+// 🧮 FULLY DYNAMIC MATH ENGINE (Syntax, Lag, Duplication, Fraction & Line Break Fixes)
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
+    
+    // 🛑 FIX: currentMathImage correctly implemented
     const instruction = inp.value.trim(); if (!currentMathImage && !instruction) return;
     
     let uiImage = currentMathImage;
+    
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; 
     
+    // Fixed: Clean single-bubble loading GUI to stop the double-bubble glitch
     let lId = "math_ai_" + Date.now();
     const historyDiv = document.getElementById("mathChatHistory");
     historyDiv.insertAdjacentHTML('beforeend', `
@@ -697,7 +703,10 @@ async function executeMathFlow() {
             </div>
         </div>
     `);
-    document.getElementById("mathScrollArea").scrollTop = 99999;
+    
+    // 🛑 FIXED: Unconditional auto-scroll removed
+    // document.getElementById("mathScrollArea").scrollTop = 99999;
+    
     window.toggleChatButton(true);
 
     let activeImage = uiImage || getLastContextImage('math');
@@ -707,14 +716,14 @@ async function executeMathFlow() {
         ? "[IMAGE MODE ON - SOLVE ALL VISIBLE QUESTIONS]" 
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
-    // 🌟 THE ELITE BRAIN PROMPT: AI will dynamically ask and GENERATE new questions
+    // 🌟 THE ELITE TUTOR PROMPT: Elite step-by-step logic, tricks, and STRICT vertical fractions
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI. STRICT RULES:
 
 1. NO HTML TAGS: NEVER use <br>, <div>, or <span>. Use standard double newlines (\\n\\n) to break lines!
-2. STRICT FRACTIONS: NEVER write fractions using a slash like 1/2. You MUST use proper vertical LaTeX fractions like $$\\frac{1}{2}$$. ALWAYS use 'x' for multiplication.
-3. DYNAMIC QUESTION GENERATOR (CRITICAL): If the user says "Yes", "हाँ", or asks for another question, YOU MUST INVENT AND GENERATE A BRAND NEW QUESTION related to the previous math topic, and provide its step-by-step solution!
-4. ADVANCED SVG DIAGRAMS: If the question involves geometry, draw a highly accurate <svg> diagram containing the main shape, relevant internal lines (radius, height), and accurately placed text labels for measurements. Use 'currentColor'.
-5. DELIMITERS: Format your response using EXACTLY these hidden delimiters:
+2. STRICT FRACTION RULE (CRITICAL): NEVER write fractions using a slash like 1/2 or a/b. You MUST use proper vertical LaTeX fractions like $$\\frac{a}{b}$$. ALWAYS use 'x' for multiplication, not *.
+3. DELIMITERS: Format your response using EXACTLY these hidden delimiters:
+COUNT:-
+[Write the exact number of questions here, e.g., 1]
 ||MATH||
 [Your full math logic]
 ||SVG||
@@ -722,27 +731,28 @@ async function executeMathFlow() {
 ||ANSWER||
 [Final short answer]
 
-6. ELITE TEACHING STYLE: Structure your ||MATH|| block using this logical flow. CREATE REAL HEADINGS based on the problem!
+4. ELITE TEACHING STYLE (CRITICAL): You MUST format your ||MATH|| block EXACTLY like this template. Use bold headings and numbered steps:
 
-[1-line summary of the problem]
+[Brief 1-line summary/intro]
 
-**1. [Write a Real Step 1 Heading]**
+**1. [Step 1 Heading]**
 [Step 1 explanation]
-$$ [Proper math equation] $$
+$$ [Proper math equation with \\frac] $$
 
-**2. [Write a Real Step 2 Heading]**
+**2. [Step 2 Heading]**
 [Step 2 explanation]
 $$ [Proper math equation] $$
+(Add more steps as needed)
 
 **वैकल्पिक आसान तरीका (Short Trick)**
-[Provide a quick shortcut trick if one exists, otherwise skip]
+[Provide a quick shortcut, formula, or trick to solve it faster]
 
 **✅ अंतिम उत्तर**
-[Write the final explicit answer sentence]
+[Final explicit answer sentence]
 
 [CRITICAL INSTRUCTION: At the very end of your ||MATH|| block, dynamically ask the user in your own words if they want you to generate another similar question for practice. DO NOT copy-paste a robotic sentence. Ask naturally!]`;
     
-    let finalPrompt = `${sysPrompt}\n\n${modeStatus}\n\n${memoryContext}User: ${instruction || "Analyze the attached image and solve."}`;
+    let finalPrompt = `${sysPrompt}\n\n${modeStatus}\n\n${memoryContext}User: ${instruction || "Analyze image"}`;
     
     if (!window.isImageGenerationMode) { window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage }; }
 
@@ -750,6 +760,7 @@ $$ [Proper math equation] $$
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
         let rawText = resObj.text;
         
+        // Safely parse the exact count
         let qCount = 1;
         if (rawText.includes("COUNT:-")) {
             let topPart = rawText.split("COUNT:-")[1];
@@ -770,6 +781,7 @@ $$ [Proper math equation] $$
             }
         }
         
+        // Proper bold parsing for display
         mathBlock = mathBlock.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').trim(); 
 
         clearMathImage(); let generatedImgHtml = "";
@@ -798,6 +810,7 @@ $$ [Proper math equation] $$
                         ${finalAnswerBlock ? `<div style="margin-top:25px; font-size:26px; font-weight:900; padding:12px 25px; background:rgba(59,130,246,0.1); border-radius:12px; border:2px solid ${primaryColor};">ANSWER = ${finalAnswerBlock}</div>` : ''}
                     </div>`;
             } else if (window.isImageGenerationMode) {
+                // 🛑 Fixed duplication: SQUISH FIX & MATH FIX - Used white-space: pre-wrap instead of <br> tags!
                 offscreen.innerHTML = `
                     <div style="background-color:${bgColor}; line-height:35px; padding:40px; position:relative; font-family:'Kalam', sans-serif; font-size:20px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; white-space: pre-wrap; word-wrap: break-word;">
                         <div style="width:100%; display:block;">${mathBlock}</div>
@@ -807,6 +820,7 @@ $$ [Proper math equation] $$
             
             document.body.appendChild(offscreen);
             
+            // Wait for MathJax to render equations BEFORE taking the screenshot
             if (window.MathJax) { 
                 MathJax.typesetClear([offscreen]); 
                 await MathJax.typesetPromise([offscreen]); 
@@ -827,15 +841,21 @@ $$ [Proper math equation] $$
         let finalOutputText = mathBlock + warningText;
 
         if (window.isImageGenerationMode) {
-            saveToHistory('math', instruction || "Solve this", generatedImgHtml, uiImage, resObj.provider);
-            updateAiBubble(lId, generatedImgHtml, resObj.provider, true);
+            const loadingBubble = document.getElementById(lId);
+            if (loadingBubble && generatedImgHtml) {
+                // SQUISH FIX: Added white-space:nowrap and proper flex justification
+                loadingBubble.querySelector('.bubble').innerHTML = `<div style="display:flex; justify-content:flex-end; margin-bottom:5px;"><span style="font-size:10px; color:var(--text-muted); font-weight:bold; background:var(--bg-surface); padding:4px 8px; border-radius:8px; white-space:nowrap; border: 1px solid var(--border-light);">✨ IMAGE MODE • ${resObj.provider}</span></div>${generatedImgHtml}`;
+            }
+            saveToHistory('math', instruction || "Analyze image", generatedImgHtml, uiImage, resObj.provider);
+            // 🛑 FIXED: Duplicate/corruption fix - Do not use `updateAiBubble` in Image Mode. The initial innerHTML assignment above is enough.
         } else {
-            saveToHistory('math', instruction || "Solve this", finalOutputText, uiImage, resObj.provider); 
+            saveToHistory('math', instruction || "Analyze image", finalOutputText, uiImage, resObj.provider); 
             updateAiBubble(lId, finalOutputText, resObj.provider, true); 
             if (generatedImgHtml) {
                 const bbl = document.getElementById(lId)?.querySelector('.bubble');
                 if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml);
             }
+            // 🛑 FIXED: Unconditional auto-scroll removed
         }
     } catch(e) { 
         window.toggleChatButton(false);
