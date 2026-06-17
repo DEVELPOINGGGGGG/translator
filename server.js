@@ -200,12 +200,12 @@ async function handleSmartSearch(req, res) {
         const pCf = providersList.find(p => p.type === 'cloudflare');
         const pGroq = providersList.find(p => p.type === 'groq');
 
-        if (isCode) {
+       if (isCode) {
             console.log("🛠️ SMART ROUTER: Code Request Detected. Initiating High-Performance Cascade (5->4->3->2->1->CF->GROQ)");
             orderedProviders = [p5, p4, p3, p2, p1, pCf, pGroq].filter(Boolean);
         } else {
-            console.log("📝 SMART ROUTER: Text Request Detected. Initiating Quota-Saver Cascade (2->1->3->4->5->CF->GROQ)");
-            orderedProviders = [p2, p1, p3, p4, p5, pCf, pGroq].filter(Boolean);
+            console.log("📝 SMART ROUTER: Text Request Detected. Initiating Standard Cascade (1->2->3->4->5->CF->GROQ)");
+            orderedProviders = [p1, p2, p3, p4, p5, pCf, pGroq].filter(Boolean);
         }
 
         const resultObj = await tryProviders(orderedProviders, async (p) => {
