@@ -39,15 +39,20 @@
         .option-btn { background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: left; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; word-wrap: break-word; }
         .option-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #38bdf8; }
         .option-btn.selected { background: rgba(56, 189, 248, 0.2) !important; border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important; }
-        .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; text-align: center; flex: 1; }
+        
+        /* Mobile UI Fix for Stat Boxes */
+        .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px 10px; border-radius: 15px; text-align: center; flex: 1 1 28%; min-width: 80px; }
         .stat-box .num { font-size: 32px; font-weight: 900; }
+        
         .result-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; }
         @keyframes loadingSweep { 0% { left: -30%; width: 30%; } 50% { width: 50%; } 100% { left: 100%; width: 30%; } }
         @keyframes fadeToast { 0% { opacity: 0; bottom: 10px; } 10% { opacity: 1; bottom: 30px; } 90% { opacity: 1; bottom: 30px; } 100% { opacity: 0; bottom: 10px; } }
         select.standard option { background: #0f172a; color: white; }
         .subj-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: center; font-weight: 600; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
         .subj-btn:hover { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; }
-        .subj-scroll-container { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 10px; }
+        
+        /* Ensures the topics menu scrolls smoothly on mobile */
+        .subj-scroll-container { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 10px; -webkit-overflow-scrolling: touch; }
         .subj-scroll-container::-webkit-scrollbar { width: 4px; }
         .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
     </style>
@@ -159,8 +164,8 @@
         <div style="text-align: left; margin-bottom: 18px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
             <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">AI Engine Priority</label>
             <select id="modelPriority" class="standard" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 10px;">
-                <option value="groq,cloudflare,gemini" selected>⚡ Groq → Cloudflare → Gemini (Default)</option>
-                <option value="gemini,cloudflare,groq">💎 Gemini → Cloudflare → Groq</option>
+                <option value="gemini,cloudflare,groq" selected>💎 Gemini → Cloudflare → Groq (Default)</option>
+                <option value="groq,cloudflare,gemini">⚡ Groq → Cloudflare → Gemini</option>
                 <option value="cloudflare,gemini,groq">☁️ Cloudflare → Gemini → Groq</option>
             </select>
             
@@ -199,9 +204,11 @@
         <div id="pdfExportArea" class="card" style="padding: 30px; width: 100%; box-sizing: border-box;">
             <div style="text-align: center; margin-bottom: 30px;">
                 <h2 style="color: #22c55e; font-size: 32px; margin-bottom: 5px;">Quiz Completed!</h2>
-                <div id="resultSubtext" style="color: #94a3b8; font-weight: 600;">Physics - 9th Grade</div>
+                <div id="resultSubtext" style="color: #94a3b8; font-weight: 600; margin-bottom: 10px;">Physics - 9th Grade</div>
+                <div id="performanceMessage" style="font-size: 16px; font-weight: 700; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"></div>
             </div>
-            <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;">
                 <div class="stat-box"><div class="num" id="statCorrect" style="color: #22c55e;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Correct</div></div>
                 <div class="stat-box"><div class="num" id="statWrong" style="color: #ef4444;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Incorrect</div></div>
                 <div class="stat-box"><div class="num" id="statTotal" style="color: #38bdf8;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Total</div></div>
@@ -237,19 +244,55 @@
         setTimeout(() => t.remove(), 3000);
     }
 
+    // MASSIVE EXPANDED TOPIC LIST ADDED
     const topicData = {
-        "Math": [ { en: "Number System", hi: "संख्या पद्धति" }, { en: "Algebra", hi: "बीजगणित" }, { en: "Geometry", hi: "ज्यामिति" }, { en: "Trigonometry", hi: "त्रिकोणमिति" }, { en: "Mensuration", hi: "क्षेत्रमिति" }, { en: "Statistics", hi: "सांख्यिकी" }, { en: "Probability", hi: "प्रायिकता" } ],
-        "Science": [ { en: "Physics (General)", hi: "भौतिक विज्ञान (सामान्य)" }, { en: "Chemistry (General)", hi: "रसायन विज्ञान (सामान्य)" }, { en: "Biology (General)", hi: "जीव विज्ञान (सामान्य)" }, { en: "Motion", hi: "गति" }, { en: "Force & Laws of Motion", hi: "बल और गति के नियम" }, { en: "Gravitation", hi: "गुरुत्वाकर्षण" } ],
-        "SST": [ { en: "Ancient History", hi: "प्राचीन इतिहास" }, { en: "Indian National Movement", hi: "भारतीय स्वतंत्रता आंदोलन" }, { en: "Geography (Indian)", hi: "भारतीय भूगोल" }, { en: "Indian Constitution", hi: "भारतीय संविधान" } ],
-        "English Grammar": [ { en: "Tenses", hi: "Tenses" }, { en: "Nouns & Pronouns", hi: "Nouns & Pronouns" }, { en: "Active & Passive Voice", hi: "Active & Passive Voice" }, { en: "Direct & Indirect Speech", hi: "Direct & Indirect Speech" } ],
-        "Hindi Grammar": [ { en: "संज्ञा और सर्वनाम", hi: "संज्ञा और सर्वनाम" }, { en: "मुहावरे और लोकोक्तियाँ", hi: "मुहावरे और लोकोक्तियाँ" }, { en: "संधि और समास", hi: "संधि और समास" }, { en: "विलोम और पर्यायवाची", hi: "विलोम और पर्यायवाची" } ]
+        "Math": [ 
+            { en: "Number System", hi: "संख्या पद्धति" }, { en: "Algebra", hi: "बीजगणित" }, { en: "Geometry", hi: "ज्यामिति" }, 
+            { en: "Trigonometry", hi: "त्रिकोणमिति" }, { en: "Mensuration", hi: "क्षेत्रमिति" }, { en: "Statistics", hi: "सांख्यिकी" }, 
+            { en: "Probability", hi: "प्रायिकता" }, { en: "Fractions & Decimals", hi: "भिन्न और दशमलव" }, 
+            { en: "Linear Equations", hi: "रैखिक समीकरण" }, { en: "Quadratic Equations", hi: "द्विघात समीकरण" }, 
+            { en: "Polynomials", hi: "बहुपद" }, { en: "Coordinate Geometry", hi: "निर्देशांक ज्यामिति" }, 
+            { en: "Surface Area and Volume", hi: "पृष्ठीय क्षेत्रफल और आयतन" } 
+        ],
+        "Science": [ 
+            { en: "Physics (General)", hi: "भौतिक विज्ञान (सामान्य)" }, { en: "Chemistry (General)", hi: "रसायन विज्ञान (सामान्य)" }, 
+            { en: "Biology (General)", hi: "जीव विज्ञान (सामान्य)" }, { en: "Motion", hi: "गति" }, 
+            { en: "Force & Laws of Motion", hi: "बल और गति के नियम" }, { en: "Gravitation", hi: "गुरुत्वाकर्षण" },
+            { en: "Work and Energy", hi: "कार्य और ऊर्जा" }, { en: "Sound", hi: "ध्वनि" }, 
+            { en: "Structure of the Atom", hi: "परमाणु की संरचना" }, { en: "Matter in Our Surroundings", hi: "हमारे आस-पास के पदार्थ" },
+            { en: "Tissues", hi: "ऊतक" }, { en: "Diversity in Living Organisms", hi: "जीवों में विविधता" },
+            { en: "Natural Resources", hi: "प्राकृतिक संपदा" }
+        ],
+        "SST": [ 
+            { en: "Ancient History", hi: "प्राचीन इतिहास" }, { en: "Indian National Movement", hi: "भारतीय स्वतंत्रता आंदोलन" }, 
+            { en: "Geography (Indian)", hi: "भारतीय भूगोल" }, { en: "Indian Constitution", hi: "भारतीय संविधान" },
+            { en: "French Revolution", hi: "फ्रांसीसी क्रांति" }, { en: "Nazism and the Rise of Hitler", hi: "नात्सीवाद और हिटलर का उदय" },
+            { en: "Climate", hi: "जलवायु" }, { en: "Drainage", hi: "अपवाह" },
+            { en: "Electoral Politics", hi: "चुनावी राजनीति" }, { en: "Democratic Rights", hi: "लोकतांत्रिक अधिकार" },
+            { en: "Story of Village Palampur", hi: "पालमपुर गाँव की कहानी" }, { en: "Poverty as a Challenge", hi: "निर्धनता: एक चुनौती" }
+        ],
+        "English Grammar": [ 
+            { en: "Tenses", hi: "Tenses" }, { en: "Nouns & Pronouns", hi: "Nouns & Pronouns" }, 
+            { en: "Active & Passive Voice", hi: "Active & Passive Voice" }, { en: "Direct & Indirect Speech", hi: "Direct & Indirect Speech" },
+            { en: "Prepositions", hi: "Prepositions" }, { en: "Conjunctions", hi: "Conjunctions" },
+            { en: "Articles", hi: "Articles" }, { en: "Subject-Verb Agreement", hi: "Subject-Verb Agreement" },
+            { en: "Modals", hi: "Modals" }, { en: "Idioms & Phrases", hi: "Idioms & Phrases" },
+            { en: "Sentence Rearrangement", hi: "Sentence Rearrangement" }
+        ],
+        "Hindi Grammar": [ 
+            { en: "संज्ञा और सर्वनाम", hi: "संज्ञा और सर्वनाम" }, { en: "मुहावरे और लोकोक्तियाँ", hi: "मुहावरे और लोकोक्तियाँ" }, 
+            { en: "संधि और समास", hi: "संधि और समास" }, { en: "विलोम और पर्यायवाची", hi: "विलोम और पर्यायवाची" },
+            { en: "रस (Ras)", hi: "रस" }, { en: "अलंकार (Alankar)", hi: "अलंकार" },
+            { en: "प्रत्यय और उपसर्ग", hi: "प्रत्यय और उपसर्ग" }, { en: "वाक्य भेद", hi: "वाक्य भेद" },
+            { en: "पत्र लेखन (Format)", hi: "पत्र लेखन (प्रारूप)" }, { en: "अनुच्छेद लेखन", hi: "अनुच्छेद लेखन" }
+        ]
     };
 
     let chosenSubject = "";
     let chosenTopic = "";
     let topicLang = "en"; 
 
-    // 🚀 FIXED: Auto-Sync Topic language with selected Quiz Language so AI doesn't get confused
+    // 🚀 Auto-Sync Topic language with selected Quiz Language so AI doesn't get confused
     document.getElementById('quizLanguage').addEventListener('change', (e) => {
         topicLang = (e.target.value === 'Hindi') ? 'hi' : 'en';
         document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
@@ -343,16 +386,16 @@
     const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadBar = document.getElementById('loadingBarContainer');
     const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
 
-    // Fetch chunk function
+    // STRICT PROMPT FIX: Math formatting and preventing English hints in translated correct options
     async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
         1. LANGUAGE: The ENTIRE quiz (questions, options, and explanations) MUST be strictly in ${language.toUpperCase()}. Even if the topic name is English, write everything in ${language}.
-        2. ALL NUMBERS MUST be standard English Arabic numerals (0-9). DO NOT use Hindi numerals.
-        3. Use LaTeX for ALL math. Wrap inline math in $...$ and display math in $$...$$.
-        4. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
-        5. Return ONLY a valid JSON array. NO markdown code blocks.
-        6. The keys MUST be exactly: "question", "options", "correctOption", "explanation".
+        2. NO HINTS IN OPTIONS (CRITICAL): The 4 items in the "options" array MUST be identical in format. DO NOT add any extra English meanings, translations, or hints to the correct option. Make all options look uniformly plausible.
+        3. ALL NUMBERS MUST be standard English Arabic numerals (0-9). DO NOT use Hindi numerals.
+        4. Use LaTeX for ALL math equations. Wrap inline math in $...$ and display math in $$...$$.
+        5. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
+        6. Return ONLY a valid JSON array. NO markdown code blocks. NO extra conversational text.
         Format exactly like this:
         [
           {
@@ -377,15 +420,22 @@
         if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
 
         let rawText = data.text;
+        // Strip out potential markdown wrapping just in case the AI ignored the rule
         let startIdx = rawText.indexOf('[');
         let endIdx = rawText.lastIndexOf(']');
         if (startIdx === -1 || endIdx === -1) throw new Error("AI did not return the correct array format.");
 
         let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
-        let parsedArray = JSON.parse(cleanJsonString);
+        let parsedArray;
+        
+        try {
+            parsedArray = JSON.parse(cleanJsonString);
+        } catch (err) {
+            console.error("JSON Parsing failed for this chunk:", cleanJsonString);
+            throw new Error("AI returned malformed data (Syntax Error). Please try again.");
+        }
 
-        // 🚀 THE ANTI-CRASH NORMALIZER 🚀
-        // Cloudflare and Groq constantly change the JSON keys. This forces them to be standard so the results page doesn't crash!
+        // Normalizer to protect from API key changes
         return parsedArray.map(item => ({
             question: item.question || item.q || "Question text missing",
             options: item.options || item.choices || ["A", "B", "C", "D"],
@@ -542,7 +592,6 @@
         quizData.forEach((q, index) => {
             const userAns = userAnswers[index] || "Unanswered";
             
-            // 🚀 Bulleproof check to prevent the UI from crashing if JSON was slightly malformed
             const isCorrect = String(userAns).trim() === String(q.correctOption).trim();
             if(isCorrect) correctCount++;
 
@@ -573,6 +622,17 @@
         const total = quizData.length;
         const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
 
+        // NEW: Grade Calculation and Performance Feedback
+        const percentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+        let perfMsg = "";
+        let perfColor = "";
+        if (percentage >= 90) { perfMsg = "Outstanding! You have mastered this topic! 🌟"; perfColor = "#22c55e"; }
+        else if (percentage >= 70) { perfMsg = "Great job! Keep up the good work! 👏"; perfColor = "#38bdf8"; }
+        else if (percentage >= 40) { perfMsg = "Good effort, but you need to study more to master this. 📚"; perfColor = "#f59e0b"; }
+        else { perfMsg = "Needs improvement. Please review the concepts and try again. 📖"; perfColor = "#ef4444"; }
+
+        document.getElementById('performanceMessage').innerHTML = `<span style="color: ${perfColor};">${perfMsg}</span> <br><span style="font-size: 13px; color: #94a3b8; font-weight: normal; margin-top: 5px; display: inline-block;">You scored ${percentage}% marks.</span>`;
+
         document.getElementById('resultSubtext').innerText = `${finalTopicStr} - Class ${grade}`;
         document.getElementById('statCorrect').innerText = correctCount;
         document.getElementById('statWrong').innerText = total - correctCount;
@@ -586,7 +646,8 @@
     function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
         if (typeof localforage !== 'undefined') {
             let sessionId = Date.now();
-            let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total}</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
+            let percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+            let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total} (${percentage}%)</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
             
             let histItem = { 
                 id: sessionId, 
@@ -616,7 +677,7 @@
 </script>
     <script>
     // Global State Container
-    let quizData = {
+    let quizDataStore = {
         currentQuestionIndex: 0,
         score: 0,
         questions: [],
@@ -690,6 +751,18 @@
             if (elCorrect) elCorrect.innerText = correctCount;
             if (elTotal) elTotal.innerText = totalCount;
             if (elWrong) elWrong.innerText = totalCount - correctCount;
+
+            // Compute performance marks string for history load
+            const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+            let perfMsg = "";
+            let perfColor = "";
+            if (percentage >= 90) { perfMsg = "Outstanding! You have mastered this topic! 🌟"; perfColor = "#22c55e"; }
+            else if (percentage >= 70) { perfMsg = "Great job! Keep up the good work! 👏"; perfColor = "#38bdf8"; }
+            else if (percentage >= 40) { perfMsg = "Good effort, but you need to study more to master this. 📚"; perfColor = "#f59e0b"; }
+            else { perfMsg = "Needs improvement. Please review the concepts and try again. 📖"; perfColor = "#ef4444"; }
+            
+            let pContainer = document.getElementById('performanceMessage');
+            if(pContainer) pContainer.innerHTML = `<span style="color: ${perfColor};">${perfMsg}</span> <br><span style="font-size: 13px; color: #94a3b8; font-weight: normal; margin-top: 5px; display: inline-block;">You scored ${percentage}% marks.</span>`;
         }
         
         if (typeof showToast === "function") {
@@ -710,7 +783,7 @@
 
     // 4. Sample Runtime Navigation Functions for Active Quiz Mode
     window.selectQuizOption = function(optionIndex) {
-        quizData.userAnswers[quizData.currentQuestionIndex] = optionIndex;
+        quizDataStore.userAnswers[quizDataStore.currentQuestionIndex] = optionIndex;
         const options = document.querySelectorAll('.option-btn');
         options.forEach((btn, idx) => {
             if (idx === optionIndex) {
@@ -722,8 +795,8 @@
     };
 
     window.nextQuizQuestion = function() {
-        if (quizData.currentQuestionIndex < quizData.questions.length - 1) {
-            quizData.currentQuestionIndex++;
+        if (quizDataStore.currentQuestionIndex < quizDataStore.questions.length - 1) {
+            quizDataStore.currentQuestionIndex++;
             renderActiveQuestion();
         } else {
             compileAndShowResults();
@@ -732,9 +805,9 @@
 
     function renderActiveQuestion() {
         const qText = document.getElementById('questionText');
-        if (!qText || quizData.questions.length === 0) return;
+        if (!qText || quizDataStore.questions.length === 0) return;
         
-        let curQ = quizData.questions[quizData.currentQuestionIndex];
+        let curQ = quizDataStore.questions[quizDataStore.currentQuestionIndex];
         qText.innerHTML = `<h3>${curQ.question}</h3>`;
         
         // Safe LaTeX pass over text nodes
@@ -748,7 +821,7 @@
         let resultHtmlTable = `
             <div class="result-card" style="padding:15px; background:var(--input-bg); border-radius:12px; color:var(--text-main);">
                 <h3 style="margin-bottom:10px; color:var(--primary);">Quiz Complete Summary</h3>
-                <p style="font-weight:bold; margin-bottom:15px;">Final Score: ${quizData.score} out of ${quizData.questions.length}</p>
+                <p style="font-weight:bold; margin-bottom:15px;">Final Score: ${quizDataStore.score} out of ${quizDataStore.questions.length}</p>
             </div>
         `;
         
@@ -854,7 +927,7 @@
                 forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
             }
             
-        }, 800); // 👈 THIS 800ms DELAY IS THE MAGIC FIX. IT WAITS FOR EVERYTHING TO BE READY.
+        }, 800);
     });
 </script>
 </body>
