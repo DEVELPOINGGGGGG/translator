@@ -53,6 +53,37 @@
         .subj-scroll-container { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 10px; -webkit-overflow-scrolling: touch; }
         .subj-scroll-container::-webkit-scrollbar { width: 4px; }
         .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
+
+        /* Fancy Loader Animation */
+        .ai-loader {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 4px solid rgba(168, 85, 247, 0.2);
+            border-top-color: #a855f7;
+            border-left-color: #38bdf8;
+            animation: spinFast 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes spinFast { 100% { transform: rotate(360deg); } }
+
+        /* Timer UI */
+        .timer-box {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .timer-box.hurry {
+            animation: pulseRed 1s infinite;
+        }
+        @keyframes pulseRed { 0% { background: rgba(239, 68, 68, 0.15); } 50% { background: rgba(239, 68, 68, 0.4); color: #fff; } 100% { background: rgba(239, 68, 68, 0.15); } }
     </style>
 </head>
 <body>
@@ -87,10 +118,12 @@
         <div class="subj-scroll-container">
             <button class="subj-btn main-subj">Science</button>
             <button class="subj-btn main-subj">Math</button>
-            <button class="subj-btn main-subj">Computer</button>
+            <button class="subj-btn main-subj">Computer Science</button>
             <button class="subj-btn main-subj">English Grammar</button>
             <button class="subj-btn main-subj">Hindi Grammar</button>
             <button class="subj-btn main-subj">SST</button>
+            <button class="subj-btn main-subj">Geography</button>
+            <button class="subj-btn main-subj">History</button>
             <button class="subj-btn main-subj">GK</button>
         </div>
     </div>
@@ -122,7 +155,7 @@
         </div>
 
         <div style="text-align: left; margin-bottom: 18px;">
-            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject <span style="font-size:11px; font-weight:normal; color:#64748b;">(Optional - Leave blank for random subjects)</span></label>
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject <span style="font-size:11px; font-weight:normal; color:#64748b;">(Optional - Leave blank for random)</span></label>
             <div id="quizSubjectSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
                 <span id="selectedSubjectText">Select Subject... (Or Leave Blank)</span>
                 <span style="font-size: 12px;">▼</span>
@@ -175,11 +208,11 @@
 
         <button id="startQuizBtn" class="quiz-btn">🚀 Generate & Start Quiz!</button>
         
-        <div id="loadingBarContainer" style="display:none; width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 25px; overflow: hidden; position: relative;">
-            <div style="height: 100%; width: 30%; background: #a855f7; position: absolute; animation: loadingSweep 1.5s infinite ease-in-out;"></div>
+        <!-- Advanced Animation Loader -->
+        <div id="loadingAnimationContainer" style="display:none; text-align: center; margin-top: 30px; padding-bottom: 10px;">
+            <div class="ai-loader"></div>
+            <div id="setupStatus" style="font-size: 15px; color: #38bdf8; font-weight: 600; letter-spacing: 0.5px;">Building your smart quiz...</div>
         </div>
-        
-        <div id="setupStatus" style="margin-top: 15px; font-size: 14px; color: #94a3b8; font-weight: 600; text-align: center; min-height: 20px;"></div>
     </div>
 
     <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
@@ -187,13 +220,16 @@
             <div id="quizProgressBar" style="height: 100%; width: 0%; background: #38bdf8; transition: width 0.3s ease;"></div>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
-            <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
-            <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1; max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div id="quizProgress" style="font-weight: 700; color: #38bdf8; font-size: 16px;">Question 1 of 5</div>
+                <div id="timerContainer" class="timer-box">⏱️ <span id="timerText">60s</span></div>
+            </div>
+            <div id="quizTag" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; color: #cbd5e1; max-width: 40%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
         </div>
         <div id="questionText" style="font-size: 20px; font-weight: 600; line-height: 1.5; color: white; margin-bottom: 25px; word-wrap: break-word; white-space: normal;">Loading Question...</div>
         <div id="optionsContainer" style="display: flex; flex-direction: column;"></div>
         <div style="display: flex; gap: 15px; margin-top: 25px;">
-            <button id="prevBtn" class="btn" style="flex: 1; padding: 15px; border-radius: 12px; background: #475569; color: white; display: none;">⬅️ Previous</button>
+            <!-- Previous Button Removed entirely as requested -->
             <button id="nextBtn" class="btn blue" style="flex: 1; padding: 15px; border-radius: 12px;">Next ➡️</button>
         </div>
     </div>
@@ -208,7 +244,7 @@
             
             <div style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;">
                 <div class="stat-box"><div class="num" id="statCorrect" style="color: #22c55e;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Correct</div></div>
-                <div class="stat-box"><div class="num" id="statWrong" style="color: #ef4444;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Incorrect</div></div>
+                <div class="stat-box"><div class="num" id="statWrong" style="color: #ef4444;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Incorrect/Skipped</div></div>
                 <div class="stat-box"><div class="num" id="statTotal" style="color: #38bdf8;">0</div><div style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase;">Total</div></div>
             </div>
             <h3 style="color: white; margin-bottom: 15px; font-size: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Detailed Review</h3>
@@ -258,15 +294,26 @@
             { en: "Work and Energy", hi: "कार्य और ऊर्जा" }, { en: "Sound", hi: "ध्वनि" }, 
             { en: "Structure of the Atom", hi: "परमाणु की संरचना" }, { en: "Matter in Our Surroundings", hi: "हमारे आस-पास के पदार्थ" },
             { en: "Tissues", hi: "ऊतक" }, { en: "Diversity in Living Organisms", hi: "जीवों में विविधता" },
-            { en: "Natural Resources", hi: "प्राकृतिक संपदा" }
+            { en: "Natural Resources", hi: "प्राकृतिक संपदा" }, { en: "Light - Reflection & Refraction", hi: "प्रकाश - परावर्तन तथा अपवर्तन" },
+            { en: "Electricity", hi: "विद्युत" }, { en: "Magnetic Effects of Electric Current", hi: "विद्युत धारा के चुंबकीय प्रभाव" }
         ],
         "SST": [ 
-            { en: "Ancient History", hi: "प्राचीन इतिहास" }, { en: "Indian National Movement", hi: "भारतीय स्वतंत्रता आंदोलन" }, 
-            { en: "Geography (Indian)", hi: "भारतीय भूगोल" }, { en: "Indian Constitution", hi: "भारतीय संविधान" },
-            { en: "French Revolution", hi: "फ्रांसीसी क्रांति" }, { en: "Nazism and the Rise of Hitler", hi: "नात्सीवाद और हिटलर का उदय" },
-            { en: "Climate", hi: "जलवायु" }, { en: "Drainage", hi: "अपवाह" },
-            { en: "Electoral Politics", hi: "चुनावी राजनीति" }, { en: "Democratic Rights", hi: "लोकतांत्रिक अधिकार" },
-            { en: "Story of Village Palampur", hi: "पालमपुर गाँव की कहानी" }, { en: "Poverty as a Challenge", hi: "निर्धनता: एक चुनौती" }
+            { en: "The French Revolution", hi: "फ्रांसीसी क्रांति" }, { en: "Socialism in Europe and the Russian Revolution", hi: "यूरोप में समाजवाद एवं रूसी क्रांति" }, 
+            { en: "Nazism and the Rise of Hitler", hi: "नात्सीवाद और हिटलर का उदय" }, { en: "Forest Society and Colonialism", hi: "वन्य समाज एवं उपनिवेशवाद" },
+            { en: "Pastoralists in the Modern World", hi: "आधुनिक विश्व में चरवाहे" }, { en: "India - Size and Location", hi: "भारत - आकार और स्थिति" },
+            { en: "Physical Features of India", hi: "भारत का भौतिक स्वरूप" }, { en: "Drainage", hi: "अपवाह" },
+            { en: "Climate", hi: "जलवायु" }, { en: "Natural Vegetation and Wildlife", hi: "प्राकृतिक वनस्पति तथा वन्य प्राणी" },
+            { en: "Population", hi: "जनसंख्या" }, { en: "What is Democracy? Why Democracy?", hi: "लोकतंत्र क्या? लोकतंत्र क्यों?" },
+            { en: "Constitutional Design", hi: "संविधान निर्माण" }, { en: "Electoral Politics", hi: "चुनावी राजनीति" },
+            { en: "Working of Institutions", hi: "संस्थाओं का कामकाज" }, { en: "Democratic Rights", hi: "लोकतांत्रिक अधिकार" },
+            { en: "The Story of Village Palampur", hi: "पालमपुर गाँव की कहानी" }, { en: "People as Resource", hi: "संसाधन के रूप में लोग" },
+            { en: "Poverty as a Challenge", hi: "निर्धनता: एक चुनौती" }, { en: "Food Security in India", hi: "भारत में खाद्य सुरक्षा" },
+            { en: "Nationalism in India", hi: "भारत में राष्ट्रवाद" }, { en: "The Making of a Global World", hi: "भूमंडलीकृत विश्व का बनना" },
+            { en: "The Age of Industrialization", hi: "औद्योगीकरण की युग" }, { en: "Print Culture and the Modern World", hi: "मुद्रण संस्कृति और आधुनिक दुनिया" },
+            { en: "Resources and Development", hi: "संसाधन और विकास" }, { en: "Water Resources", hi: "जल संसाधन" },
+            { en: "Agriculture", hi: "कृषि" }, { en: "Power Sharing", hi: "सत्ता की साझेदारी" }, { en: "Federalism", hi: "संघवाद" },
+            { en: "Gender, Religion and Caste", hi: "जाति, धर्म और लैंगिक मसले" }, { en: "Political Parties", hi: "राजनीतिक दल" },
+            { en: "Outcomes of Democracy", hi: "लोकतंत्र के परिणाम" }, { en: "Sectors of the Indian Economy", hi: "भारतीय अर्थव्यवस्था के क्षेत्रक" }
         ],
         "English Grammar": [ 
             { en: "Tenses", hi: "Tenses" }, { en: "Nouns & Pronouns", hi: "Nouns & Pronouns" }, 
@@ -282,12 +329,29 @@
             { en: "रस (Ras)", hi: "रस" }, { en: "अलंकार (Alankar)", hi: "अलंकार" },
             { en: "प्रत्यय और उपसर्ग", hi: "प्रत्यय और उपसर्ग" }, { en: "वाक्य भेद", hi: "वाक्य भेद" },
             { en: "पत्र लेखन (Format)", hi: "पत्र लेखन (प्रारूप)" }, { en: "अनुच्छेद लेखन", hi: "अनुच्छेद लेखन" }
+        ],
+        "Computer Science": [
+            { en: "Computer Networks", hi: "कंप्यूटर नेटवर्किंग" }, { en: "Database Management (DBMS)", hi: "डेटाबेस मैनेजमेंट" },
+            { en: "HTML & CSS Basics", hi: "HTML और CSS मूल बातें" }, { en: "Python Programming", hi: "पायथन प्रोग्रामिंग" },
+            { en: "Data Structures", hi: "डेटा संरचना (Data Structures)" }, { en: "Cyber Security", hi: "साइबर सुरक्षा" },
+            { en: "Operating Systems", hi: "ऑपरेटिंग सिस्टम" }, { en: "Binary Mathematics", hi: "बाइनरी गणित" }
+        ],
+        "Geography": [
+            { en: "World Geography", hi: "विश्व का भूगोल" }, { en: "Physical Geography", hi: "भौतिक भूगोल" },
+            { en: "Human Geography", hi: "मानव भूगोल" }, { en: "Maps and Topography", hi: "मानचित्र और स्थलाकृति" },
+            { en: "Environment and Ecology", hi: "पर्यावरण और पारिस्थितिकी" }
+        ],
+        "History": [
+            { en: "Ancient History", hi: "प्राचीन इतिहास" }, { en: "Medieval History", hi: "मध्यकालीन इतिहास" },
+            { en: "Modern World History", hi: "आधुनिक विश्व इतिहास" }, { en: "Industrial Revolution", hi: "औद्योगिक क्रांति" }
         ]
     };
 
     let chosenSubject = "";
     let chosenTopic = "";
     let topicLang = "en"; 
+    let timerInterval;
+    let timeLeft = 60;
 
     document.getElementById('quizLanguage').addEventListener('change', (e) => {
         topicLang = (e.target.value === 'Hindi') ? 'hi' : 'en';
@@ -379,8 +443,8 @@
     let userAnswers = [];
 
     const setupEl = document.getElementById('quizSetup'), activeEl = document.getElementById('quizActive'), resultsEl = document.getElementById('quizResults');
-    const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadBar = document.getElementById('loadingBarContainer');
-    const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
+    const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadingContainer = document.getElementById('loadingAnimationContainer');
+    const nextBtn = document.getElementById('nextBtn'); // No prevBtn now
 
     async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
@@ -465,7 +529,7 @@
         if(count > 30) count = 30;
 
         startBtn.style.display = 'none';
-        loadBar.style.display = 'block';
+        loadingContainer.style.display = 'block';
         
         let finalTopicStr = "";
         let displayTitleStr = "";
@@ -514,7 +578,7 @@
                 const results = await Promise.all(promises);
                 allFetchedQuestions = results.flat();
             } else {
-                setupStatus.innerHTML = `Connecting to ${baseModelOrder[0].toUpperCase()}...`;
+                setupStatus.innerHTML = `Connecting to ${baseModelOrder[0].toUpperCase()} AI Engine...`;
                 
                 let chunks = [];
                 let remaining = count;
@@ -548,11 +612,39 @@
             setupStatus.innerHTML = `❌ Error: Generation failed. Try asking for fewer questions.`;
             showToast("⚠️ Generation error. Click start again!");
             startBtn.style.display = 'block';
-            loadBar.style.display = 'none';
+            loadingContainer.style.display = 'none';
         }
     });
 
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeLeft = 60;
+        const timerText = document.getElementById('timerText');
+        const timerContainer = document.getElementById('timerContainer');
+        timerText.innerText = timeLeft + "s";
+        timerContainer.classList.remove('hurry');
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerText.innerText = timeLeft + "s";
+            
+            if(timeLeft <= 10) {
+                timerContainer.classList.add('hurry');
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (!userAnswers[currentQuestionIndex]) {
+                    userAnswers[currentQuestionIndex] = "Skipped";
+                }
+                handleNextQuestion();
+            }
+        }, 1000);
+    }
+
     function renderQuestion() {
+        startTimer(); // Start 1 minute timer
+
         const qData = quizData[currentQuestionIndex];
         const progressPct = ((currentQuestionIndex) / quizData.length) * 100;
         document.getElementById('quizProgressBar').style.width = progressPct + '%';
@@ -569,13 +661,17 @@
             btn.className = 'option-btn';
             btn.innerHTML = String(opt).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             
-            if (prevAns && opt === prevAns) btn.classList.add('selected'); 
+            if (prevAns && opt === prevAns && prevAns !== "Skipped") btn.classList.add('selected'); 
             
-            btn.onclick = () => { userAnswers[currentQuestionIndex] = opt; renderQuestion(); };
+            btn.onclick = () => { 
+                userAnswers[currentQuestionIndex] = opt; 
+                // Render purely to update selection styling without resetting timer
+                Array.from(optsContainer.children).forEach(c => c.classList.remove('selected'));
+                btn.classList.add('selected');
+            };
             optsContainer.appendChild(btn);
         });
 
-        prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
         nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
 
         if (window.MathJax) {
@@ -584,13 +680,22 @@
         }
     }
 
-    nextBtn.addEventListener('click', () => {
-        if (!userAnswers[currentQuestionIndex]) return showToast("⚠️ Please select an answer first!");
+    function handleNextQuestion() {
+        clearInterval(timerInterval);
         currentQuestionIndex++;
-        if (currentQuestionIndex >= quizData.length) finishQuiz(); else renderQuestion();
-    });
+        if (currentQuestionIndex >= quizData.length) {
+            finishQuiz(); 
+        } else {
+            renderQuestion();
+        }
+    }
 
-    prevBtn.addEventListener('click', () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuestion(); } });
+    nextBtn.addEventListener('click', () => {
+        if (!userAnswers[currentQuestionIndex]) {
+            return showToast("⚠️ Please select an answer first! Wait for timer to skip.");
+        }
+        handleNextQuestion();
+    });
 
     function finishQuiz() {
         activeEl.classList.remove('active');
@@ -600,16 +705,26 @@
         let reviewHtml = '';
 
         quizData.forEach((q, index) => {
-            const userAns = userAnswers[index] || "Unanswered";
-            
-            const isCorrect = String(userAns).trim() === String(q.correctOption).trim();
-            if(isCorrect) correctCount++;
+            const userAns = userAnswers[index] || "Skipped";
+            let isCorrect = false;
+            let statusIcon = '❌';
+            let colorClass = '#ef4444';
+            let displayAns = String(userAns).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-            const statusIcon = isCorrect ? '✅' : '❌';
-            const colorClass = isCorrect ? '#22c55e' : '#ef4444';
+            if (userAns === "Skipped") {
+                displayAns = "- (Skipped / Time Out)";
+                colorClass = '#f59e0b'; // orange for skipped
+                statusIcon = '⏳';
+            } else {
+                isCorrect = String(userAns).trim() === String(q.correctOption).trim();
+                if (isCorrect) {
+                    correctCount++;
+                    statusIcon = '✅';
+                    colorClass = '#22c55e';
+                }
+            }
             
             const safeQ = String(q.question).replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const safeU = String(userAns).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const safeC = String(q.correctOption).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const safeE = String(q.explanation).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -617,12 +732,12 @@
             <div class="result-card">
                 <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">${index + 1}. ${safeQ}</div>
                 <div style="font-size: 13px; margin-bottom: 5px;">
-                    <span style="color: #94a3b8;">Your Answer:</span> <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${safeU}</span>
+                    <span style="color: #94a3b8;">Your Answer:</span> <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${displayAns}</span>
                 </div>
                 <div style="font-size: 13px; margin-bottom: 10px;">
                     <span style="color: #94a3b8;">Correct Answer:</span> <span style="color: #22c55e; font-weight: 600;">${safeC}</span>
                 </div>
-                <div style="font-size: 13px; color: #cbd5e1; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 3px solid #a855f7;">
+                <div style="font-size: 14px; color: #ffffff; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #a855f7; margin-top: 8px; font-weight: 500;">
                     <b>Why?</b> ${safeE}
                 </div>
             </div>`;
@@ -790,40 +905,6 @@
             }
         });
     };
-
-    window.nextQuizQuestion = function() {
-        if (quizDataStore.currentQuestionIndex < quizDataStore.questions.length - 1) {
-            quizDataStore.currentQuestionIndex++;
-            renderActiveQuestion();
-        } else {
-            compileAndShowResults();
-        }
-    };
-
-    function renderActiveQuestion() {
-        const qText = document.getElementById('questionText');
-        if (!qText || quizDataStore.questions.length === 0) return;
-        
-        let curQ = quizDataStore.questions[quizDataStore.currentQuestionIndex];
-        qText.innerHTML = `<h3>${curQ.question}</h3>`;
-        
-        if (window.MathJax) {
-            MathJax.typesetPromise([qText]).catch(e => console.log(e));
-        }
-    }
-
-    function compileAndShowResults() {
-        let resultHtmlTable = `
-            <div class="result-card" style="padding:15px; background:var(--input-bg); border-radius:12px; color:var(--text-main);">
-                <h3 style="margin-bottom:10px; color:var(--primary);">Quiz Complete Summary</h3>
-                <p style="font-weight:bold; margin-bottom:15px;">Final Score: ${quizDataStore.score} out of ${quizDataStore.questions.length}</p>
-            </div>
-        `;
-        
-        document.getElementById('quizActive').classList.remove('active');
-        document.getElementById('quizResults').classList.add('active');
-        document.getElementById('reviewContainer').innerHTML = resultHtmlTable;
-    }
 
     function resetVideoActivity() {
         if (typeof window.resetVideoActivity === "function") {
