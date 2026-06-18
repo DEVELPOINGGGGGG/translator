@@ -40,7 +40,6 @@
         .option-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #38bdf8; }
         .option-btn.selected { background: rgba(56, 189, 248, 0.2) !important; border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important; }
         
-        /* Mobile UI Fix for Stat Boxes */
         .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px 10px; border-radius: 15px; text-align: center; flex: 1 1 28%; min-width: 80px; }
         .stat-box .num { font-size: 32px; font-weight: 900; }
         
@@ -51,7 +50,6 @@
         .subj-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: center; font-weight: 600; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
         .subj-btn:hover { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; }
         
-        /* Ensures the topics menu scrolls smoothly on mobile */
         .subj-scroll-container { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 10px; -webkit-overflow-scrolling: touch; }
         .subj-scroll-container::-webkit-scrollbar { width: 4px; }
         .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
@@ -124,22 +122,22 @@
         </div>
 
         <div style="text-align: left; margin-bottom: 18px;">
-            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject</label>
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject <span style="font-size:11px; font-weight:normal; color:#64748b;">(Optional - Leave blank for random subjects)</span></label>
             <div id="quizSubjectSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
-                <span id="selectedSubjectText">Select Subject...</span>
+                <span id="selectedSubjectText">Select Subject... (Or Leave Blank)</span>
                 <span style="font-size: 12px;">▼</span>
             </div>
         </div>
 
         <div id="topicContainer" style="display: none; text-align: left; margin-bottom: 18px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin: 0;">Specific Topic</label>
+                <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin: 0;">Specific Topic <span style="font-size:11px; font-weight:normal; color:#64748b;">(Optional)</span></label>
                 <button id="topicLangToggle" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; border-radius: 15px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s;">
                     <span style="font-size: 15px;">🌐</span> English
                 </button>
             </div>
             <div id="quizTopicSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
-                <span id="selectedTopicText">Select Topic...</span>
+                <span id="selectedTopicText">Select Topic... (Or Leave Blank)</span>
                 <span style="font-size: 12px;">▼</span>
             </div>
         </div>
@@ -244,7 +242,6 @@
         setTimeout(() => t.remove(), 3000);
     }
 
-    // MASSIVE EXPANDED TOPIC LIST ADDED
     const topicData = {
         "Math": [ 
             { en: "Number System", hi: "संख्या पद्धति" }, { en: "Algebra", hi: "बीजगणित" }, { en: "Geometry", hi: "ज्यामिति" }, 
@@ -292,7 +289,6 @@
     let chosenTopic = "";
     let topicLang = "en"; 
 
-    // 🚀 Auto-Sync Topic language with selected Quiz Language so AI doesn't get confused
     document.getElementById('quizLanguage').addEventListener('change', (e) => {
         topicLang = (e.target.value === 'Hindi') ? 'hi' : 'en';
         document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
@@ -336,7 +332,7 @@
             if (topicData[chosenSubject]) {
                 document.getElementById('topicContainer').style.display = 'block';
                 chosenTopic = "";
-                document.getElementById('selectedTopicText').innerText = "Select Topic...";
+                document.getElementById('selectedTopicText').innerText = "Select Topic... (Or Leave Blank)";
                 document.getElementById('selectedTopicText').style.color = "#94a3b8";
                 renderTopics();
             } else {
@@ -386,16 +382,16 @@
     const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadBar = document.getElementById('loadingBarContainer');
     const nextBtn = document.getElementById('nextBtn'), prevBtn = document.getElementById('prevBtn');
 
-    // STRICT PROMPT FIX: Math formatting and preventing English hints in translated correct options
     async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
-        1. LANGUAGE: The ENTIRE quiz (questions, options, and explanations) MUST be strictly in ${language.toUpperCase()}. Even if the topic name is English, write everything in ${language}.
-        2. NO HINTS IN OPTIONS (CRITICAL): The 4 items in the "options" array MUST be identical in format. DO NOT add any extra English meanings, translations, or hints to the correct option. Make all options look uniformly plausible.
-        3. ALL NUMBERS MUST be standard English Arabic numerals (0-9). DO NOT use Hindi numerals.
-        4. Use LaTeX for ALL math equations. Wrap inline math in $...$ and display math in $$...$$.
-        5. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
-        6. Return ONLY a valid JSON array. NO markdown code blocks. NO extra conversational text.
+        1. DIFFICULTY SCALING: The difficulty level MUST strictly match Class ${grade} academic standards. If the class is high (e.g., Class 9-12), the questions MUST be conceptual, difficult, and advanced. DO NOT include overly basic or trivial questions like "Who is the Prime Minister of India?" for high school grades.
+        2. LANGUAGE: The ENTIRE quiz (questions, options, and explanations) MUST be strictly in ${language.toUpperCase()}. Even if the topic name is English, write everything in ${language}.
+        3. NO HINTS IN OPTIONS (CRITICAL): The 4 items in the "options" array MUST be identical in format. DO NOT add any extra English meanings, translations, or hints to the correct option. Make all options look uniformly plausible.
+        4. ALL NUMBERS MUST be standard English Arabic numerals (0-9). DO NOT use Hindi numerals.
+        5. Use LaTeX for ALL math equations. Wrap inline math in $...$ and display math in $$...$$.
+        6. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
+        7. Return ONLY a valid JSON array. NO markdown code blocks. NO extra conversational text.
         Format exactly like this:
         [
           {
@@ -420,7 +416,6 @@
         if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
 
         let rawText = data.text;
-        // Strip out potential markdown wrapping just in case the AI ignored the rule
         let startIdx = rawText.indexOf('[');
         let endIdx = rawText.lastIndexOf(']');
         if (startIdx === -1 || endIdx === -1) throw new Error("AI did not return the correct array format.");
@@ -435,7 +430,6 @@
             throw new Error("AI returned malformed data (Syntax Error). Please try again.");
         }
 
-        // Normalizer to protect from API key changes
         return parsedArray.map(item => ({
             question: item.question || item.q || "Question text missing",
             options: item.options || item.choices || ["A", "B", "C", "D"],
@@ -465,8 +459,6 @@
         const modelPriorityStr = document.getElementById('modelPriority').value;
         const isDivideMode = document.getElementById('divideMode').checked;
 
-        if(!chosenSubject) { showToast("⚠️ Please select a Subject first."); return; }
-        if(topicData[chosenSubject] && !chosenTopic) { showToast("⚠️ Please select a Specific Topic."); return; }
         if(!grade) { showToast("⚠️ Please select a Class/Grade."); return; }
         
         if(isNaN(count) || count < 1) count = 5;
@@ -475,7 +467,23 @@
         startBtn.style.display = 'none';
         loadBar.style.display = 'block';
         
-        const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
+        let finalTopicStr = "";
+        let displayTitleStr = "";
+        
+        if (!chosenSubject) {
+            finalTopicStr = "Mixed topics across multiple random academic subjects (like Science, Math, History, General Knowledge)";
+            displayTitleStr = "Mixed Subjects";
+            document.getElementById('quizTag').innerText = `Mixed Subjects • Class ${grade}`;
+        } else if (!chosenTopic) {
+            finalTopicStr = `A random mix of all topics within the subject: ${chosenSubject}`;
+            displayTitleStr = `${chosenSubject} (Mixed Topics)`;
+            document.getElementById('quizTag').innerText = `${chosenSubject} (Mixed) • Class ${grade}`;
+        } else {
+            finalTopicStr = `${chosenSubject} - ${chosenTopic}`;
+            displayTitleStr = `${chosenSubject} - ${chosenTopic}`;
+            document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
+        }
+        
         const baseModelOrder = modelPriorityStr.split(','); 
 
         try {
@@ -527,7 +535,9 @@
             quizData = allFetchedQuestions.slice(0, count); 
             currentQuestionIndex = 0;
             userAnswers = [];
-            document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
+            
+            // Store the display string globally for saving to history later
+            window.activeQuizTitle = displayTitleStr;
             
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
@@ -620,9 +630,7 @@
 
         const grade = document.getElementById('quizClass').value;
         const total = quizData.length;
-        const finalTopicStr = chosenTopic ? `${chosenSubject} - ${chosenTopic}` : chosenSubject;
 
-        // NEW: Grade Calculation and Performance Feedback
         const percentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
         let perfMsg = "";
         let perfColor = "";
@@ -633,14 +641,15 @@
 
         document.getElementById('performanceMessage').innerHTML = `<span style="color: ${perfColor};">${perfMsg}</span> <br><span style="font-size: 13px; color: #94a3b8; font-weight: normal; margin-top: 5px; display: inline-block;">You scored ${percentage}% marks.</span>`;
 
-        document.getElementById('resultSubtext').innerText = `${finalTopicStr} - Class ${grade}`;
+        document.getElementById('resultSubtext').innerText = `${window.activeQuizTitle} - Class ${grade}`;
         document.getElementById('statCorrect').innerText = correctCount;
         document.getElementById('statWrong').innerText = total - correctCount;
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
         if (window.MathJax) MathJax.typesetPromise([document.getElementById('reviewContainer')]).catch((err) => console.log('MathJax Review Render Error: ', err));
-        saveQuizToHistory(finalTopicStr, grade, correctCount, total, reviewHtml);
+        
+        saveQuizToHistory(window.activeQuizTitle, grade, correctCount, total, reviewHtml);
     }
 
     function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
@@ -663,6 +672,7 @@
                 history = history || [];
                 history.unshift(histItem);
                 localforage.setItem('aiHistory', history);
+                console.log("Quiz saved to history successfully.");
             }).catch(function(err) {
                 console.error("Failed to save quiz history", err);
             });
@@ -671,12 +681,11 @@
 
     function downloadPDF() {
         const element = document.getElementById('pdfExportArea');
-        const finalTopicStr = chosenTopic ? `${chosenSubject}_${chosenTopic}` : chosenSubject;
-        html2pdf().set({ margin: 10, filename: `AI_Quiz_Result_${finalTopicStr.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => showToast("✅ PDF Downloaded!"));
+        const filenameSafe = window.activeQuizTitle ? window.activeQuizTitle.replace(/\s+/g, '_') : 'Mixed_Quiz';
+        html2pdf().set({ margin: 10, filename: `AI_Quiz_Result_${filenameSafe}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => showToast("✅ PDF Downloaded!"));
     }
 </script>
     <script>
-    // Global State Container
     let quizDataStore = {
         currentQuestionIndex: 0,
         score: 0,
@@ -690,7 +699,6 @@
         checkForHistoryRestore();
     });
 
-    // 1. Check URL Parameters for Session Restoration
     function checkForHistoryRestore() {
         const urlParams = new URLSearchParams(window.location.search);
         const restoreId = urlParams.get('restore');
@@ -700,7 +708,6 @@
                 let history = [];
                 try { history = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
                 
-                // Fallback check if using localForage structure or standard schema
                 let item = history.find(i => i.id == restoreId);
                 if (item && item.interactions && item.interactions.length > 0) {
                     executeQuizRestoration(item.interactions[0].answer, item.title || "Restored Quiz Review");
@@ -711,9 +718,7 @@
         }
     }
 
-    // 2. Execute UI Switches and Inject Historical Data
     function executeQuizRestoration(savedHtmlTable, quizTitle) {
-        // Toggle view containers cleanly
         const setupView = document.getElementById('quizSetup');
         const activeView = document.getElementById('quizActive');
         const resultsView = document.getElementById('quizResults');
@@ -722,14 +727,11 @@
         if (activeView) activeView.classList.remove('active');
         if (resultsView) resultsView.classList.add('active');
         
-        // Target container divs inside quiz.html result section
         const reviewContainer = document.getElementById('reviewContainer');
         const subtextHeader = document.getElementById('resultSubtext');
         
         if (reviewContainer) {
             reviewContainer.innerHTML = savedHtmlTable;
-            
-            // Re-render LaTeX symbols inside the injected historical table safely
             if (window.MathJax) {
                 MathJax.typesetPromise([reviewContainer]).catch(e => console.log("MathJax error:", e));
             }
@@ -738,7 +740,6 @@
             subtextHeader.innerText = quizTitle;
         }
 
-        // Dynamically compute stat card values from the saved HTML table string
         let scoreMatch = savedHtmlTable.match(/Score:\s*(\d+)\s*out\s*of\s*(\d+)/i);
         if (scoreMatch) {
             const correctCount = parseInt(scoreMatch[1]);
@@ -752,7 +753,6 @@
             if (elTotal) elTotal.innerText = totalCount;
             if (elWrong) elWrong.innerText = totalCount - correctCount;
 
-            // Compute performance marks string for history load
             const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
             let perfMsg = "";
             let perfColor = "";
@@ -770,18 +770,15 @@
         }
     }
 
-    // 3. Set Up Listeners for Manual Quiz Creation
     function setupSubjectListeners() {
-        // Handle selecting subject categories manually (Physics, Chemistry, etc.)
         const selectors = document.querySelectorAll('.subj-btn, .topic-btn');
         selectors.forEach(btn => {
             btn.addEventListener('click', () => {
-                resetVideoActivity(); // Keep UI interactions fresh
+                resetVideoActivity(); 
             });
         });
     }
 
-    // 4. Sample Runtime Navigation Functions for Active Quiz Mode
     window.selectQuizOption = function(optionIndex) {
         quizDataStore.userAnswers[quizDataStore.currentQuestionIndex] = optionIndex;
         const options = document.querySelectorAll('.option-btn');
@@ -810,14 +807,12 @@
         let curQ = quizDataStore.questions[quizDataStore.currentQuestionIndex];
         qText.innerHTML = `<h3>${curQ.question}</h3>`;
         
-        // Safe LaTeX pass over text nodes
         if (window.MathJax) {
             MathJax.typesetPromise([qText]).catch(e => console.log(e));
         }
     }
 
     function compileAndShowResults() {
-        // Build score table format to comply with your app's global save schema
         let resultHtmlTable = `
             <div class="result-card" style="padding:15px; background:var(--input-bg); border-radius:12px; color:var(--text-main);">
                 <h3 style="margin-bottom:10px; color:var(--primary);">Quiz Complete Summary</h3>
@@ -825,13 +820,11 @@
             </div>
         `;
         
-        // Execute UI displays switch
         document.getElementById('quizActive').classList.remove('active');
         document.getElementById('quizResults').classList.add('active');
         document.getElementById('reviewContainer').innerHTML = resultHtmlTable;
     }
 
-    // Utility function override to reset animation logs safely
     function resetVideoActivity() {
         if (typeof window.resetVideoActivity === "function") {
             window.resetVideoActivity();
@@ -844,9 +837,7 @@
         const restoreId = urlParams.get('restore');
         if (!restoreId) return;
 
-        // Wait 800ms to guarantee the page, CSS, and animations are 100% finished loading
         setTimeout(() => {
-            // Automatically hunt down the chat box or text area on the page
             let container = document.querySelector('.chat-scroll-area') || 
                             document.getElementById('chatHistory') || 
                             document.getElementById('searchChatHistory') ||
@@ -859,9 +850,8 @@
                 let item = historyData.find(i => i.id == restoreId);
                 if (!item) return;
 
-                // 🛑 SCENARIO 1: It's a Chat Interface (Search, Image)
                 if (item.interactions && item.interactions.length > 0 && container.classList.contains('chat-scroll-area')) {
-                    container.innerHTML = ''; // Wipe the empty screen
+                    container.innerHTML = ''; 
                     
                     item.interactions.forEach((inter, index) => {
                         let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-width:100%; border-radius:16px; margin-bottom:15px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">` : '';
@@ -888,12 +878,9 @@
                         `);
                     });
                     
-                    // Force the window to scroll to the newly injected text
                     setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
                     if (typeof showToast === 'function') showToast("🔄 Search Restored Successfully!");
                 } 
-                
-                // 🛑 SCENARIO 2: It's a Text Box Interface (Translator, Q&A)
                 else {
                     let textId = `restored_text_box`;
                     let ansText = item.interactions ? item.interactions[0].answer : item.answer;
@@ -906,18 +893,15 @@
                             <button class="btn" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; flex: 1;" onclick="copyToClipboard('${textId}')">📋 Copy</button>
                         </div>
                     `;
-                    // Refill the input text box too
                     if (document.getElementById('inputText')) document.getElementById('inputText').value = item.question || "";
                     if (typeof showToast === 'function') showToast("🔄 Document Restored Successfully!");
                 }
 
-                // Safely render any Math/Physics equations (LaTeX)
                 if (window.MathJax) {
                     MathJax.typesetPromise([container]).catch(e => console.log(e));
                 }
             };
 
-            // Safely fetch from your LocalForage database, fallback to LocalStorage
             if (typeof localforage !== 'undefined') {
                 localforage.getItem('aiHistory').then(data => {
                     if (data && data.length > 0) forceInjectData(data);
