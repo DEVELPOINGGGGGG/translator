@@ -489,7 +489,8 @@ function getRetryButtonsHtml(lId) {
 }
 
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
-    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
+    // FIX: Changed margin-top to 35px so it doesn't overlap the "BY GEMINI" badge
+    containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:35px;"></div>`;
     const txtEl = document.getElementById(contentId);
     
     const chars = rawText.length || 1;
@@ -529,33 +530,11 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     const buttons = `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('text_${lId}')">🔊 Listen</button><button class="btn blue" style="padding:10px; flex:1; font-size:13px; border-radius:20px; background:linear-gradient(135deg, #f43f5e, #be123c);" onclick="initVideoGui()">▶️ Tutor</button><button class="btn" style="padding:10px; flex:0.5; font-size:13px; border-radius:20px; background:#475569; color:white;" onclick="copyToClipboard('text_${lId}')">📋</button></div>${getRetryButtonsHtml(lId)}</div>`;
     
     if (useTyping) { typeWriteResponse(bbl, answer, provider, `text_${lId}`, buttons, true); } 
-    else { bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:10px;">${answer.replace(/\n/g, '<br>')}</div>${buttons}`; if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); } window.toggleChatButton(false); }
-}
-
-async function retryRequest(lId, targetProvider) {
-    const req = window.requestCache[lId]; if(!req) return showToast("Request data expired.");
-    let container;
-    if (req.type === 'qa') { container = document.getElementById("qaAnswerBox"); document.getElementById("qaStatusText").innerText = `Retrying with ${targetProvider.toUpperCase()}...`; document.getElementById("qaProgressBar").style.width = "85%"; } 
-    else { container = document.getElementById(lId)?.querySelector('.bubble'); }
-    if(!container) return;
-    container.innerHTML = `<div class="spinner"></div> Retrying with ${targetProvider.toUpperCase()}...`; window.toggleChatButton(true);
-    
-    try {
-        if (req.type === 'math') {
-            let resObj = req.image ? await callGeminiVision(req.image, req.prompt, targetProvider) : await callGeminiText(req.sysPrompt, req.prompt, targetProvider);
-            let cleanSol = resObj.text.replace(/[\*&#_]/g, ''); saveToHistory('math', req.prompt.substring(0, 100) + " (Retry)", cleanSol, req.image, resObj.provider); updateAiBubble(lId, cleanSol, resObj.provider, true);
-        }
-        else if (req.type === 'search') {
-            let resObj;
-            if (req.image) { resObj = await callGeminiVision(req.image, req.prompt, targetProvider); } 
-            else { track('t'); window.currentAbortController = new AbortController(); if(targetProvider === "gemini") { resObj = await callGeminiText("Act as an Internet Search Engine.", req.prompt, "gemini"); } else { const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }), signal: window.currentAbortController.signal }); resObj = await checkHtmlError(res); if(!resObj.text) throw new Error(resObj.error || "Search failed"); window.currentAbortController = null; } }
-            let ans = resObj.text.replace(/[\*&#_]/g, ''); saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider || targetProvider);
-            const buttons = `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`; typeWriteResponse(container, ans, resObj.provider || targetProvider, `search_${lId}`, buttons, false);
-        }
-    } catch(e) { 
-        window.toggleChatButton(false);
-        if(req.type === 'qa') { document.getElementById("qaStatusText").innerText = "❌ Error Occurred"; document.getElementById("qaProgressBar").style.background = "var(--red)"; container.innerHTML = "Error: " + e.message; } 
-        else { container.innerText = "❌ Error: " + e.message; }
+    else { 
+        // FIX: Changed margin-top to 35px so it doesn't overlap the "BY GEMINI" badge
+        bbl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="text_${lId}" style="margin-top:35px;">${answer.replace(/\n/g, '<br>')}</div>${buttons}`; 
+        if (window.MathJax) { MathJax.typesetClear([bbl]); MathJax.typesetPromise([bbl]); } 
+        window.toggleChatButton(false); 
     }
 }
 
