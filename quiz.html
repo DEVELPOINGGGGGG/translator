@@ -101,6 +101,7 @@
   <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
   <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
   <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
+  <button onclick="window.location.href='chess.html'">♟️ Chess AI</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
   <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
@@ -455,7 +456,8 @@
         4. ALL NUMBERS MUST be standard English Arabic numerals (0-9). DO NOT use Hindi numerals.
         5. Use LaTeX for ALL math equations. Wrap inline math in $...$ and display math in $$...$$.
         6. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
-        7. Return ONLY a valid JSON array. NO markdown code blocks. NO extra conversational text.
+        7. For every item also include "correctOptionHindi" and "explanationHindi" in natural Hindi, even when the selected quiz language is not Hindi.
+        8. Return ONLY a valid JSON array. NO markdown code blocks. NO extra conversational text.
         Format exactly like this:
         [
           {
@@ -498,7 +500,9 @@
             question: item.question || item.q || "Question text missing",
             options: item.options || item.choices || ["A", "B", "C", "D"],
             correctOption: item.correctOption || item.correct_option || item.answer || item.correctAnswer || item.correct || "",
-            explanation: item.explanation || item.reason || item.reasoning || item.desc || "No explanation provided."
+            correctOptionHindi: item.correctOptionHindi || item.correct_option_hindi || item.answerHindi || item.correctAnswerHindi || item.correctHindi || item.correctOption || item.answer || "",
+            explanation: item.explanation || item.reason || item.reasoning || item.desc || "No explanation provided.",
+            explanationHindi: item.explanationHindi || item.reasonHindi || item.reasoningHindi || item.descHindi || item.explanation || item.reason || "No Hindi explanation provided."
         }));
     }
 
@@ -727,6 +731,9 @@
             const safeQ = String(q.question).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const safeC = String(q.correctOption).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const safeE = String(q.explanation).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeCHi = String(q.correctOptionHindi || q.correctOption).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeEHi = String(q.explanationHindi || q.explanation).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const selectedLang = document.getElementById('quizLanguage').value;
 
             reviewHtml += `
             <div class="result-card">
@@ -735,10 +742,13 @@
                     <span style="color: #94a3b8;">Your Answer:</span> <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${displayAns}</span>
                 </div>
                 <div style="font-size: 13px; margin-bottom: 10px;">
-                    <span style="color: #94a3b8;">Correct Answer:</span> <span style="color: #22c55e; font-weight: 600;">${safeC}</span>
+                    <span style="color: #94a3b8;">Correct Answer (${selectedLang}):</span> <span style="color: #22c55e; font-weight: 600;">${safeC}</span>
+                </div>
+                <div style="font-size: 13px; margin-bottom: 10px;">
+                    <span style="color: #94a3b8;">सही उत्तर (Hindi):</span> <span style="color: #22c55e; font-weight: 600;">${safeCHi}</span>
                 </div>
                 <div style="font-size: 14px; color: #ffffff; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #a855f7; margin-top: 8px; font-weight: 500;">
-                    <b>Why?</b> ${safeE}
+                    <b>Why (${selectedLang})?</b> ${safeE}<br><br><b>क्यों? (Hindi)</b> ${safeEHi}
                 </div>
             </div>`;
         });

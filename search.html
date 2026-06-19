@@ -85,6 +85,7 @@
       <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
       <button onclick="window.location.href='youtube.html'">📺 YouTube AI</button>
       <button onclick="window.location.href='quiz.html'">📝 Quiz Maker</button>
+  <button onclick="window.location.href='chess.html'">♟️ Chess AI</button>
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
@@ -251,11 +252,12 @@
         // --- 4. MENUS & MODALS ---
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
-        function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
+        function closePlusMenu() { const menu = document.getElementById("plusMenu"); if (menu) menu.style.display = "none"; }
         
         // Close plus menu if clicked outside
         window.addEventListener('click', function(e) {
-            if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) {
+            const plusMenu = document.getElementById('plusMenu');
+            if (plusMenu && !plusMenu.contains(e.target) && !e.target.closest('#plusBtn')) {
                 closePlusMenu();
             }
         });
@@ -410,7 +412,9 @@
 
             // Build User Bubble
             let userImgs = uploadedImagesList.map(img => `<img src="${img}" style="max-height:100px; border-radius:8px; margin:2px;">`).join('');
-            let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
+            let userTextId = "user_" + Date.now();
+            let safeUserQuestion = q.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+            let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}<div id="${userTextId}">${safeUserQuestion}</div><div class="msg-actions" style="margin-top:10px; display:flex; justify-content:flex-end;"><button class="action-btn" data-target="${userTextId}" onclick="copyText(this)">📋 Copy</button></div></div></div>`;
             chatBox.insertAdjacentHTML('beforeend', userHtml);
             inp.value = ""; inp.style.height = ''; document.getElementById("searchScrollArea").scrollTop = document.getElementById("searchScrollArea").scrollHeight;
 
