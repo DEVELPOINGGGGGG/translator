@@ -1,11 +1,11 @@
 /* =======================================================
-   AI PRO SUITE - THE ULTIMATE BUILD (V62 - MASTER EDITION)
-   Includes Synchronized Video Typewriter, Deep Search, Context Memory & PDF Support
+   AI PRO SUITE - THE ULTIMATE BUILD (V63 - HISTORY FIX)
+   Includes Synchronized Video Typewriter, Deep Search, Context Memory & Universal DB Mirror
 ======================================================= */
 
 let appHistory = [];
 
-// 🛑 INDESTRUCTIBLE VAULT LOADER 🛑
+// 🛑 INDESTRUCTIBLE VAULT LOADER & UNIVERSAL MIRROR 🛑
 if (typeof localforage !== 'undefined') {
     localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
     localforage.getItem('aiHistory').then(function(savedData) {
@@ -21,9 +21,9 @@ if (typeof localforage !== 'undefined') {
         }
 
         appHistory = mergedHistory;
+        saveHistorySafe(); // Force mirror update immediately upon load
         if (document.getElementById('historyList')) renderHistory();
 
-        // 🚀 DELAYED RESTORE FIX: Waits for vault to unlock before restoring chat!
         const urlParams = new URLSearchParams(window.location.search);
         const restoreId = urlParams.get('restore');
         if (restoreId) {
@@ -32,7 +32,7 @@ if (typeof localforage !== 'undefined') {
         }
     }).catch(e => console.log("Vault error:", e));
 } else {
-    console.warn("⚠️ LocalForage is missing from your HTML! Falling back to 5MB limits to prevent a crash.");
+    console.warn("⚠️ LocalForage is missing! Falling back to 5MB LocalStorage limits.");
     try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
     setTimeout(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -43,6 +43,53 @@ if (typeof localforage !== 'undefined') {
         }
     }, 100);
 }
+
+// 🛡️ THE UNIVERSAL DATABASE SYNCHRONIZER 🛡️
+// This ensures history.html ALWAYS sees your chats, even if it doesn't load IndexedDB
+function saveHistorySafe() { 
+    // 1. Save Full Data (With Heavy Images) to the massive IndexedDB Vault
+    if (typeof localforage !== 'undefined') {
+        localforage.setItem('aiHistory', appHistory).catch(e => console.error("Vault save failed:", e));
+    }
+    
+    // 2. ALWAYS Mirror a lightweight text-only version to standard LocalStorage!
+    // This prevents 5MB quota crashes while guaranteeing history.html works seamlessly.
+    try {
+        let lightHistory = appHistory.slice(0, 30).map(item => {
+            let cloned = { ...item };
+            cloned.image = null; 
+            if (cloned.interactions) {
+                cloned.interactions = cloned.interactions.map(i => ({ ...i, image: null }));
+            }
+            return cloned;
+        });
+        localStorage.setItem('aiHistory', JSON.stringify(lightHistory));
+    } catch(e) {
+        console.warn("LocalStorage mirror failed, attempting emergency trim:", e);
+        try { localStorage.setItem('aiHistory', JSON.stringify(appHistory.slice(0, 5).map(i => ({...i, image: null})))); } catch(err) {}
+    }
+}
+
+// 🏆 UNIVERSAL QUIZ HISTORY INTERCEPTOR 🏆
+// Overrides any local functions in quiz.html to force it into the main database pipeline
+window.saveQuizToHistory = function(subject, grade, correct, total, htmlDetails) {
+    let sessionId = Date.now();
+    let percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+    let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total} (${percentage}%)</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
+
+    let histItem = { 
+        id: sessionId, 
+        type: 'quiz', 
+        title: `${subject} Quiz (${correct}/${total})`, 
+        interactions: [{ question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer, provider: "AI Quiz Engine" }], 
+        provider: "AI Quiz Engine", 
+        question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, 
+        answer: formattedAnswer 
+    };
+
+    appHistory.unshift(histItem);
+    saveHistorySafe();
+};
 
 let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0'), textReqs = parseInt(localStorage.getItem('textReqs') || '0');
 let isProcessing = false, capturedImage = null, currentMode = "", qaImages = [], transImages = [], qaContextText = "", isFlashOn = true;
@@ -94,14 +141,11 @@ window.cancelActiveRequest = function() {
     showToast("⚠️ Generation Stopped");
 };
 
-// 🛑 YOUR GOOGLE SHEETS WEBHOOK 🛑
 const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
 
-// 🛑 SESSION CACHE & RETRY ENGINE 🛑
 window.requestCache = {};
 let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
 
-// 🛑 CONTINUOUS CONTEXT MEMORY ENGINE 🛑
 function getLastContextImage(type) {
     let sessionId = sessionCache[type];
     if (!sessionId) return null;
@@ -128,7 +172,6 @@ function getSessionContext(type) {
     return ctx + "--- CURRENT NEW QUESTION ---\n";
 }
 
-// 🛑 THE MILITARY-GRADE OCR PROMPT 🛑
 const MASTER_OCR_PROMPT = `You are an expert Optical Character Recognition (OCR) scanner.
 CRITICAL INSTRUCTIONS:
 1. Extract ALL text from the image EXACTLY as it is written in its original language.
@@ -138,7 +181,6 @@ CRITICAL INSTRUCTIONS:
 5. DO NOT add conversational filler.
 6. Output ONLY the raw transcribed text. If no text is visible, output exactly "NO_TEXT_FOUND".`;
 
-// Video Player Variables
 let videoSpeed = 0.75, isVideoPaused = false, currentVideoVolume = 1.0;
 let videoElapsed = 0, videoTotalEst = 0, videoTickInterval, hideControlsTimer, videoLineIndex = 0, activeVideoUtterance = null, videoRunToken = 0;
 
@@ -190,7 +232,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!lastResetDate) {
             localStorage.setItem('lastApiResetDatePT', currentPtDate); 
         } else if (currentPtDate !== lastResetDate) { 
-            console.log("🕛 Pacific Time Midnight Hit! Wiping Database...");
             visionReqs = 0; textReqs = 0; 
             localStorage.setItem('visionReqs', '0'); 
             localStorage.setItem('textReqs', '0'); 
@@ -220,7 +261,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById('historyList') && typeof localforage === 'undefined') renderHistory();
 });
 
-// --- UI FEATURES ---
 function showToast(msg) {
     let t = document.createElement('div'); t.innerText = msg;
     t.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #3b82f6, #8b5cf6); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:10000; font-weight:600; font-size: 14px; text-align:center; animation:fadeInOut 3s forwards; letter-spacing: 0.5px;";
@@ -281,8 +321,6 @@ function appendUserBubble(txt, img, cid) {
 function appendAiLoading(cid) {
     const c = getActiveChatContainer(cid); if(!c) return null;
     const id = "loading_" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
-    
-    // Sleek animated pulsing dots, no boring text
     c.insertAdjacentHTML('beforeend', `
         <div class="chat-msg chat-ai" id="${id}">
             <div class="bubble" style="display:flex; align-items:center; background:transparent; box-shadow:none; padding:0;">
@@ -294,7 +332,6 @@ function appendAiLoading(cid) {
             </div>
         </div>
     `);
-    
     scrollToBottom(cid.replace('ChatHistory', 'ScrollArea')); 
     return id;
 }
@@ -309,7 +346,6 @@ function getRetryButtonsHtml(lId) {
     </div>`;
 }
 
-// ⚡ LIVE MATH RENDERER: Fixed Syntax Error (Removed illegal 'await' from setInterval)
 function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtml, isMath, onComplete) {
     containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:10px;"></div>`;
     const txtEl = document.getElementById(contentId);
@@ -331,33 +367,22 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
             needsMathRender = false;
 
             for (let j = 0; j < charsPerTick && i < rawText.length; j++) {
-                
                 if (rawText[i] === '<') {
                     let tagEnd = rawText.indexOf('>', i);
-                    if (tagEnd !== -1) {
-                        chunk += rawText.substring(i, tagEnd + 1);
-                        i = tagEnd + 1;
-                    } else { chunk += rawText[i]; i++; }
+                    if (tagEnd !== -1) { chunk += rawText.substring(i, tagEnd + 1); i = tagEnd + 1; } 
+                    else { chunk += rawText[i]; i++; }
                 } 
                 else if (rawText.substring(i, i + 2) === '$$') {
                     let mathEnd = rawText.indexOf('$$', i + 2);
-                    if (mathEnd !== -1) {
-                        chunk += rawText.substring(i, mathEnd + 2);
-                        i = mathEnd + 2;
-                        needsMathRender = true; 
-                    } else { chunk += rawText[i]; i++; }
+                    if (mathEnd !== -1) { chunk += rawText.substring(i, mathEnd + 2); i = mathEnd + 2; needsMathRender = true; } 
+                    else { chunk += rawText[i]; i++; }
                 }
                 else if (rawText.substring(i, i + 2) === '\\(') {
                     let mathEnd = rawText.indexOf('\\)', i + 2);
-                    if (mathEnd !== -1) {
-                        chunk += rawText.substring(i, mathEnd + 2);
-                        i = mathEnd + 2;
-                        needsMathRender = true; 
-                    } else { chunk += rawText[i]; i++; }
+                    if (mathEnd !== -1) { chunk += rawText.substring(i, mathEnd + 2); i = mathEnd + 2; needsMathRender = true; } 
+                    else { chunk += rawText[i]; i++; }
                 } 
-                else {
-                    chunk += rawText[i]; i++;
-                }
+                else { chunk += rawText[i]; i++; }
             }
             
             currentHtml += chunk;
@@ -371,20 +396,14 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
         } else {
             clearInterval(window.currentTypingTimer);
             window.currentTypingTimer = null;
-            
-            // 🛑 FIX: Removed 'await' so it doesn't crash the JS file!
-            if (isMath && window.MathJax) { 
-                MathJax.typesetClear([containerEl]); 
-                MathJax.typesetPromise([containerEl]).catch(e => console.log(e)); 
-            }
-            
+            if (isMath && window.MathJax) { MathJax.typesetClear([containerEl]); MathJax.typesetPromise([containerEl]).catch(e => console.log(e)); }
             containerEl.insertAdjacentHTML('beforeend', buttonsHtml);
             if (onComplete) onComplete();
-            
             window.toggleChatButton(false);
         }
     }, tickRate);
 }
+
 function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
     const loadingBubble = document.getElementById(lId);
     if (!loadingBubble) return;
@@ -412,54 +431,31 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
 
 async function checkHtmlError(r) {
     const contentType = r.headers.get("content-type");
-    if (contentType && contentType.includes("text/html")) {
-        throw new Error("⚠️ Server Connection Error: Your backend server is asleep. Wait 30s and try again!");
-    }
+    if (contentType && contentType.includes("text/html")) throw new Error("⚠️ Server Connection Error: Your backend server is asleep. Wait 30s and try again!");
     return await r.json();
 }
 
 async function callGeminiText(sysText, usrText, override = null) {
   if (isProcessing) throw new Error("Processing..."); 
-  isProcessing = true; 
-  track('t');
+  isProcessing = true; track('t');
   window.currentAbortController = new AbortController();
-  
   try { 
       const r = await fetch("/api/gemini-text", { 
-          method: "POST", 
-          headers: {"Content-Type":"application/json"}, 
-          body: JSON.stringify({ 
-              systemPrompt: sysText, 
-              userPrompt: usrText, 
-              providerOverride: override 
-          }),
-          signal: window.currentAbortController.signal
+          method: "POST", headers: {"Content-Type":"application/json"}, 
+          body: JSON.stringify({ systemPrompt: sysText, userPrompt: usrText, providerOverride: override }), signal: window.currentAbortController.signal
       }); 
-      
-      const d = await checkHtmlError(r); 
-      if(!r.ok) {
-          // If the server returned an error, the tryProviders loop in server.js 
-          // has already exhausted all 5 keys before sending this error back.
-          throw new Error(d.error || "All API keys failed."); 
-      }
-      
-      isProcessing = false; 
-      window.currentAbortController = null; 
-      return d; 
-  } catch(e) { 
-      isProcessing = false; 
-      window.currentAbortController = null; 
-      throw e; // This will trigger the red "Error" bubble in search.html
-  }
+      const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error || "All API keys failed."); 
+      isProcessing = false; window.currentAbortController = null; return d; 
+  } catch(e) { isProcessing = false; window.currentAbortController = null; throw e; }
 }
+
 async function callGeminiVision(imgData, aiQuery, override = null) {
   if (isProcessing) throw new Error("Processing..."); isProcessing = true; track('v');
   window.currentAbortController = new AbortController();
   try { 
       const r = await fetch("/api/gemini-vision", { 
           method: "POST", headers: {"Content-Type":"application/json"}, 
-          body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery, providerOverride: override }),
-          signal: window.currentAbortController.signal
+          body: JSON.stringify({ imageBase64: imgData, userPrompt: aiQuery, providerOverride: override }), signal: window.currentAbortController.signal
       }); 
       const d = await checkHtmlError(r); if(!r.ok) throw new Error(d.error); 
       isProcessing = false; window.currentAbortController = null; return d; 
@@ -467,45 +463,21 @@ async function callGeminiVision(imgData, aiQuery, override = null) {
 }
 
 function formatHindiSpeechText(text) {
-    return String(text || "")
-        .replace(/\\text\{([^}]+)\}/g, " $1 ")
-        .replace(/\\quad/g, " ").replace(/\\qquad/g, " ").replace(/\\,/g, " ").replace(/\\;/g, " ")
-        .replace(/\\Rightarrow/g, " iska matlab hai ").replace(/\\rightarrow/g, " iska matlab hai ")
-        .replace(/\\approx/g, " lagbhag barabar ")
-        .replace(/\\left/g, " ").replace(/\\right/g, " ")
-        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ")
-        .replace(/\\sqrt\{([^}]+)\}/g, " root $1 ")
-        .replace(/\^\{([^}]+)\}/g, " ki power $1 ").replace(/\^([0-9a-zA-Z])/g, " ki power $1 ")
-        .replace(/_\{([^}]+)\}/g, " base $1 ").replace(/_([0-9a-zA-Z])/g, " base $1 ")
-        .replace(/\\times/gi, " guna ").replace(/ X /g, " guna ").replace(/ x /g, " guna ")
-        .replace(/:-/g, " bhag ").replace(/÷/g, " bhag ").replace(/=/g, " barabar ")
-        .replace(/-/g, " minus ").replace(/\+/g, " plus ").replace(/%/g, " percent ")
-        .replace(/\(/g, " bracket ").replace(/\)/g, " bracket ")
-        .replace(/\{/g, " ").replace(/\}/g, " ").replace(/\[/g, " ").replace(/\]/g, " ")
-        .replace(/\//g, " batta ")
-        .replace(/[\$\\]/g, " ")
-        .replace(/\./g, ". , , ").replace(/\|/g, " , , ")
-        .replace(/\s+/g, " ").trim();
+    return String(text || "").replace(/\\text\{([^}]+)\}/g, " $1 ").replace(/\\quad/g, " ").replace(/\\qquad/g, " ").replace(/\\,/g, " ").replace(/\\;/g, " ").replace(/\\Rightarrow/g, " iska matlab hai ").replace(/\\rightarrow/g, " iska matlab hai ").replace(/\\approx/g, " lagbhag barabar ").replace(/\\left/g, " ").replace(/\\right/g, " ").replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, " $1 batta $2 ").replace(/\\sqrt\{([^}]+)\}/g, " root $1 ").replace(/\^\{([^}]+)\}/g, " ki power $1 ").replace(/\^([0-9a-zA-Z])/g, " ki power $1 ").replace(/_\{([^}]+)\}/g, " base $1 ").replace(/_([0-9a-zA-Z])/g, " base $1 ").replace(/\\times/gi, " guna ").replace(/ X /g, " guna ").replace(/ x /g, " guna ").replace(/:-/g, " bhag ").replace(/÷/g, " bhag ").replace(/=/g, " barabar ").replace(/-/g, " minus ").replace(/\+/g, " plus ").replace(/%/g, " percent ").replace(/\(/g, " bracket ").replace(/\)/g, " bracket ").replace(/\{/g, " ").replace(/\}/g, " ").replace(/\[/g, " ").replace(/\]/g, " ").replace(/\//g, " batta ").replace(/[\$\\]/g, " ").replace(/\./g, ". , , ").replace(/\|/g, " , , ").replace(/\s+/g, " ").trim();
 }
 
 function speakAndHighlight(elId) {
     const el = document.getElementById(elId); if (!el) return;
     if (!('speechSynthesis' in window)) { alert("Your browser does not support text-to-speech!"); return; }
-    
     window.speechSynthesis.cancel(); 
     const player = document.getElementById('ttsMiniPlayer');
-    if (player) {
-        player.classList.add('active');
-        player.classList.remove('paused');
-        document.getElementById('ttsPlayPauseBtn').innerText = '⏸️';
-    }
+    if (player) { player.classList.add('active'); player.classList.remove('paused'); document.getElementById('ttsPlayPauseBtn').innerText = '⏸️'; }
 
     const cleanSpeech = formatHindiSpeechText(el.innerText);
     const utterance = new SpeechSynthesisUtterance(cleanSpeech);
     utterance.lang = 'hi-IN';
     if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
     const hindiVoice = availableVoices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || availableVoices.find(v => v.name.includes('हिन्दी')) || availableVoices.find(v => v.lang.includes('hi')) || availableVoices[0];
-
     if (hindiVoice) { utterance.voice = hindiVoice; }
     utterance.pitch = 1.0; utterance.rate = 0.9;  
     
@@ -515,33 +487,19 @@ function speakAndHighlight(elId) {
 }
 
 window.toggleTtsPause = function() {
-    if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-        document.getElementById('ttsPlayPauseBtn').innerText = '⏸️';
-        document.getElementById('ttsMiniPlayer').classList.remove('paused');
-    } else if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.pause();
-        document.getElementById('ttsPlayPauseBtn').innerText = '▶️';
-        document.getElementById('ttsMiniPlayer').classList.add('paused');
-    }
+    if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); document.getElementById('ttsPlayPauseBtn').innerText = '⏸️'; document.getElementById('ttsMiniPlayer').classList.remove('paused'); } 
+    else if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); document.getElementById('ttsPlayPauseBtn').innerText = '▶️'; document.getElementById('ttsMiniPlayer').classList.add('paused'); }
 };
 
-window.closeTtsPlayer = function() {
-    window.speechSynthesis.cancel();
-    const player = document.getElementById('ttsMiniPlayer');
-    if (player) player.classList.remove('active');
-};
+window.closeTtsPlayer = function() { window.speechSynthesis.cancel(); const player = document.getElementById('ttsMiniPlayer'); if (player) player.classList.remove('active'); };
 
 async function retryRequest(lId, targetProvider) {
     const req = window.requestCache[lId];
     if(!req) return showToast("Request data expired.");
     
     let container;
-    if (req.type === 'qa') {
-         container = document.getElementById("qaAnswerBox");
-         document.getElementById("qaStatusText").innerText = `Retrying with ${targetProvider.toUpperCase()}...`;
-         document.getElementById("qaProgressBar").style.width = "85%";
-    } else { container = document.getElementById(lId)?.querySelector('.bubble'); }
+    if (req.type === 'qa') { container = document.getElementById("qaAnswerBox"); document.getElementById("qaStatusText").innerText = `Retrying with ${targetProvider.toUpperCase()}...`; document.getElementById("qaProgressBar").style.width = "85%"; } 
+    else { container = document.getElementById(lId)?.querySelector('.bubble'); }
     
     if(!container) return;
     container.innerHTML = `<div class="spinner"></div> Retrying with ${targetProvider.toUpperCase()}...`;
@@ -559,29 +517,16 @@ async function retryRequest(lId, targetProvider) {
             if (req.image) { resObj = await callGeminiVision(req.image, req.prompt, targetProvider); } 
             else { 
                 track('t'); window.currentAbortController = new AbortController();
-                if(targetProvider === "gemini") {
-                     resObj = await callGeminiText("Act as an Internet Search Engine.", req.prompt, "gemini");
-                } else {
-                     const res = await fetch("/api/groq-search", { 
-                         method: "POST", headers: {"Content-Type":"application/json"}, 
-                         body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }),
-                         signal: window.currentAbortController.signal
-                     });
+                if(targetProvider === "gemini") { resObj = await callGeminiText("Act as an Internet Search Engine.", req.prompt, "gemini"); } 
+                else { 
+                     const res = await fetch("/api/groq-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ prompt: req.originalSearch, providerOverride: targetProvider }), signal: window.currentAbortController.signal });
                      resObj = await checkHtmlError(res); if(!resObj.text) throw new Error(resObj.error || "Search failed");
                      window.currentAbortController = null;
                 }
             }
             let ans = resObj.text.replace(/[\*&#_]/g, '');
             saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider || targetProvider);
-            const buttons = `
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                    <div style="display:flex; gap:10px; width:100%;">
-                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
-                    </div>
-                    ${getRetryButtonsHtml(lId)}
-                </div>
-            `;
+            const buttons = `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
             typeWriteResponse(container, ans, resObj.provider || targetProvider, `search_${lId}`, buttons, false);
         }
         else if (req.type === 'image_trans') {
@@ -596,14 +541,7 @@ async function retryRequest(lId, targetProvider) {
                 <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
                 <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
                 <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                    <div style="display:flex; gap:10px; width:100%;">
-                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
-                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
-                    </div>
-                    ${getRetryButtonsHtml(lId)}
-                </div>
-            `;
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
             window.toggleChatButton(false);
         }
         else if (req.type === 'qa') {
@@ -616,14 +554,7 @@ async function retryRequest(lId, targetProvider) {
                 <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${req.finalQuestion.replace(/\n/g, '<br>')}</div>
                 <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div>
                 <div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                    <div style="display:flex; gap:10px; width:100%;">
-                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button>
-                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${lId}')">📋 Copy</button>
-                    </div>
-                    ${getRetryButtonsHtml(lId)}
-                </div>
-            `;
+                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
             if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); }
             window.toggleChatButton(false);
         }
@@ -634,8 +565,8 @@ async function retryRequest(lId, targetProvider) {
     }
 }
 
-function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) chip.style.display = "none"; }
-// 🖼️ NEW: Dedicated GUI for viewing & downloading generated images
+function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; currentMathImage = null; if (typeof window.capturedImage !== 'undefined') window.capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "none"; chip.style.backgroundImage = "none"; } }
+
 window.showGeneratedImageGUI = function(src) {
     let modal = document.getElementById('genImageModal');
     if (!modal) {
@@ -659,21 +590,18 @@ window.showGeneratedImageGUI = function(src) {
             if(typeof showToast === 'function') showToast("✅ Image Downloaded!");
         };
     }
-    
     document.getElementById('genImageDisplay').src = src;
     modal.style.display = 'flex';
     setTimeout(() => modal.style.opacity = '1', 10);
 };
 
-// 🧮 FULLY DYNAMIC MATH ENGINE (Syntax, Lag, Duplication, Fraction & Line Break Fixes)
-// 🧮 FULLY DYNAMIC MATH ENGINE (Fixed Duplicate Math Text Bug)
 async function executeMathFlow() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
-    
-    const instruction = inp.value.trim(); if (!currentMathImage && !instruction) return;
+    const instruction = inp.value.trim(); 
+    if (typeof window.capturedImage !== 'undefined' && window.capturedImage) currentMathImage = window.capturedImage;
+    if (!currentMathImage && !instruction) return;
     
     let uiImage = currentMathImage;
-    
     appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
     inp.value = ""; 
     
@@ -700,9 +628,7 @@ async function executeMathFlow() {
         ? "[IMAGE MODE ON - SOLVE ALL VISIBLE QUESTIONS]" 
         : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
 
-    // 🌟 THE ELITE TUTOR PROMPT
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI. STRICT RULES:
-
 1. NO HTML TAGS: NEVER use <br>, <div>, or <span>. Use standard double newlines (\\n\\n) to break lines!
 2. STRICT FRACTION RULE: NEVER write fractions using a slash like 1/2. You MUST use proper vertical LaTeX fractions like $$\\frac{1}{2}$$. ALWAYS use 'x' for multiplication.
 3. DELIMITERS: Format your response using EXACTLY these hidden delimiters:
@@ -716,28 +642,22 @@ COUNT:-
 [Final short answer]
 
 4. ELITE TEACHING STYLE: You MUST format your ||MATH|| block EXACTLY like this template. DO NOT rewrite the original question.
-
 [Brief 1-line summary/intro. DO NOT rewrite the question!]
-
 **1. [Step 1 Heading]**
 [Step 1 explanation]
 $$ [Proper math equation with \\frac] $$
-
 **2. [Step 2 Heading]**
 [Step 2 explanation]
 $$ [Proper math equation] $$
 (Add more steps as needed)
-
 **वैकल्पिक आसान तरीका (Short Trick)**
 [Provide a quick shortcut, formula, or trick to solve it faster]
-
 **✅ अंतिम उत्तर**
 [Final explicit answer sentence]
 
-[CRITICAL INSTRUCTION: At the very end of your ||MATH|| block, dynamically ask the user in your own words if they want you to generate another similar question for practice. DO NOT copy-paste a robotic sentence. Ask naturally!]`;
+[CRITICAL INSTRUCTION: At the very end of your ||MATH|| block, dynamically ask the user in your own words if they want you to generate another similar question for practice.]`;
     
     let finalPrompt = `${sysPrompt}\n\n${modeStatus}\n\n${memoryContext}User: ${instruction || "Analyze image"}`;
-    
     if (!window.isImageGenerationMode) { window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage }; }
 
     try {
@@ -756,14 +676,12 @@ $$ [Proper math equation] $$
             let parts = rawText.split("||MATH||")[1] || rawText;
             let svgSplit = parts.split("||SVG||");
             mathBlock = svgSplit[0].trim();
-            
             if (svgSplit.length > 1) {
                 let ansSplit = svgSplit[1].split("||ANSWER||");
                 svgBlock = ansSplit[0].trim();
                 if (ansSplit.length > 1) finalAnswerBlock = ansSplit[1].trim();
             }
         }
-        
         mathBlock = mathBlock.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').trim(); 
 
         clearMathImage(); let generatedImgHtml = "";
@@ -786,26 +704,14 @@ $$ [Proper math equation] $$
             offscreen.style.width = '750px'; offscreen.style.zIndex = '-9999'; 
 
             if (generateStandaloneShape) {
-                offscreen.innerHTML = `
-                    <div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px;">
-                        ${svgBlock}
-                        ${finalAnswerBlock ? `<div style="margin-top:25px; font-size:26px; font-weight:900; padding:12px 25px; background:rgba(59,130,246,0.1); border-radius:12px; border:2px solid ${primaryColor};">ANSWER = ${finalAnswerBlock}</div>` : ''}
-                    </div>`;
+                offscreen.innerHTML = `<div style="background-color:${bgColor}; color:${textColor}; padding:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border: 4px solid ${primaryColor}; border-radius: 15px;">${svgBlock}${finalAnswerBlock ? `<div style="margin-top:25px; font-size:26px; font-weight:900; padding:12px 25px; background:rgba(59,130,246,0.1); border-radius:12px; border:2px solid ${primaryColor};">ANSWER = ${finalAnswerBlock}</div>` : ''}</div>`;
             } else if (window.isImageGenerationMode) {
-                offscreen.innerHTML = `
-                    <div style="background-color:${bgColor}; line-height:35px; padding:40px; position:relative; font-family:'Kalam', sans-serif; font-size:20px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; white-space: pre-wrap; word-wrap: break-word;">
-                        <div style="width:100%; display:block;">${mathBlock}</div>
-                        ${svgBlock ? `<div style="margin-top:30px; display:flex; justify-content:center; width:100%;">${svgBlock}</div>` : ''}
-                    </div>`;
+                offscreen.innerHTML = `<div style="background-color:${bgColor}; line-height:35px; padding:40px; position:relative; font-family:'Kalam', sans-serif; font-size:20px; color:${textColor}; border: 4px solid ${primaryColor}; border-radius: 15px; box-sizing: border-box; width:100%; white-space: pre-wrap; word-wrap: break-word;"><div style="width:100%; display:block;">${mathBlock}</div>${svgBlock ? `<div style="margin-top:30px; display:flex; justify-content:center; width:100%;">${svgBlock}</div>` : ''}</div>`;
             }
-            
             document.body.appendChild(offscreen);
-            
             if (window.MathJax) { 
                 MathJax.typesetClear([offscreen]); 
                 await MathJax.typesetPromise([offscreen]); 
-                
-                // 🛑 FIX: NUKES THE DUPLICATE MATH TEXT BUG BEFORE TAKING THE PHOTO 🛑
                 const assistiveElements = offscreen.querySelectorAll('mjx-assistive-mml');
                 assistiveElements.forEach(el => el.remove());
             }
@@ -813,12 +719,7 @@ $$ [Proper math equation] $$
             try {
                 const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true, backgroundColor: bgColor, windowWidth: 800 });
                 const base64Img = canvas.toDataURL("image/png");
-                
-                generatedImgHtml = `
-                    <div style="position:relative; display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:10px; margin-bottom:15px; width:100%;">
-                        <div style="position:absolute; top:-12px; right:5px; font-size:10px; color:white; background:var(--primary); padding:3px 10px; border-radius:10px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.5); z-index:10;">✨ ${resObj.provider}</div>
-                        <img src="${base64Img}" style="width:100%; max-width:450px; height:auto; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)">
-                    </div>`;
+                generatedImgHtml = `<div style="position:relative; display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:10px; margin-bottom:15px; width:100%;"><div style="position:absolute; top:-12px; right:5px; font-size:10px; color:white; background:var(--primary); padding:3px 10px; border-radius:10px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.5); z-index:10;">✨ ${resObj.provider}</div><img src="${base64Img}" style="width:100%; max-width:450px; height:auto; object-fit:contain; border-radius:12px; border:2px solid var(--primary); cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition:transform 0.2s;" onclick="showGeneratedImageGUI(this.src)"></div>`;
             } catch (err) { console.error("Render Error:", err); } finally { offscreen.remove(); }
         }
 
@@ -826,17 +727,12 @@ $$ [Proper math equation] $$
 
         if (window.isImageGenerationMode) {
             const loadingBubble = document.getElementById(lId);
-            if (loadingBubble && generatedImgHtml) {
-                loadingBubble.querySelector('.bubble').innerHTML = `<div style="display:flex; justify-content:flex-end; margin-bottom:5px;"><span style="font-size:10px; color:var(--text-muted); font-weight:bold; background:var(--bg-surface); padding:4px 8px; border-radius:8px; white-space:nowrap; border: 1px solid var(--border-light);">✨ IMAGE MODE • ${resObj.provider}</span></div>${generatedImgHtml}`;
-            }
+            if (loadingBubble && generatedImgHtml) { loadingBubble.querySelector('.bubble').innerHTML = `<div style="display:flex; justify-content:flex-end; margin-bottom:5px;"><span style="font-size:10px; color:var(--text-muted); font-weight:bold; background:var(--bg-surface); padding:4px 8px; border-radius:8px; white-space:nowrap; border: 1px solid var(--border-light);">✨ IMAGE MODE • ${resObj.provider}</span></div>${generatedImgHtml}`; }
             saveToHistory('math', instruction || "Analyze image", generatedImgHtml, uiImage, resObj.provider);
         } else {
             saveToHistory('math', instruction || "Analyze image", finalOutputText, uiImage, resObj.provider); 
             updateAiBubble(lId, finalOutputText, resObj.provider, true); 
-            if (generatedImgHtml) {
-                const bbl = document.getElementById(lId)?.querySelector('.bubble');
-                if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml);
-            }
+            if (generatedImgHtml) { const bbl = document.getElementById(lId)?.querySelector('.bubble'); if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml); }
         }
     } catch(e) { 
         window.toggleChatButton(false);
@@ -844,39 +740,32 @@ $$ [Proper math equation] $$
         if(el) { el.querySelector('.bubble').innerText = e.name === 'AbortError' ? "⚠️ Stopped by user." : "❌ Error: " + e.message; }
     }
 }
+
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
     const q = inp.value.trim(); 
-    
     if(!q && !capturedImage && !window.attachedPdfText) return;
     
     let uiImage = capturedImage;
-    
     let displayQ = q || (window.attachedPdfText ? "Analyze this document." : "Analyze this image.");
     if(window.attachedPdfText) displayQ = "📄 [PDF Attached]\n" + displayQ;
     
     appendUserBubble(displayQ, uiImage, "searchChatHistory"); 
     inp.value = ""; let lId = appendAiLoading("searchChatHistory");
-    
     window.toggleChatButton(true);
     
     let activeImage = uiImage || getLastContextImage('search');
     let memoryContext = getSessionContext('search');
-    
     let sysPrompt = "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.";
     
     let promptContent = q;
-    if (window.attachedPdfText) {
-        promptContent = `Here is the extracted text from an attached PDF document:\n\n${window.attachedPdfText}\n\nBased ONLY on this document, please answer the user query: ${q || 'Please summarize this document.'}`;
-    }
+    if (window.attachedPdfText) { promptContent = `Here is the extracted text from an attached PDF document:\n\n${window.attachedPdfText}\n\nBased ONLY on this document, please answer the user query: ${q || 'Please summarize this document.'}`; }
     
     let finalPrompt = `${memoryContext}User: ${promptContent}`;
-    
     window.requestCache[lId] = { type: 'search', originalSearch: q, prompt: finalPrompt, image: activeImage };
 
     try {
         let ans = ""; let provider = "";
-        
         if (activeImage) {
             let resObj = await callGeminiVision(activeImage, `${sysPrompt}\n\n${finalPrompt}`);
             ans = resObj.text; provider = resObj.provider;
@@ -891,75 +780,44 @@ async function runGroqSearch() {
         const bbl = document.getElementById(lId);
         if (bbl) {
             const bubbleEl = bbl.querySelector('.bubble');
-            const buttons = `
-                <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                    <div style="display:flex; gap:10px; width:100%;">
-                        <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                        <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
-                    </div>
-                    ${getRetryButtonsHtml(lId)}
-                </div>`;
+            const buttons = `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
             typeWriteResponse(bubbleEl, ans, provider, `search_${lId}`, buttons, false);
         }
-        
-        clearMathImage();
-        if(window.clearPdfFile) window.clearPdfFile();
+        clearMathImage(); if(window.clearPdfFile) window.clearPdfFile();
         
     } catch(e) { 
         window.toggleChatButton(false);
         const el = document.getElementById(lId); 
-        if(el) {
-             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
-             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
-        }
+        if(el) { if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user."; else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
     }
 }
-// 🎯 TRUE FOCUS MODE ENGINE
-window.toggleFocusMode = function(enable) {
-    const topbar = document.getElementById('appTopbar');
-    const inputArea = document.querySelector('.chat-input-area');
-    const exitBtn = document.getElementById('exitFocusBtn');
-    const page = document.querySelector('.page');
 
+window.toggleFocusMode = function(enable) {
+    const topbar = document.getElementById('appTopbar'); const inputArea = document.querySelector('.chat-input-area'); const exitBtn = document.getElementById('exitFocusBtn'); const page = document.querySelector('.page');
     if (enable) {
-        if(topbar) topbar.style.display = "none"; // Completely gone
-        if(inputArea) {
-            inputArea.style.opacity = "0";
-            inputArea.style.pointerEvents = "none";
-            inputArea.style.transform = "translateY(20px)";
-        }
-        exitBtn.style.display = "block";
-        setTimeout(() => exitBtn.style.opacity = "1", 10);
-        
-        if (page) page.style.paddingTop = "15px"; // Text goes all the way to the top!
-        
+        if(topbar) topbar.style.display = "none";
+        if(inputArea) { inputArea.style.opacity = "0"; inputArea.style.pointerEvents = "none"; inputArea.style.transform = "translateY(20px)"; }
+        exitBtn.style.display = "block"; setTimeout(() => exitBtn.style.opacity = "1", 10);
+        if (page) page.style.paddingTop = "15px";
         if(typeof showToast === 'function') showToast("🎯 Focus Mode Activated!");
     } else {
-        if(topbar) topbar.style.display = "flex"; // Bring it back
-        if(inputArea) {
-            inputArea.style.opacity = "1";
-            inputArea.style.pointerEvents = "auto";
-            inputArea.style.transform = "translateY(0)";
-        }
-        exitBtn.style.opacity = "0";
-        setTimeout(() => exitBtn.style.display = "none", 500);
-        
-        if (page) page.style.paddingTop = "105px"; // Restore padding
-        
+        if(topbar) topbar.style.display = "flex";
+        if(inputArea) { inputArea.style.opacity = "1"; inputArea.style.pointerEvents = "auto"; inputArea.style.transform = "translateY(0)"; }
+        exitBtn.style.opacity = "0"; setTimeout(() => exitBtn.style.display = "none", 500);
+        if (page) page.style.paddingTop = "105px";
         if(typeof showToast === 'function') showToast("UI Restored");
     }
 };
+
 function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
 
 function startVideoTimer(totalChars) {
     clearInterval(videoTickInterval); 
     videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); 
     document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(videoTotalEst)}`;
-    
     videoTickInterval = setInterval(() => {
         if(!isVideoPaused && window.speechSynthesis.speaking) {
-            videoElapsed += 1; 
-            let displayTotal = videoTotalEst; 
+            videoElapsed += 1; let displayTotal = videoTotalEst; 
             if(videoElapsed > videoTotalEst) displayTotal = videoElapsed; 
             document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(displayTotal)}`;
         }
@@ -975,66 +833,39 @@ function resetVideoActivity() {
 
 function toggleVideoFullscreen() { 
     const ov = document.getElementById('videoGuiOverlay'); 
-    if (!document.fullscreenElement) { 
-        if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
-        if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
-    } else { 
-        document.exitFullscreen().catch(()=>{}); 
-        if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-    } 
+    if (!document.fullscreenElement) { if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{}); if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); } 
+    else { document.exitFullscreen().catch(()=>{}); if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } 
 }
 
 function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); if (activeVideoUtterance) activeVideoUtterance.volume = currentVideoVolume; resetVideoActivity(); }
 
 function initVideoGui() {
     if(!window.latestMathSolution) return;
-    
     videoElapsed = 0; isVideoPaused = false; 
     const ov = document.createElement('div'); ov.id = 'videoGuiOverlay';
     ov.style.cssText = "position:fixed; inset:0; background:radial-gradient(circle, #1e293b 0%, #000000 100%); z-index:9999; display:flex; flex-direction:column; font-family:'Poppins', sans-serif; touch-action:none;";
     ov.innerHTML = `
         <div id="vTopBar" style="position:absolute; top:0; left:0; right:0; padding:20px; background:linear-gradient(rgba(0,0,0,0.9), transparent); display:flex; justify-content:space-between; transition: opacity 0.3s; z-index:100;">
-            <div style="color:white; font-weight:bold; font-size:18px;">🔴 AI TUTOR LIVE</div>
-            <button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
+            <div style="color:white; font-weight:bold; font-size:18px;">🔴 AI TUTOR LIVE</div><button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
         </div>
-        
         <div style="position:absolute; left:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, -1)"></div>
         <div style="position:absolute; right:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, 1)"></div>
-        
         <div id="skipIndLeft" style="position:absolute; left:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏪</div>
         <div id="skipIndRight" style="position:absolute; right:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏩</div>
-
         <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px; position:relative; z-index:10;">
             <div id="videoContent" style="font-size: 36px; font-weight: 700; color: #fff; line-height: 1.8; max-width: 900px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:40px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
         </div>
-
         <div id="vControlsContainer" style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); transition: opacity 0.3s; z-index:100;">
-           <div style="width:100%; height:20px; cursor:pointer; display:flex; align-items:center;" onclick="seekVideo(event)">
-               <div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; position:relative;" id="vProgressBarBg">
-                   <div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.1s linear;" id="vProgressBar"></div>
-               </div>
-           </div>
-
+           <div style="width:100%; height:20px; cursor:pointer; display:flex; align-items:center;" onclick="seekVideo(event)"><div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; position:relative;" id="vProgressBarBg"><div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.1s linear;" id="vProgressBar"></div></div></div>
            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:5px;">
-               <div style="display:flex; align-items:center; gap:20px;">
-                   <button id="vPlayBtn" onclick="toggleVideoPause()" style="background:none; border:none; color:white; font-size:26px; cursor:pointer;">⏸️</button>
-                   <span id="vTimeDisplay" style="color:#cbd5e1; font-size:14px; font-weight:500; font-family:monospace;">00:00 / 00:00</span>
-               </div>
-               <div style="display:flex; align-items:center; gap:20px;">
-                   <div style="display:flex; align-items:center; gap:5px;"><span style="color:white; font-size:16px;">🔊</span><input type="range" id="vVolumeSlider" min="0" max="1" step="0.1" value="${currentVideoVolume}" onchange="updateVideoVolume(this.value)" style="width:70px; accent-color:#3b82f6; cursor:pointer;"></div>
-                   <button onclick="cycleVideoSpeed()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:14px; font-weight:bold; cursor:pointer; border-radius:10px; padding:5px 12px;" id="vSpeedTxt">${videoSpeed}x</button>
-                   <button onclick="toggleVideoFullscreen()" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;" title="Fullscreen">🔲</button>
-               </div>
+               <div style="display:flex; align-items:center; gap:20px;"><button id="vPlayBtn" onclick="toggleVideoPause()" style="background:none; border:none; color:white; font-size:26px; cursor:pointer;">⏸️</button><span id="vTimeDisplay" style="color:#cbd5e1; font-size:14px; font-weight:500; font-family:monospace;">00:00 / 00:00</span></div>
+               <div style="display:flex; align-items:center; gap:20px;"><div style="display:flex; align-items:center; gap:5px;"><span style="color:white; font-size:16px;">🔊</span><input type="range" id="vVolumeSlider" min="0" max="1" step="0.1" value="${currentVideoVolume}" onchange="updateVideoVolume(this.value)" style="width:70px; accent-color:#3b82f6; cursor:pointer;"></div><button onclick="cycleVideoSpeed()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:14px; font-weight:bold; cursor:pointer; border-radius:10px; padding:5px 12px;" id="vSpeedTxt">${videoSpeed}x</button><button onclick="toggleVideoFullscreen()" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;" title="Fullscreen">🔲</button></div>
            </div>
         </div>
     `;
     document.body.appendChild(ov); 
-    
-    if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{});
-    if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
-
-    ov.addEventListener('mousemove', resetVideoActivity); ov.addEventListener('touchstart', resetVideoActivity);
-    resetVideoActivity(); playFractionVideo(0);
+    if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{}); if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+    ov.addEventListener('mousemove', resetVideoActivity); ov.addEventListener('touchstart', resetVideoActivity); resetVideoActivity(); playFractionVideo(0);
 }
 
 window.handleVideoTap = function(e, dir) {
@@ -1046,30 +877,18 @@ window.handleVideoTap = function(e, dir) {
 window.skipVideo = function(dir) {
     const ind = document.getElementById(dir === 1 ? 'skipIndRight' : 'skipIndLeft');
     if(ind) { ind.style.opacity = '1'; setTimeout(()=>ind.style.opacity='0', 400); }
-    
     window.speechSynthesis.cancel();
     const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
     let target = videoLineIndex + dir;
-    if(target < 0) target = 0;
-    if(target >= lines.length) target = lines.length - 1;
-    
-    videoElapsed = Math.floor((target / lines.length) * videoTotalEst);
-    playFractionVideo(target, false, isVideoPaused);
+    if(target < 0) target = 0; if(target >= lines.length) target = lines.length - 1;
+    videoElapsed = Math.floor((target / lines.length) * videoTotalEst); playFractionVideo(target, false, isVideoPaused);
 };
 
 window.seekVideo = function(e) {
-    const barBg = document.getElementById('vProgressBarBg');
-    const rect = barBg.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const percent = Math.max(0, Math.min(1, clickX / rect.width));
-    
+    const barBg = document.getElementById('vProgressBarBg'); const rect = barBg.getBoundingClientRect(); const clickX = e.clientX - rect.left; const percent = Math.max(0, Math.min(1, clickX / rect.width));
     const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
-    let targetLine = Math.floor(percent * lines.length);
-    if(targetLine >= lines.length) targetLine = lines.length - 1;
-
-    window.speechSynthesis.cancel();
-    videoElapsed = Math.floor((targetLine / lines.length) * videoTotalEst);
-    playFractionVideo(targetLine, false, isVideoPaused);
+    let targetLine = Math.floor(percent * lines.length); if(targetLine >= lines.length) targetLine = lines.length - 1;
+    window.speechSynthesis.cancel(); videoElapsed = Math.floor((targetLine / lines.length) * videoTotalEst); playFractionVideo(targetLine, false, isVideoPaused);
 };
 
 function exitVideoGui() { 
@@ -1082,8 +901,7 @@ function exitVideoGui() {
 function cycleVideoSpeed() { 
     videoSpeed = videoSpeed === 0.75 ? 1.0 : (videoSpeed === 1.0 ? 1.5 : (videoSpeed === 1.5 ? 2.0 : 0.75)); 
     document.getElementById('vSpeedTxt').innerText = videoSpeed + 'x'; 
-    const wasPaused = isVideoPaused; window.speechSynthesis.cancel(); resetVideoActivity();
-    playFractionVideo(videoLineIndex, true, wasPaused);
+    const wasPaused = isVideoPaused; window.speechSynthesis.cancel(); resetVideoActivity(); playFractionVideo(videoLineIndex, true, wasPaused);
 }
 
 function toggleVideoPause() { 
@@ -1093,40 +911,29 @@ function toggleVideoPause() {
     resetVideoActivity();
 }
 
-function replayVideo() { 
-    window.speechSynthesis.cancel(); videoLineIndex = 0; videoElapsed = 0; isVideoPaused = false; 
-    document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); 
-}
+function replayVideo() { window.speechSynthesis.cancel(); videoLineIndex = 0; videoElapsed = 0; isVideoPaused = false; document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); }
 
 async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
-    const token = ++videoRunToken;
-    const content = document.getElementById("videoContent");
-    if (!content) return;
+    const token = ++videoRunToken; const content = document.getElementById("videoContent"); if (!content) return;
     const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
     videoLineIndex = Math.min(startIndex, Math.max(lines.length - 1, 0));
     
     if (!preserveContent) {
         content.innerHTML = "";
         for(let i=0; i<videoLineIndex; i++) {
-            let div = document.createElement("div");
-            div.dataset.videoLine = i; div.className = "video-line-card"; div.innerHTML = lines[i];
-            content.appendChild(div);
-            if (window.MathJax) MathJax.typesetPromise([div]);
+            let div = document.createElement("div"); div.dataset.videoLine = i; div.className = "video-line-card"; div.innerHTML = lines[i];
+            content.appendChild(div); if (window.MathJax) MathJax.typesetPromise([div]);
         }
     }
     
-    startVideoTimer(window.latestMathSolution.length);
-    const pBar = document.getElementById('vProgressBar');
+    startVideoTimer(window.latestMathSolution.length); const pBar = document.getElementById('vProgressBar');
 
     for(let i=videoLineIndex; i<lines.length; i++) {
         if(token !== videoRunToken || !document.getElementById('videoGuiOverlay')) return;
-        videoLineIndex = i;
-        if(pBar) pBar.style.width = ((i / lines.length) * 100) + '%';
+        videoLineIndex = i; if(pBar) pBar.style.width = ((i / lines.length) * 100) + '%';
         
-        const lineText = lines[i];
-        const cleanSpeech = formatHindiSpeechText(lineText);
-        const u = new SpeechSynthesisUtterance(cleanSpeech);
-        activeVideoUtterance = u;
+        const lineText = lines[i]; const cleanSpeech = formatHindiSpeechText(lineText);
+        const u = new SpeechSynthesisUtterance(cleanSpeech); activeVideoUtterance = u;
         if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
         let premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
         if (premium) u.voice = premium;
@@ -1134,94 +941,51 @@ async function playFractionVideo(startIndex = 0, preserveContent = false, pauseA
 
        let lineDiv = document.querySelector(`[data-video-line="${i}"]`);
         if (!lineDiv) {
-            lineDiv = document.createElement("div");
-            lineDiv.dataset.videoLine = i; 
-            lineDiv.className = "video-line-card"; 
-            // 🛑 BUG FIX: FORCE PURE WHITE TEXT OVER DARK BACKGROUND
-            lineDiv.style.color = "#ffffff"; 
-            lineDiv.style.textShadow = "0 2px 5px rgba(0,0,0,1)";
-            content.appendChild(lineDiv);
+            lineDiv = document.createElement("div"); lineDiv.dataset.videoLine = i; lineDiv.className = "video-line-card"; 
+            lineDiv.style.color = "#ffffff"; lineDiv.style.textShadow = "0 2px 5px rgba(0,0,0,1)"; content.appendChild(lineDiv);
         }
         
         lineDiv.innerHTML = lineText; lineDiv.classList.add("active");
-
-        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { 
-            MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); lineDiv.setAttribute('data-math-done', 'true');
-        }
-
+        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); lineDiv.setAttribute('data-math-done', 'true'); }
         setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 10);
 
         window.speechSynthesis.speak(u);
-        if (pauseAfterStart) {
-            window.speechSynthesis.pause(); isVideoPaused = true;
-            const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "▶️";
-            pauseAfterStart = false;
-        }
+        if (pauseAfterStart) { window.speechSynthesis.pause(); isVideoPaused = true; const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "▶️"; pauseAfterStart = false; }
 
         let estimatedDurationMs = (cleanSpeech.length / 13.5) * 1000 / videoSpeed; 
         let startTime = Date.now();
-
-        let waitInterval = setInterval(() => {
-            if (isVideoPaused) startTime += 50; 
-            let elapsed = Date.now() - startTime;
-            if (elapsed >= estimatedDurationMs) clearInterval(waitInterval);
-        }, 50);
+        let waitInterval = setInterval(() => { if (isVideoPaused) startTime += 50; let elapsed = Date.now() - startTime; if (elapsed >= estimatedDurationMs) clearInterval(waitInterval); }, 50);
 
         await new Promise(r => { u.onend = r; u.onerror = r; setTimeout(r, Math.max(estimatedDurationMs + 500, 2000)); });
-        
-        lineDiv.classList.remove("active");
-        if(token !== videoRunToken) return;
+        lineDiv.classList.remove("active"); if(token !== videoRunToken) return;
     }
     
     if(pBar) pBar.style.width = '100%'; clearInterval(videoTickInterval);
-    const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄";
-    resetVideoActivity();
+    const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄"; resetVideoActivity();
 }
-
-const langMap = { "Hindi": "hi-IN", "English": "en-US", "French": "fr-FR", "Spanish": "es-ES", "German": "de-DE", "Japanese": "ja-JP" };
 
 let recognition; let isRecording = false;
 
-function getActiveTextInput() {
-    return document.getElementById("searchInput") || document.getElementById("inputText") || document.getElementById("mathInstructionInput") || document.getElementById("qaQuestionInput");
-}
+function getActiveTextInput() { return document.getElementById("searchInput") || document.getElementById("inputText") || document.getElementById("mathInstructionInput") || document.getElementById("qaQuestionInput"); }
 
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) { 
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
     recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true; 
-    
-    recognition.onstart = () => { 
-        isRecording = true; 
-        const mic = document.getElementById("micBtn"); 
-        if(mic) { mic.classList.add("recording"); mic.style.background = "rgba(239, 68, 68, 0.8)"; mic.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.8)"; } 
-    }; 
-    
-    recognition.onresult = (e) => { 
-        let tr = ""; for (let i = 0; i < e.results.length; i++) tr += e.results[i][0].transcript; 
-        const inp = getActiveTextInput(); if(inp) inp.value = tr; 
-    }; 
-    
-    recognition.onerror = () => stopRecording(); 
-    recognition.onend = () => stopRecording(); 
+    recognition.onstart = () => { isRecording = true; const mic = document.getElementById("micBtn"); if(mic) { mic.classList.add("recording"); mic.style.background = "rgba(239, 68, 68, 0.8)"; mic.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.8)"; } }; 
+    recognition.onresult = (e) => { let tr = ""; for (let i = 0; i < e.results.length; i++) tr += e.results[i][0].transcript; const inp = getActiveTextInput(); if(inp) inp.value = tr; }; 
+    recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording(); 
 }
 
 window.toggleRecording = function() { 
     if (!recognition) return showToast("⚠️ Microphone not supported on this browser."); 
     if (isRecording) { recognition.stop(); } 
-    else { 
-        const langEl = document.getElementById("voiceSourceLang");
-        recognition.lang = langEl ? langEl.value : "hi-IN"; 
-        const inp = getActiveTextInput(); if(inp) inp.value = "Listening..."; 
-        recognition.start(); 
-    } 
+    else { const langEl = document.getElementById("voiceSourceLang"); recognition.lang = langEl ? langEl.value : "hi-IN"; const inp = getActiveTextInput(); if(inp) inp.value = "Listening..."; recognition.start(); } 
 };
 
 window.stopRecording = function() { 
-    isRecording = false; 
-    const mic = document.getElementById("micBtn"); 
+    isRecording = false; const mic = document.getElementById("micBtn"); 
     if(mic) { mic.classList.remove("recording"); mic.style.background = "rgba(255, 255, 255, 0.08)"; mic.style.boxShadow = "none"; } 
-    const inp = getActiveTextInput();
-    if(inp && inp.value === "Listening...") inp.value = ""; 
+    const inp = getActiveTextInput(); if(inp && inp.value === "Listening...") inp.value = ""; 
 };
 
 async function runTranslation(){ 
@@ -1237,7 +1001,6 @@ async function runTranslation(){
         Text to translate:\n${txt}`;
         
         let resObj = await callGeminiText("You are a strict translator.", prompt); 
-        
         let parts = resObj.text.split('|||');
         let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed.";
         let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
@@ -1245,12 +1008,7 @@ async function runTranslation(){
         
         const tId = "trans_" + Date.now();
         const transBox = document.getElementById("translatedText"); transBox.style.position = "relative";
-        transBox.innerHTML = `
-           <div id="${tId}" style="margin-top:10px;">${cleanText}</div>
-            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; gap:10px; width:100%;">
-                <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button>
-                <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${tId}')">📋 Copy</button>
-            </div>`; 
+        transBox.innerHTML = `<div id="${tId}" style="margin-top:10px;">${cleanText}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${tId}')">📋 Copy</button></div>`; 
         document.getElementById("translatedTextStatus").style.display = "none"; 
         
         let hwDiv = document.getElementById("hardWords");
@@ -1264,11 +1022,7 @@ function renderTransImagePreviews() {
     const container = document.getElementById("imagePreviewContainer"); if (!container) return;
     if (transImages.length === 0) { container.style.display = "none"; return; }
     container.style.display = "flex";
-    container.innerHTML = transImages.map((img, index) => `
-        <div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;">
-            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeTransImage(${index}, event)">✕</div>
-        </div>
-    `).join('');
+    container.innerHTML = transImages.map((img, index) => `<div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;"><div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeTransImage(${index}, event)">✕</div></div>`).join('');
 }
 
 function removeTransImage(index, event) { if(event) event.stopPropagation(); transImages.splice(index, 1); renderTransImagePreviews(); }
@@ -1322,14 +1076,7 @@ async function executeImageTransFlow() {
             <div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div>
             <div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div>
             <div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div>
-            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                <div style="display:flex; gap:10px; width:100%;">
-                    <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button>
-                </div>
-                ${getRetryButtonsHtml(lId)}
-            </div>
-        `;
+            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
         
         const loadingBubble = document.getElementById(lId);
         if (loadingBubble) { loadingBubble.querySelector('.bubble').innerHTML = finalHtml; }
@@ -1339,10 +1086,7 @@ async function executeImageTransFlow() {
     } catch(e) { 
         window.toggleChatButton(false);
         const el = document.getElementById(lId); 
-        if(el) {
-             if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user.";
-             else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
-        }
+        if(el) { if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user."; else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
     }
 }
 
@@ -1351,22 +1095,14 @@ let qaSourceImages = []; let qaQuestionImage = null;
 function renderQaSourcePreviews() {
     const count = document.getElementById("qaSourceCount"); if(count) count.innerText = qaSourceImages.length;
     const container = document.getElementById("qaSourcePreviews"); if(!container) return;
-    container.innerHTML = qaSourceImages.map((img, i) => `
-        <div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;">
-            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaSource(${i}, event)">✕</div>
-        </div>
-    `).join('');
+    container.innerHTML = qaSourceImages.map((img, i) => `<div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;"><div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaSource(${i}, event)">✕</div></div>`).join('');
 }
 function removeQaSource(index, event) { if(event) event.stopPropagation(); qaSourceImages.splice(index, 1); renderQaSourcePreviews(); }
 
 function renderQaQuestionPreview() {
     const container = document.getElementById("qaQuestionPreview"); if(!container) return;
     if(!qaQuestionImage) { container.innerHTML = ""; return; }
-    container.innerHTML = `
-        <div class="image-preview-chip" style="display:block; position:relative; width:80px; height:80px; background-image:url(${qaQuestionImage}); background-size:cover; border-radius:8px; flex-shrink:0;">
-            <div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaQuestion(event)">✕</div>
-        </div>
-    `;
+    container.innerHTML = `<div class="image-preview-chip" style="display:block; position:relative; width:80px; height:80px; background-image:url(${qaQuestionImage}); background-size:cover; border-radius:8px; flex-shrink:0;"><div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeQaQuestion(event)">✕</div></div>`;
 }
 function removeQaQuestion(event) { if(event) event.stopPropagation(); qaQuestionImage = null; renderQaQuestionPreview(); }
 
@@ -1410,11 +1146,11 @@ async function executeQaFlow() {
         
         let prompt = `You are an expert Document Assistant.
         DOCUMENT TEXT:\n${extractedContext}\n\nTARGET QUESTION(S) TO SOLVE:\n${finalQuestion}
-        CRITICAL INSTRUCTIONS (FAILURE IS NOT AN OPTION):
-        1. Answer ALL questions provided in the "TARGET QUESTION(S) TO SOLVE" section thoroughly. Do not skip any!
+        CRITICAL INSTRUCTIONS:
+        1. Answer ALL questions provided. Do not skip any!
         2. Answer based ONLY on the Document Text provided. 
         3. You MUST write your entire answer strictly in ${targetLang}. 
-        4. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY. DO NOT USE ENGLISH UNLESS ENGLISH IS SELECTED.
+        4. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY.
         5. If the answer cannot be found in the provided text, state that clearly.`;
         
         const qaId = "qa_ans_" + Date.now();
@@ -1432,13 +1168,7 @@ async function executeQaFlow() {
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div>
             <div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div>
             <div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div>
-            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;">
-                <div style="display:flex; gap:10px; width:100%;">
-                    <button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button>
-                    <button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${qaId}')">📋 Copy</button>
-                </div>
-                ${getRetryButtonsHtml(qaId)}
-            </div>
+            <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${qaId}')">📋 Copy</button></div>${getRetryButtonsHtml(qaId)}</div>
         `;
         
         if (window.MathJax) { MathJax.typesetClear([outBox]); MathJax.typesetPromise([outBox]); }
@@ -1447,11 +1177,8 @@ async function executeQaFlow() {
         
     } catch(e) { 
         window.toggleChatButton(false);
-        if (e.name === 'AbortError') {
-             statusTxt.innerText = "⚠️ Stopped by user."; pBar.style.background = "#f59e0b";
-        } else {
-             statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; 
-        }
+        if (e.name === 'AbortError') { statusTxt.innerText = "⚠️ Stopped by user."; pBar.style.background = "#f59e0b"; } 
+        else { statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; }
     }
 }
 
@@ -1470,14 +1197,6 @@ async function generateTitleWithGroq(sessionId) {
     } catch(e) { console.log("Groq title generation failed"); }
 }
 
-function saveHistorySafe() { 
-    if (typeof localforage !== 'undefined') {
-        localforage.setItem('aiHistory', appHistory).catch(e => console.error("Vault save failed:", e));
-    } else {
-        try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) { appHistory.pop(); saveHistorySafe(); }
-    }
-}
-
 function persistHistoryOnChatClose(reason = "page-close") {
     try { saveHistorySafe(); localStorage.setItem('aiHistoryLastCloseReason', reason); localStorage.setItem('aiHistoryLastCloseSavedAt', new Date().toISOString()); } 
     catch(e) { console.log("Close-safe history save failed", e); }
@@ -1487,24 +1206,27 @@ window.addEventListener('pagehide', () => persistHistoryOnChatClose('pagehide'))
 window.addEventListener('beforeunload', () => persistHistoryOnChatClose('beforeunload'));
 
 function saveToHistory(type, q, a, img = null, provider = "AI") { 
-    fetch(GOOGLE_SHEETS_WEBHOOK, {
-        method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-        body: JSON.stringify({ action: "log", type: type, question: q, answer: a.replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
-    }).catch(e => console.log("Google Sheets sync failed."));
+    try {
+        fetch(GOOGLE_SHEETS_WEBHOOK, {
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+            body: JSON.stringify({ action: "log", type: type, question: q || "Action", answer: String(a || "").replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" })
+        }).catch(e => console.log("Google Sheets sync failed."));
+    } catch(e) {}
 
     let sessionId = sessionCache[type];
     let histItem = appHistory.find(i => i.id === sessionId);
 
     if (!histItem) {
         sessionId = Date.now(); sessionCache[type] = sessionId; 
-        histItem = { id: sessionId, type: type, title: q.substring(0,25) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
+        histItem = { id: sessionId, type: type, title: String(q || "").substring(0,35) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a };
         appHistory.unshift(histItem);
     } else {
         histItem.interactions.push({ question: q, answer: a, image: img, provider: provider });
         histItem.question = q; histItem.answer = a; 
     }
     
-    saveHistorySafe(); generateTitleWithGroq(sessionId); 
+    saveHistorySafe(); 
+    generateTitleWithGroq(sessionId); 
 }
 
 window.viewHistory = function(id) {
@@ -1553,7 +1275,7 @@ function clearAllHistory() {
         if (typeof localforage !== 'undefined') localforage.removeItem('aiHistory'); 
         localStorage.removeItem('aiHistory'); 
         renderHistory(); 
-        showToast("🗑️ All history has been cleared!"); 
+        if(typeof showToast === 'function') showToast("🗑️ All history has been cleared!"); 
     } 
 }
 
@@ -1561,13 +1283,8 @@ function deleteHistoryItem(e, id) {
     e.stopPropagation(); 
     appHistory = appHistory.filter(i => i.id !== id); 
     saveHistorySafe(); 
-    try {
-        let old = JSON.parse(localStorage.getItem('aiHistory') || '[]');
-        old = old.filter(i => i.id !== id);
-        localStorage.setItem('aiHistory', JSON.stringify(old));
-    } catch(err) {}
     renderHistory(); 
-    showToast("Deleted successfully."); 
+    if(typeof showToast === 'function') showToast("Deleted successfully."); 
 }
 
 function cleanLatexForDownload(text) { return text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1/$2)').replace(/\\times/g, 'x').replace(/\\%/g, '%').replace(/[\$\\]/g, '').replace(/&nbsp;/g, ' ').replace(/<br>/g, '\n'); }
@@ -1586,10 +1303,10 @@ function triggerFileDownload(item) {
     }
     const b = new Blob([content], { type: "text/plain;charset=utf-8" }); 
     const l = document.createElement("a"); l.href = URL.createObjectURL(b); l.download = `AI_Chat_${item.title}.txt`; l.click(); 
-    showToast("📥 Download started!");
+    if(typeof showToast === 'function') showToast("📥 Download started!");
 }
 
-function restoreSession(e, id) { 
+window.restoreSession = function(e, id) { 
     if(e) e.stopPropagation(); 
     const item = appHistory.find(i => i.id == id); 
     if(!item) return; 
@@ -1603,8 +1320,8 @@ function restoreSession(e, id) {
     else if(item.type === 'quiz') targetPage = 'quiz.html';
     else if(item.type === 'youtube') targetPage = 'youtube.html';
     
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    if (currentPage !== targetPage && targetPage !== '') { 
+    const currentPath = window.location.pathname.toLowerCase();
+    if (targetPage !== '' && !currentPath.includes(targetPage)) { 
         window.location.href = `${targetPage}?restore=${id}`; 
         return; 
     }
@@ -1612,19 +1329,10 @@ function restoreSession(e, id) {
     sessionCache[item.type] = item.id;
     const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
 
-    // 🛑 BULLETPROOF CONTAINER FINDER 🛑
-    // This dynamically finds your chat area no matter what you named it in your HTML files!
-    let container = document.querySelector('.chat-scroll-area') || 
-                    document.getElementById('chatHistory') || 
-                    document.getElementById('searchChatHistory') || 
-                    document.getElementById('mathChatHistory') || 
-                    document.getElementById('mathsChatHistory') ||
-                    document.getElementById('imageChatHistory');
-    
+    let container = document.querySelector('.chat-scroll-area') || document.getElementById('chatHistory') || document.getElementById('searchChatHistory') || document.getElementById('mathChatHistory') || document.getElementById('mathsChatHistory') || document.getElementById('imageChatHistory');
     let containerId = container ? (container.id || "chatContainerFallback") : "";
-    if (container && !container.id) container.id = containerId; // Assign fallback ID if missing
+    if (container && !container.id) container.id = containerId;
 
-    // 🧮 1. RESTORE MATH SOLVER
     if(item.type === 'math' && container) { 
         container.innerHTML = ''; 
         interactionsToRestore.forEach(inter => {
@@ -1634,25 +1342,16 @@ function restoreSession(e, id) {
         });
         scrollToBottom(containerId);
     } 
-    // 🔍 2. RESTORE DEEP SEARCH
     else if (item.type === 'search' && container) {
         container.innerHTML = ''; 
         interactionsToRestore.forEach(inter => {
             appendUserBubble(inter.question, inter.image, containerId); 
             let lId = appendAiLoading(containerId); 
             const bbl = document.getElementById(lId).querySelector('.bubble');
-            bbl.innerHTML = `
-                <div class="api-badge">✨ BY ${inter.provider || "AI"}</div>
-                <div id="search_${lId}" style="margin-top:10px;">${inter.answer.replace(/\n/g, '<br>')}</div>
-                <div class="action-buttons-container">
-                    <button class="btn green" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button>
-                    <button class="btn" style="background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>
-                    ${getRetryButtonsHtml(lId)}
-                </div>`;
+            bbl.innerHTML = `<div class="api-badge">✨ BY ${inter.provider || "AI"}</div><div id="search_${lId}" style="margin-top:10px;">${inter.answer.replace(/\n/g, '<br>')}</div><div class="action-buttons-container"><button class="btn green" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="background:#475569; color:white;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button>${getRetryButtonsHtml(lId)}</div>`;
         });
         scrollToBottom(containerId);
     } 
-    // 🎙️ 3. RESTORE TEXT TRANSLATOR
     else if (item.type === 'translation') {
         const inputField = document.getElementById("inputText");
         const outputBox = document.getElementById("translatedText");
@@ -1660,34 +1359,27 @@ function restoreSession(e, id) {
             inputField.value = item.question || "";
             outputBox.innerHTML = item.answer || "";
             let parts = item.answer.split("Hard Words:");
-            if(parts[1] && document.getElementById("hardWords")) {
-                document.getElementById("hardWords").innerHTML = parts[1].trim();
-            }
+            if(parts[1] && document.getElementById("hardWords")) document.getElementById("hardWords").innerHTML = parts[1].trim();
         }
     }
-    // 🖼️ 4. RESTORE IMAGE TRANSLATOR
     else if (item.type === 'image_translation' && container) {
         container.innerHTML = ''; 
         interactionsToRestore.forEach(inter => {
             appendUserBubble(inter.question, inter.image, containerId); 
             let lId = appendAiLoading(containerId); 
-            const bbl = document.getElementById(lId).querySelector('.bubble');
-            bbl.innerHTML = inter.answer;
+            document.getElementById(lId).querySelector('.bubble').innerHTML = inter.answer;
         });
         scrollToBottom(containerId);
     } 
-    // 📄 5. RESTORE DOCUMENT Q&A
     else if (item.type === 'qa') {
         const outBox = document.getElementById("qaAnswerBox") || document.getElementById("qaResult");
-        const statusTxt = document.getElementById("qaStatusText");
-        const pBar = document.getElementById("qaProgressBar");
+        const statusTxt = document.getElementById("qaStatusText"), pBar = document.getElementById("qaProgressBar");
         if(outBox) {
             const lastInter = interactionsToRestore[interactionsToRestore.length - 1];
             outBox.innerHTML = lastInter.answer; 
             if(pBar) pBar.style.width = "100%"; 
             if(statusTxt) statusTxt.innerText = "Restored from History";
         } else if (container) { 
-            // Fallback just in case you use a chat UI for QA
             container.innerHTML = ''; 
             interactionsToRestore.forEach(inter => {
                 appendUserBubble(inter.question, inter.image, containerId); 
@@ -1697,7 +1389,6 @@ function restoreSession(e, id) {
             scrollToBottom(containerId);
         }
     }
-    // 🎬 6. RESTORE YOUTUBE
     else if (item.type === 'youtube') {
         let ytInput = document.getElementById('ytSearchInput') || document.getElementById('searchInput');
         let ytBtn = document.getElementById('ytSearchBtn') || document.getElementById('searchBtn');
@@ -1705,10 +1396,9 @@ function restoreSession(e, id) {
             ytInput.value = interactionsToRestore[0].question.replace("YouTube Search: ", "");
             let status = document.getElementById('ytStatus');
             if (status) status.innerHTML = `⏳ Loaded from history. Re-triggering search ranking...`;
-            ytBtn.click(); // Auto-clicks the search button to pull the videos
+            ytBtn.click();
         }
     }
-    // 🏆 7. RESTORE QUIZ
     else if (item.type === 'quiz') {
         let reviewContainer = document.getElementById('reviewContainer');
         if (reviewContainer) {
@@ -1730,7 +1420,7 @@ function restoreSession(e, id) {
         }
     }
     
-    showToast("🔄 Session Restored Successfully");
+    if(typeof showToast === 'function') showToast("🔄 Session Restored Successfully");
 }
 
 let currentStream = null, currentFacing = "environment";
@@ -1743,7 +1433,7 @@ function closeCamera() {
     if (mod) mod.classList.remove("active"); 
     if (currentStream) {
         const track = currentStream.getVideoTracks()[0];
-        try { if (track && track.getCapabilities && track.getCapabilities().torch) { track.applyConstraints({ advanced: [{ torch: false }] }); } } catch(err) { console.log("Torch off error:", err); }
+        try { if (track && track.getCapabilities && track.getCapabilities().torch) { track.applyConstraints({ advanced: [{ torch: false }] }); } } catch(err) {}
         currentStream.getTracks().forEach(t => t.stop()); currentStream = null;
     }
     isFlashOn = false; updateFlashUI();
@@ -1764,7 +1454,8 @@ function capturePhoto(){
     c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, w, h); capturedImage = c.toDataURL("image/jpeg", 0.7); 
     
     if (currentMode === 'math' || currentMode === 'search') { 
-        const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
+        if (typeof window.setMathImage === 'function') window.setMathImage(capturedImage);
+        else { const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } }
     }
     else if (currentMode === 'image_trans') {
         if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } else { transImages.push(capturedImage); renderTransImagePreviews(); }
@@ -1777,24 +1468,18 @@ function capturePhoto(){
 }
 
 window.attachedPdfText = "";
-
 window.handlePdfUpload = async function(event) {
     const file = event.target.files[0]; if (!file) return;
     if (file.type !== "application/pdf") return showToast("⚠️ Only PDF files are supported!");
-    
-    showToast("📄 Reading PDF... Please wait.");
-    const fileReader = new FileReader();
-    
+    showToast("📄 Reading PDF... Please wait."); const fileReader = new FileReader();
     fileReader.onload = async function() {
         const typedarray = new Uint8Array(this.result);
         try {
             const pdf = await pdfjsLib.getDocument(typedarray).promise;
             let fullText = "";
             for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += `\n--- Page ${i} ---\n` + pageText;
+                const page = await pdf.getPage(i); const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' '); fullText += `\n--- Page ${i} ---\n` + pageText;
             }
             window.attachedPdfText = fullText;
             const chip = document.getElementById("pdfPreviewChip");
@@ -1811,268 +1496,19 @@ window.clearPdfFile = function(e) {
     const chip = document.getElementById("pdfPreviewChip"); if(chip) chip.style.display = "none";
 };
 
-// ==========================================
-// 📤 SHARE CHAT HISTORY ENGINE
-// ==========================================
-async function shareChatHistory() {
-    const historyDiv = document.getElementById("mathChatHistory");
-    if (!historyDiv) return;
-
-    // 1. Gather all chat bubbles
-    const messages = historyDiv.querySelectorAll('.chat-msg');
-    
-    if (messages.length === 0) {
-        alert("No chat history to share yet!");
-        return;
-    }
-
-    // 2. Format the chat into clean text
-    let chatText = "📚 My Math Study Session:\n\n";
-
-    messages.forEach(msg => {
-        const isUser = msg.classList.contains('chat-user');
-        // Clean up the text by removing the "IMAGE OF SOLUTION" label for text sharing
-        let text = msg.innerText.replace("📝 IMAGE OF SOLUTION----", "").trim();
-        
-        if (isUser) {
-            chatText += `👤 Me: ${text}\n`;
-        } else {
-            chatText += `🤖 Tutor:\n${text}\n\n`;
-            chatText += `-----------------------------------\n\n`;
-        }
-    });
-
-    // 3. Trigger Native Share or Fallback to Clipboard
-    if (navigator.share) {
-        try {
-            await navigator.share({
-                title: 'Math Solution Chat',
-                text: chatText,
-            });
-            console.log('Shared successfully');
-        } catch (err) {
-            console.log('User cancelled share or error:', err);
-        }
-    } else {
-        try {
-            await navigator.clipboard.writeText(chatText);
-            alert("✅ Entire chat copied to clipboard! You can paste it in WhatsApp or Discord.");
-        } catch (err) {
-            alert("❌ Failed to copy chat.");
-            console.error(err);
-        }
-    }
-}
-// ==========================================
-// 🖼️ IMAGE GENERATION MODE ENGINE
-// ==========================================
-window.isImageGenerationMode = false;
-window.imagePages = [];
-window.currentImagePage = 0;
-window.imageControlsVisible = true;
-
-window.toggleImageModeBtn = function() {
-    window.isImageGenerationMode = !window.isImageGenerationMode;
-    const btn = document.getElementById("imgModeBtn");
-    if (window.isImageGenerationMode) {
-        btn.style.background = "linear-gradient(135deg, #f43f5e, #be123c)"; // Red active color
-        btn.innerHTML = "🖼️ Image Mode: ON";
-        showToast("🖼️ Image Generation Mode Enabled");
-    } else {
-        btn.style.background = "rgba(255,255,255,0.2)";
-        btn.innerHTML = "🖼️ Image Mode";
-        showToast("🖼️ Image Generation Mode Disabled");
-    }
-};
-
-window.openImageModeViewer = function(text) {
-    // Advanced Pagination: Split text roughly every 800-1000 characters to fit nicely on a page
-    let chunks = text.split('\n\n');
-    window.imagePages = [];
-    let currentPageStr = "";
-    
-    for(let chunk of chunks) {
-        if ((currentPageStr + chunk).length > 900) {
-            window.imagePages.push(currentPageStr);
-            currentPageStr = chunk + "\n\n";
-        } else {
-            currentPageStr += chunk + "\n\n";
-        }
-    }
-    if(currentPageStr.trim()) window.imagePages.push(currentPageStr);
-    
-    window.currentImagePage = 0;
-    const modal = document.getElementById("imageModeModal");
-    modal.style.display = "flex";
-    setTimeout(() => modal.style.opacity = "1", 10);
-    
-    // Inject custom animation styles for slides
-    if (!document.getElementById("imgModeStyles")) {
-        document.head.insertAdjacentHTML("beforeend", `
-            <style id="imgModeStyles">
-                @keyframes slideImgRight { from{ transform:translateX(50px); opacity:0; } to{ transform:translateX(0); opacity:1; } }
-                @keyframes slideImgLeft { from{ transform:translateX(-50px); opacity:0; } to{ transform:translateX(0); opacity:1; } }
-            </style>
-        `);
-    }
-    
-    updateImageModeDisplay();
-};
-
-window.updateImageModeDisplay = function(direction = "") {
-    const paper = document.getElementById("imageModePaper");
-    const wrapper = document.getElementById("imageModePaperWrapper");
-    
-    // Render text with MathJax so No raw LaTeX is visible
-    paper.innerHTML = window.imagePages[window.currentImagePage].replace(/\n/g, '<br>');
-    if(window.MathJax) { 
-        MathJax.typesetClear([paper]); 
-        MathJax.typesetPromise([paper]); 
-    }
-    
-    // Trigger Slide Animation
-    if (direction === "next") { wrapper.style.animation = "slideImgRight 0.4s ease-out"; }
-    if (direction === "prev") { wrapper.style.animation = "slideImgLeft 0.4s ease-out"; }
-    setTimeout(() => wrapper.style.animation = "", 400);
-    
-    // Update Indicators & Buttons
-    document.getElementById("imageModePageIndicator").innerText = `Page ${window.currentImagePage + 1} / ${window.imagePages.length}`;
-    document.getElementById("imgPrevBtn").style.display = window.currentImagePage > 0 ? "block" : "none";
-    document.getElementById("imgNextBtn").style.display = window.currentImagePage < window.imagePages.length - 1 ? "block" : "none";
-};
-
-window.nextImagePage = function(e) { 
-    if(e) e.stopPropagation(); 
-    if(window.currentImagePage < window.imagePages.length - 1) { 
-        window.currentImagePage++; 
-        updateImageModeDisplay("next"); 
-    } 
-};
-
-window.prevImagePage = function(e) { 
-    if(e) e.stopPropagation(); 
-    if(window.currentImagePage > 0) { 
-        window.currentImagePage--; 
-        updateImageModeDisplay("prev"); 
-    } 
-};
-
-window.toggleImageControls = function() {
-    window.imageControlsVisible = !window.imageControlsVisible;
-    const controls = document.getElementById("imageModeControls");
-    const indicator = document.getElementById("imageModePageIndicator");
-    const prev = document.getElementById("imgPrevBtn");
-    const next = document.getElementById("imgNextBtn");
-    
-    const op = window.imageControlsVisible ? "1" : "0";
-    controls.style.opacity = op;
-    indicator.style.opacity = op;
-    controls.style.pointerEvents = window.imageControlsVisible ? "auto" : "none";
-    
-    if(prev.style.display !== "none") prev.style.opacity = op;
-    if(next.style.display !== "none") next.style.opacity = op;
-};
-
-window.closeImageMode = function() {
-    const modal = document.getElementById("imageModeModal");
-    modal.style.opacity = "0";
-    setTimeout(() => modal.style.display = "none", 300);
-};
-
-window.downloadImageMode = function() {
-    if (typeof html2canvas === 'undefined') return showToast("❌ html2canvas is loading or blocked.");
-    const paper = document.getElementById("imageModePaperWrapper");
-    
-    // Temporarily disable overflow so html2canvas captures the FULL height of the paper
-    const originalHeight = paper.style.maxHeight;
-    const originalOverflow = paper.style.overflowY;
-    paper.style.maxHeight = "none";
-    paper.style.overflowY = "visible";
-    
-    showToast("⏳ Snapshotting Image...");
-    
-    html2canvas(paper, { scale: 2, backgroundColor: "#fdfbf7", useCORS: true }).then(canvas => {
-        // Restore CSS
-        paper.style.maxHeight = originalHeight;
-        paper.style.overflowY = originalOverflow;
-        
-        const link = document.createElement("a");
-        link.download = `AI_Math_Solution_Page_${window.currentImagePage + 1}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-        showToast("✅ Image Downloaded Successfully!");
-    }).catch(err => {
-        showToast("❌ Failed to create image.");
-        paper.style.maxHeight = originalHeight;
-        paper.style.overflowY = originalOverflow;
-    });
-};
-// ==========================================
-// 📋 USER BUBBLE COPY BUTTON OVERRIDE
-// ==========================================
 window.appendUserBubble = function(text, img, containerId) {
-    const historyDiv = document.getElementById(containerId);
-    if (!historyDiv) return;
-    
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "chat-msg chat-user";
-    
-    // Safely escape text for the clipboard
-    let escapedText = text.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-    
+    const historyDiv = document.getElementById(containerId); if (!historyDiv) return;
+    const msgDiv = document.createElement("div"); msgDiv.className = "chat-msg chat-user";
+    let escapedText = String(text || "").replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
     let contentHtml = `<div class="bubble" style="position:relative;">`;
-    
-    // 📋 The Copy Button
     contentHtml += `<button onclick="navigator.clipboard.writeText('${escapedText}'); typeof showToast === 'function' ? showToast('✅ Copied!') : alert('Copied!');" style="position:absolute; top:-10px; right:-10px; background:var(--primary); color:white; border:2px solid var(--bg-surface); border-radius:50%; width:28px; height:28px; font-size:12px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.3); display:flex; justify-content:center; align-items:center; transition:0.2s;">📋</button>`;
-    
-    if (img) {
-        contentHtml += `<img src="${img}" class="bubble-img" style="max-width:200px; border-radius:10px; margin-bottom:10px;"><br>`;
-    }
-    
-    contentHtml += `<div>${text.replace(/\n/g, '<br>')}</div></div>`;
-    msgDiv.innerHTML = contentHtml;
-    historyDiv.appendChild(msgDiv);
-    
-    const scrollArea = document.getElementById(containerId.replace('ChatHistory', 'ScrollArea'));
-    if (scrollArea) scrollArea.scrollTop = 99999;
+    if (img) contentHtml += `<img src="${img}" class="bubble-img" style="max-width:200px; border-radius:10px; margin-bottom:10px;"><br>`;
+    contentHtml += `<div>${String(text || "").replace(/\n/g, '<br>')}</div></div>`;
+    msgDiv.innerHTML = contentHtml; historyDiv.appendChild(msgDiv);
+    const scrollArea = document.getElementById(containerId.replace('ChatHistory', 'ScrollArea')); if (scrollArea) scrollArea.scrollTop = 99999;
 };
 
-// ==========================================
-// 🌐 OFFLINE INTERNET DETECTOR
-// ==========================================
-window.addEventListener('offline', () => {
-    if(typeof showToast === 'function') {
-        showToast("⚠️ Internet not working. AI will not respond due to inactivity of internet.");
-    } else {
-        alert("⚠️ Internet not working. AI will not respond due to inactivity of internet.");
-    }
-});
+window.addEventListener('offline', () => { typeof showToast === 'function' ? showToast("⚠️ Internet disconnected. AI will not respond.") : alert("Internet disconnected."); });
+window.addEventListener('online', () => { if(typeof showToast === 'function') showToast("✅ Internet restored!"); });
 
-window.addEventListener('online', () => {
-    if(typeof showToast === 'function') showToast("✅ Internet restored!");
-});
-// 🛑 MASTER HISTORY ROUTER FIX 🛑
-// Forces Search history to open in search.html and Math in maths.html
-window.restoreSession = function(e, id) {
-    if(e) e.stopPropagation();
-    const item = appHistory.find(i => i.id == id);
-    if(!item) return;
-
-    const currentPath = window.location.pathname.toLowerCase();
-    
-    // If it's a Search item, force it to open in search.html
-    if (item.type === 'search' && !currentPath.includes('search.html')) {
-        window.location.href = 'search.html?restore=' + id;
-        return;
-    }
-    // If it's a Math item, force it to open in maths.html
-    if (item.type === 'math' && !currentPath.includes('maths.html')) {
-        window.location.href = 'maths.html?restore=' + id;
-        return;
-    }
-    
-    // If already on the correct page, trigger the load
-    window.location.href = window.location.pathname + '?restore=' + id;
-};
-// --- GLOBAL EXPORTS ---
 window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.initVideoGui = initVideoGui; window.exitVideoGui = exitVideoGui; window.cycleVideoSpeed = cycleVideoSpeed; window.toggleVideoPause = toggleVideoPause; window.replayVideo = replayVideo; window.toggleFlash = toggleFlash; window.runTranslation = runTranslation; window.toggleRecording = toggleRecording; window.runGroqSearch = runGroqSearch; window.deleteHistoryItem = deleteHistoryItem; window.quickDownload = quickDownload; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.clearAllHistory = clearAllHistory; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen; window.updateVideoVolume = updateVideoVolume; window.toggleVideoFullscreen = toggleVideoFullscreen; window.removeTransImage = removeTransImage; window.executeImageTransFlow = executeImageTransFlow; window.removeQaSource = removeQaSource; window.removeQaQuestion = removeQaQuestion; window.clearQaSession = clearQaSession; window.executeQaFlow = executeQaFlow; window.retryRequest = retryRequest; window.handlePdfUpload = handlePdfUpload; window.clearPdfFile = clearPdfFile;
