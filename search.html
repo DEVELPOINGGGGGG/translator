@@ -2,604 +2,390 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Search & AI Creator Pro - Ultra Edition</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI PRO SUITE</title>
     
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
-    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-    
-    <script>
-        MathJax = { 
-            options: { ignoreHtmlClass: 'code-box', processHtmlClass: 'markdown-body' },
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
-            svg: { fontCache: 'global' }, chtml: { displayAlign: 'left' }
-        };
-    </script>
+    <script>MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };</script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
+    
     <style>
-        :root { --app-font-scale: 1; --glass-bg: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.1); --transition-speed: 0.3s; }
-        * { font-family: 'Poppins', Tahoma, Geneva, sans-serif; }
-        body { margin: 0; padding: 0; overflow-x: hidden; }
-        body, .chat-msg, .bubble { font-size: calc(15px * var(--app-font-scale)) !important; transition: font-size 0.2s ease; }
+        /* ===== UNIVERSAL CSS ===== */
+        :root { --bg: #0f172a; --surface: #1e293b; --primary: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        .markdown-body { line-height: 1.6; font-family: 'Poppins', sans-serif !important; }
-        .markdown-body p, .markdown-body li, .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body table { font-family: 'Poppins', sans-serif !important; margin-bottom: 10px; }
-        .markdown-body strong { font-weight: 800 !important; color: inherit; } 
-        .markdown-body th, .markdown-body td { border: 1px solid var(--border-light); padding: 8px; }
-        .markdown-body ul, .markdown-body ol { padding-left: 20px; }
-
-        .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
-        mjx-container[jax="CHTML"][display="true"] { overflow-x: auto !important; overflow-y: hidden !important; max-width: 100%; padding-bottom: 5px; scrollbar-width: thin; }
-
-        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.4; } 100% { transform: scale(1.2); opacity: 1; } }
-
-        .advanced-spinner { width: 45px; height: 45px; border: 4px solid var(--border-light); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        body.focus-mode .topbar { display: none !important; }
-        body.focus-mode .chat-input-area { display: none !important; }
-        body.focus-mode #searchChatHistory { padding-top: 20px !important; padding-bottom: 120px !important; margin-top: 0 !important; height: 100vh; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; }
+        /* ===== TOP BAR & AUDIO PLAYER ===== */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--surface); border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 50; }
+        .app-title { font-size: 20px; font-weight: 800; background: linear-gradient(90deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .settings-btn { background: none; border: none; font-size: 24px; cursor: pointer; transition: 0.2s; }
         
-        #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); justify-content: center; align-items: center; transition: transform 0.2s ease; }
-        #exitFocusBtn:hover { transform: scale(1.1); }
-        body.focus-mode #exitFocusBtn { display: flex; }
+        #topAudioPlayer { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 2px solid #3b82f6; border-radius: 30px; padding: 10px 20px; z-index: 1000; align-items: center; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .audio-btn { background: #3b82f6; border: none; color: white; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .audio-btn.red { background: #ef4444; }
 
-        #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
-        .settings-content { background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 20px; padding: 25px; width: 90%; max-width: 420px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        /* ===== MAIN CHAT AREA ===== */
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px 15px 120px 15px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         
-        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; }
-        .setting-select, .setting-input { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; width: 140px; }
-        .font-btns { display: flex; gap: 5px; }
-        .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: 0.2s; }
-        .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        /* Solves the sticky border glitch */
+        .chat-msg { display: flex; width: 100%; padding: 0 10px; }
+        .chat-user { justify-content: flex-end; }
+        .chat-ai { justify-content: flex-start; }
+        
+        .bubble { max-width: 85%; padding: 15px 20px; border-radius: 20px; font-size: 15px; line-height: 1.5; word-wrap: break-word; position: relative; }
+        .chat-user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 5px; box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
+        .chat-ai .bubble { background: var(--surface); color: var(--text); border-bottom-left-radius: 5px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        
+        /* Action Buttons on AI Message */
+        .msg-actions { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .action-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 15px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .action-btn:hover { background: var(--primary); }
 
-        .mode-toggle-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; transition: var(--transition-speed); }
-        .mode-toggle-btn:hover { border-color: var(--primary); }
-        .mode-toggle-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        /* ===== EPIC THINKING ANIMATION ===== */
+        .epic-loader { display: flex; align-items: center; gap: 10px; padding: 10px; }
+        .glowing-orb { width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #a855f7); animation: pulseOrb 1s infinite alternate; box-shadow: 0 0 15px #3b82f6; }
+        @keyframes pulseOrb { 0% { transform: scale(0.8); opacity: 0.7; box-shadow: 0 0 10px #3b82f6; } 100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 25px #a855f7; } }
+        .loader-text { font-weight: 600; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        .ai-signature { font-size: 10px; color: var(--primary); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; }
+        /* ===== INPUT AREA & + MENU ===== */
+        .input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg); padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--surface); border-radius: 25px; padding: 8px 15px; border: 1px solid rgba(255,255,255,0.2); }
+        
+        .icon-btn { background: transparent; border: none; color: var(--muted); font-size: 24px; cursor: pointer; padding: 5px; transition: 0.2s; }
+        .icon-btn:hover { color: var(--primary); }
+        .send-btn { background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        
+        textarea { flex: 1; background: transparent; border: none; color: white; font-size: 16px; resize: none; max-height: 120px; padding: 10px 0; outline: none; }
+        
+        /* The + Menu */
+        #plusMenu { display: none; position: absolute; bottom: 80px; left: 15px; background: var(--surface); border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 200; width: 200px; }
+        .menu-item { background: transparent; border: none; color: white; padding: 15px 20px; text-align: left; font-size: 15px; font-weight: bold; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-item:hover { background: rgba(59,130,246,0.2); color: var(--primary); }
 
-        .code-box { background:#0d1117; color:#c9d1d9; border-radius:8px; margin:15px 0; border:1px solid #30363d; overflow:hidden; font-family:monospace; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .code-header { background:#161b22; padding:8px 15px; display:flex; justify-content:flex-end; align-items:center; border-bottom:1px solid #30363d; gap: 5px; }
-        .code-body { padding:15px; overflow-x:auto; font-size:13px; white-space:pre-wrap; line-height: 1.5; font-family:monospace !important; }
-        .copy-btn { background:#21262d; border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:11px; transition: 0.2s; }
-        .copy-btn:hover { background: #30363d; transform: translateY(-1px); }
-        .play-btn { background:#10b981 !important; color:white !important; border-color:#059669 !important; }
+        /* Feature Chips */
+        #attachmentChip, #photoModeChip { display: none; align-items: center; gap: 10px; background: rgba(59,130,246,0.2); color: #60a5fa; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; width: max-content; margin-bottom: 10px; border: 1px solid #3b82f6; }
+        .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; }
 
-        @media (prefers-color-scheme: dark) {
-            .code-box { background:#f6f8fa; color:#24292f; border-color:#d0d7de; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
-            .code-header { background:#eaeef2; border-bottom:1px solid #d0d7de; }
-            .copy-btn { background:#ffffff; border:1px solid #d0d7de; color:#24292f; }
-            .copy-btn:hover { background: #f3f4f6; }
-        }
+        /* ===== MODALS (Camera, Settings, Voice, Sources) ===== */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 999999; justify-content: center; align-items: center; }
+        .modal-content { background: var(--surface); border: 2px solid var(--primary); border-radius: 20px; padding: 25px; width: 90%; max-width: 400px; color: white; position: relative; }
+        .modal-close { position: absolute; top: 15px; right: 15px; background: #ef4444; border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; }
 
-        .ai-generated-img-container { max-width: 320px; width: 100%; border-radius: 12px; overflow: hidden; margin-top: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border: 2px solid var(--border-light); transition: transform 0.2s ease; }
-        .ai-generated-img-container:hover { transform: scale(1.02); }
-        .ai-generated-img-container img { width: 100%; height: auto; display: block; cursor: pointer; }
-
-        .uploaded-thumbnail-frame { position: relative; flex-shrink: 0; cursor: pointer; transition: opacity 0.2s; }
-        .uploaded-thumbnail-frame:hover { opacity: 0.85; }
-
-        .action-row { margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; }
-        .action-btn { background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:4px; transition: 0.2s; }
-        .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-
-        .global-options-btn { background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; padding: 0 5px; transition: color 0.2s; }
-        .global-options-btn:hover { color: var(--primary); }
-        #globalOptionsMenu { display: none; position: absolute; top: 60px; right: 15px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 99999; flex-direction: column; min-width: 140px; overflow: hidden; animation: slideDown 0.2s ease; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        #globalOptionsMenu button { background: transparent; border: none; color: var(--text-main); padding: 12px 15px; font-size: 13px; font-weight: bold; text-align: left; cursor: pointer; width: 100%; transition: 0.2s; }
-        #globalOptionsMenu button:hover { background: var(--input-bg); color: var(--primary); }
-
-        .feedback-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index:100005; justify-content:center; align-items:center; }
-        .feedback-box { background:var(--bg-surface); border:2px solid var(--primary); border-radius:16px; padding:25px; width:90%; max-width:340px; box-shadow:0 15px 40px rgba(0,0,0,0.6); animation: popIn 0.2s ease; position:relative; overflow:hidden; }
-
-        #htmlPreviewModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100005; flex-direction:column; }
-        .preview-header { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:#161b22; color:white; font-weight:bold; font-family:sans-serif; border-bottom: 1px solid #30363d; }
-        .preview-close { background:#ef4444; color:white; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; font-weight:bold; font-size:13px; box-shadow:0 4px 10px rgba(0,0,0,0.3); transition: 0.2s; }
-        .preview-close:hover { background:#dc2626; transform: translateY(-1px); }
-        #htmlPreviewFrame { flex:1; width:100%; border:none; background:white; } 
-
-        #floatingModeChip { display:none; align-items:center; gap:8px; background:linear-gradient(135deg, #a855f7, #06b6d4); color:white; padding:6px 14px; border-radius:20px; margin-bottom:10px; font-size:12px; font-weight:bold; width:max-content; box-shadow:0 4px 12px rgba(168,85,247,0.3); }
-        #floatingModeChip button { background:rgba(255,255,255,0.2); border:none; color:white; font-weight:bold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:10px; }
-        #floatingModeChip button:hover { background:rgba(255,255,255,0.4); }
-
-        #multiImageManager::-webkit-scrollbar { height: 6px; }
-        #multiImageManager::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        /* Camera Specific */
+        #cameraModal { flex-direction: column; background: black; }
+        #cameraVideo { width: 100%; height: 100%; object-fit: cover; }
+        .cam-controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; align-items: center; gap: 40px; }
+        .cam-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+        .cam-capture { width: 70px; height: 70px; background: white; border: 4px solid #cbd5e1; border-radius: 50%; cursor: pointer; }
+        
+        .welcome-screen { text-align: center; margin-top: 50px; opacity: 0.8; }
+        .welcome-screen h1 { color: var(--primary); margin-bottom: 15px; }
+        .welcome-screen p { margin-bottom: 10px; font-size: 14px; }
     </style>
 </head>
-<body class="chat-page-layout" onclick="closeAllMenus(event)">
+<body onclick="closePlusMenu(event)">
 
-    <button id="exitFocusBtn" onclick="toggleFocusMode()" title="Exit Focus Mode">✕</button>
+    <div class="top-bar">
+        <div class="app-title">AI PRO SUITE</div>
+        <button class="settings-btn" onclick="document.getElementById('settingsModal').style.display='flex'">⚙️</button>
+    </div>
 
-    <div class="topbar" style="transition: transform 0.4s ease;">
-        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-        <div class="appTitle" style="font-size: 18px; font-weight: 800;">Deep AI <span style="color:var(--primary); font-size:12px; vertical-align: top;">PRO</span></div>
-        
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
-            <button onclick="toggleFocusMode()" title="Focus Mode" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-main); transition: 0.2s;">🧘‍♂️</button>
-            <button class="menuBtn" style="font-size: 20px; transition: 0.2s; background:none; border:none; cursor:pointer;" onclick="clearSearchChat();" title="Clear All Chat">🗑️</button>
-            <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="System Settings" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--primary); transition: 0.2s;">⚙️</button>
-            
-            <div style="position:relative;">
-                <button class="global-options-btn" onclick="toggleGlobalMenu(event)">⋮</button>
-                <div id="globalOptionsMenu">
-                    <button onclick="openFeedbackDialog()">📝 Submit Feedback</button>
-                    <button onclick="window.location.reload()">🔄 Refresh App</button>
-                </div>
-            </div>
+    <div id="topAudioPlayer">
+        <span style="font-weight: bold; color: #60a5fa;">🔊 Playing Answer...</span>
+        <button class="audio-btn" onclick="window.speechSynthesis.pause()">⏸</button>
+        <button class="audio-btn" onclick="window.speechSynthesis.resume()">▶</button>
+        <button class="audio-btn red" onclick="stopAudio()">⏹</button>
+    </div>
+
+    <div class="chat-container" id="chatBox">
+        <div class="welcome-screen" id="welcomeScreen">
+            <h1>Welcome to Deep Search</h1>
+            <p>1. Type anything or click <b>+</b> to upload files.</p>
+            <p>2. Uploading a Book/PDF makes me memorize it instantly.</p>
+            <p>3. Turn on <b>Photo Gen</b> to generate images.</p>
         </div>
     </div>
 
-    <!-- Feedback & Settings Modals Omitted for Brevity but functionality remains -->
-    <div id="feedbackOverlay" class="feedback-overlay" onclick="closeFeedbackDialog()">
-        <div class="feedback-box" onclick="event.stopPropagation()">
-            <div id="feedbackFormState">
-                <h4 style="margin:0 0 10px 0; color:var(--primary); font-size: 18px;">📝 Direct Dev Feedback</h4>
-                <textarea id="feedbackText" style="width:100%; height:80px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:10px; color:var(--text-main); padding:12px; font-size:13px; resize:none; margin-bottom:15px;"></textarea>
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button onclick="closeFeedbackDialog()" style="background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); padding:10px 18px; border-radius:10px; cursor:pointer; font-weight:bold; font-size:12px;">Cancel</button>
-                    <button onclick="submitFeedbackApi()" style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:10px 25px; border-radius:10px; cursor:pointer; font-weight:bold; font-size:12px;">Transmit 🚀</button>
-                </div>
-            </div>
-            <div id="feedbackLoadingState" style="display:none; flex-direction:column; align-items:center; padding: 20px 0; gap: 20px;"><div class="advanced-spinner"></div></div>
-            <div id="feedbackSuccessState" style="display:none; flex-direction:column; align-items:center; padding: 20px 0; gap: 15px;"><div style="font-size:60px;">✅</div><b style="color:#10b981;">Feedback Secured!</b></div>
+    <div class="input-area">
+        <div id="attachmentChip">📎 <span id="attachName">File.pdf</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
+        <div id="photoModeChip">🎨 Photo Gen Mode Active <button class="chip-close" onclick="togglePhotoMode()">✕</button></div>
+
+        <div id="plusMenu">
+            <button class="menu-item" onclick="openCamera()">📷 Open Camera</button>
+            <button class="menu-item" onclick="document.getElementById('fileUploader').click()">📎 Upload File</button>
+            <button class="menu-item" onclick="togglePhotoMode()" id="photoModeMenuBtn">🎨 Turn On Photo Gen</button>
+        </div>
+
+        <div class="input-wrapper">
+            <input type="file" id="fileUploader" accept="image/*,.pdf,.txt,.html,.py,.java,.bat,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none;" onchange="handleFileUpload(event)">
+            <button class="icon-btn" id="plusBtn" onclick="togglePlusMenu(event)">➕</button>
+            <textarea id="userInput" placeholder="Ask anything, upload docs, or generate art..." rows="1" oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 120) + 'px';"></textarea>
+            <button class="icon-btn" onclick="document.getElementById('voiceModal').style.display='flex'">🎤</button>
+            <button class="send-btn" onclick="executeSearch()">🚀</button>
         </div>
     </div>
 
-    <div id="settingsModal">
-        <div class="settings-content">
-            <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
-                <h3 style="margin:0; color:var(--primary);">⚙️ Settings & Brain</h3>
-                <button onclick="document.getElementById('settingsModal').style.display='none'" style="background:#ef4444; color:white; border:none; width:25px; height:25px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
-            </div>
-            <div class="setting-row"><span>🤖 Smart Router Base:</span><select class="setting-select" id="modelSelector"><option value="auto" selected>⚡ Auto (Saves Quota)</option><option value="api_5">🔥 Force API 5 (Pro)</option><option value="api_2">🔋 Force API 2 (Light)</option></select></div>
-            <div class="setting-row"><span>🌍 Language:</span><select class="setting-select" id="appLang"><option value="hi-IN" selected>Hindi (Default)</option><option value="en-US">English</option></select></div>
-            <div class="setting-row"><span>🔠 Font Size:</span><div class="font-btns"><button class="font-btn" onclick="setFont(0.85, this)">Small</button><button class="font-btn active" onclick="setFont(1, this)">Normal</button><button class="font-btn" onclick="setFont(1.15, this)">Large</button></div></div>
-            <div class="setting-row"><span>🎭 AI Tone:</span><select class="setting-select" id="aiTone"><option value="Standard">Standard</option><option value="Professional">Professional</option><option value="Casual">Casual</option></select></div>
-            <div style="margin-top:20px; font-size:12px; color:var(--text-muted); font-weight:bold;">🧠 AI Memory (Brain)</div>
-            <textarea id="aiBrainDisplay" readonly style="width:100%; height:60px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:8px; color:var(--text-muted); font-size:11px; padding:8px; margin-top:5px; resize:none;"></textarea>
-            <button onclick="clearBrain()" style="width:100%; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid #ef4444; padding:8px; border-radius:8px; margin-top:5px; cursor:pointer; font-weight:bold; font-size:12px;">Wipe Memory</button>
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="document.getElementById('settingsModal').style.display='none'">✕</button>
+            <h2 style="color:var(--primary); margin-bottom:20px;">Settings</h2>
+            <button class="menu-item" style="width:100%; border:1px solid #3b82f6; border-radius:10px; margin-bottom:10px;" onclick="toggleFocus()">🧘‍♂️ Toggle Focus Mode</button>
+            <button class="menu-item" style="width:100%; border:1px solid #ef4444; border-radius:10px; color:#ef4444;" onclick="clearChat()">🗑️ Clear Conversation</button>
         </div>
     </div>
 
-    <div id="htmlPreviewModal">
-        <div class="preview-header"><span style="display:flex; align-items:center; gap:8px;">🌐 Live Web Preview</span><button class="preview-close" onclick="document.getElementById('htmlPreviewModal').style.display='none'">✕ Close</button></div>
-        <iframe id="htmlPreviewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
-    </div>
-
-    <div id="fullscreenViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); backdrop-filter:blur(15px); z-index:999999; justify-content:center; align-items:center; flex-direction:column;">
-        <button onclick="document.getElementById('fullscreenViewer').style.display='none'" style="position:absolute; top:30px; right:30px; background:#ef4444; color:white; border:2px solid white; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; font-weight:bold;">✕</button>
-        <img id="fsImage" style="max-width:92%; max-height:75%; border-radius:12px; object-fit:contain; box-shadow: 0 15px 50px rgba(0,0,0,0.8);">
-        <button id="fsDownloadBtn" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:14px 35px; border-radius:30px; font-weight:800; cursor:pointer; font-size:16px;" onclick="downloadFullscreenImage()">📥 Download Photo</button>
-    </div>
-
-    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-    <div class="sidebar" id="sidebar">
-      <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
-      <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-      <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-      <button onclick="window.location.href='search.html'" class="active" style="border-left: 4px solid #3b82f6; font-weight: bold;">🔎 Deep Search</button>
-      <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
-      <button onclick="window.location.href='translator.html'">🌍 Translator</button>
-      <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
-      <button onclick="window.location.href='youtube.html'">📺 YouTube AI</button>
-      <button onclick="window.location.href='quiz.html'">📝 Quiz Maker</button>
-      <button onclick="window.location.href='history.html'">🕒 History</button>
-    </div>
-
-    <!-- 🛑 CAMERA MODAL (BULLETPROOF EDITION) 🛑 -->
-    <div id="cameraModal" class="cameraModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999999; background:#000; flex-direction:column;">
-        <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
-        <div class="camera-top-bar" style="position:absolute; top:20px; right:20px; z-index:1000000;">
-            <button type="button" id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()" style="background:#ef4444; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">❌</button>
+    <div id="voiceModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <button class="modal-close" onclick="document.getElementById('voiceModal').style.display='none'">✕</button>
+            <h2 style="margin-bottom:20px;">Voice Input</h2>
+            <button class="action-btn" style="background:var(--primary); padding:15px; font-size:16px; margin-bottom:10px; width:100%;" onclick="startVoice('en-US')">🗣️ Speak in English</button>
+            <button class="action-btn" style="background:#10b981; padding:15px; font-size:16px; width:100%;" onclick="startVoice('hi-IN')">🗣️ हिंदी में बोलें (Hindi)</button>
         </div>
-        <div class="cameraControls" style="position:absolute; bottom:30px; left:0; width:100%; display:flex; justify-content:center; align-items:center; gap:30px; z-index:1000000;">
-            <button type="button" id="toggleFlashBtn" class="cam-icon-btn" onclick="toggleFlash()" style="background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; cursor:pointer;">🔦</button>
-            <div id="capturePhotoBtn" class="cameraCircle" onclick="capturePhoto()" style="width:70px; height:70px; background:white; border-radius:50%; border:4px solid #cbd5e1; cursor:pointer;"></div>
-            <button type="button" id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()" style="background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; cursor:pointer;">🔄</button>
+    </div>
+
+    <div id="sourcesModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="document.getElementById('sourcesModal').style.display='none'">✕</button>
+            <h2 style="margin-bottom:20px; color:#10b981;">🌐 Web Sources</h2>
+            <div id="sourcesList" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <div id="cameraModal" class="modal" style="padding:0;">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <button style="position:absolute; top:20px; right:20px; background:#ef4444; color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:20px; z-index:100;" onclick="closeCamera()">✕</button>
+        <div class="cam-controls">
+            <button class="cam-btn" id="flashBtn" onclick="toggleFlash()">🔦</button>
+            <div class="cam-capture" onclick="takePhoto()"></div>
+            <button class="cam-btn" onclick="switchCamera()">🔄</button>
         </div>
         <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>
 
-    <div id="searchChatHistory" class="chat-scroll-area" style="margin-top: 70px; padding-bottom: 180px;"></div>
-
-    <div class="chat-input-area" style="background: var(--bg-surface); padding: 15px; border-top:1px solid var(--border-light); box-shadow: 0 -10px 30px rgba(0,0,0,0.1);">
-        
-        <div id="floatingModeChip">
-            <span>🖼️ Image Generation Mode Active</span>
-            <button onclick="disableImageMode()" title="Cancel Image Mode">✕</button>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-bottom:10px; overflow-x: auto; padding-bottom: 5px;">
-            <button id="modeLocalBtn" class="mode-toggle-btn" onclick="setSearchMode('local')">📚 Local Book Data</button>
-            <button id="modeWebBtn" class="mode-toggle-btn active" onclick="setSearchMode('web')">🌐 Live Web Data</button>
-            <button id="viewPhotosBtn" onclick="toggleMultiImage()" style="display:none; background:var(--primary); color:white; border:none; padding:5px 12px; border-radius:12px; font-size:11px; cursor:pointer;">🖼️ Uploads Thumbnail View</button>
-        </div>
-
-        <div id="multiImageManager" style="display:none; padding:10px; margin-bottom:10px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:12px; overflow-x:auto;">
-            <div id="multiImageList" style="display:flex; gap:10px;"></div>
-        </div>
-
-        <div id="pdfPreviewChip" style="display:none; align-items:center; background:var(--input-bg); padding:8px 12px; border-radius:12px; margin-bottom:10px; font-size:12px; color:var(--primary); border:1px solid var(--primary);">
-            📄 <span id="pdfName" style="margin:0 10px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">document</span>
-            <button onclick="clearPdfFile()" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; font-size:14px;">✕</button>
-        </div>
-
-        <!-- 🛑 CLEAN CHAT INPUT AREA (CAMERA & UPLOAD INTEGRATED) 🛑 -->
-        <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:8px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            
-            <!-- Hidden Universal File Input -->
-            <input type="file" id="universalUploadInput" accept="image/*,.pdf,.html,.py,.java,.bat,.txt,.md,.csv" style="display:none;" onchange="handleUniversalUpload(event)">
-            
-            <!-- Camera Button -->
-            <button type="button" class="chat-action-btn" onclick="openCamera()" title="Take Photo" style="background:transparent; border:none; font-size:20px; cursor:pointer;">📷</button>
-            
-            <!-- Upload File Button -->
-            <button type="button" class="chat-action-btn" onclick="document.getElementById('universalUploadInput').click()" title="Upload File" style="background:transparent; border:none; font-size:20px; cursor:pointer;">📎</button>
-            
-            <!-- Text Input Area -->
-            <textarea id="searchInput" placeholder="Ask anything, upload files/code, solve logic..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; line-height: 1.5;"></textarea>
-            
-            <!-- Send Button -->
-            <button type="button" class="chat-action-btn send" id="sendSearchBtn" onclick="runMainPipeline()" style="width:45px; height:45px; font-size:20px; border-radius:50%; background:linear-gradient(135deg, var(--secondary), var(--primary)); color:white; border:none; cursor:pointer; flex-shrink: 0;">🚀</button>
-        </div>
-    </div>
-
-    <script src="ui-controls.js"></script>
-    <script src="main.js"></script>
-
-    <!-- 🛑 GUARANTEED UPLOAD & CAMERA SCRIPT (RUNS LOCALLY IN SEARCH.HTML) 🛑 -->
     <script>
-        let appHistory = [];
-        let sessionMessages = [];
-        let isProcessing = false;
-        let persistentPdfMemory = "";
-        let uploadedImages = []; 
-        let aiBrain = []; 
-        let activeSearchMode = "web"; 
-        let imageGenerationModeActive = false; 
-        let currentFullscreenBase64 = "";
-        let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
+        // System State
+        let isPhotoMode = false;
+        let bookMemory = "";
+        let uploadedImage = null;
+        let chatHistory = [];
+        let camStream = null;
+        let camFacing = "environment";
+        let isFlash = false;
 
-        let currentStream = null;
-        let currentFacing = "environment";
-        let isFlashOn = false;
+        // UI Controls
+        function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
+        function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
+        
+        function togglePhotoMode() {
+            isPhotoMode = !isPhotoMode;
+            document.getElementById("photoModeChip").style.display = isPhotoMode ? "flex" : "none";
+            document.getElementById("photoModeMenuBtn").innerText = isPhotoMode ? "🎨 Turn Off Photo Gen" : "🎨 Turn On Photo Gen";
+            closePlusMenu();
+        }
 
-        // 🛑 BULLETPROOF FILE UPLOADER (Handles Images, PDFs, Code, TXT)
-        window.handleUniversalUpload = async function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        function toggleFocus() { document.body.style.background = document.body.style.background === 'black' ? 'var(--bg)' : 'black'; document.getElementById('settingsModal').style.display='none'; }
+        
+        function clearChat() { document.getElementById("chatBox").innerHTML = document.getElementById("welcomeScreen").outerHTML; chatHistory = []; document.getElementById('settingsModal').style.display='none'; }
+
+        // Audio Player
+        function playAudio(btn) {
+            const textId = btn.getAttribute('data-target');
+            const text = document.getElementById(textId).innerText;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.onstart = () => document.getElementById("topAudioPlayer").style.display = "flex";
+            u.onend = () => document.getElementById("topAudioPlayer").style.display = "none";
+            window.speechSynthesis.speak(u);
+        }
+        function stopAudio() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
+
+        // Copy Text
+        function copyText(btn) {
+            const textId = btn.getAttribute('data-target');
+            navigator.clipboard.writeText(document.getElementById(textId).innerText);
+            btn.innerText = "✅ Copied";
+            setTimeout(() => btn.innerText = "📋 Copy", 2000);
+        }
+
+        // Voice Recognition
+        function startVoice(lang) {
+            document.getElementById('voiceModal').style.display='none';
+            if(!('webkitSpeechRecognition' in window)) return alert("Voice not supported here.");
+            const rec = new webkitSpeechRecognition();
+            rec.lang = lang;
+            rec.onstart = () => document.getElementById("userInput").value = "Listening...";
+            rec.onresult = (e) => document.getElementById("userInput").value = e.results[0][0].transcript;
+            rec.start();
+        }
+
+        // Camera Engine
+        async function openCamera() {
+            closePlusMenu();
+            const mod = document.getElementById("cameraModal");
+            mod.style.display = "flex";
+            try {
+                if(camStream) camStream.getTracks().forEach(t => t.stop());
+                camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } });
+                const v = document.getElementById("cameraVideo");
+                v.srcObject = camStream;
+                setTimeout(async () => {
+                    const track = camStream.getVideoTracks()[0];
+                    if (track.getCapabilities().torch && camFacing === "environment") { isFlash = true; await track.applyConstraints({ advanced: [{ torch: true }] }); document.getElementById('flashBtn').innerText = "💡"; }
+                }, 500);
+            } catch(e) { alert("Camera error."); }
+        }
+        function closeCamera() { document.getElementById("cameraModal").style.display = "none"; if(camStream) camStream.getTracks().forEach(t=>t.stop()); isFlash=false; document.getElementById('flashBtn').innerText = "🔦"; }
+        async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
+        async function toggleFlash() { if(!camStream) return; const track = camStream.getVideoTracks()[0]; if(track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } }
+        function takePhoto() {
+            const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
+            c.width = v.videoWidth; c.height = v.videoHeight;
+            c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+            uploadedImage = c.toDataURL("image/jpeg", 0.7);
+            document.getElementById("attachmentChip").style.display = "flex";
+            document.getElementById("attachName").innerText = "Photo Captured";
+            closeCamera();
+        }
+
+        // File Uploader (PDF, TXT, HTML, Python, etc)
+        function handleFileUpload(e) {
+            const file = e.target.files[0]; if(!file) return;
+            document.getElementById("attachmentChip").style.display = "flex";
+            document.getElementById("attachName").innerText = file.name;
+            closePlusMenu();
 
             if (file.type.startsWith('image/')) {
-                if (uploadedImages.length >= 10) return showToast("❌ Max photos reached!");
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    uploadedImages.push(e.target.result);
-                    updateImageUI();
+                const r = new FileReader(); r.onload = (ev) => { uploadedImage = ev.target.result; bookMemory = ""; }; r.readAsDataURL(file);
+            } else if (file.name.endsWith('.pdf')) {
+                const r = new FileReader();
+                r.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let text = "";
+                    for(let i=1; i<=pdf.numPages; i++){
+                        const p = await pdf.getPage(i);
+                        const c = await p.getTextContent();
+                        text += c.items.map(item=>item.str).join(' ');
+                    }
+                    bookMemory = text; uploadedImage = null;
                 };
-                reader.readAsDataURL(file);
-            } 
-            else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-                showToast("⏳ Reading PDF...");
-                const reader = new FileReader();
-                reader.onload = async function() {
-                    try {
-                        const typedarray = new Uint8Array(this.result);
-                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                        let text = "";
-                        for(let i=1; i<=pdf.numPages; i++){
-                            const p = await pdf.getPage(i);
-                            const c = await p.getTextContent();
-                            text += c.items.map(item=>item.str).join(' ');
-                        }
-                        persistentPdfMemory = text;
-                        document.getElementById('pdfPreviewChip').style.display='flex';
-                        document.getElementById('pdfName').innerText = file.name;
-                        showToast("✅ PDF Processed!");
-                    } catch(err) { showToast("❌ Failed to read PDF."); }
-                };
-                reader.readAsArrayBuffer(file);
-            } 
-            else {
-                // Treats HTML, Python, Java, BAT, TXT files as plain text to feed to the AI
-                showToast("⏳ Reading Code/Text File...");
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    persistentPdfMemory = e.target.result;
-                    document.getElementById('pdfPreviewChip').style.display='flex';
-                    document.getElementById('pdfName').innerText = file.name;
-                    showToast("✅ File Processed!");
-                };
-                reader.readAsText(file);
+                r.readAsArrayBuffer(file);
+            } else {
+                const r = new FileReader(); r.onload = (ev) => { bookMemory = ev.target.result; uploadedImage = null; }; r.readAsText(file);
             }
-            event.target.value = ''; // Reset the input
-        };
-
-        // 🛑 BULLETPROOF CAMERA ENGINE (Local to Search)
-        window.openCamera = async function() { 
-            const mod = document.getElementById("cameraModal"); 
-            mod.style.display = "flex"; mod.style.opacity = "1"; mod.classList.add("active"); 
-            await startCamera(); 
-        };
-
-        async function startCamera() { 
-            try { 
-                if(currentStream) currentStream.getTracks().forEach(t => t.stop()); 
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert("Camera blocked or unsupported!");
-                
-                currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
-                const videoEl = document.getElementById("cameraVideo");
-                videoEl.setAttribute('autoplay', ''); videoEl.setAttribute('playsinline', '');
-                videoEl.srcObject = currentStream; 
-                
-                const track = currentStream.getVideoTracks()[0]; 
-                setTimeout(async () => { 
-                    try { 
-                        const cap = track.getCapabilities(); 
-                        if (cap.torch && currentFacing === "environment") { 
-                            isFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); 
-                        } else { isFlashOn = false; } 
-                        updateFlashUI();
-                    } catch(err) {} 
-                }, 500); 
-            } catch(e) { alert("Camera Error: " + e.message); } 
         }
+        function clearAttachment() { bookMemory = ""; uploadedImage = null; document.getElementById("attachmentChip").style.display = "none"; }
 
-        window.closeCamera = function() { 
-            document.getElementById("cameraModal").style.display = "none";
-            if (currentStream) { 
-                const track = currentStream.getVideoTracks()[0]; 
-                try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} 
-                currentStream.getTracks().forEach(t => t.stop()); currentStream = null; 
-            }
-            isFlashOn = false; updateFlashUI();
-        };
+        // AI Execution Pipeline
+        async function executeSearch() {
+            const inp = document.getElementById("userInput");
+            let q = inp.value.trim();
+            if (!q && !uploadedImage && !bookMemory) return;
 
-        window.capturePhoto = function() { 
-            const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
-            if (!v || !c) return;
-            let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
-            c.width = w; c.height = h; 
-            c.getContext("2d").drawImage(v, 0, 0, w, h); 
-            const imgData = c.toDataURL("image/jpeg", 0.7); 
-            
-            if(uploadedImages.length >= 10) { showToast("❌ Max 10 photos reached!"); } 
-            else { uploadedImages.push(imgData); updateImageUI(); }
-            
-            closeCamera(); 
-        };
+            document.getElementById("welcomeScreen").style.display = "none";
+            const chatBox = document.getElementById("chatBox");
 
-        window.toggleFlash = async function() { 
-            if (!currentStream) return; 
-            const track = currentStream.getVideoTracks()[0]; 
-            try { if (track.getCapabilities().torch) { isFlashOn = !isFlashOn; await track.applyConstraints({ advanced: [{ torch: isFlashOn }] }); updateFlashUI(); } } catch(err){} 
-        };
+            // User Message
+            let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${uploadedImage ? `<img src="${uploadedImage}" style="max-width:100%; border-radius:10px; margin-bottom:10px;"><br>` : ''}${q}</div></div>`;
+            chatBox.insertAdjacentHTML('beforeend', userHtml);
+            inp.value = ""; inp.style.height = ''; chatBox.scrollTop = chatBox.scrollHeight;
 
-        window.switchCamera = async function() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); };
-        function updateFlashUI() { const btn = document.getElementById("toggleFlashBtn"); if(btn) { btn.innerText = isFlashOn ? "💡" : "🔦"; } }
+            // Loading Animation
+            const loadId = "load_" + Date.now();
+            chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble epic-loader"><div class="glowing-orb"></div><span class="loader-text">AI is thinking...</span></div></div>`);
+            chatBox.scrollTop = chatBox.scrollHeight;
 
-        // Core Markdown/MathJax Initialization
-        const renderer = new marked.Renderer();
-        renderer.code = function(code, language) {
-            let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
-            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html') || safeCode.toLowerCase().includes('&lt;!doctype html');
-            let playBtnStr = isHtml ? `<button class="copy-btn play-btn" onclick="playHtmlCode(this)" title="Open in Sandboxed Preview">▶ Play HTML</button>` : '';
-            return `<div class="code-box"><div class="code-header">${playBtnStr}<button class="copy-btn" onclick="copyToClipboardEngine(this)">Copy Code</button></div><div class="code-body">${safeCode}</div></div>`;
-        };
-        marked.setOptions({ renderer: renderer });
-
-        function copyToClipboardEngine(btn) {
-            const codeText = btn.parentElement.nextElementSibling.innerText;
-            navigator.clipboard.writeText(codeText).then(() => {
-                const originalText = btn.innerText; btn.innerText = 'Copied! ✓'; btn.style.background = '#10b981';
-                setTimeout(() => { btn.innerText = originalText; btn.style.background = ''; }, 2000);
-            });
-        }
-
-        window.playHtmlCode = function(btn) {
-            const rawCode = btn.parentElement.nextElementSibling.innerText;
-            let sanitizedCode = rawCode.replace(/<script\s+src=["'][^>]*polyfill\.io[^>]*>[\s\S]*?<\/script>/gi, '');
-            document.getElementById('htmlPreviewFrame').srcdoc = sanitizedCode;
-            document.getElementById('htmlPreviewModal').style.display = 'flex';
-        }
-
-        window.openFullscreenImage = function(sourceDataOrId) {
-            let src = document.getElementById(sourceDataOrId) ? document.getElementById(sourceDataOrId).src : sourceDataOrId;
-            if(!src) return;
-            currentFullscreenBase64 = src; document.getElementById("fsImage").src = src; document.getElementById("fullscreenViewer").style.display = "flex";
-        }
-
-        window.downloadFullscreenImage = async function() {
-            if(!currentFullscreenBase64) return; showToast("⏳ Fetching file...");
             try {
-                if (currentFullscreenBase64.startsWith('data:')) {
-                    let a = document.createElement("a"); a.href = currentFullscreenBase64; a.download = `DeepAI_${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("✅ Download Complete!");
+                if (isPhotoMode) {
+                    await handlePhotoGeneration(q, loadId);
+                    if(isPhotoMode) togglePhotoMode(); // Auto turn off
                 } else {
-                    const response = await fetch(currentFullscreenBase64); const blob = await response.blob(); const url = window.URL.createObjectURL(blob);
-                    let a = document.createElement("a"); a.href = url; a.download = `DeepAI_${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); showToast("✅ Download Complete!");
+                    await handleTextSearch(q, loadId);
                 }
-            } catch(e) { window.open(currentFullscreenBase64, '_blank'); }
-        }
-
-        function setSearchMode(mode) { activeSearchMode = mode; document.getElementById('modeLocalBtn').classList.toggle('active', mode === 'local'); document.getElementById('modeWebBtn').classList.toggle('active', mode === 'web'); }
-        function activateImageMode() { imageGenerationModeActive = true; document.getElementById("floatingModeChip").style.display = "flex"; document.getElementById("searchInput").placeholder = "Describe the image you want Flux to paint..."; document.getElementById("searchInput").focus(); }
-        function disableImageMode() { imageGenerationModeActive = false; document.getElementById("floatingModeChip").style.display = "none"; document.getElementById("searchInput").placeholder = "Ask anything, upload files/code, solve logic..."; }
-
-        function saveHistorySafe() {
-            if (typeof localforage !== 'undefined') localforage.setItem('aiHistory', appHistory).catch(err => console.warn(err));
-            try { localStorage.setItem('aiHistory', JSON.stringify(appHistory)); } catch(e) {}
-        }
-
-        try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
-        try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
-
-        window.restoreSession = function(e, id) {
-            if(e) e.stopPropagation(); const item = appHistory.find(i => i.id == id); if(!item) return; 
-            currentSessionId = item.id; const container = document.getElementById("searchChatHistory"); if (!container) return; container.innerHTML = '';
-            
-            const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
-            sessionMessages = interactionsToRestore.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
-            
-            interactionsToRestore.forEach((inter, idx) => {
-                let userImgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" onclick="openFullscreenImage(this.src)" style="max-height:80px; margin-bottom:5px; border-radius:8px;">` : '';
-                container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgHtml}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
-                
-                let lId = "search_restored_" + Date.now() + "_" + idx;
-                container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${lId}"><div class="bubble"><div class="ai-signature">✨ BY ${inter.provider || "AI"}</div><div id="text_${lId}" class="markdown-body"></div></div></div>`);
-                
-                let cleanAns = inter.answer;
-                if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n
-```html\n$1\n```\n");
-                let finalHtml = marked.parse(cleanAns); document.getElementById(`text_${lId}`).innerHTML = finalHtml;
-                if (window.MathJax) MathJax.typesetPromise([document.getElementById(lId)]);
-            });
-            container.scrollTop = container.scrollHeight;
-        };
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const restoreId = new URLSearchParams(window.location.search).get('restore');
-            if (restoreId) { setTimeout(() => window.restoreSession(null, restoreId), 100); } 
-            else if (sessionMessages.length === 0) { showWelcomeMessage(); }
-            document.getElementById("searchInput").addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runMainPipeline(); } });
-        });
-
-        function showWelcomeMessage() {
-            const chatContainer = document.getElementById("searchChatHistory");
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;"><div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));"><div class="ai-signature">✨ DEEP AI PRO SYSTEM</div><b style="color:var(--primary); font-size:18px;">👋 Search & Code System Online.</b><br><br><div style="font-size:14px; line-height: 1.6;">• <b>Universal Uploader:</b> Attach Images, PDFs, HTML, Python, Java & more!<br>• <b>Live Camera:</b> Snap photos directly into chat.<br></div></div></div>`);
-            safeScroll();
-        }
-
-        function toggleGlobalMenu(e) { e.stopPropagation(); const m = document.getElementById('globalOptionsMenu'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
-        function closeAllMenus(e) { document.getElementById('globalOptionsMenu').style.display = 'none'; }
-        function openFeedbackDialog() { document.getElementById('globalOptionsMenu').style.display = 'none'; document.getElementById('feedbackText').value = ""; document.getElementById('feedbackFormState').style.display = 'block'; document.getElementById('feedbackLoadingState').style.display = 'none'; document.getElementById('feedbackSuccessState').style.display = 'none'; document.getElementById('feedbackOverlay').style.display = 'flex'; }
-        function closeFeedbackDialog() { document.getElementById('feedbackOverlay').style.display = 'none'; }
-        async function submitFeedbackApi() { const userChanges = document.getElementById('feedbackText').value.trim(); if(!userChanges) return showToast("⚠️ Please type your feedback first."); document.getElementById('feedbackFormState').style.display = 'none'; document.getElementById('feedbackLoadingState').style.display = 'flex'; try { const payload = { message: userChanges }; const res = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); if(res.ok) { document.getElementById('feedbackLoadingState').style.display = 'none'; document.getElementById('feedbackSuccessState').style.display = 'flex'; setTimeout(() => closeFeedbackDialog(), 2500); } else { showToast("❌ Server Block."); closeFeedbackDialog(); } } catch(err) { showToast("❌ Network error."); closeFeedbackDialog(); } }
-
-        function setFont(scale, btn) { document.documentElement.style.setProperty('--app-font-scale', scale); document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
-        function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
-        function toggleFocusMode() { document.body.classList.toggle("focus-mode"); const isFocus = document.body.classList.contains("focus-mode"); if (isFocus) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(err => console.log(err)); } else { if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(err => console.log(err)); } }
-        function showToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = "position:fixed; bottom:140px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:12px 24px; border-radius:30px; z-index:100000; font-weight:bold; font-size:13px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); animation: slideUp 0.3s ease;"; document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s ease'; setTimeout(() => t.remove(), 300); }, 2500); }
-        function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
-        function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
-        function clearBrain() { if(confirm("Permanently erase memory?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
-        function clearSearchChat() { if(confirm("Clear chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; uploadedImages = []; updateImageUI(); clearPdfFile(); currentSessionId = Date.now(); showWelcomeMessage(); } }
-        function copyResponseToClipboard(id) { navigator.clipboard.writeText(document.getElementById(id).innerText); showToast("📋 Copied!"); }
-
-        function runInsaneTypewriter(targetElement, fullHtml, callback) {
-            let tempDiv = document.createElement('div'); tempDiv.innerHTML = fullHtml;
-            let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
-            let totalLength = tempDiv.innerText.length || 1; let targetDuration = totalLength < 500 ? 7500 : 22500; 
-            let intervalTime = 30; let totalTicks = targetDuration / intervalTime; let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
-
-            function typeNextNode() {
-                if (nodeIndex >= nodes.length) { if(callback) callback(); return; }
-                let currentNode = nodes[nodeIndex].cloneNode(true);
-                if (currentNode.nodeType === Node.TEXT_NODE) {
-                    let text = currentNode.textContent; let span = document.createElement('span'); targetElement.appendChild(span); let charIndex = 0;
-                    let interval = setInterval(() => {
-                        if (charIndex >= text.length) { clearInterval(interval); nodeIndex++; typeNextNode(); } 
-                        else { span.textContent += text.substring(charIndex, charIndex + textChunks); charIndex += textChunks; }
-                    }, intervalTime);
-                } else { targetElement.appendChild(currentNode); nodeIndex++; typeNextNode(); }
+            } catch(e) {
+                document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444;">❌ Error: ${e.message}</div>`;
             }
-            typeNextNode();
+            clearAttachment();
         }
 
-        window.startTts = function(id) { window.speechSynthesis.cancel(); let cleanSpeechText = document.getElementById(id).innerText.replace(/[\*\#\_\`]/g, ''); let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText); currentUtterance.lang = document.getElementById("appLang").value; window.speechSynthesis.speak(currentUtterance); };
-        window.closeTts = function() { window.speechSynthesis.cancel(); };
-
-        function processMath(text) { return text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}'); }
-        function toggleMultiImage() { const m = document.getElementById("multiImageManager"); m.style.display = m.style.display === "none" ? "block" : "none"; }
-        
-        function updateImageUI() {
-            const list = document.getElementById("multiImageList"); const btn = document.getElementById("viewPhotosBtn");
-            if (uploadedImages.length > 0) {
-                btn.style.display = "block"; btn.innerText = `🖼️ View Active Uploads (${uploadedImages.length})`; list.innerHTML = "";
-                uploadedImages.forEach((imgSrc, index) => { list.innerHTML += `<div class="uploaded-thumbnail-frame" style="position:relative;"><button onclick="event.stopPropagation(); removeUploadedImage(${index})" style="position:absolute; top:-5px; right:-5px; background:#ef4444; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold; z-index:10; box-shadow:0 2px 5px rgba(0,0,0,0.5);">✕</button><img src="${imgSrc}" onclick="openFullscreenImage('${imgSrc}')" style="width:70px; height:70px; object-fit:cover; border-radius:10px; border:2px solid var(--border-light);" title="Click to view full size"></div>`; });
-            } else { btn.style.display = "none"; document.getElementById("multiImageManager").style.display = "none"; }
-        }
-        
-        function removeUploadedImage(index) { uploadedImages.splice(index, 1); updateImageUI(); }
-        function clearPdfFile() { persistentPdfMemory = ""; document.getElementById('pdfPreviewChip').style.display='none'; showToast("🗑️ Attachment cleared."); }
-
-        function runMainPipeline() { const inp = document.getElementById("searchInput"); const textValue = inp.value.trim(); if (imageGenerationModeActive) { runDirectImageGeneration(textValue); disableImageMode(); } else { runStandaloneTextSearch(); } }
-
-        async function runDirectImageGeneration(promptText) {
-            if(!promptText) return; document.getElementById("sendSearchBtn").innerHTML = "🚀";
-            const chatContainer = document.getElementById("searchChatHistory"); const loadId = "img_load_" + Date.now();
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">🎨 <b>Art Request:</b><br>${promptText}</div></div><div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:max-content;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div><div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div><div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div></div></div></div>`);
-            document.getElementById("searchInput").value = ""; safeScroll(); 
-            try {
-                const response = await fetch("/api/hf-search-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: promptText }) });
-                const result = await response.json();
-                if (result.imageBase64) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<div class="ai-signature">✨ BY FLUX ENGINE (RENDER API)</div><div class="ai-generated-img-container" onclick="openFullscreenImage('img_src_${loadId}')"><img src="${result.imageBase64}" id="img_src_${loadId}"></div>`; saveHistorySafe(); } 
-                else { throw new Error("No image data received."); }
-            } catch (error) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Image generation queue failed.</span>`; }
-        }
-
-        async function runStandaloneTextSearch() {
-            const inp = document.getElementById("searchInput"); let q = inp.value.trim(); 
-            if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
-            if(isProcessing) return; isProcessing = true; document.getElementById("sendSearchBtn").innerHTML = "🛑";
+        // The Complex Photo Generation Loop
+        async function handlePhotoGeneration(prompt, loadId) {
+            let bestImage = null;
+            let hfPrompt = prompt + " , NO CHINESE TEXT, NO LETTERS, ONLY ART."; // Prevents text to avoid Chinese words
             
-            const chatContainer = document.getElementById("searchChatHistory");
-            const selectedTierOnStartup = document.getElementById("modelSelector").value;
-            const langSelect = document.getElementById("appLang"); const selectedLang = langSelect.options[langSelect.selectedIndex].text;
-            const toneSelect = document.getElementById("aiTone").value;
-
-            let userImgHtml = ''; uploadedImages.forEach(img => { userImgHtml += `<img src="${img}" onclick="openFullscreenImage('${img}')" style="max-height:80px; margin-right:5px; margin-bottom:5px; border-radius:8px; border:1px solid var(--border-light); display:inline-block; cursor:pointer;">`; });
-            let currentImagesToSave = [...uploadedImages]; let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
-
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">${userImgHtml ? userImgHtml+'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`);
-            inp.value = ""; safeScroll();
-
-            let lowercaseQ = q.toLowerCase(); const codingKeywords = ['code', 'html', 'css', 'javascript', 'python', 'script', 'react', 'tailwind']; let isCodingRequest = codingKeywords.some(kw => lowercaseQ.includes(kw));
-            let requiresImageTrigger = ["चित्र", "नक्शा", "map", "diagram", "picture"].some(kw => lowercaseQ.includes(kw));
-
-            const loadId = "txt_load_" + Date.now();
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:max-content;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div><div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div><div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div></div></div></div>`);
-            safeScroll();
-
-            let historyLog = sessionMessages.length > 0 ? "PAST MEMORY:\n" + sessionMessages.map(m => `User: ${m.q}\nAI: ${m.a}`).join('\n---\n') + "\n\n" : "";
-            let promptDirectives = isCodingRequest ? `CRITICAL CODING INSTRUCTION: Write highly optimized, production-ready code. Provide fully runnable files. NO HINDI allowed when coding.` : `CRITICAL LANGUAGE INSTRUCTION: You MUST write your ENTIRE response STRICTLY in ${selectedLang}. English only for brand/technical names.`;
-            const advancedPrompt = `You are an elite AI assistant.\n\n${promptDirectives}\n\n${historyLog}CURRENT QUERY: ${q}\n\n${persistentPdfMemory ? 'CONTEXT DATA:\n'+persistentPdfMemory : ''}`;
-
-            try {
-                const payload = { userPrompt: advancedPrompt, systemPrompt: "You are an elite AI system.", imageBase64: imageToUseForApi || null, isCode: isCodingRequest, providerOverride: selectedTierOnStartup };
-                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 150000); 
-                const response = await fetch("/api/smart-search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: controller.signal });
-                clearTimeout(timeoutId); const data = await response.json();
+            for(let i=0; i<3; i++) {
+                document.getElementById(loadId).querySelector('.loader-text').innerText = `Generating Art (Attempt ${i+1}/3)...`;
                 
-                if (!response.ok) throw new Error(data.error || "Server cascade failed.");
-
-                let activeResolvedChannel = data.provider || "SYSTEM ROUTER"; let cleanAns = data.text;
-                if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n
-```html\n$1\n```\n");
-
-                sessionMessages.push({ q: q, a: cleanAns, imgs: currentImagesToSave });
-                let existingSession = appHistory.find(s => s.id == currentSessionId);
-                if (existingSession) { existingSession.interactions.push({ question: q, answer: cleanAns, image: currentImagesToSave[0], provider: activeResolvedChannel }); } 
-                else { appHistory.unshift({ id: currentSessionId, type: 'search', title: q.substring(0, 20), interactions: [{ question: q, answer: cleanAns, image: currentImagesToSave[0], provider: activeResolvedChannel }] }); }
-                saveHistorySafe();
-
-                let processedMathAns = processMath(cleanAns); let finalHtml = marked.parse(processedMathAns);
-
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<div class="ai-signature">✨ BY ${activeResolvedChannel}</div><div id="text_${loadId}" class="markdown-body"></div><div class="action-row"><button class="action-btn" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button><button class="action-btn" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy</button></div><div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
+                // 1. Generate Image (Using standard endpoint)
+                const res = await fetch("/api/hf-search-image", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({prompt: hfPrompt})});
+                const data = await res.json();
+                if(data.imageBase64) bestImage = data.imageBase64;
                 
-                runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
-                    if (window.MathJax) MathJax.typesetPromise([document.getElementById(loadId)]);
-                    if (requiresImageTrigger) runDirectImageGeneration(q, `attached_image_zone_${loadId}`);
-                });
-            } catch (err) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Pipeline Failure: ${err.message}</span>`; } 
-            finally { isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImages = []; updateImageUI(); clearPdfFile(); }
+                // 2. Ideally, send `bestImage` to Gemini Vision here to rate it. 
+                // Since this requires a custom backend loop, we accept the image if it exists.
+                if(bestImage) break;
+            }
+
+            if(bestImage) {
+                document.getElementById(loadId).innerHTML = `
+                    <div class="bubble">
+                        <div style="font-size:10px; color:var(--primary); font-weight:bold; margin-bottom:10px;">✨ PHOTO GENERATED</div>
+                        <img src="${bestImage}" style="width:100%; border-radius:10px;">
+                    </div>`;
+            } else {
+                throw new Error("Failed to generate photo after 3 attempts.");
+            }
+        }
+
+        // Text & Data Search (Routing via Server.js)
+        async function handleTextSearch(prompt, loadId) {
+            let sysPrompt = "You are an elite AI. Answer clearly.";
+            if(bookMemory) sysPrompt += `\n\nCRITICAL KNOWLEDGE BASE:\n${bookMemory}\nAnswer the user based on this book data first.`;
+
+            // Routing logic based on prompt content
+            let isMathOrCode = /math|solve|calculate|code|python|java|html|translate/i.test(prompt);
+            let targetProvider = isMathOrCode ? "api_5" : "api_1"; // Connects to your server.js logic
+
+            const payload = { userPrompt: prompt, systemPrompt: sysPrompt, imageBase64: uploadedImage, providerOverride: targetProvider };
+            const res = await fetch("/api/smart-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+            const data = await res.json();
+
+            if(!res.ok) throw new Error(data.error || "API Failed");
+
+            let textId = "txt_" + loadId;
+            let htmlContent = marked.parse(data.text);
+            
+            // Build Sources UI if URLs are present
+            let sourceBtnHtml = "";
+            let urlRegex = /(https?:\/\/[^\s]+)/g;
+            let urls = data.text.match(urlRegex);
+            if(urls) {
+                window['sources_' + loadId] = urls;
+                sourceBtnHtml = `<button class="action-btn" onclick="openSources('${loadId}')">🔗 View Sources</button>`;
+            }
+
+            document.getElementById(loadId).innerHTML = `
+                <div class="bubble">
+                    <div style="font-size:10px; color:var(--primary); font-weight:bold; margin-bottom:10px;">✨ BY ${data.provider || 'AI ROUTER'}</div>
+                    <div id="${textId}">${htmlContent}</div>
+                    <div class="msg-actions">
+                        <button class="action-btn" data-target="${textId}" onclick="playAudio(this)">🔊 Listen</button>
+                        <button class="action-btn" data-target="${textId}" onclick="copyText(this)">📋 Copy</button>
+                        ${sourceBtnHtml}
+                    </div>
+                </div>`;
+            
+            if(window.MathJax) MathJax.typesetPromise([document.getElementById(loadId)]);
+        }
+
+        function openSources(loadId) {
+            const urls = window['sources_' + loadId];
+            const list = document.getElementById("sourcesList");
+            list.innerHTML = urls.map(url => `<a href="${url.replace(/[\)\.\"]+$/, '')}" target="_blank" style="color:var(--primary); text-decoration:none; background:rgba(59,130,246,0.1); padding:10px; border-radius:10px; word-break:break-all;">${url}</a>`).join('');
+            document.getElementById("sourcesModal").style.display = "flex";
         }
     </script>
 </body>
