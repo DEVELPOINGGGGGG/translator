@@ -23,7 +23,7 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        body { overflow: hidden; }
+        body { overflow: hidden; position: relative; }
         
         /* Modals & Menus */
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -45,7 +45,7 @@
         .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
         .play-btn { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
 
-        /* NEW THINKING ANIMATION: DATA-STREAM PULSE */
+        /* THINKING ANIMATION: DATA-STREAM PULSE */
         .ai-thinking { padding: 15px 20px; display: flex; align-items: center; gap: 15px; min-width: 200px; }
         .data-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; position: relative; }
         .data-bar::after { content: ''; position: absolute; left: -50%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, var(--primary), transparent); animation: scan 1.5s infinite linear; }
@@ -53,12 +53,12 @@
         .thinking-text { font-size: 12px; font-weight: bold; color: var(--primary); letter-spacing: 1px; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        /* Chat Layout & Paddings */
-        .search-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface); padding: 15px; border-top: 1px solid var(--border-light); z-index: 100; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
+        /* Chat Layout & SCROLL FIXES */
+        .search-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface); padding: 15px; border-top: 1px solid var(--border-light); z-index: 100; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: transform 0.3s; }
         .search-input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 25px; padding: 8px 12px; }
         
-        /* NO AUTO SCROLL SETUP */
-        .chat-scroll-area { height: calc(100vh - 140px); overflow-y: auto; padding-bottom: 40px; }
+        /* 🛑 SCROLL FIX: Top padding added so messages don't hide under the topbar */
+        .chat-scroll-area { height: 100vh; overflow-y: auto; padding-top: 80px; padding-bottom: 140px; }
         .chat-msg { display: flex; width: 100%; padding: 0 15px; margin-bottom: 20px; }
         .chat-user { justify-content: flex-end; }
         .chat-ai { justify-content: flex-start; }
@@ -66,8 +66,12 @@
         .chat-user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 5px; }
         .chat-ai .bubble { background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 5px; }
 
+        /* Topbar & Focus Mode X Button */
+        .topbar { position: absolute; top: 0; left: 0; width: 100%; z-index: 50; transition: transform 0.3s; }
+        #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; border: 2px solid white; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; z-index: 999999; box-shadow: 0 5px 15px rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+
         /* Top Audio Player */
-        #topAudioPlayer { display: none; position: fixed; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; align-items: center; gap: 15px; padding: 10px 20px; border-radius: 30px; border: 2px solid var(--primary); background: var(--bg-surface); animation: slideDown 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #topAudioPlayer { display: none; position: fixed; top: 85px; left: 50%; transform: translateX(-50%); z-index: 1000; align-items: center; gap: 15px; padding: 10px 20px; border-radius: 30px; border: 2px solid var(--primary); background: var(--bg-surface); animation: slideDown 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         @keyframes slideDown { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
         .audio-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .audio-btn:hover { transform: scale(1.1); }
@@ -78,6 +82,8 @@
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
+
+    <button id="exitFocusBtn" onclick="toggleFocus()">✕</button>
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
@@ -107,7 +113,7 @@
     </div>
 
     <div class="chat-scroll-area" id="searchScrollArea">
-        <div class="chat-history" id="searchChatHistory" style="padding-top: 15px;">
+        <div class="chat-history" id="searchChatHistory">
             <div class="chat-msg chat-ai" id="welcomeMessage">
                 <div class="bubble" style="border: 2px solid var(--primary);">
                     <div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div>
@@ -121,7 +127,7 @@
         </div>
     </div>
 
-    <div class="search-input-area">
+    <div class="search-input-area" id="appInputArea">
         
         <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">File</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
         <div id="photoModeChip" class="status-chip" style="border-color:#8b5cf6;">🎨 Photo Gen ON (Gemini) <button class="chip-close" onclick="togglePhotoMode()">✕</button></div>
@@ -201,7 +207,7 @@
     </div>
 
     <div id="fullImageViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999999; flex-direction:column; align-items:center; justify-content:center;">
-        <button onclick="document.getElementById('fullImageViewer').style.display='none'" style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; font-weight:bold; cursor:pointer; box-shadow:0 5px 15px rgba(0,0,0,0.5);">✕</button>
+        <button onclick="document.getElementById('fullImageViewer').style.display='none'" style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; font-weight:bold; cursor:pointer; box-shadow:0 5px 15px rgba(0,0,0,0.5); z-index: 10000000;">✕</button>
         <img id="fullImageSrc" style="max-width:95%; max-height:80vh; border-radius:15px; box-shadow:0 15px 50px rgba(0,0,0,0.8); object-fit:contain;">
         <button onclick="downloadFullImage()" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); padding:15px 30px; color:white; border:none; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 5px 15px rgba(0,0,0,0.5);">📥 Download Image</button>
     </div>
@@ -218,7 +224,69 @@
     </div>
 
     <script>
-        // --- 1. TOAST NOTIFICATIONS ---
+        // --- 1. LOCALFORAGE STATE RESTORATION ---
+        localforage.config({ name: 'AI_Pro_Suite', storeName: 'search_history' });
+        
+        let appHistory = [];
+        let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('appLang').value = "Hindi";
+            
+            localforage.getItem('aiHistory').then(data => {
+                if(data) {
+                    appHistory = data;
+                    const restoreId = new URLSearchParams(window.location.search).get('restore');
+                    if(restoreId) restoreSession(restoreId);
+                }
+            });
+        });
+
+        function saveHistorySafe() {
+            localforage.setItem('aiHistory', appHistory).catch(e => console.log(e));
+        }
+
+        function restoreSession(id) {
+            const session = appHistory.find(s => s.id == id);
+            if(!session) return;
+            currentSessionId = id;
+            const chatBox = document.getElementById("searchChatHistory");
+            chatBox.innerHTML = '';
+            
+            session.interactions.forEach(inter => {
+                // Restore User
+                let userImgs = (inter.images || []).map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
+                chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
+                
+                // Restore AI
+                const lId = "restored_" + Date.now() + Math.floor(Math.random() * 1000);
+                const textId = "txt_" + lId;
+                
+                let sourceBtnHtml = "";
+                if(inter.sources && inter.sources.length > 0) {
+                    window['sources_' + loadId] = inter.sources;
+                    sourceBtnHtml = `<button class="action-btn" onclick="openSources('${loadId}')">🔗 Sources</button>`;
+                }
+
+                chatBox.insertAdjacentHTML('beforeend', `
+                    <div class="chat-msg chat-ai" id="${lId}">
+                        <div class="bubble">
+                            <div style="font-size:10px; color:var(--primary); font-weight:900; margin-bottom:10px; text-transform:uppercase;">✨ SECURED VIA ${inter.provider || 'AI ROUTER'}</div>
+                            <div id="${textId}" class="markdown-body">${inter.answer}</div>
+                            <div class="msg-actions" style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="action-btn" data-target="${textId}" onclick="playAudio(this)">🔊 Listen</button>
+                                <button class="action-btn" data-target="${textId}" onclick="copyText(this)">📋 Copy</button>
+                                ${sourceBtnHtml}
+                            </div>
+                        </div>
+                    </div>`);
+                
+                if(window.MathJax) MathJax.typesetPromise([document.getElementById(lId)]);
+            });
+            setTimeout(() => document.getElementById("searchScrollArea").scrollTo(0, document.getElementById("searchScrollArea").scrollHeight), 100);
+        }
+
+        // --- 2. TOAST NOTIFICATIONS ---
         function showToast(msg) {
             let t = document.createElement('div'); t.innerText = msg;
             t.style.cssText = "position:fixed; bottom:130px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:999999; font-weight:bold; font-size:13px; box-shadow:0 5px 15px rgba(0,0,0,0.5); animation:slideUpToast 0.3s ease;";
@@ -226,7 +294,7 @@
         }
         document.head.insertAdjacentHTML('beforeend', '<style>@keyframes slideUpToast{from{transform:translate(-50%, 20px);opacity:0;}to{transform:translate(-50%, 0);opacity:1;}}</style>');
 
-        // --- 2. BLACK BOX RENDERER ---
+        // --- 3. BLACK BOX RENDERER ---
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
             let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
@@ -238,16 +306,13 @@
         function copyCodeEngine(btn) { navigator.clipboard.writeText(btn.parentElement.nextElementSibling.innerText); btn.innerText = "✅ Copied"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerText = "📋 Copy"; btn.style.background = "var(--input-bg)"; }, 2000); showToast("Code Copied!"); }
         window.playHtmlCode = function(btn) { document.getElementById('htmlPreviewFrame').srcdoc = btn.parentElement.nextElementSibling.innerText; document.getElementById('htmlPreviewModal').style.display = 'flex'; showToast("Opening Live Preview..."); }
 
-        // --- 3. FULL IMAGE VIEWER ---
+        // --- 4. FULL IMAGE VIEWER ---
         let currentFullscreenImage = "";
         function openFullImage(src) { currentFullscreenImage = src; document.getElementById('fullImageSrc').src = src; document.getElementById('fullImageViewer').style.display = 'flex'; }
         function downloadFullImage() { const a = document.createElement("a"); a.href = currentFullscreenImage; a.download = `AI_Image_${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("📥 Download Started!"); }
 
-        // --- 4. SYSTEM STATE ---
+        // --- 5. SYSTEM STATE ---
         let isPhotoMode = false; let documentMemory = ""; let uploadedImagesList = []; let camStream = null; let camFacing = "environment"; let isFlash = true; let isProcessing = false;
-
-        // Default to Hindi
-        document.addEventListener("DOMContentLoaded", () => { document.getElementById('appLang').value = "Hindi"; });
 
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
@@ -260,13 +325,28 @@
             if(isPhotoMode) showToast("Photo Gen Ready (Gemini Powered)"); closePlusMenu();
         }
 
+        // --- 6. FOCUS MODE WITH X BUTTON FIX ---
         function toggleFocus() { 
-            const topBar = document.getElementById('appTopbar'); const isFocus = topBar.style.display !== 'none';
-            topBar.style.display = isFocus ? 'none' : 'flex'; document.getElementById('settingsModal').style.display = 'none';
+            const topBar = document.getElementById('appTopbar'); 
+            const inputArea = document.getElementById('appInputArea');
+            const exitBtn = document.getElementById('exitFocusBtn');
+            const isFocus = topBar.style.display !== 'none';
+            
+            topBar.style.display = isFocus ? 'none' : 'flex'; 
+            inputArea.style.transform = isFocus ? 'translateY(200%)' : 'translateY(0)';
+            exitBtn.style.display = isFocus ? 'flex' : 'none'; // Shows the red X button
+            
+            document.getElementById('settingsModal').style.display = 'none';
             showToast(isFocus ? "Focus Mode ON" : "Focus Mode OFF");
         }
 
-        function clearSearchChat() { document.getElementById("searchChatHistory").innerHTML = document.getElementById("welcomeMessage").outerHTML; documentMemory = ""; uploadedImagesList = []; updateImageUI(); clearAttachment(); document.getElementById('settingsModal').style.display = 'none'; showToast("Memory Wiped Clean."); }
+        function clearSearchChat() { 
+            document.getElementById("searchChatHistory").innerHTML = document.getElementById("welcomeMessage").outerHTML; 
+            documentMemory = ""; uploadedImagesList = []; updateImageUI(); clearAttachment(); 
+            document.getElementById('settingsModal').style.display = 'none'; 
+            currentSessionId = Date.now(); // Reset session ID for localforage
+            showToast("Memory Wiped Clean."); 
+        }
 
         function playAudio(btn) { const text = document.getElementById(btn.getAttribute('data-target')).innerText; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = document.getElementById('appLang').value === 'Hindi' ? 'hi-IN' : 'en-US'; u.onstart = () => document.getElementById("topAudioPlayer").style.display = "flex"; u.onend = () => document.getElementById("topAudioPlayer").style.display = "none"; window.speechSynthesis.speak(u); }
         function stopAudio() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
@@ -274,7 +354,7 @@
 
         function startVoice(lang) { document.getElementById('voiceModal').style.display='none'; if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice not supported."); const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; const rec = new SpeechRec(); rec.lang = lang; rec.onstart = () => { document.getElementById("searchInput").value = "Listening..."; showToast("Listening..."); }; rec.onresult = (e) => document.getElementById("searchInput").value = e.results[0][0].transcript; rec.start(); }
 
-        // --- 5. CAMERA & UPLOAD (MAX 20) ---
+        // --- 7. CAMERA & UPLOAD (MAX 20) ---
         async function openCamera() { closePlusMenu(); document.getElementById('cameraModal').style.display='flex'; try { if(camStream) camStream.getTracks().forEach(t => t.stop()); camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); document.getElementById("cameraVideo").srcObject = camStream; setTimeout(async () => { const track = camStream.getVideoTracks()[0]; if (track.getCapabilities().torch && camFacing === "environment") { isFlash = true; await track.applyConstraints({ advanced: [{ torch: true }] }); document.getElementById('flashBtn').innerText = "💡"; } }, 500); } catch(e) { alert("Camera Error."); document.getElementById('cameraModal').style.display='none'; } }
         function closeCamera() { document.getElementById('cameraModal').style.display='none'; if(camStream) camStream.getTracks().forEach(t=>t.stop()); isFlash=false; }
         async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
@@ -299,7 +379,7 @@
 
         document.getElementById("searchInput").addEventListener("keypress", function(e) { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runMainSearch(); } });
 
-        // --- 6. CREATE NOTES MODULE ---
+        // --- 8. CREATE NOTES MODULE ---
         function openNotesModal() { closePlusMenu(); document.getElementById('notesModal').style.display = 'flex'; }
         async function generateNotes() {
             const b = document.getElementById("noteBookName").value.trim(); const c = document.getElementById("noteChapter").value.trim();
@@ -309,20 +389,37 @@
             runMainSearch();
         }
 
-        // --- 7. TYPEWRITER ENGINE (NO AUTO SCROLL) ---
+        // --- 9. TYPEWRITER ENGINE (NO AUTO SCROLL & NO ARTIFACTS FIX) ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
-            let tempDiv = document.createElement('div'); tempDiv.innerHTML = fullHtml; let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
+            let tempDiv = document.createElement('div'); 
+            // Fix text rendering artifacts by ensuring standard string decoding
+            tempDiv.innerHTML = fullHtml.replace(/[\u00A0-\u9999<>\&]/g, function(i) {
+               return '&#'+i.charCodeAt(0)+';';
+            });
+            let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
+            
             function typeNextNode() {
                 if (nodeIndex >= nodes.length) { if(callback) callback(); return; }
                 let currentNode = nodes[nodeIndex].cloneNode(true);
+                
                 if (currentNode.nodeType === Node.TEXT_NODE) {
                     let text = currentNode.textContent; let span = document.createElement('span'); targetElement.appendChild(span); let charIndex = 0;
-                    let interval = setInterval(() => { if (charIndex >= text.length) { clearInterval(interval); nodeIndex++; typeNextNode(); } else { span.textContent += text.substring(charIndex, charIndex + 5); charIndex += 5; } }, 20);
-                } else { targetElement.appendChild(currentNode); nodeIndex++; typeNextNode(); }
-            } typeNextNode();
+                    let interval = setInterval(() => { 
+                        if (charIndex >= text.length) { clearInterval(interval); nodeIndex++; typeNextNode(); } 
+                        else { 
+                            span.textContent += text.substring(charIndex, charIndex + 5); 
+                            charIndex += 5; 
+                            // NO SCROLLING HERE
+                        } 
+                    }, 20);
+                } else { 
+                    targetElement.appendChild(currentNode); nodeIndex++; typeNextNode(); 
+                }
+            } 
+            typeNextNode();
         }
 
-        // --- 8. AI EXECUTION & LIMITS ---
+        // --- 10. AI EXECUTION & LIMITS ---
         function checkDailyImageLimit() {
             const today = new Date().toDateString();
             let usage = JSON.parse(localStorage.getItem('geminiImgUsage') || '{"count": 0, "date": ""}');
@@ -340,45 +437,60 @@
             isProcessing = true; document.getElementById("sendSearchBtn").innerHTML = "⏳";
             const chatBox = document.getElementById("searchChatHistory"); document.getElementById("welcomeMessage").style.display = "none";
 
+            let currentImagesToSave = [...uploadedImagesList];
             let userImgs = uploadedImagesList.map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
             let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
             chatBox.insertAdjacentHTML('beforeend', userHtml); inp.value = ""; inp.style.height = ''; 
-            document.getElementById("searchScrollArea").scrollTop = document.getElementById("searchScrollArea").scrollHeight;
+            
+            // Only scroll once when user sends message
+            const scrollArea = document.getElementById("searchScrollArea");
+            scrollArea.scrollTo(0, scrollArea.scrollHeight);
 
             const loadId = "load_" + Date.now();
-            chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble ai-thinking"><div class="thinking-text">PROCESSING...</div><div class="data-bar"></div></div></div>`);
-            document.getElementById("searchScrollArea").scrollTop = document.getElementById("searchScrollArea").scrollHeight;
+            chatBox.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" id="${loadId}">
+                    <div class="bubble ai-thinking">
+                        <div class="thinking-text">PROCESSING...</div>
+                        <div class="data-bar"></div>
+                    </div>
+                </div>`);
+            scrollArea.scrollTo(0, scrollArea.scrollHeight);
 
             try {
-                if (isPhotoMode) { await handlePhotoGeneration(q, loadId); if(isPhotoMode) togglePhotoMode(); }
-                else { await handleTextSearch(q, loadId); }
+                if (isPhotoMode) { await handlePhotoGeneration(q, loadId, currentImagesToSave); if(isPhotoMode) togglePhotoMode(); }
+                else { await handleTextSearch(q, loadId, currentImagesToSave); }
             } catch(e) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Error: ${e.message}</div>`; }
             
             isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImagesList = []; updateImageUI(); clearAttachment();
         }
 
         // Gemini Image Generator
-        async function handlePhotoGeneration(prompt, loadId) {
-            let safePrompt = prompt.replace(/[^\x00-\x7F]/g, "") + ", NO CHINESE TEXT, highly detailed, no letters, cinematic."; 
-            const payload = { userPrompt: safePrompt, isImageGen: true }; // Flag to tell server.js/Cloudflare to use image API
+        async function handlePhotoGeneration(prompt, loadId, savedImages) {
+            let safePrompt = prompt.replace(/[^\x00-\x7F]/g, "") + ", NO TEXT, highly detailed, cinematic."; 
+            const payload = { userPrompt: safePrompt, isImageGen: true }; 
 
             const res = await fetch("/api/smart-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload)});
             const data = await res.json();
             if(data.imageBase64) {
-                document.getElementById(loadId).innerHTML = `<div class="bubble"><div style="font-size:10px; color:var(--primary); font-weight:900; margin-bottom:10px;">✨ GEMINI VISION ENGINE</div><img src="${data.imageBase64}" onclick="openFullImage('${data.imageBase64}')" style="width:100%; border-radius:12px; cursor:pointer;"></div>`;
+                let htmlAns = `<div style="font-size:10px; color:var(--primary); font-weight:900; margin-bottom:10px;">✨ GEMINI VISION ENGINE</div><img src="${data.imageBase64}" onclick="openFullImage('${data.imageBase64}')" style="width:100%; border-radius:12px; cursor:pointer;">`;
+                document.getElementById(loadId).innerHTML = `<div class="bubble">${htmlAns}</div>`;
+                saveInteractionToLocalForage(prompt, htmlAns, savedImages, "Gemini Vision");
             } else throw new Error("Failed to render image via Gemini.");
         }
 
         // Text Search Routing
-        async function handleTextSearch(prompt, loadId) {
+        async function handleTextSearch(prompt, loadId, savedImages) {
             const lang = document.getElementById("appLang").value; const customRules = document.getElementById("aiInstructions").value.trim();
-            let sysPrompt = `You are the ultimate AI. Language: ${lang}. Use **bold**. Use \\frac for math fractions. Render code blocks correctly.`;
+            
+            // Absolute Hindi instruction to prevent Urdu artifacts
+            let sysPrompt = `You are the ultimate AI. IMPORTANT: If the requested language is Hindi, YOU MUST ONLY USE DEVANAGARI SCRIPT. NEVER use Urdu, Arabic, or strange symbols. Language: ${lang}. Use **bold**. Use \\frac for math fractions. Render code blocks correctly.`;
+            
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if(documentMemory) sysPrompt += `\n\nLOCAL KNOWLEDGE BASE (USE THIS FIRST):\n${documentMemory}`;
 
             let isCode = /math|solve|code|python|java|html|notes/i.test(prompt);
             let targetProvider = isCode ? "api_5" : "api_1"; 
-            let payloadImage = uploadedImagesList.length > 0 ? uploadedImagesList[0] : null;
+            let payloadImage = savedImages.length > 0 ? savedImages[0] : null;
 
             const payload = { userPrompt: prompt, systemPrompt: sysPrompt, imageBase64: payloadImage, isCode: isCode, providerOverride: targetProvider };
             const res = await fetch("/api/smart-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
@@ -405,7 +517,19 @@
             
             runInsaneTypewriter(document.getElementById(textId), htmlContent, () => {
                 if(window.MathJax) MathJax.typesetPromise([document.getElementById(loadId)]);
+                saveInteractionToLocalForage(prompt, htmlContent, savedImages, data.provider, urls);
             });
+        }
+
+        // Save interaction to LocalForage
+        function saveInteractionToLocalForage(question, answer, images, provider, sources = []) {
+            let existingSession = appHistory.find(s => s.id == currentSessionId);
+            if (existingSession) {
+                existingSession.interactions.push({ question: question, answer: answer, images: images, provider: provider, sources: sources });
+            } else {
+                appHistory.unshift({ id: currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources }] });
+            }
+            saveHistorySafe();
         }
 
         function openSources(loadId) {
