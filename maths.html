@@ -1,4 +1,325 @@
-function capturePhoto() { 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pro Suite - Math Solver</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <script>
+      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        mjx-container { padding: 5px 0 !important; margin: 0 !important; }
+        .typing-indicator { display: flex; gap: 5px; padding: 10px; }
+        .typing-indicator span { width: 8px; height: 8px; background: #c084fc; border-radius: 50%; animation: pulse 1s infinite alternate; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
+        
+        .digital-paper-container { width: 100%; overflow-x: auto; margin-top: 5px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); margin-bottom: 10px; }
+        .digital-paper { background-color: #fdfbf7; background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px); line-height: 30px; padding: 30px 20px 30px 65px; position: relative; font-family: 'Kalam', cursive; font-size: 20px; color: #1e3a8a; min-width: 300px; white-space: pre-wrap; }
+        .digital-paper::before { content: ''; position: absolute; top: 0; bottom: 0; left: 45px; width: 2px; background: #fca5a5; }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="topbar" id="appTopbar" style="display: flex; justify-content: space-between; align-items: center; padding-right: 15px; transition: opacity 0.5s ease, transform 0.5s ease;">
+  <div style="display: flex; align-items: center; gap: 15px;">
+      <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+      <div class="appTitle">AI Pro Suite</div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 10px;">
+      <button id="imgModeBtn" onclick="toggleImageModeBtn()" style="background: var(--input-bg); border: 2px solid var(--border-light); color: var(--text-main); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: var(--glass-shadow); transition: 0.3s;">
+          🖼️ Image Mode
+      </button>
+
+      <button onclick="toggleFocusMode(true)" style="background: var(--input-bg); border: 2px solid var(--border-light); color: var(--text-main); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: var(--glass-shadow); transition: 0.2s;">
+          🎯 Focus
+      </button>
+      
+      <button id="langToggleBtn" onclick="toggleMathLanguage()" style="background: var(--input-bg); border: 2px solid var(--border-light); color: var(--text-main); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: var(--glass-shadow); transition: 0.2s;">
+          🌍 <span id="langText">HI</span>
+      </button>
+  </div>
+</div>
+
+<button id="exitFocusBtn" onclick="toggleFocusMode(false)" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 999999; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 50px; height: 50px; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.5s ease;">✖</button>
+
+<div id="imageModeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999999; flex-direction:column; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s;">
+    <div id="imageModeControls" style="position:absolute; top:0; left:0; right:0; padding:20px 30px; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(rgba(0,0,0,0.8), transparent); transition:0.3s; z-index:100;">
+        <button onclick="downloadImageMode()" style="background:var(--primary); border:2px solid white; color:white; border-radius:15px; padding:8px 15px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">📥 Download</button>
+        <button onclick="closeImageMode()" style="background:#ef4444; border:2px solid white; color:white; border-radius:50%; width:40px; height:40px; font-weight:bold; font-size:18px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✖</button>
+    </div>
+    
+    <button id="imgPrevBtn" onclick="prevImagePage(event)" style="position:absolute; left:20px; top:50%; transform:translateY(-50%); font-size:50px; background:none; border:none; color:white; cursor:pointer; z-index:100; display:none; filter:drop-shadow(0 0 5px black); transition:0.3s;">❮</button>
+    <button id="imgNextBtn" onclick="nextImagePage(event)" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); font-size:50px; background:none; border:none; color:white; cursor:pointer; z-index:100; display:none; filter:drop-shadow(0 0 5px black); transition:0.3s;">❯</button>
+
+    <div id="imageModePaperWrapper" onclick="toggleImageControls()" style="width:100%; max-width:800px; max-height:80vh; overflow-y:auto; overflow-x:hidden; position:relative; background:#fdfbf7; border-radius:10px; box-shadow:0 15px 40px rgba(0,0,0,0.8); transition: transform 0.4s;">
+        <div id="imageModePaper" class="digital-paper" style="min-height:100%; padding:40px 25px 40px 65px; margin:0;">
+            </div>
+    </div>
+    <div id="imageModePageIndicator" style="color:white; margin-top:20px; font-weight:bold; font-size:18px; font-family:monospace; z-index:100; transition:0.3s;">Page 1 / 1</div>
+</div>
+
+<div class="apiTracker">
+    <div>⏱️ PT: <span id="apiTimer" class="api-val timer">--:--:--</span></div>
+    <div style="color: #f59e0b;">📊 Tot: <span id="apiTotal" class="api-val" style="color: #f59e0b;">0</span></div>
+    <div>🖼️ <span id="apiVision" class="api-val vision">0</span></div>
+    <div>📝 <span id="apiText" class="api-val text">0</span></div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
+  <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
+  <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
+  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
+  <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
+  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+</div>
+
+<div class="page active chat-page-layout" id="mathsPage">
+  <div class="chat-scroll-area" id="mathScrollArea">
+    <div class="card" style="background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
+        <h1 style="font-size: 24px; color: white;">🧮 Math Solver</h1>
+        <p style="font-size: 14px; opacity: 0.9; color: white;">Give Answers Of Maths.</p>
+    </div>
+    
+    <button onclick="openWhatsAppModal()" style="background: #25D366; color: white; padding: 10px 15px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 0C5.385 0 0 5.384 0 12.031c0 2.115.548 4.183 1.587 6.008L.063 24l6.104-1.6c1.782.946 3.791 1.446 5.864 1.446 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm3.843 17.202c-.173.486-.998.922-1.428.983-.393.056-1.155.155-3.327-.743-2.618-1.082-4.296-3.75-4.425-3.924-.131-.173-1.056-1.408-1.056-2.684 0-1.277.663-1.905.897-2.164.234-.258.508-.323.679-.323.173 0 .344.004.498.01.161.008.384-.064.602.46.223.535.753 1.84.819 1.968.066.13.111.28.024.453-.087.172-.132.28-.264.432-.131.153-.277.327-.393.454-.123.134-.254.281-.107.535.147.255.653 1.081 1.402 1.748.966.86 1.763 1.132 2.015 1.261.253.13.4.111.55-.064.148-.174.636-.74.808-.992.172-.254.344-.213.576-.126.232.087 1.468.692 1.721.821.253.129.423.193.484.301.062.107.062.624-.11 1.111z"/></svg>
+        Share Full Chat via WhatsApp
+    </button>
+
+    <div id="mathChatHistory"></div>
+  </div>
+  <div class="chat-input-area">
+    <div class="image-preview-chip" id="mathPreviewChip">
+        <div class="image-preview-close" id="clearMathImgBtn" onclick="clearMathImage()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; font-size:12px; cursor:pointer;">✕</div>
+    </div>
+    
+    <div class="chat-input-wrapper">
+        <input type="file" id="mathGalleryInput" accept="image/*" style="display:none;" onchange="handleMathGallery(event)">
+        <button class="chat-action-btn" id="galleryBtn" onclick="document.getElementById('mathGalleryInput').click()" title="Upload Image" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;">📁</button>
+        <button class="chat-action-btn" id="openMathCameraBtn" onclick="openCamera('math')" title="Take Photo">📷</button>
+        <textarea id="mathInstructionInput" placeholder="Ask math question, paste or attach image... (Press Enter)"></textarea>
+        <button class="chat-action-btn send" id="sendMathBtn" onclick="executeMathFlow()">↑</button>
+    </div>
+  </div>
+</div>
+
+<div id="cameraModal" class="cameraModal">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <div class="camera-top-bar">
+        <button id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()">❌</button>
+    </div>
+    <div class="cameraControls">
+        <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
+        <div id="capturePhotoBtn" class="cameraCircle" onclick="capturePhoto()"></div>
+        <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
+    </div>
+    <canvas id="captureCanvas" style="display:none;"></canvas>
+</div>
+
+<div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
+    <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 400px; width: 90%; text-align: center; position:relative;">
+        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Full Chat</h3>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the authorized mobile number to send the complete history.</p>
+        <input type="number" id="waNumberInput" placeholder="e.g. 919876543210" style="width: 100%; padding: 15px; border-radius: 16px; border: 2px solid var(--border-light); background: var(--input-bg); color: var(--text-main); margin-bottom: 25px; font-weight: bold; text-align: center; font-size: 18px;">
+        <div style="display: flex; gap: 10px;">
+            <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="submitWhatsAppNumber(event)">🚀 Send Chat</button>
+            <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px; background: #ef4444; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="closeWhatsAppModal()">✖ Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentMathLang = "Hindi";
+    let currentMathImage = null;
+
+    window.toggleMathLanguage = function() {
+        const langText = document.getElementById('langText');
+        if (currentMathLang === "Hindi") {
+            currentMathLang = "English";
+            langText.innerText = "EN";
+            if(typeof showToast === 'function') showToast("🌍 Language changed to English");
+        } else {
+            currentMathLang = "Hindi";
+            langText.innerText = "HI";
+            if(typeof showToast === 'function') showToast("🌍 Language changed to Hindi");
+        }
+    };
+
+    window.setMathImage = function(base64) {
+        currentMathImage = base64;
+        if (typeof window.capturedImage !== 'undefined') window.capturedImage = base64;
+        const chip = document.getElementById("mathPreviewChip");
+        if(chip) { chip.style.backgroundImage = `url(${base64})`; chip.style.display = "block"; }
+    };
+
+    window.handleMathGallery = function(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            window.setMathImage(e.target.result);
+            if(typeof showToast === 'function') showToast("✅ Image attached!");
+        };
+        reader.readAsDataURL(file);
+        event.target.value = "";
+    };
+
+    document.getElementById("mathInstructionInput").addEventListener("paste", function(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let index in items) {
+            const item = items[index];
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    window.setMathImage(event.target.result);
+                    if(typeof showToast === 'function') showToast("✅ Image pasted!");
+                };
+                reader.readAsDataURL(blob);
+                e.preventDefault();
+            }
+        }
+    });
+
+    window.openWhatsAppModal = function() {
+        const historyDiv = document.getElementById("mathChatHistory");
+        const messages = historyDiv.querySelectorAll(".chat-msg");
+        
+        if (messages.length === 0) {
+            alert("⚠️ No chat history available to share yet! Please ask a question first.");
+            return;
+        }
+        
+        document.getElementById('whatsappModal').style.display = 'flex';
+        document.getElementById('waNumberInput').focus();
+    };
+
+    window.closeWhatsAppModal = function() {
+        document.getElementById('whatsappModal').style.display = 'none';
+        document.getElementById('waNumberInput').value = '';
+    };
+
+    window.submitWhatsAppNumber = async function(event) {
+        const number = document.getElementById('waNumberInput').value.trim();
+        if (!number) return alert("Please enter a mobile number.");
+
+        const historyDiv = document.getElementById("mathChatHistory");
+        const messages = historyDiv.querySelectorAll(".chat-msg");
+        
+        if (messages.length === 0) {
+            alert("⚠️ No chat history to share.");
+            return;
+        }
+
+        let fullChatText = "";
+
+        messages.forEach(msg => {
+            const isUser = msg.classList.contains("chat-user");
+            const bubble = msg.querySelector(".bubble");
+            if (!bubble) return;
+
+            let clone = bubble.cloneNode(true);
+            
+            const garbageElements = clone.querySelectorAll('.action-buttons-container, .api-badge, button, select, .retry-dropdown, div[style*="border-top"]');
+            garbageElements.forEach(el => el.remove());
+            
+            let htmlStr = clone.innerHTML;
+            htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n');
+            htmlStr = htmlStr.replace(/<\/div>/gi, '\n');
+            htmlStr = htmlStr.replace(/<\/p>/gi, '\n\n');
+            
+            clone.innerHTML = htmlStr;
+            let msgText = clone.textContent || clone.innerText || "";
+            msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
+
+            if (msgText.length > 0) {
+                if (isUser) {
+                    fullChatText += `👤 *YOU:* ${msgText}\n\n`;
+                } else {
+                    fullChatText += `🤖 *AI SOLVER:* \n${msgText}\n\n---------------------------------\n\n`;
+                }
+            }
+        });
+
+        const superscripts = {
+            '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹',
+            '+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'
+        };
+        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
+
+        fullChatText = fullChatText
+            .replace(/\$\$/g, '') 
+            .replace(/\$/g, '')   
+            .replace(/\\\(/g, '') 
+            .replace(/\\\)/g, '') 
+            .replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2') 
+            .replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)) 
+            .replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)) 
+            .replace(/\\sqrt{([^}]+)}/g, '√$1') 
+            .replace(/\\times/g, '×') 
+            .replace(/\\cdot/g, '·')  
+            .replace(/\\pi/g, 'π')    
+            .replace(/\\theta/g, 'θ') 
+            .replace(/\\left/g, '')   
+            .replace(/\\right/g, '')
+            .replace(/\\/g, '');      
+
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ Sending Full Chat...";
+        btn.style.opacity = "0.7";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch("/api/secure-whatsapp", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    number: number,
+                    message: "📚 *AI Pro Suite - Complete Session Export* 📚\n\n" + fullChatText.trim()
+                })
+            });
+
+            if (response.status === 403) {
+                alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
+            } else if (response.ok) {
+                alert("✅ Full chat history sent successfully to authorized device!");
+                closeWhatsAppModal();
+            } else {
+                alert("❌ Failed to send. Server responded with an error.");
+            }
+        } catch (e) {
+            alert("❌ Connection error. Is your Render server running?");
+        }
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = "1";
+        btn.disabled = false;
+    };
+    function capturePhoto() { 
     const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
     let w = v.videoWidth, h = v.videoHeight; 
     if(w > 1500) { h *= 1500/w; w = 1500; } 
@@ -24,3 +345,9 @@ function capturePhoto() {
     
     closeCamera(); 
 }
+</script>
+
+<script src="ui-controls.js" defer></script>
+<script src="main.js" defer></script>
+</body>
+</html>
