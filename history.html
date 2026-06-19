@@ -146,8 +146,8 @@
                 <span style="display: inline-block; margin-bottom: 15px;">📅 Logged: ${new Date(item.id).toLocaleString()}</span>
                 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn blue" style="padding: 10px 18px; font-size: 13px; flex: 1;" onclick="openSmartHistoryModal(${item.id})">👁️ View Message</button>
-                    <button class="btn red" style="padding: 10px 18px; font-size: 13px; flex: 1;" onclick="deleteSingleItemEngine(${item.id})">🗑️ Delete</button>
+                    <button class="btn blue" style="padding: 10px 18px; font-size: 13px; flex: 1;" onclick="openSmartHistoryModal('${item.id}')">👁️ View Message</button>
+                    <button class="btn red" style="padding: 10px 18px; font-size: 13px; flex: 1;" onclick="deleteSingleItemEngine('${item.id}')">🗑️ Delete</button>
                 </div>
             </div>`;
         });
@@ -156,7 +156,7 @@
 
     // 🔥 OPENS THE GUI MODAL WITHOUT REDIRECTING 🔥
     window.openSmartHistoryModal = function(id) {
-        let item = localHistoryArray.find(i => i.id === id);
+        let item = localHistoryArray.find(i => String(i.id) === String(id));
         if (!item) return;
 
         document.getElementById('histTitle').innerText = item.title || "Saved Message";
@@ -180,11 +180,11 @@
         document.getElementById('histQuestion').innerHTML = q + imgHtml;
         document.getElementById('histAnswer').innerHTML = a;
 
-        // Injects Restore & Delete buttons into the GUI popup
+        // Fixed: Wrapped args in quotes to preserve string matching
         document.getElementById('histFooter').innerHTML = `
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button class="btn blue" style="flex: 1; padding: 14px; font-size: 15px;" onclick="triggerSessionRestoreEngine('${item.type}', ${item.id})">🚀 Restore to App</button>
-                <button class="btn red" style="flex: 1; padding: 14px; font-size: 15px;" onclick="deleteSingleItemEngine(${item.id})">🗑️ Delete Permanently</button>
+                <button class="btn blue" style="flex: 1; padding: 14px; font-size: 15px;" onclick="triggerSessionRestoreEngine('${item.type}', '${item.id}')">🚀 Restore to App</button>
+                <button class="btn red" style="flex: 1; padding: 14px; font-size: 15px;" onclick="deleteSingleItemEngine('${item.id}')">🗑️ Delete Permanently</button>
             </div>
         `;
 
@@ -213,7 +213,8 @@
 
     window.deleteSingleItemEngine = function(id) {
         if (confirm("Permanently wipe this message?")) {
-            localHistoryArray = localHistoryArray.filter(i => i.id !== id);
+            // Strict string matching to prevent datatype errors
+            localHistoryArray = localHistoryArray.filter(i => String(i.id) !== String(id));
             if (typeof localforage !== 'undefined') {
                 localforage.setItem('aiHistory', localHistoryArray);
             }
