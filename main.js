@@ -311,27 +311,32 @@ window.cancelActiveRequest = function() {
     isProcessing = false; window.toggleChatButton(false); showToast("⚠️ Generation Stopped");
 };
 
-// 🛑 BULLETPROOF CAMERA ENGINE 🛑
+// 🛑 BULLETPROOF CAMERA ENGINE (ALL PAGES FIXED) 🛑
 window.currentStream = null;
 window.currentFacing = "environment";
 window.isFlashOn = false;
 window.currentMode = "";
 
+// Auto-fix missing Flash and Close buttons across all pages dynamically
+document.addEventListener("DOMContentLoaded", () => {
+    const flashBtn = document.getElementById("toggleFlashBtn");
+    if (flashBtn) flashBtn.onclick = window.toggleFlash;
+
+    // Fixes the X button for both maths, qa, and image translation files
+    const closeBtn = document.getElementById("closeCameraBtn");
+    if (closeBtn) closeBtn.onclick = window.closeCamera;
+});
+
 window.startCamera = async function() { 
     try { 
         if(window.currentStream) window.currentStream.getTracks().forEach(t => t.stop()); 
         
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("Camera access blocked! Make sure you are using HTTPS or localhost.");
-            return;
-        }
-
         window.currentStream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: window.currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } 
         }); 
         
         const videoEl = document.getElementById("cameraVideo");
-        if (!videoEl) return alert("Error: <video id='cameraVideo'> not found in HTML!");
+        if (!videoEl) return alert("Error: <video id='cameraVideo'> not found!");
         
         videoEl.setAttribute('autoplay', '');
         videoEl.setAttribute('playsinline', '');
@@ -351,7 +356,7 @@ window.startCamera = async function() {
             } catch(err) {} 
         }, 500); 
     } catch(e) { 
-        alert("Camera Error: " + e.message); 
+        alert("Camera Error: Please check permissions.\n" + e.message); 
     } 
 };
 
@@ -369,19 +374,20 @@ window.toggleFlash = async function() {
 
 window.updateFlashUI = function() { 
     const btn = document.getElementById("toggleFlashBtn"); 
-    if(btn) { btn.innerText = window.isFlashOn ? "💡" : "🔦"; btn.style.background = window.isFlashOn ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"; } 
+    if(btn) { btn.innerText = window.isFlashOn ? "💡" : "🔦"; } 
 };
 
 window.openCamera = async function(m) { 
     window.currentMode = m; 
     const mod = document.getElementById("cameraModal"); 
-    if(!mod) { alert("Error: <div id='cameraModal'> not found in this file!"); return; }
-    
-    // FORCE CSS VISIBILITY
-    mod.style.display = "flex"; 
-    mod.style.opacity = "1";
-    mod.classList.add("active"); 
-    await window.startCamera(); 
+    if(mod) { 
+        mod.style.display = "flex";
+        mod.style.opacity = "1";
+        mod.classList.add("active"); 
+        await window.startCamera(); 
+    } else {
+        alert("Camera Modal container not found!");
+    }
 };
 
 window.closeCamera = function() { 
@@ -407,32 +413,28 @@ window.switchCamera = async function() {
 
 window.capturePhoto = function() { 
     const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
-    if (!v || !c) return alert("Video or Canvas element missing from HTML!");
+    if (!v || !c) return alert("Capture components missing!");
     
     let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
     c.width = w; c.height = h; 
     c.getContext("2d").drawImage(v, 0, 0, w, h); 
     window.capturedImage = c.toDataURL("image/jpeg", 0.7); 
     
+    // Wire up variables safely across all features
     if (window.currentMode === 'math' || window.currentMode === 'search') { 
-        if (typeof window.setMathImage === 'function') {
-            window.setMathImage(window.capturedImage);
-        } else {
-            const chip = document.getElementById("mathPreviewChip"); 
-            if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${window.capturedImage})`; } 
-        }
+        window.currentMathImage = window.capturedImage;
+        const chip = document.getElementById("mathPreviewChip"); 
+        if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${window.capturedImage})`; } 
     }
     else if (window.currentMode === 'image_trans') {
-        if(typeof transImages !== 'undefined') {
-            if(transImages.length >= 3) { showToast("Max 3 images allowed!"); } 
-            else { transImages.push(window.capturedImage); if(typeof renderTransImagePreviews === 'function') renderTransImagePreviews(); }
-        }
+        if (typeof transImages === 'undefined') window.transImages = [];
+        if(window.transImages.length >= 3) { showToast("Max 3 images allowed!"); } 
+        else { window.transImages.push(window.capturedImage); if(typeof renderTransImagePreviews === 'function') renderTransImagePreviews(); }
     }
     else if (window.currentMode === 'qa_source') {
-        if(typeof qaSourceImages !== 'undefined') {
-            if(qaSourceImages.length >= 10) { showToast("Max 10 images allowed!"); } 
-            else { qaSourceImages.push(window.capturedImage); if(typeof renderQaSourcePreviews === 'function') renderQaSourcePreviews(); }
-        }
+        if (typeof qaSourceImages === 'undefined') window.qaSourceImages = [];
+        if(window.qaSourceImages.length >= 10) { showToast("Max 10 images allowed!"); } 
+        else { window.qaSourceImages.push(window.capturedImage); if(typeof renderQaSourcePreviews === 'function') renderQaSourcePreviews(); }
     }
     else if (window.currentMode === 'qa_question') { 
         window.qaQuestionImage = window.capturedImage; 
