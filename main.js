@@ -339,49 +339,137 @@ window.cancelActiveRequest = function() {
     isProcessing = false; window.toggleChatButton(false); showToast("⚠️ Generation Stopped");
 };
 
-// 🛑 CAMERA ENGINE 🛑
-let currentStream = null, currentFacing = "environment";
+// 🛑 CAMERA ENGINE (BULLETPROOF EDITION) 🛑
+window.currentStream = null;
+window.currentFacing = "environment";
+window.isFlashOn = false;
+window.currentMode = "";
 
-async function startCamera() { 
+// Auto-fix the missing Flash button onclick from your HTML
+document.addEventListener("DOMContentLoaded", () => {
+    const flashBtn = document.getElementById("toggleFlashBtn");
+    if (flashBtn) flashBtn.onclick = window.toggleFlash;
+});
+
+window.startCamera = async function() { 
     try { 
-        if(currentStream) currentStream.getTracks().forEach(t => t.stop()); 
-        currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
-        document.getElementById("cameraVideo").srcObject = currentStream; const track = currentStream.getVideoTracks()[0]; 
-        setTimeout(async () => { try { const cap = track.getCapabilities(); if (cap.torch && currentFacing === "environment") { isFlashOn = true; await track.applyConstraints({ advanced: [{ torch: true }] }); updateFlashUI(); } else { isFlashOn = false; updateFlashUI(); } } catch(err) {} }, 500); 
-    } catch(e) { alert("Camera Error."); } 
-}
+        if(window.currentStream) window.currentStream.getTracks().forEach(t => t.stop()); 
+        
+        window.currentStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: window.currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } 
+        }); 
+        
+        const videoEl = document.getElementById("cameraVideo");
+        videoEl.setAttribute('autoplay', '');
+        videoEl.setAttribute('playsinline', '');
+        videoEl.srcObject = window.currentStream; 
+        
+        const track = window.currentStream.getVideoTracks()[0]; 
+        setTimeout(async () => { 
+            try { 
+                const cap = track.getCapabilities(); 
+                if (cap.torch && window.currentFacing === "environment") { 
+                    window.isFlashOn = true; 
+                    await track.applyConstraints({ advanced: [{ torch: true }] }); 
+                } else { 
+                    window.isFlashOn = false; 
+                } 
+                window.updateFlashUI();
+            } catch(err) {} 
+        }, 500); 
+    } catch(e) { 
+        alert("Camera Error: Please allow camera permissions in your browser.\n" + e.message); 
+    } 
+};
 
-async function toggleFlash() { if (!currentStream) return; const track = currentStream.getVideoTracks()[0]; try { if (track.getCapabilities().torch) { isFlashOn = !isFlashOn; await track.applyConstraints({ advanced: [{ torch: isFlashOn }] }); updateFlashUI(); } } catch(err){} }
-function updateFlashUI() { const btn = document.getElementById("toggleFlashBtn"); if(btn) { btn.innerText = isFlashOn ? "💡" : "🔦"; btn.style.background = isFlashOn ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"; } }
+window.toggleFlash = async function() { 
+    if (!window.currentStream) return; 
+    const track = window.currentStream.getVideoTracks()[0]; 
+    try { 
+        if (track.getCapabilities().torch) { 
+            window.isFlashOn = !window.isFlashOn; 
+            await track.applyConstraints({ advanced: [{ torch: window.isFlashOn }] }); 
+            window.updateFlashUI(); 
+        } 
+    } catch(err){} 
+};
 
-async function openCamera(m){ currentMode = m; const mod = document.getElementById("cameraModal"); if(mod) { mod.classList.add("active"); await startCamera(); } }
+window.updateFlashUI = function() { 
+    const btn = document.getElementById("toggleFlashBtn"); 
+    if(btn) { btn.innerText = window.isFlashOn ? "💡" : "🔦"; btn.style.background = window.isFlashOn ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"; } 
+};
 
-function closeCamera() { 
-    const mod = document.getElementById("cameraModal"); if (mod) mod.classList.remove("active"); 
-    if (currentStream) { const track = currentStream.getVideoTracks()[0]; try { if (track && track.getCapabilities && track.getCapabilities().torch) { track.applyConstraints({ advanced: [{ torch: false }] }); } } catch(err) {} currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
-    isFlashOn = false; updateFlashUI();
-}
+window.openCamera = async function(m) { 
+    window.currentMode = m; 
+    const mod = document.getElementById("cameraModal"); 
+    if(mod) { 
+        // Force the modal to appear regardless of CSS bugs
+        mod.style.display = "flex";
+        mod.style.opacity = "1";
+        mod.classList.add("active"); 
+        await window.startCamera(); 
+    } else {
+        alert("Camera Modal not found!");
+    }
+};
 
-async function switchCamera() { currentFacing = currentFacing === "environment" ? "user" : "environment"; await startCamera(); }
+window.closeCamera = function() { 
+    const mod = document.getElementById("cameraModal"); 
+    if (mod) {
+        mod.classList.remove("active"); 
+        mod.style.display = "none";
+    }
+    if (window.currentStream) { 
+        const track = window.currentStream.getVideoTracks()[0]; 
+        try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {} 
+        window.currentStream.getTracks().forEach(t => t.stop()); 
+        window.currentStream = null; 
+    }
+    window.isFlashOn = false; 
+    window.updateFlashUI();
+};
 
-function capturePhoto(){ 
+window.switchCamera = async function() { 
+    window.currentFacing = window.currentFacing === "environment" ? "user" : "environment"; 
+    await window.startCamera(); 
+};
+
+window.capturePhoto = function() { 
     const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
-    let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
-    c.width = w; c.height = h; c.getContext("2d").drawImage(v, 0, 0, w, h); capturedImage = c.toDataURL("image/jpeg", 0.7); 
+    if (!v || !c) return;
     
-    if (currentMode === 'math' || currentMode === 'search') { 
-        const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
+    let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
+    c.width = w; c.height = h; 
+    c.getContext("2d").drawImage(v, 0, 0, w, h); 
+    window.capturedImage = c.toDataURL("image/jpeg", 0.7); 
+    
+    if (window.currentMode === 'math' || window.currentMode === 'search') { 
+        if (typeof window.setMathImage === 'function') {
+            window.setMathImage(window.capturedImage);
+        } else {
+            const chip = document.getElementById("mathPreviewChip"); 
+            if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${window.capturedImage})`; } 
+        }
     }
-    else if (currentMode === 'image_trans') {
-        if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } else { transImages.push(capturedImage); renderTransImagePreviews(); }
+    else if (window.currentMode === 'image_trans') {
+        if(typeof transImages !== 'undefined') {
+            if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } 
+            else { transImages.push(window.capturedImage); if(typeof renderTransImagePreviews === 'function') renderTransImagePreviews(); }
+        }
     }
-    else if (currentMode === 'qa_source') {
-        if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
+    else if (window.currentMode === 'qa_source') {
+        if(typeof qaSourceImages !== 'undefined') {
+            if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } 
+            else { qaSourceImages.push(window.capturedImage); if(typeof renderQaSourcePreviews === 'function') renderQaSourcePreviews(); }
+        }
     }
-    else if (currentMode === 'qa_question') { qaQuestionImage = capturedImage; renderQaQuestionPreview(); }
-    closeCamera(); 
-}
-
+    else if (window.currentMode === 'qa_question') { 
+        window.qaQuestionImage = window.capturedImage; 
+        if(typeof renderQaQuestionPreview === 'function') renderQaQuestionPreview(); 
+    }
+    
+    window.closeCamera(); 
+};
 function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "none"; chip.style.backgroundImage = "none"; } }
 
 // 🛑 API COMMUNICATION ENGINE 🛑
