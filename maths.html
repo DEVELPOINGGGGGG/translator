@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
@@ -30,7 +30,6 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
         
-        /* 🚀 THE CSS DIGITAL PAPER ENGINE */
         .digital-paper-container {
             width: 100%;
             overflow-x: auto;
@@ -141,12 +140,14 @@
   </div>
   <div class="chat-input-area">
     <div class="image-preview-chip" id="mathPreviewChip">
-        <div class="image-preview-close" id="clearMathImgBtn" onclick="clearMathImage()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; font-size:12px; cursor:pointer;">✕</div>
+        <div class="image-preview-close" id="clearMathImgBtn" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; font-size:12px; cursor:pointer;">✕</div>
     </div>
     <div class="chat-input-wrapper">
-        <button class="chat-action-btn" id="openMathCameraBtn" onclick="openCamera()" title="Take Photo">➕</button>
-        <textarea id="mathInstructionInput" placeholder="Ask math question or attach image... (Press Enter)"></textarea>
-        <button class="chat-action-btn send" id="sendMathBtn" onclick="executeMathFlow()">↑</button>
+        <input type="file" id="mathGalleryInput" accept="image/*" style="display:none;" onchange="handleMathGallery(event)">
+        <button class="chat-action-btn" id="galleryBtn" onclick="document.getElementById('mathGalleryInput').click()" title="Upload Image" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;">📁</button>
+        <button class="chat-action-btn" id="openMathCameraBtn" onclick="openCamera('math')" title="Take Photo">📷</button>
+        <textarea id="mathInstructionInput" placeholder="Ask math question, paste or attach image... (Press Enter)"></textarea>
+        <button class="chat-action-btn send" id="sendMathBtn">↑</button>
     </div>
   </div>
 </div>
@@ -158,7 +159,7 @@
     </div>
     <div class="cameraControls">
         <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
-        <div id="capturePhotoBtn" class="cameraCircle" onclick="captureImage()"></div>
+        <div id="capturePhotoBtn" class="cameraCircle"></div>
         <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
     <canvas id="captureCanvas" style="display:none;"></canvas>
@@ -177,12 +178,8 @@
 </div>
 
 <script>
-    let currentMathImage = null;
-    let mathConversationHistory = [];
-    let videoStream = null;
-    let usingFrontCamera = false;
-    
-    let currentMathLang = "Hindi"; // Default language
+    let currentMathLang = "Hindi"; 
+    let currentMathImage = null; // The robust image variable used by local processes
 
     window.toggleMathLanguage = function() {
         const langText = document.getElementById('langText');
@@ -197,63 +194,113 @@
         }
     };
 
-    document.getElementById("mathInstructionInput").addEventListener("keypress", function(e) {
-        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); }
-    });
-
-    function appendMessage(role, text, imageUrl = null, isGeneratedImage = false) {
-        const historyDiv = document.getElementById("mathChatHistory");
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `chat-msg ${role === 'user' ? 'chat-user' : 'chat-ai'}`;
-        
-        let contentHtml = `<div class="bubble">`;
-        if (imageUrl) {
-            let imgClass = isGeneratedImage ? "handwritten-img" : "bubble-img";
-            contentHtml += `<img src="${imageUrl}" class="${imgClass}" style="${!isGeneratedImage ? 'max-width: 200px; border-radius: 10px; margin-bottom: 10px;' : ''}"><br>`;
+    // Helper to set both local and global image variables simultaneously
+    window.setMathImage = function(base64) {
+        currentMathImage = base64;
+        if (typeof window.capturedImage !== 'undefined') {
+            window.capturedImage = base64; // Syncs main.js's variable directly
         }
-        
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-        contentHtml += `<div>${formattedText}</div></div>`;
-        msgDiv.innerHTML = contentHtml;
-        historyDiv.appendChild(msgDiv);
-        
-        if (window.MathJax) MathJax.typesetPromise([msgDiv]);
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    }
+        const chip = document.getElementById("mathPreviewChip");
+        if(chip) {
+            chip.style.backgroundImage = `url(${base64})`;
+            chip.style.display = "block";
+        }
+    };
 
-    function showTyping() {
-        const div = document.createElement("div");
-        div.id = "mathTyping";
-        div.className = "chat-msg chat-ai";
-        div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
-        document.getElementById("mathChatHistory").appendChild(div);
-        document.getElementById("mathScrollArea").scrollTop = 99999;
-    }
+    // Gallery / File Explorer Event Handler
+    window.handleMathGallery = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            window.setMathImage(e.target.result);
+            if(typeof showToast === 'function') showToast("✅ Image attached!");
+        };
+        reader.readAsDataURL(file);
+        event.target.value = ""; // Reset the input
+    };
 
-    function removeTyping() { document.getElementById("mathTyping")?.remove(); }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
-    function openCamera() { document.getElementById("cameraModal").classList.add("active"); startVideoStream(); }
-    function closeCamera() { document.getElementById("cameraModal").classList.remove("active"); if (videoStream) videoStream.getTracks().forEach(t => t.stop()); }
-    
-    async function startVideoStream() {
-        if (videoStream) videoStream.getTracks().forEach(t => t.stop());
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: usingFrontCamera ? "user" : "environment" } });
-            document.getElementById("cameraVideo").srcObject = videoStream;
-        } catch (err) { alert("Camera Error"); closeCamera(); }
-    }
-    function switchCamera() { usingFrontCamera = !usingFrontCamera; startVideoStream(); }
-    function captureImage() {
-        const video = document.getElementById("cameraVideo");
-        const canvas = document.getElementById("captureCanvas");
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-        currentMathImage = canvas.toDataURL("image/jpeg", 0.6);
-        document.getElementById("mathPreviewChip").style.backgroundImage = `url(${currentMathImage})`;
-        document.getElementById("mathPreviewChip").style.display = "block";
-        closeCamera();
-    }
-    function clearMathImage() { currentMathImage = null; document.getElementById("mathPreviewChip").style.display = "none"; }
+    // Core injection to intercept, fix, and align logic loaded by main.js
+    window.addEventListener('DOMContentLoaded', () => {
+        // We defer this slightly to ensure main.js has fully initialized its variables
+        setTimeout(() => {
+            // Overrides the buggy clear function imported from main.js
+            window.clearMathImage = function(e) {
+                if(e) e.stopPropagation();
+                
+                // Nuke all image references
+                currentMathImage = null;
+                if (typeof window.capturedImage !== 'undefined') {
+                    window.capturedImage = null;
+                }
+                
+                // Hide the UI
+                const chip = document.getElementById("mathPreviewChip");
+                if(chip) {
+                    chip.style.display = "none";
+                    chip.style.backgroundImage = "none";
+                }
+            };
+            
+            // Re-bind the Close/X button to the new robust clear function
+            const clearBtn = document.getElementById('clearMathImgBtn');
+            if (clearBtn) clearBtn.onclick = window.clearMathImage;
+
+            // Intercept `executeMathFlow` from main.js to perform the missing variable sync
+            const originalExecute = window.executeMathFlow;
+            if (originalExecute) {
+                window.executeMathFlow = async function() {
+                    // Synchronize the camera capture from main.js into our local sender variable
+                    if (typeof window.capturedImage !== 'undefined' && window.capturedImage) {
+                        currentMathImage = window.capturedImage;
+                    }
+                    
+                    // Run the core math solver flow
+                    await originalExecute();
+                    
+                    // Post-run cleanup to ensure the image does not bleed into the next question
+                    window.clearMathImage(); 
+                };
+                
+                // Re-bind the physical SEND button to our synced interceptor
+                const sendBtn = document.getElementById("sendMathBtn");
+                if(sendBtn) sendBtn.onclick = window.executeMathFlow;
+                
+                // Completely detach main.js's buggy keyboard listener and re-apply a clean one
+                const inputEl = document.getElementById("mathInstructionInput");
+                if (inputEl) {
+                    const newEl = inputEl.cloneNode(true);
+                    inputEl.parentNode.replaceChild(newEl, inputEl);
+                    
+                    // Standard Enter Key Submission
+                    newEl.addEventListener("keypress", function(e) {
+                        if (e.key === "Enter" && !e.shiftKey) { 
+                            e.preventDefault(); 
+                            window.executeMathFlow(); 
+                        }
+                    });
+                    
+                    // NEW: Clipboard Paste Event Listener
+                    newEl.addEventListener("paste", function(e) {
+                        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                        for (let index in items) {
+                            const item = items[index];
+                            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                                const blob = item.getAsFile();
+                                const reader = new FileReader();
+                                reader.onload = function(event) {
+                                    window.setMathImage(event.target.result);
+                                    if(typeof showToast === 'function') showToast("✅ Image pasted from clipboard!");
+                                };
+                                reader.readAsDataURL(blob);
+                                e.preventDefault(); // Stop raw image blobs pasting as corrupt text
+                            }
+                        }
+                    });
+                }
+            }
+        }, 800); // 800ms guarantees execution happens after main.js binds
+    });
 
     // =======================================================
     // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE
@@ -373,7 +420,6 @@
         btn.style.opacity = "1";
         btn.disabled = false;
     };
-
 </script>
 
 <script src="ui-controls.js" defer></script>
