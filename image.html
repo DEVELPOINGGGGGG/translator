@@ -8,10 +8,9 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <style>
-        /* Forces the Image Translator dropdown, chat bubbles, and text to listen to the "Aa" Menu */
         #chatTargetLang, .bubble, p {
             font-size: calc(15px * var(--app-font-scale, 1)) !important;
             line-height: 1.6 !important;
@@ -25,189 +24,292 @@
 </head>
 <body>
 
-<div class="overlay" id="overlay"></div>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
 <div class="topbar">
   <div class="menuBtn" onclick="toggleSidebar()">☰</div>
   <div class="appTitle">AI Pro Suite</div>
 </div>
 <div class="apiTracker">
-    <div>⏱️ <span id="apiTimer" class="api-val timer">60s</span></div>
-    <div>🖼️ <span id="apiVision" class="api-val vision">0</span>/20</div>
-    <div>📝 <span id="apiText" class="api-val text">0</span>/20</div>
+    <div>⏱️ Reset: <span id="apiTimer" class="api-val timer">60s</span></div>
+    <div>🖼️ Vis: <span id="apiVision" class="api-val vision">0</span>/20</div>
+    <div>📝 Txt: <span id="apiText" class="api-val text">0</span>/20</div>
 </div>
 
 <div class="sidebar" id="sidebar">
   <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
-  <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
+  <button onclick="window.location.href='quiz.html'">📝 Quiz Maker</button>
   <button onclick="window.location.href='translator.html'">🎙️ Text Translator</button>
-  <button onclick="window.location.href='image.html'">🖼️ Image Translator</button>
+  <button onclick="window.location.href='image.html'" class="active" style="border-left: 4px solid #3b82f6; font-weight: bold;">🖼️ Image Translator</button>
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-
+  <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<div class="page active chat-page-layout" id="imagePage">
-  <div class="chat-scroll-area" id="imageScrollArea">
-    <div class="card" style="background:linear-gradient(135deg,#a855f7,#7e22ce); border:none; text-align:center; margin-bottom: 20px; flex-shrink: 0;">
-        <h1 style="font-size: 24px;">🖼️ Image Translator</h1>
-        <p style="font-size: 14px; opacity: 0.9;">Translate up to 3 pages at once.</p>
-    </div>
-    
-    <div id="imageChatHistory">
-        <div class="chat-msg chat-ai">
-            <div class="bubble">Please click the <b>➕</b> icon to share a photo of translation text. Click the <b>➕</b> icon again to share more photos at once (Max: 3).</div>
-        </div>
-    </div>
-  </div>
+<div class="page active chat-page-layout">
+  <div class="chat-container">
+      <div class="chat-scroll-area" id="imageScrollArea">
+          <div class="chat-history" id="imageChatHistory">
+              <div class="chat-msg chat-ai">
+                  <div class="bubble">
+                      📸 <b>Image Translation Mode</b><br>Take a photo or upload an image containing text, and I will extract the text, translate it, and define the hard words for you.
+                  </div>
+              </div>
+          </div>
+      </div>
 
-  <div class="chat-input-area" style="flex-direction: column;">
-    <div id="imagePreviewContainer" style="display: none; gap: 10px; margin-bottom: 10px; overflow-x: auto; width: 100%; padding-bottom: 5px;"></div>
-    
-    <div class="chat-input-wrapper" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border-radius: 40px;">
-        
-        <button class="chat-action-btn" id="openImageCameraBtn" title="Take Photo" onclick="openCamera('image_trans')" style="flex-shrink: 0; margin-bottom: 0;">➕</button>
-        
-        <select id="chatTargetLang" style="flex: 1; padding: 0 12px; border-radius: 20px; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); outline: none; font-family: 'Poppins', sans-serif; margin-bottom: 0; height: 45px;">
-            <option value="Hindi">Target: Hindi</option>
-            <option value="English">Target: English</option>
-            <option value="French">Target: French</option>
-            <option value="Spanish">Target: Spanish</option>
-            <option value="German">Target: German</option>
-            <option value="Japanese">Target: Japanese</option>
-        </select>
-        
-        <button class="btn blue" id="sendImageTransBtn" onclick="executeImageTransFlow()" style="margin: 0; padding: 0 20px; border-radius: 30px; white-space: nowrap; flex-shrink: 0; width: auto; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);">Convert</button>
-        
-    </div>
+      <div class="chat-input-area" style="flex-direction: column; gap: 10px;">
+          <div style="display: flex; gap: 10px; width: 100%; align-items: center; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; border: 1px solid var(--border-light);">
+              <span style="font-size: 13px; color: var(--text-muted); white-space: nowrap;">Translate to:</span>
+              <select id="chatTargetLang" style="flex: 1; padding: 8px; background: var(--input-bg); color: var(--text-main); border-radius: 8px; border: 1px solid var(--border-light); outline: none;">
+                  <option value="Hindi">Hindi (हिंदी)</option>
+                  <option value="English">English</option>
+                  <option value="French">French</option>
+                  <option value="Spanish">Spanish</option>
+                  <option value="German">German</option>
+                  <option value="Japanese">Japanese</option>
+              </select>
+          </div>
+
+          <div id="imagePreviewContainer" style="display: none; gap: 10px; margin-bottom: 5px; overflow-x: auto;"></div>
+
+          <div class="input-wrapper" style="width: 100%; display: flex; gap: 10px; justify-content: center;">
+              <input type="file" id="imageUploadInput" accept="image/*" style="display:none;" onchange="handleLocalImageUpload(event)">
+              <button class="chat-action-btn" onclick="localOpenCamera()" style="flex:1; border-radius:12px; background:var(--input-bg); font-size:16px;">📷 Camera</button>
+              <button class="chat-action-btn" onclick="document.getElementById('imageUploadInput').click()" style="flex:1; border-radius:12px; background:var(--input-bg); font-size:16px;">📎 Upload</button>
+              <button class="chat-action-btn send" id="sendImageTransBtn" onclick="executeLocalImageTransFlow()" style="flex:1; border-radius:12px; font-size:16px;">🚀 Translate</button>
+          </div>
+      </div>
   </div>
 </div>
 
-<!-- 🛑 BULLETPROOF CAMERA MODAL (WITH FORCED ONCLICKS) 🛑 -->
 <div id="cameraModal" class="cameraModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999999; background:#000; flex-direction:column;">
     <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
     
     <div class="camera-top-bar" style="position:absolute; top:20px; right:20px; z-index:1000000;">
-        <button type="button" id="closeCameraBtn" class="cam-icon-btn" onclick="closeCamera()" style="background:#ef4444; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">❌</button>
+        <button type="button" id="closeCameraBtn" class="cam-icon-btn" onclick="localCloseCamera()" style="background:#ef4444; color:white; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; cursor:pointer;">❌</button>
     </div>
     
     <div class="cameraControls" style="position:absolute; bottom:30px; left:0; width:100%; display:flex; justify-content:center; align-items:center; gap:30px; z-index:1000000;">
-        <button type="button" id="toggleFlashBtn" class="cam-icon-btn" onclick="toggleFlash()" style="background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; cursor:pointer;">🔦</button>
-        
-        <!-- THIS WAS MISSING onclick="capturePhoto()" -->
-        <div id="capturePhotoBtn" class="cameraCircle" onclick="capturePhoto()" style="width:70px; height:70px; background:white; border-radius:50%; border:4px solid #cbd5e1; cursor:pointer;"></div>
-        
-        <!-- THIS WAS MISSING onclick="switchCamera()" -->
-        <button type="button" id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()" style="background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; cursor:pointer;">🔄</button>
+        <button type="button" id="toggleFlashBtn" class="cam-icon-btn" onclick="localToggleFlash()" style="background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; cursor:pointer;">🔦</button>
+        <div id="capturePhotoBtn" class="cameraCircle" onclick="localCapturePhoto()" style="width:70px; height:70px; background:white; border-radius:50%; border:4px solid #cbd5e1; cursor:pointer;"></div>
+        <button type="button" id="switchCameraBtn" class="cam-icon-btn" onclick="localSwitchCamera()" style="background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; cursor:pointer;">🔄</button>
     </div>
     
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
+
 <div class="photoViewer" id="photoViewer">
   <div style="position: absolute; top: 20px; right: 20px; z-index: 6001;">
-      <button class="closeBtn" id="closePreviewBtn">✕</button>
+      <button class="closeBtn" onclick="document.getElementById('photoViewer').classList.remove('active')">✕</button>
   </div>
-  <img id="previewImage" src="" alt="Preview">
+  <img id="previewImage">
 </div>
+
+<script src="ui-controls.js" defer></script>
+<script src="main.js" defer></script>
+
 <script>
+    window.localTransImages = [];
+    let localStream = null;
+    let localFacing = "environment";
+    let localFlashOn = false;
+
+    // 1. Bulletproof Camera Functions
+    window.localOpenCamera = async function() {
+        const mod = document.getElementById("cameraModal");
+        mod.style.display = "flex";
+        mod.style.opacity = "1";
+        mod.classList.add("active");
+        try {
+            if(localStream) localStream.getTracks().forEach(t => t.stop());
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert("Camera blocked! Check permissions or use HTTPS.");
+                return;
+            }
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: localFacing, width: {ideal: 1920}, height: {ideal: 1080} }
+            });
+            const videoEl = document.getElementById("cameraVideo");
+            videoEl.setAttribute('autoplay', '');
+            videoEl.setAttribute('playsinline', '');
+            videoEl.srcObject = localStream;
+            
+            const track = localStream.getVideoTracks()[0];
+            setTimeout(async () => {
+                try {
+                    const cap = track.getCapabilities();
+                    if (cap.torch && localFacing === "environment") {
+                        localFlashOn = true;
+                        await track.applyConstraints({ advanced: [{ torch: true }] });
+                    } else {
+                        localFlashOn = false;
+                    }
+                    document.getElementById("toggleFlashBtn").innerText = localFlashOn ? "💡" : "🔦";
+                } catch(e) {}
+            }, 500);
+        } catch(e) { alert("Camera Error: " + e.message); }
+    };
+
+    window.localCloseCamera = function() {
+        document.getElementById("cameraModal").style.display = "none";
+        if (localStream) {
+            const track = localStream.getVideoTracks()[0];
+            try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err) {}
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+        }
+        localFlashOn = false;
+    };
+
+    window.localSwitchCamera = async function() {
+        localFacing = localFacing === "environment" ? "user" : "environment";
+        await window.localOpenCamera();
+    };
+
+    window.localToggleFlash = async function() {
+        if (!localStream) return;
+        const track = localStream.getVideoTracks()[0];
+        try {
+            if (track.getCapabilities().torch) {
+                localFlashOn = !localFlashOn;
+                await track.applyConstraints({ advanced: [{ torch: localFlashOn }] });
+                document.getElementById("toggleFlashBtn").innerText = localFlashOn ? "💡" : "🔦";
+            }
+        } catch(err) {}
+    };
+
+    window.localCapturePhoto = function() {
+        const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
+        if (!v || !c) return;
+        
+        let w = v.videoWidth, h = v.videoHeight; 
+        if(w > 1500) { h *= 1500/w; w = 1500; } 
+        c.width = w; c.height = h; 
+        c.getContext("2d").drawImage(v, 0, 0, w, h); 
+        let capturedImg = c.toDataURL("image/jpeg", 0.7); 
+        
+        if(window.localTransImages.length >= 3) { 
+            if(typeof showToast === 'function') showToast("Max 3 images allowed!"); else alert("Max 3 images allowed!"); 
+        } else { 
+            window.localTransImages.push(capturedImg); 
+            renderLocalTransImagePreviews(); 
+        }
+        window.localCloseCamera(); 
+    };
+
+    // 2. File Upload Handler
+    window.handleLocalImageUpload = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if(window.localTransImages.length >= 3) {
+                if(typeof showToast === 'function') showToast("Max 3 images allowed!"); else alert("Max 3 images allowed!"); 
+            } else {
+                window.localTransImages.push(e.target.result);
+                renderLocalTransImagePreviews();
+            }
+        };
+        reader.readAsDataURL(file);
+        event.target.value = ""; 
+    };
+
+    // 3. UI Update Functions
+    window.renderLocalTransImagePreviews = function() {
+        const container = document.getElementById("imagePreviewContainer"); 
+        if (!container) return; 
+        if (window.localTransImages.length === 0) { 
+            container.style.display = "none"; 
+            return; 
+        } 
+        container.style.display = "flex"; 
+        container.innerHTML = window.localTransImages.map((img, index) => `<div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0; border:2px solid var(--primary);"><div onclick="removeLocalTransImage(${index}, event)" style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border-radius:50%; width:24px; height:24px; text-align:center; cursor:pointer; font-size:12px; line-height:24px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">✕</div></div>`).join(''); 
+    };
+
+    window.removeLocalTransImage = function(index, event) {
+        if(event) event.stopPropagation();
+        window.localTransImages.splice(index, 1);
+        renderLocalTransImagePreviews();
+    };
+
+    // 4. Image Translation Execution Flow
+    window.executeLocalImageTransFlow = async function() {
+        if (window.localTransImages.length === 0) {
+            if(typeof showToast === 'function') showToast("Please attach at least 1 image!"); else alert("Please attach an image!");
+            return;
+        }
+        
+        const targetLang = document.getElementById("chatTargetLang").value;
+        const c = document.getElementById("imageChatHistory");
+        if (!c) return;
+
+        // Display User Bubble with Images
+        let imgsHtml = window.localTransImages.map(img => `<img src="${img}" class="bubble-img" onclick="document.getElementById('previewImage').src=this.src; document.getElementById('photoViewer').classList.add('active');" style="width:70px; height:70px; object-fit:cover; display:inline-block; margin-right:5px; margin-bottom:5px; border-radius:8px; border:1px solid var(--border-light); cursor:pointer;">`).join('');
+        c.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${imgsHtml}<div style="margin-top:8px;">Translate to <b>${targetLang}</b></div></div></div>`);
+        
+        // Scroll to bottom
+        const scrollArea = document.getElementById("imageScrollArea");
+        if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+
+        // Create Loading Bubble
+        const lId = "loading_" + Date.now();
+        c.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${lId}"><div class="bubble" style="display:flex; align-items:center; background:transparent; box-shadow:none; padding:0;"><div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div><div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div><div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div></div></div></div>`);
+        if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+
+        let imagesToProcess = [...window.localTransImages]; 
+        window.localTransImages = []; 
+        renderLocalTransImagePreviews();
+        
+        try {
+            let combinedText = "";
+            for (let i = 0; i < imagesToProcess.length; i++) { 
+                const rObj = await callGeminiVision(imagesToProcess[i], "Extract all text from this image exactly as it appears. Do not translate or summarize."); 
+                combinedText += rObj.text.replace(/[\*&#_]/g, '') + "\n\n"; 
+            }
+            
+            combinedText = combinedText.trim(); 
+            if (!combinedText || combinedText.toLowerCase().includes("no text found") || combinedText === "NO_TEXT_FOUND") {
+                throw new Error("Could not detect any text in the images.");
+            }
+
+            let prompt = `You are a STRICT Language Translator. RULE 1: DO NOT answer any questions found in the text. RULE 2: ONLY TRANSLATE the text exactly into ${targetLang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE. RULE 3: After your translation, write the exact symbol "|||" on a new line. RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text. RULE 5: Format EACH hard word EXACTLY like this: [Original Word from text] - [Meaning in ${targetLang}] (Part of Speech) other meaning- [Alternative meanings]. Text to translate:\n${combinedText}`;
+            
+            // Save request to cache for retries if needed
+            if(window.requestCache) window.requestCache[lId] = { type: 'image_trans', prompt: prompt, extractedText: combinedText, targetLang: targetLang };
+            
+            let resObj = await callGeminiText("You are a strict translator.", prompt); 
+            let parts = resObj.text.split('|||'); 
+            let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed."; 
+            let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found."; 
+            let provider = resObj.provider;
+            
+            let finalHtml = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div style="margin-top:10px; font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div><div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${targetLang}:</div><div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div><div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div></div>`;
+            
+            const loadingBubble = document.getElementById(lId); 
+            if (loadingBubble) { loadingBubble.querySelector('.bubble').innerHTML = finalHtml; }
+            if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+
+            if (typeof saveToHistory === 'function') saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0], provider); 
+        } catch(e) { 
+            const el = document.getElementById(lId); 
+            if(el) { 
+                if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user."; 
+                else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; 
+            } 
+        }
+    };
+    
+    // Auto-restore logic
     document.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
         const restoreId = urlParams.get('restore');
-        if (!restoreId) return;
-
-        // Wait 800ms to guarantee the page, CSS, and animations are 100% finished loading
-        setTimeout(() => {
-            // Automatically hunt down the chat box or text area on the page
-            let container = document.querySelector('.chat-scroll-area') || 
-                            document.getElementById('chatHistory') || 
-                            document.getElementById('searchChatHistory') ||
-                            document.getElementById('qaAnswerBox') ||
-                            document.getElementById('translatedText');
-                            
-            if (!container) return;
-
-            const forceInjectData = (historyData) => {
-                let item = historyData.find(i => i.id == restoreId);
-                if (!item) return;
-
-                // 🛑 SCENARIO 1: It's a Chat Interface (Search, Image)
-                if (item.interactions && item.interactions.length > 0 && container.classList.contains('chat-scroll-area')) {
-                    container.innerHTML = ''; // Wipe the empty screen
-                    
-                    item.interactions.forEach((inter, index) => {
-                        let imgHtml = inter.image ? `<img src="${inter.image}" class="bubble-img" style="max-width:100%; border-radius:16px; margin-bottom:15px; border: 2px solid var(--border-light); box-shadow: var(--glass-shadow);">` : '';
-                        let textId = `restored_text_${index}`;
-                        
-                        container.insertAdjacentHTML('beforeend', `
-                            <div class="chat-msg chat-user" style="animation: slideInUp 0.5s ease-out;">
-                                <div class="bubble" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 6px; box-shadow: 0 8px 25px var(--primary-glow);">
-                                    ${imgHtml}
-                                    <div>${inter.question.replace(/\n/g, '<br>')}</div>
-                                </div>
-                            </div>
-                            <div class="chat-msg chat-ai" style="animation: bounceInBubble 0.6s ease-out;">
-                                <div class="bubble" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 6px; box-shadow: var(--glass-shadow); display: flex; flex-direction: column;">
-                                    <div class="api-badge" style="display: inline-block; align-self: flex-start; background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 14px; font-size: 11px; font-weight: 900; margin-bottom: 20px; box-shadow: 0 4px 10px var(--primary-glow);">✨ BY ${inter.provider || "AI"}</div>
-                                    <div id="${textId}" style="margin-top:0; width:100%; overflow-x:auto;">${inter.answer.replace(/\n/g, '<br>')}</div>
-                                    
-                                    <div class="action-buttons-container" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:25px; padding-top:15px; border-top:1px solid var(--border-light); width:100%;">
-                                        <button class="btn green" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; flex: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onclick="speakAndHighlight('${textId}')">🔊 Listen</button>
-                                        <button class="btn" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; flex: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onclick="copyToClipboard('${textId}')">📋 Copy</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
-                    });
-                    
-                    // Force the window to scroll to the newly injected text
-                    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
-                    if (typeof showToast === 'function') showToast("🔄 Search Restored Successfully!");
-                } 
-                
-                // 🛑 SCENARIO 2: It's a Text Box Interface (Translator, Q&A)
-                else {
-                    let textId = `restored_text_box`;
-                    let ansText = item.interactions ? item.interactions[0].answer : item.answer;
-                    
-                    container.innerHTML = `
-                        <div class="api-badge" style="display: inline-block; background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 14px; font-size: 11px; font-weight: 900; margin-bottom: 20px;">✨ BY ${item.provider || "AI"}</div>
-                        <div id="${textId}" style="margin-top:0;">${ansText.replace(/\n/g, '<br>')}</div>
-                        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:25px; padding-top:15px; border-top:1px solid var(--border-light);">
-                            <button class="btn green" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; flex: 1;" onclick="speakAndHighlight('${textId}')">🔊 Listen</button>
-                            <button class="btn" style="background: linear-gradient(145deg, var(--bg-surface), var(--input-bg)); color: var(--primary); border: 1px solid var(--primary); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 800; flex: 1;" onclick="copyToClipboard('${textId}')">📋 Copy</button>
-                        </div>
-                    `;
-                    // Refill the input text box too
-                    if (document.getElementById('inputText')) document.getElementById('inputText').value = item.question || "";
-                    if (typeof showToast === 'function') showToast("🔄 Document Restored Successfully!");
-                }
-
-                // Safely render any Math/Physics equations (LaTeX)
-                if (window.MathJax) {
-                    MathJax.typesetPromise([container]).catch(e => console.log(e));
-                }
-            };
-
-            // Safely fetch from your LocalForage database, fallback to LocalStorage
-            if (typeof localforage !== 'undefined') {
-                localforage.getItem('aiHistory').then(data => {
-                    if (data && data.length > 0) forceInjectData(data);
-                    else forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
-                }).catch(() => forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]')));
-            } else {
-                forceInjectData(JSON.parse(localStorage.getItem('aiHistory') || '[]'));
-            }
-            
-        }, 800); // 👈 THIS 800ms DELAY IS THE MAGIC FIX. IT WAITS FOR EVERYTHING TO BE READY.
+        if (restoreId) { setTimeout(() => { if(typeof window.restoreSession === 'function') window.restoreSession(null, restoreId); }, 800); } 
     });
 </script>
-<canvas id="captureCanvas" style="display:none;"></canvas>
-<script src="ui-controls.js" defer></script>
-<script src="main.js" defer></script>
 </body>
 </html>
