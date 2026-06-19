@@ -319,6 +319,32 @@
         btn.style.opacity = "1";
         btn.disabled = false;
     };
+    function capturePhoto() { 
+    const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
+    let w = v.videoWidth, h = v.videoHeight; 
+    if(w > 1500) { h *= 1500/w; w = 1500; } 
+    c.width = w; c.height = h; 
+    c.getContext("2d").drawImage(v, 0, 0, w, h); 
+    capturedImage = c.toDataURL("image/jpeg", 0.7); 
+    
+    if (currentMode === 'math' || currentMode === 'search') { 
+        if (typeof window.setMathImage === 'function') {
+            window.setMathImage(capturedImage);
+        } else { 
+            const chip = document.getElementById("mathPreviewChip"); 
+            if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
+        }
+    }
+    else if (currentMode === 'image_trans') {
+        if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } else { transImages.push(capturedImage); renderTransImagePreviews(); }
+    }
+    else if (currentMode === 'qa_source') {
+        if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
+    }
+    else if (currentMode === 'qa_question') { qaQuestionImage = capturedImage; renderQaQuestionPreview(); }
+    
+    closeCamera(); 
+}
 </script>
 
 <script src="ui-controls.js" defer></script>
