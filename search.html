@@ -53,11 +53,10 @@
         .thinking-text { font-size: 12px; font-weight: bold; color: var(--primary); letter-spacing: 1px; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        /* Chat Layout & SCROLL FIXES */
+        /* Chat Layout */
         .search-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface); padding: 15px; border-top: 1px solid var(--border-light); z-index: 100; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: transform 0.3s; }
         .search-input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 25px; padding: 8px 12px; }
         
-        /* 🛑 SCROLL FIX: Top padding added so messages don't hide under the topbar */
         .chat-scroll-area { height: 100vh; overflow-y: auto; padding-top: 80px; padding-bottom: 140px; }
         .chat-msg { display: flex; width: 100%; padding: 0 15px; margin-bottom: 20px; }
         .chat-user { justify-content: flex-end; }
@@ -232,7 +231,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('appLang').value = "Hindi";
-            
             localforage.getItem('aiHistory').then(data => {
                 if(data) {
                     appHistory = data;
@@ -242,9 +240,7 @@
             });
         });
 
-        function saveHistorySafe() {
-            localforage.setItem('aiHistory', appHistory).catch(e => console.log(e));
-        }
+        function saveHistorySafe() { localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); }
 
         function restoreSession(id) {
             const session = appHistory.find(s => s.id == id);
@@ -254,18 +250,16 @@
             chatBox.innerHTML = '';
             
             session.interactions.forEach(inter => {
-                // Restore User
                 let userImgs = (inter.images || []).map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
                 chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
                 
-                // Restore AI
                 const lId = "restored_" + Date.now() + Math.floor(Math.random() * 1000);
                 const textId = "txt_" + lId;
                 
                 let sourceBtnHtml = "";
                 if(inter.sources && inter.sources.length > 0) {
-                    window['sources_' + loadId] = inter.sources;
-                    sourceBtnHtml = `<button class="action-btn" onclick="openSources('${loadId}')">🔗 Sources</button>`;
+                    window['sources_' + lId] = inter.sources;
+                    sourceBtnHtml = `<button class="action-btn" onclick="openSources('${lId}')">🔗 Sources</button>`;
                 }
 
                 chatBox.insertAdjacentHTML('beforeend', `
@@ -292,7 +286,6 @@
             t.style.cssText = "position:fixed; bottom:130px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:999999; font-weight:bold; font-size:13px; box-shadow:0 5px 15px rgba(0,0,0,0.5); animation:slideUpToast 0.3s ease;";
             document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
         }
-        document.head.insertAdjacentHTML('beforeend', '<style>@keyframes slideUpToast{from{transform:translate(-50%, 20px);opacity:0;}to{transform:translate(-50%, 0);opacity:1;}}</style>');
 
         // --- 3. BLACK BOX RENDERER ---
         const renderer = new marked.Renderer();
@@ -325,7 +318,6 @@
             if(isPhotoMode) showToast("Photo Gen Ready (Gemini Powered)"); closePlusMenu();
         }
 
-        // --- 6. FOCUS MODE WITH X BUTTON FIX ---
         function toggleFocus() { 
             const topBar = document.getElementById('appTopbar'); 
             const inputArea = document.getElementById('appInputArea');
@@ -334,7 +326,7 @@
             
             topBar.style.display = isFocus ? 'none' : 'flex'; 
             inputArea.style.transform = isFocus ? 'translateY(200%)' : 'translateY(0)';
-            exitBtn.style.display = isFocus ? 'flex' : 'none'; // Shows the red X button
+            exitBtn.style.display = isFocus ? 'flex' : 'none'; 
             
             document.getElementById('settingsModal').style.display = 'none';
             showToast(isFocus ? "Focus Mode ON" : "Focus Mode OFF");
@@ -344,7 +336,7 @@
             document.getElementById("searchChatHistory").innerHTML = document.getElementById("welcomeMessage").outerHTML; 
             documentMemory = ""; uploadedImagesList = []; updateImageUI(); clearAttachment(); 
             document.getElementById('settingsModal').style.display = 'none'; 
-            currentSessionId = Date.now(); // Reset session ID for localforage
+            currentSessionId = Date.now(); 
             showToast("Memory Wiped Clean."); 
         }
 
@@ -354,7 +346,7 @@
 
         function startVoice(lang) { document.getElementById('voiceModal').style.display='none'; if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice not supported."); const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; const rec = new SpeechRec(); rec.lang = lang; rec.onstart = () => { document.getElementById("searchInput").value = "Listening..."; showToast("Listening..."); }; rec.onresult = (e) => document.getElementById("searchInput").value = e.results[0][0].transcript; rec.start(); }
 
-        // --- 7. CAMERA & UPLOAD (MAX 20) ---
+        // --- 6. CAMERA & UPLOAD (MAX 20) ---
         async function openCamera() { closePlusMenu(); document.getElementById('cameraModal').style.display='flex'; try { if(camStream) camStream.getTracks().forEach(t => t.stop()); camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); document.getElementById("cameraVideo").srcObject = camStream; setTimeout(async () => { const track = camStream.getVideoTracks()[0]; if (track.getCapabilities().torch && camFacing === "environment") { isFlash = true; await track.applyConstraints({ advanced: [{ torch: true }] }); document.getElementById('flashBtn').innerText = "💡"; } }, 500); } catch(e) { alert("Camera Error."); document.getElementById('cameraModal').style.display='none'; } }
         function closeCamera() { document.getElementById('cameraModal').style.display='none'; if(camStream) camStream.getTracks().forEach(t=>t.stop()); isFlash=false; }
         async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
@@ -379,7 +371,7 @@
 
         document.getElementById("searchInput").addEventListener("keypress", function(e) { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runMainSearch(); } });
 
-        // --- 8. CREATE NOTES MODULE ---
+        // --- 7. CREATE NOTES MODULE ---
         function openNotesModal() { closePlusMenu(); document.getElementById('notesModal').style.display = 'flex'; }
         async function generateNotes() {
             const b = document.getElementById("noteBookName").value.trim(); const c = document.getElementById("noteChapter").value.trim();
@@ -389,13 +381,10 @@
             runMainSearch();
         }
 
-        // --- 9. TYPEWRITER ENGINE (NO AUTO SCROLL & NO ARTIFACTS FIX) ---
+        // --- 8. TYPEWRITER ENGINE (NO HTML ESCAPE BUGS) ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div'); 
-            // Fix text rendering artifacts by ensuring standard string decoding
-            tempDiv.innerHTML = fullHtml.replace(/[\u00A0-\u9999<>\&]/g, function(i) {
-               return '&#'+i.charCodeAt(0)+';';
-            });
+            tempDiv.innerHTML = fullHtml; // Direct innerHTML so nodes remain DOM elements!
             let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
             
             function typeNextNode() {
@@ -406,12 +395,8 @@
                     let text = currentNode.textContent; let span = document.createElement('span'); targetElement.appendChild(span); let charIndex = 0;
                     let interval = setInterval(() => { 
                         if (charIndex >= text.length) { clearInterval(interval); nodeIndex++; typeNextNode(); } 
-                        else { 
-                            span.textContent += text.substring(charIndex, charIndex + 5); 
-                            charIndex += 5; 
-                            // NO SCROLLING HERE
-                        } 
-                    }, 20);
+                        else { span.textContent += text.substring(charIndex, charIndex + 5); charIndex += 5; } 
+                    }, 15);
                 } else { 
                     targetElement.appendChild(currentNode); nodeIndex++; typeNextNode(); 
                 }
@@ -419,7 +404,7 @@
             typeNextNode();
         }
 
-        // --- 10. AI EXECUTION & LIMITS ---
+        // --- 9. AI EXECUTION & LIMITS ---
         function checkDailyImageLimit() {
             const today = new Date().toDateString();
             let usage = JSON.parse(localStorage.getItem('geminiImgUsage') || '{"count": 0, "date": ""}');
@@ -442,7 +427,7 @@
             let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
             chatBox.insertAdjacentHTML('beforeend', userHtml); inp.value = ""; inp.style.height = ''; 
             
-            // Only scroll once when user sends message
+            // Initial scroll when you send message
             const scrollArea = document.getElementById("searchScrollArea");
             scrollArea.scrollTo(0, scrollArea.scrollHeight);
 
@@ -464,7 +449,6 @@
             isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImagesList = []; updateImageUI(); clearAttachment();
         }
 
-        // Gemini Image Generator
         async function handlePhotoGeneration(prompt, loadId, savedImages) {
             let safePrompt = prompt.replace(/[^\x00-\x7F]/g, "") + ", NO TEXT, highly detailed, cinematic."; 
             const payload = { userPrompt: safePrompt, isImageGen: true }; 
@@ -478,12 +462,11 @@
             } else throw new Error("Failed to render image via Gemini.");
         }
 
-        // Text Search Routing
         async function handleTextSearch(prompt, loadId, savedImages) {
             const lang = document.getElementById("appLang").value; const customRules = document.getElementById("aiInstructions").value.trim();
             
-            // Absolute Hindi instruction to prevent Urdu artifacts
-            let sysPrompt = `You are the ultimate AI. IMPORTANT: If the requested language is Hindi, YOU MUST ONLY USE DEVANAGARI SCRIPT. NEVER use Urdu, Arabic, or strange symbols. Language: ${lang}. Use **bold**. Use \\frac for math fractions. Render code blocks correctly.`;
+            // STRICT INSTRUCTIONS FOR HINDI AND MATH (NO URDU, REQUIRES $$ FOR MATH)
+            let sysPrompt = `You are the ultimate AI. IMPORTANT: If language is Hindi, YOU MUST ONLY USE DEVANAGARI SCRIPT. NEVER use Urdu, Arabic, or strange symbols. Language: ${lang}. Use **bold**. Use $$ $$ for math equations and fractions (e.g., $$\\frac{1}{2}$$). Render code blocks correctly in markdown.`;
             
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if(documentMemory) sysPrompt += `\n\nLOCAL KNOWLEDGE BASE (USE THIS FIRST):\n${documentMemory}`;
@@ -498,8 +481,7 @@
             if(!res.ok) throw new Error(data.error || "Neural network timeout.");
 
             let textId = "txt_" + loadId;
-            let mathParsedText = data.text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
-            let htmlContent = marked.parse(mathParsedText);
+            let htmlContent = marked.parse(data.text);
             
             let sourceBtnHtml = ""; let urlRegex = /(https?:\/\/[^\s]+)/g; let urls = data.text.match(urlRegex);
             if(urls) { window['sources_' + loadId] = urls; sourceBtnHtml = `<button class="action-btn" onclick="openSources('${loadId}')">🔗 Sources</button>`; }
@@ -516,12 +498,14 @@
                 </div>`;
             
             runInsaneTypewriter(document.getElementById(textId), htmlContent, () => {
-                if(window.MathJax) MathJax.typesetPromise([document.getElementById(loadId)]);
+                if(window.MathJax) {
+                    MathJax.typesetClear([document.getElementById(loadId)]);
+                    MathJax.typesetPromise([document.getElementById(loadId)]);
+                }
                 saveInteractionToLocalForage(prompt, htmlContent, savedImages, data.provider, urls);
             });
         }
 
-        // Save interaction to LocalForage
         function saveInteractionToLocalForage(question, answer, images, provider, sources = []) {
             let existingSession = appHistory.find(s => s.id == currentSessionId);
             if (existingSession) {
