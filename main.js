@@ -16,8 +16,30 @@ window.latestMathSolution = "";
 let availableVoices = [];
 window.hasResetToday = false;
 
+// 🟢 NEW VARIABLES ADDED FOR MISSING FEATURES 🟢
+let qaSourceImages = [];
+let qaQuestionImage = null;
+const MASTER_OCR_PROMPT = "Extract all text from this image exactly as it appears. Do not translate or summarize.";
+
+// Video Player Variables
+let videoTickInterval = null;
+let videoTotalEst = 0;
+let videoElapsed = 0;
+let isVideoPaused = false;
+let videoLineIndex = 0;
+let activeVideoUtterance = null;
+let currentVideoVolume = 1;
+let videoSpeed = 1;
+let videoRunToken = 0;
+let hideControlsTimer = null;
+
+// TTS System
+let speechSynth = window.speechSynthesis;
+let activeUtterance = null;
+
 window.currentAbortController = null;
 window.currentTypingTimer = null;
+window.isImageGenerationMode = false;
 
 const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2QYJcWkkUQMlDtpBXajrV0psXXc9q68LZLJkZ0b_rokKsz6fyKcYzJ8R6Dsnw/exec";
 
@@ -61,9 +83,127 @@ if (typeof localforage !== 'undefined') {
     }, 100);
 }
 
+// 🟢 TTS, SESSION CONTEXT, AND MATH IMAGE MODE FUNCTIONS 🟢
+window.loadVoices = function() {
+    if (speechSynth) {
+        availableVoices = speechSynth.getVoices();
+        if (speechSynth.onvoiceschanged !== undefined) {
+            speechSynth.onvoiceschanged = () => { availableVoices = speechSynth.getVoices(); };
+        }
+    }
+};
+
+window.speakAndHighlight = function(elementId) {
+    if (!speechSynth) return showToast("TTS not supported.");
+    let textEl = document.getElementById(elementId);
+    let text = textEl ? textEl.innerText : "";
+    if(!text) return;
+    
+    speechSynth.cancel();
+    activeUtterance = new SpeechSynthesisUtterance(text);
+    
+    let isHindi = /[अ-ह]/.test(text);
+    activeUtterance.lang = isHindi ? 'hi-IN' : 'en-US';
+    
+    let preferredVoice = availableVoices.find(v => v.lang === activeUtterance.lang && (v.name.includes('Google') || v.name.includes('Premium')));
+    if (preferredVoice) activeUtterance.voice = preferredVoice;
+    
+    activeUtterance.onstart = () => { const p = document.getElementById('ttsMiniPlayer'); if(p) p.style.display = 'flex'; };
+    activeUtterance.onend = () => { const p = document.getElementById('ttsMiniPlayer'); if(p) p.style.display = 'none'; };
+    
+    speechSynth.speak(activeUtterance);
+};
+
+window.toggleTtsPause = function() {
+    const btn = document.getElementById('ttsPlayPauseBtn');
+    if (speechSynth.paused) {
+        speechSynth.resume();
+        if(btn) btn.innerHTML = "⏸️";
+    } else {
+        speechSynth.pause();
+        if(btn) btn.innerHTML = "▶️";
+    }
+};
+
+window.closeTtsPlayer = function() {
+    if(speechSynth) speechSynth.cancel();
+    const p = document.getElementById('ttsMiniPlayer');
+    if(p) p.style.display = 'none';
+};
+
+window.formatHindiSpeechText = function(text) { return text; };
+
+window.getSessionContext = function(type) {
+    let context = "";
+    if(appHistory && appHistory.length > 0) {
+        let session = appHistory.find(i => i.type === type);
+        if(session && session.interactions) {
+            let lastFew = session.interactions.slice(-3);
+            lastFew.forEach(i => { context += `User: ${i.question}\nAI: ${i.answer}\n`; });
+        }
+    }
+    return context ? `Previous Context:\n${context}\n` : "";
+};
+
+window.getLastContextImage = function(type) {
+    if(appHistory && appHistory.length > 0) {
+        let session = appHistory.find(i => i.type === type);
+        if(session && session.interactions) {
+            for(let i = session.interactions.length - 1; i >= 0; i--) {
+                if(session.interactions[i].image) return session.interactions[i].image;
+            }
+        }
+    }
+    return null;
+};
+
+window.toggleImageModeBtn = function() {
+    window.isImageGenerationMode = !window.isImageGenerationMode;
+    const btn = document.getElementById("imgModeBtn");
+    if(!btn) return;
+    if(window.isImageGenerationMode) {
+        btn.innerHTML = "🖼️ Image Mode ON";
+        btn.style.background = "var(--primary)";
+        btn.style.color = "white";
+        showToast("Image Generation Mode Enabled");
+    } else {
+        btn.innerHTML = "🖼️ Image Mode";
+        btn.style.background = "var(--input-bg)";
+        btn.style.color = "var(--text-main)";
+        showToast("Image Generation Mode Disabled");
+    }
+};
+
+window.openImageModeViewer = function(imgSrc) {
+    const modal = document.getElementById('imageModeModal');
+    if(!modal) return;
+    const paper = document.getElementById('imageModePaper');
+    if(paper) paper.innerHTML = `<img src="${imgSrc}" style="max-width:100%;">`;
+    modal.style.display = 'flex';
+    setTimeout(() => modal.style.opacity = '1', 10);
+};
+
+window.closeImageMode = function() {
+    const modal = document.getElementById('imageModeModal');
+    if(modal) {
+        modal.style.opacity = '0';
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+};
+
+window.downloadImageMode = function() {
+    const img = document.querySelector('#imageModePaper img');
+    if(img) {
+        const link = document.createElement('a');
+        link.download = 'AI_Math_Solution.png';
+        link.href = img.src;
+        link.click();
+    }
+};
+
 // 🛑 INIT SCRIPT & TIMERS 🛑
 document.addEventListener("DOMContentLoaded", () => {
-    loadVoices();
+    window.loadVoices();
     
     const ttsDiv = document.createElement('div');
     ttsDiv.id = 'ttsMiniPlayer';
@@ -199,7 +339,7 @@ window.cancelActiveRequest = function() {
     isProcessing = false; window.toggleChatButton(false); showToast("⚠️ Generation Stopped");
 };
 
-// 🛑 CAMERA ENGINE (WITH THE EXACT FIX YOU REQUESTED) 🛑
+// 🛑 CAMERA ENGINE 🛑
 let currentStream = null, currentFacing = "environment";
 
 async function startCamera() { 
@@ -388,8 +528,8 @@ async function executeMathFlow() {
     let lId = appendAiLoading("mathChatHistory");
     window.toggleChatButton(true);
 
-    let activeImage = uiImage || getLastContextImage('math');
-    let memoryContext = getSessionContext('math');
+    let activeImage = uiImage || window.getLastContextImage('math');
+    let memoryContext = window.getSessionContext('math');
 
     const modeStatus = window.isImageGenerationMode 
         ? "[IMAGE MODE ON - SOLVE ALL VISIBLE QUESTIONS]" 
@@ -481,8 +621,8 @@ async function runGroqSearch() {
     appendUserBubble(displayQ, uiImage, "searchChatHistory"); 
     inp.value = ""; let lId = appendAiLoading("searchChatHistory"); window.toggleChatButton(true);
     
-    let activeImage = uiImage || getLastContextImage('search');
-    let memoryContext = getSessionContext('search');
+    let activeImage = uiImage || window.getLastContextImage('search');
+    let memoryContext = window.getSessionContext('search');
     let sysPrompt = "Act as an Internet Search Engine. Provide highly factual search results. YOU MUST ANSWER ENTIRELY IN HINDI (DEVANAGARI SCRIPT ONLY). DO NOT USE ENGLISH.";
     
     let promptContent = q;
@@ -740,4 +880,15 @@ window.toggleRecording = function() { if (!recognition) return showToast("⚠️
 window.stopRecording = function() { isRecording = false; const mic = document.getElementById("micBtn"); if(mic) { mic.classList.remove("recording"); mic.style.background = "rgba(255, 255, 255, 0.08)"; mic.style.boxShadow = "none"; } const inp = getActiveTextInput(); if(inp && inp.value === "Listening...") inp.value = ""; };
 
 // EXPORT TO WINDOW
-window.toggleSidebar = toggleSidebar; window.openCamera = openCamera; window.closeCamera = closeCamera; window.switchCamera = switchCamera; window.capturePhoto = capturePhoto; window.clearMathImage = clearMathImage; window.executeMathFlow = executeMathFlow; window.speakAndHighlight = speakAndHighlight; window.restoreSession = restoreSession; window.copyToClipboard = copyToClipboard; window.showToast = showToast; window.viewPhotoFullscreen = viewPhotoFullscreen;
+window.toggleSidebar = toggleSidebar; 
+window.openCamera = openCamera; 
+window.closeCamera = closeCamera; 
+window.switchCamera = switchCamera; 
+window.capturePhoto = capturePhoto; 
+window.clearMathImage = clearMathImage; 
+window.executeMathFlow = executeMathFlow; 
+window.speakAndHighlight = speakAndHighlight; 
+window.restoreSession = restoreSession; 
+window.copyToClipboard = copyToClipboard; 
+window.showToast = showToast; 
+window.viewPhotoFullscreen = viewPhotoFullscreen;
