@@ -1,22 +1,21 @@
 /* =======================================================
-   AI PRO SUITE - MAIN.JS (COMPLETE & UNCUT)
+   AI PRO SUITE - MAIN.JS (COMPLETE & BUG-FREE EDITION)
    ======================================================= */
 
 let appHistory = [];
 let visionReqs = parseInt(localStorage.getItem('visionReqs') || '0');
 let textReqs = parseInt(localStorage.getItem('textReqs') || '0');
 let isProcessing = false;
-let capturedImage = null; // MASTER IMAGE VARIABLE
+window.capturedImage = null; // MASTER IMAGE VARIABLE
+window.currentMathImage = null; // SAFE MATH IMAGE VARIABLE
 let currentMode = "";
 let qaImages = [];
 let transImages = [];
 let qaContextText = "";
-let isFlashOn = true;
 window.latestMathSolution = "";
 let availableVoices = [];
 window.hasResetToday = false;
 
-// 🟢 NEW VARIABLES ADDED FOR MISSING FEATURES 🟢
 let qaSourceImages = [];
 let qaQuestionImage = null;
 const MASTER_OCR_PROMPT = "Extract all text from this image exactly as it appears. Do not translate or summarize.";
@@ -46,7 +45,7 @@ const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbz1_gv9M2
 window.requestCache = {};
 let sessionCache = { math: null, search: null, translation: null, image_translation: null, qa: null };
 
-// 🛑 DATABASE LOADER & MIRROR 🛑
+// 🛑 DATABASE LOADER 🛑
 if (typeof localforage !== 'undefined') {
     localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
     localforage.getItem('aiHistory').then(function(savedData) {
@@ -73,17 +72,9 @@ if (typeof localforage !== 'undefined') {
     }).catch(e => console.log("Vault error:", e));
 } else {
     try { appHistory = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) { appHistory = []; }
-    setTimeout(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const restoreId = urlParams.get('restore');
-        if (restoreId) {
-            setTimeout(() => restoreSession(null, restoreId), 400);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }, 100);
 }
 
-// 🟢 TTS, SESSION CONTEXT, AND MATH IMAGE MODE FUNCTIONS 🟢
+// 🛑 TTS & SESSION CONTEXT 🛑
 window.loadVoices = function() {
     if (speechSynth) {
         availableVoices = speechSynth.getVoices();
@@ -108,13 +99,13 @@ window.speakAndHighlight = function(elementId) {
     let preferredVoice = availableVoices.find(v => v.lang === activeUtterance.lang && (v.name.includes('Google') || v.name.includes('Premium')));
     if (preferredVoice) activeUtterance.voice = preferredVoice;
     
-    activeUtterance.onstart = () => { const p = document.getElementById('ttsMiniPlayer'); if(p) p.style.display = 'flex'; };
-    activeUtterance.onend = () => { const p = document.getElementById('ttsMiniPlayer'); if(p) p.style.display = 'none'; };
+    activeUtterance.onstart = () => { const p = document.getElementById('ttsPlayer'); if(p) p.style.display = 'flex'; };
+    activeUtterance.onend = () => { const p = document.getElementById('ttsPlayer'); if(p) p.style.display = 'none'; };
     
     speechSynth.speak(activeUtterance);
 };
 
-window.toggleTtsPause = function() {
+window.toggleTts = function() {
     const btn = document.getElementById('ttsPlayPauseBtn');
     if (speechSynth.paused) {
         speechSynth.resume();
@@ -125,9 +116,9 @@ window.toggleTtsPause = function() {
     }
 };
 
-window.closeTtsPlayer = function() {
+window.closeTts = function() {
     if(speechSynth) speechSynth.cancel();
-    const p = document.getElementById('ttsMiniPlayer');
+    const p = document.getElementById('ttsPlayer');
     if(p) p.style.display = 'none';
 };
 
@@ -143,18 +134,6 @@ window.getSessionContext = function(type) {
         }
     }
     return context ? `Previous Context:\n${context}\n` : "";
-};
-
-window.getLastContextImage = function(type) {
-    if(appHistory && appHistory.length > 0) {
-        let session = appHistory.find(i => i.type === type);
-        if(session && session.interactions) {
-            for(let i = session.interactions.length - 1; i >= 0; i--) {
-                if(session.interactions[i].image) return session.interactions[i].image;
-            }
-        }
-    }
-    return null;
 };
 
 window.toggleImageModeBtn = function() {
@@ -205,16 +184,9 @@ window.downloadImageMode = function() {
 document.addEventListener("DOMContentLoaded", () => {
     window.loadVoices();
     
-    const ttsDiv = document.createElement('div');
-    ttsDiv.id = 'ttsMiniPlayer';
-    ttsDiv.className = 'tts-mini-player';
-    ttsDiv.innerHTML = `
-        <div style="font-size: 18px; filter: drop-shadow(0 0 5px #38bdf8);">🎧</div>
-        <div class="tts-wave" id="ttsWave"><div class="tts-bar"></div><div class="tts-bar"></div><div class="tts-bar"></div><div class="tts-bar"></div></div>
-        <button class="tts-btn play-pause" id="ttsPlayPauseBtn" onclick="toggleTtsPause()">⏸️</button>
-        <button class="tts-btn stop" onclick="closeTtsPlayer()">⏹️</button>
-    `;
-    document.body.appendChild(ttsDiv);
+    // Auto-fix the missing Flash button onclick from HTML
+    const flashBtn = document.getElementById("toggleFlashBtn");
+    if (flashBtn) flashBtn.onclick = window.toggleFlash;
 
     setInterval(() => {
         const now = new Date();
@@ -339,27 +311,28 @@ window.cancelActiveRequest = function() {
     isProcessing = false; window.toggleChatButton(false); showToast("⚠️ Generation Stopped");
 };
 
-// 🛑 CAMERA ENGINE (BULLETPROOF EDITION) 🛑
+// 🛑 BULLETPROOF CAMERA ENGINE 🛑
 window.currentStream = null;
 window.currentFacing = "environment";
 window.isFlashOn = false;
 window.currentMode = "";
 
-// Auto-fix the missing Flash button onclick from your HTML
-document.addEventListener("DOMContentLoaded", () => {
-    const flashBtn = document.getElementById("toggleFlashBtn");
-    if (flashBtn) flashBtn.onclick = window.toggleFlash;
-});
-
 window.startCamera = async function() { 
     try { 
         if(window.currentStream) window.currentStream.getTracks().forEach(t => t.stop()); 
         
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("Camera access blocked! Make sure you are using HTTPS or localhost.");
+            return;
+        }
+
         window.currentStream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: window.currentFacing, width: {ideal: 1920}, height: {ideal: 1080} } 
         }); 
         
         const videoEl = document.getElementById("cameraVideo");
+        if (!videoEl) return alert("Error: <video id='cameraVideo'> not found in HTML!");
+        
         videoEl.setAttribute('autoplay', '');
         videoEl.setAttribute('playsinline', '');
         videoEl.srcObject = window.currentStream; 
@@ -378,7 +351,7 @@ window.startCamera = async function() {
             } catch(err) {} 
         }, 500); 
     } catch(e) { 
-        alert("Camera Error: Please allow camera permissions in your browser.\n" + e.message); 
+        alert("Camera Error: " + e.message); 
     } 
 };
 
@@ -402,15 +375,13 @@ window.updateFlashUI = function() {
 window.openCamera = async function(m) { 
     window.currentMode = m; 
     const mod = document.getElementById("cameraModal"); 
-    if(mod) { 
-        // Force the modal to appear regardless of CSS bugs
-        mod.style.display = "flex";
-        mod.style.opacity = "1";
-        mod.classList.add("active"); 
-        await window.startCamera(); 
-    } else {
-        alert("Camera Modal not found!");
-    }
+    if(!mod) { alert("Error: <div id='cameraModal'> not found in this file!"); return; }
+    
+    // FORCE CSS VISIBILITY
+    mod.style.display = "flex"; 
+    mod.style.opacity = "1";
+    mod.classList.add("active"); 
+    await window.startCamera(); 
 };
 
 window.closeCamera = function() { 
@@ -436,7 +407,7 @@ window.switchCamera = async function() {
 
 window.capturePhoto = function() { 
     const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
-    if (!v || !c) return;
+    if (!v || !c) return alert("Video or Canvas element missing from HTML!");
     
     let w = v.videoWidth, h = v.videoHeight; if(w > 1500) { h *= 1500/w; w = 1500; } 
     c.width = w; c.height = h; 
@@ -453,13 +424,13 @@ window.capturePhoto = function() {
     }
     else if (window.currentMode === 'image_trans') {
         if(typeof transImages !== 'undefined') {
-            if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } 
+            if(transImages.length >= 3) { showToast("Max 3 images allowed!"); } 
             else { transImages.push(window.capturedImage); if(typeof renderTransImagePreviews === 'function') renderTransImagePreviews(); }
         }
     }
     else if (window.currentMode === 'qa_source') {
         if(typeof qaSourceImages !== 'undefined') {
-            if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } 
+            if(qaSourceImages.length >= 10) { showToast("Max 10 images allowed!"); } 
             else { qaSourceImages.push(window.capturedImage); if(typeof renderQaSourcePreviews === 'function') renderQaSourcePreviews(); }
         }
     }
@@ -470,7 +441,15 @@ window.capturePhoto = function() {
     
     window.closeCamera(); 
 };
-function clearMathImage(e) { if(e) e.stopPropagation(); capturedImage = null; const chip = document.getElementById("mathPreviewChip"); if(chip) { chip.style.display = "none"; chip.style.backgroundImage = "none"; } }
+
+// 🛑 SUPERCHARGED IMAGE CLEARER 🛑
+window.clearMathImage = function(e) {
+    if(e) e.stopPropagation();
+    window.capturedImage = null;
+    window.currentMathImage = null;
+    const chip = document.getElementById("mathPreviewChip");
+    if(chip) { chip.style.display = "none"; chip.style.backgroundImage = "none"; }
+};
 
 // 🛑 API COMMUNICATION ENGINE 🛑
 async function checkHtmlError(r) {
@@ -553,11 +532,9 @@ function updateAiBubble(lId, answer, provider = "AI", useTyping = true) {
 
 async function retryRequest(lId, targetProvider) {
     const req = window.requestCache[lId]; if(!req) return showToast("Request data expired.");
-    
     let container;
     if (req.type === 'qa') { container = document.getElementById("qaAnswerBox"); document.getElementById("qaStatusText").innerText = `Retrying with ${targetProvider.toUpperCase()}...`; document.getElementById("qaProgressBar").style.width = "85%"; } 
     else { container = document.getElementById(lId)?.querySelector('.bubble'); }
-    
     if(!container) return;
     container.innerHTML = `<div class="spinner"></div> Retrying with ${targetProvider.toUpperCase()}...`; window.toggleChatButton(true);
     
@@ -573,19 +550,6 @@ async function retryRequest(lId, targetProvider) {
             let ans = resObj.text.replace(/[\*&#_]/g, ''); saveToHistory('search', req.originalSearch + " (Retry)", ans, req.image, resObj.provider || targetProvider);
             const buttons = `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`; typeWriteResponse(container, ans, resObj.provider || targetProvider, `search_${lId}`, buttons, false);
         }
-        else if (req.type === 'image_trans') {
-            let resObj = await callGeminiText("You are a strict translator.", req.prompt, targetProvider); 
-            let parts = resObj.text.split('|||'); let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed."; let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found.";
-            saveToHistory('image_translation', `Translate to ${req.targetLang} (Retry)`, cleanText + "\n\nHard Words:\n" + hardWordsText, null, resObj.provider);
-            container.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${resObj.provider}</div><div style="margin-top:10px; font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div><div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${req.extractedText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${req.targetLang}:</div><div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div><div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`; window.toggleChatButton(false);
-        }
-        else if (req.type === 'qa') {
-            let ansObj = await callGeminiText("You are a helpful document assistant.", req.prompt, targetProvider);
-            let cleanAns = ansObj.text.replace(/[\*&#_]/g, ''); document.getElementById("qaProgressBar").style.width = "100%"; document.getElementById("qaStatusText").innerText = "✅ Done!";
-            saveToHistory('qa', req.finalQuestion + " (Retry)", cleanAns, null, ansObj.provider);
-            container.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${ansObj.provider}</div><div style="margin-top:10px; font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div><div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${req.finalQuestion.replace(/\n/g, '<br>')}</div><div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer:</div><div id="${lId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
-            if (window.MathJax) { MathJax.typesetClear([container]); MathJax.typesetPromise([container]); } window.toggleChatButton(false);
-        }
     } catch(e) { 
         window.toggleChatButton(false);
         if(req.type === 'qa') { document.getElementById("qaStatusText").innerText = "❌ Error Occurred"; document.getElementById("qaProgressBar").style.background = "var(--red)"; container.innerHTML = "Error: " + e.message; } 
@@ -593,35 +557,28 @@ async function retryRequest(lId, targetProvider) {
     }
 }
 
-// 🛑 MATH SOLVER 🛑
-window.showGeneratedImageGUI = function(src) {
-    let modal = document.getElementById('genImageModal');
-    if (!modal) {
-        modal = document.createElement('div'); modal.id = 'genImageModal'; modal.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999999; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s;";
-        modal.innerHTML = `<div style="position:absolute; top:20px; right:20px; display:flex; gap:15px; z-index:100;"><button id="genImgDownloadBtn" style="background:#3b82f6; color:white; border:2px solid white; padding:8px 15px; border-radius:12px; font-size:14px; font-weight:bold; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">📥 Download</button><button onclick="document.getElementById('genImageModal').style.opacity='0'; setTimeout(()=>document.getElementById('genImageModal').style.display='none',300);" style="background:#ef4444; color:white; border:2px solid white; width:40px; height:40px; border-radius:50%; font-weight:bold; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.5);">✖</button></div><img id="genImageDisplay" style="max-width:95%; max-height:85vh; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.8); object-fit:contain;">`; document.body.appendChild(modal);
-        document.getElementById('genImgDownloadBtn').onclick = function() { const link = document.createElement('a'); link.download = 'AI_Math_Solution.png'; link.href = document.getElementById('genImageDisplay').src; link.click(); if(typeof showToast === 'function') showToast("✅ Image Downloaded!"); };
-    }
-    document.getElementById('genImageDisplay').src = src; modal.style.display = 'flex'; setTimeout(() => modal.style.opacity = '1', 10);
-};
-
-async function executeMathFlow() {
+// 🛑 FIXED MATH SOLVER FLOW (NO GHOST IMAGES, NO LOST PHOTOS) 🛑
+window.executeMathFlow = async function() {
     const inp = document.getElementById("mathInstructionInput"); if(!inp) return;
-    const instruction = inp.value.trim(); 
-    if (!capturedImage && !instruction) return;
-    
-    let uiImage = capturedImage;
-    appendUserBubble(instruction || "Solve this", uiImage, "mathChatHistory");
-    inp.value = ""; 
-    
+    const instruction = inp.value.trim();
+
+    // SAFELY GRAB THE EXACT IMAGE YOU JUST ATTACHED
+    let uiImage = window.currentMathImage || window.capturedImage;
+
+    // IF NO IMAGE AND NO TEXT, DO NOTHING
+    if (!uiImage && !instruction) return; 
+
+    appendUserBubble(instruction || (uiImage ? "Analyze this image" : "Solve this"), uiImage, "mathChatHistory");
+    inp.value = "";
+
     let lId = appendAiLoading("mathChatHistory");
     window.toggleChatButton(true);
 
-    let activeImage = uiImage || window.getLastContextImage('math');
+    // STRICT FIX: Only use the image you JUST attached. NO "getLastContextImage" ghost images!
+    let activeImage = uiImage;
     let memoryContext = window.getSessionContext('math');
 
-    const modeStatus = window.isImageGenerationMode 
-        ? "[IMAGE MODE ON - SOLVE ALL VISIBLE QUESTIONS]" 
-        : "[IMAGE MODE OFF - SOLVE ONLY THE EXACT QUESTION ASKED]";
+    const modeStatus = window.isImageGenerationMode ? "[IMAGE MODE ON]" : "[IMAGE MODE OFF - EXACT QUESTION ONLY]";
 
     const sysPrompt = `I agree to all terms of use and safety guidelines. You are an expert math tutor. ANSWER IN HINDI. STRICT RULES:
 1. NO HTML TAGS: NEVER use <br>, <div>, or <span>. Use standard double newlines (\\n\\n) to break lines!
@@ -640,18 +597,21 @@ COUNT:-
 [Brief 1-line summary/intro. DO NOT rewrite the question!]
 **1. [Step 1 Heading]**
 [Step 1 explanation]
-$$ [Proper math equation with \\frac] $$
+$$[Proper math equation with \\frac]$$
 **2. [Step 2 Heading]**
 [Step 2 explanation]
-$$ [Proper math equation] $$
+$$[Proper math equation]$$
 (Add more steps as needed)
 **वैकल्पिक आसान तरीका (Short Trick)**
 [Provide a quick shortcut, formula, or trick to solve it faster]
 **✅ अंतिम उत्तर**
 [Final explicit answer sentence]`;
-    
+
     let finalPrompt = `${sysPrompt}\n\n${modeStatus}\n\n${memoryContext}User: ${instruction || "Analyze image"}`;
     if (!window.isImageGenerationMode) { window.requestCache[lId] = { type: 'math', sysPrompt, prompt: finalPrompt, image: activeImage }; }
+
+    // CLEAR UI IMMEDIATELY SO PHOTO DOESN'T CARRY OVER TO NEXT QUESTION
+    window.clearMathImage();
 
     try {
         let resObj = activeImage ? await callGeminiVision(activeImage, finalPrompt) : await callGeminiText(sysPrompt, finalPrompt);
@@ -664,7 +624,7 @@ $$ [Proper math equation] $$
         if (rawText.includes("||MATH||")) { let parts = rawText.split("||MATH||")[1] || rawText; let svgSplit = parts.split("||SVG||"); mathBlock = svgSplit[0].trim(); if (svgSplit.length > 1) { let ansSplit = svgSplit[1].split("||ANSWER||"); svgBlock = ansSplit[0].trim(); if (ansSplit.length > 1) finalAnswerBlock = ansSplit[1].trim(); } }
         mathBlock = mathBlock.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').trim(); 
 
-        clearMathImage(); let generatedImgHtml = "";
+        let generatedImgHtml = "";
         let generateStandaloneShape = (!window.isImageGenerationMode && svgBlock.length > 10);
         let warningText = "";
         if (generateStandaloneShape && qCount > 1) { generateStandaloneShape = false; warningText = "\n\n<small style='color:#ef4444; font-weight:bold;'>⚠️ Multiple questions detected. Diagram disabled.</small>"; }
@@ -695,14 +655,14 @@ $$ [Proper math equation] $$
             if (generatedImgHtml) { const bbl = document.getElementById(lId)?.querySelector('.bubble'); if (bbl) bbl.insertAdjacentHTML('afterbegin', generatedImgHtml); }
         }
     } catch(e) { window.toggleChatButton(false); const el = document.getElementById(lId); if(el) { el.querySelector('.bubble').innerText = e.name === 'AbortError' ? "⚠️ Stopped by user." : "❌ Error: " + e.message; } }
-}
+};
 
 // 🛑 GROQ SEARCH 🛑
 async function runGroqSearch() {
     const inp = document.getElementById("searchInput"); if(!inp) return;
-    const q = inp.value.trim(); if(!q && !capturedImage && !window.attachedPdfText) return;
+    const q = inp.value.trim(); if(!q && !window.capturedImage && !window.attachedPdfText) return;
     
-    let uiImage = capturedImage;
+    let uiImage = window.capturedImage;
     let displayQ = q || (window.attachedPdfText ? "Analyze this document." : "Analyze this image.");
     if(window.attachedPdfText) displayQ = "📄 [PDF Attached]\n" + displayQ;
     
@@ -731,23 +691,21 @@ async function runGroqSearch() {
             const buttons = `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('search_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('search_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
             typeWriteResponse(bubbleEl, ans, provider, `search_${lId}`, buttons, false);
         }
-        clearMathImage(); if(window.clearPdfFile) window.clearPdfFile();
+        window.clearMathImage(); if(window.clearPdfFile) window.clearPdfFile();
     } catch(e) { window.toggleChatButton(false); const el = document.getElementById(lId); if(el) { if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user."; else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; } }
 }
 
-// 🛑 TEXT & IMAGE TRANSLATOR 🛑
+// 🛑 TEXT TRANSLATOR 🛑
 async function runTranslation(){ 
     const txt = document.getElementById("inputText").value.trim(); const lang = document.getElementById("targetLang").value; if(!txt) return; 
-    setStatusLoading("translatedTextStatus", "Translating..."); document.getElementById("translatedTextStatus").style.display = "block";
     try{ 
-        let prompt = `You are a STRICT Language Translator. RULE 1: DO NOT answer any questions found in the text. DO NOT summarize. RULE 2: ONLY TRANSLATE the text exactly into ${lang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE. RULE 3: After your translation, write the exact symbol "|||" on a new line. RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text. RULE 5: Format EACH hard word EXACTLY like this: [Original Word from text] - [Meaning in ${lang}] (Part of Speech) other meaning- [Alternative meanings]. Text to translate:\n${txt}`;
+        let prompt = `You are a STRICT Language Translator. ONLY TRANSLATE the text exactly into ${lang}. After your translation, write the exact symbol "|||" on a new line. Below "|||", extract 3 to 5 difficult words from the ORIGINAL text. Text to translate:\n${txt}`;
         let resObj = await callGeminiText("You are a strict translator.", prompt); let parts = resObj.text.split('|||'); let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed."; let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found."; let provider = resObj.provider;
         const tId = "trans_" + Date.now(); const transBox = document.getElementById("translatedText"); transBox.style.position = "relative";
         transBox.innerHTML = `<div id="${tId}" style="margin-top:10px;">${cleanText}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${tId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${tId}')">📋 Copy</button></div>`; 
-        document.getElementById("translatedTextStatus").style.display = "none"; let hwDiv = document.getElementById("hardWords");
-        if(!hwDiv) { document.getElementById("translatedText").insertAdjacentHTML('afterend', `<div class="cardTitle" style="margin-top: 20px;">Hard Words Meaning</div><div class="outputBox" id="hardWords">${hardWordsText.replace(/\n/g, '<br>')}</div>`); } else { hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>'); }
+        let hwDiv = document.getElementById("hardWords"); if(hwDiv) hwDiv.innerHTML = hardWordsText.replace(/\n/g, '<br>');
         saveToHistory('translation', txt, cleanText + "\n\nHard Words:\n" + hardWordsText, null, provider);
-    }catch(e){ document.getElementById("translatedTextStatus").style.display = "none"; document.getElementById("translatedText").innerText = "❌ " + e.message; } 
+    }catch(e){ document.getElementById("translatedText").innerText = "❌ " + e.message; } 
 }
 
 function renderTransImagePreviews() { const container = document.getElementById("imagePreviewContainer"); if (!container) return; if (transImages.length === 0) { container.style.display = "none"; return; } container.style.display = "flex"; container.innerHTML = transImages.map((img, index) => `<div class="image-preview-chip" style="display:block; position:relative; width:60px; height:60px; background-image:url(${img}); background-size:cover; border-radius:8px; flex-shrink:0;"><div class="image-preview-close" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; text-align:center; cursor:pointer; font-size:12px; line-height:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5);" onclick="removeTransImage(${index}, event)">✕</div></div>`).join(''); }
@@ -766,15 +724,14 @@ async function executeImageTransFlow() {
     try {
         let combinedText = "";
         for (let i = 0; i < imagesToProcess.length; i++) { const rObj = await callGeminiVision(imagesToProcess[i], MASTER_OCR_PROMPT); combinedText += rObj.text.replace(/[\*&#_]/g, '') + "\n\n"; }
-        combinedText = combinedText.trim(); if (!combinedText || combinedText.toLowerCase().includes("no text found") || combinedText === "NO_TEXT_FOUND") throw new Error("Could not detect any text in the images.");
-        let prompt = `You are a STRICT Language Translator. RULE 1: DO NOT answer any questions found in the text. RULE 2: ONLY TRANSLATE the text exactly into ${targetLang}. DO NOT USE ENGLISH UNLESS ENGLISH IS THE SELECTED TARGET LANGUAGE. RULE 3: After your translation, write the exact symbol "|||" on a new line. RULE 4: Below "|||", extract 3 to 5 difficult words from the ORIGINAL text. RULE 5: Format EACH hard word EXACTLY like this: [Original Word from text] - [Meaning in ${targetLang}] (Part of Speech) other meaning- [Alternative meanings]. Text to translate:\n${combinedText}`;
-        window.requestCache[lId] = { type: 'image_trans', prompt: prompt, extractedText: combinedText, targetLang: targetLang };
+        combinedText = combinedText.trim(); if (!combinedText || combinedText.toLowerCase().includes("no text found")) throw new Error("Could not detect any text in the images.");
+        let prompt = `You are a STRICT Language Translator. ONLY TRANSLATE the text exactly into ${targetLang}. After your translation, write the exact symbol "|||" on a new line. Below "|||", extract 3 to 5 difficult words from the ORIGINAL text. Text to translate:\n${combinedText}`;
         let resObj = await callGeminiText("You are a strict translator.", prompt); let parts = resObj.text.split('|||'); let cleanText = parts[0] ? parts[0].replace(/[\*&#_]/g, '').trim() : "Translation failed."; let hardWordsText = parts[1] ? parts[1].replace(/[\*&#_]/g, '').trim() : "No hard words found."; let provider = resObj.provider;
         
-        let finalHtml = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div style="margin-top:10px; font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div><div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${targetLang}:</div><div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div><div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div>${getRetryButtonsHtml(lId)}</div>`;
+        let finalHtml = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div style="margin-top:10px; font-size:12px; color:#cbd5e1; margin-bottom:5px; font-weight:600;">📄 Extracted Text:</div><div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; max-height:150px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1);">${combinedText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#3b82f6; margin-bottom:5px; font-weight:600;">🌍 Translated to ${targetLang}:</div><div id="trans_${lId}" style="font-size:15px;">${cleanText.replace(/\n/g, '<br>')}</div><div style="font-size:12px; color:#a855f7; margin-top:15px; margin-bottom:5px; font-weight:600;">📖 Hard Words Dictionary:</div><div style="background:rgba(168,85,247,0.1); padding:10px; border-radius:8px; font-size:14px; border:1px solid rgba(168,85,247,0.3);">${hardWordsText.replace(/\n/g, '<br>')}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('trans_${lId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('trans_${lId}')">📋 Copy</button></div></div>`;
         const loadingBubble = document.getElementById(lId); if (loadingBubble) { loadingBubble.querySelector('.bubble').innerHTML = finalHtml; }
         saveToHistory('image_translation', `Translate to ${targetLang}:\n${combinedText}`, finalHtml, imagesToProcess[0], provider); window.toggleChatButton(false);
-    } catch(e) { window.toggleChatButton(false); const el = document.getElementById(lId); if(el) { if (e.name === 'AbortError') el.querySelector('.bubble').innerText = "⚠️ Stopped by user."; else el.querySelector('.bubble').innerText = "❌ Error: " + e.message; } }
+    } catch(e) { window.toggleChatButton(false); const el = document.getElementById(lId); if(el) el.querySelector('.bubble').innerText = "❌ Error: " + e.message; }
 }
 
 // 🛑 DOCUMENT Q&A 🛑
@@ -800,12 +757,12 @@ async function executeQaFlow() {
         if (qaQuestionImage) { statusTxt.innerText = "Extracting Question from Image..."; pBar.style.width = "65%"; let rObj = await callGeminiVision(qaQuestionImage, "Extract ONLY the question text exactly as written. Do not answer it."); let qText = rObj.text.replace(/[\*&#_]/g, '').trim(); finalQuestion = typedQuestion ? `${typedQuestion}\n(Image Text: ${qText})` : qText; }
         
         statusTxt.innerText = `Solving... Generating answer in ${targetLang}`; pBar.style.width = "85%";
-        let prompt = `You are an expert Document Assistant. DOCUMENT TEXT:\n${extractedContext}\n\nTARGET QUESTION(S) TO SOLVE:\n${finalQuestion}\nCRITICAL INSTRUCTIONS:\n1. Answer ALL questions provided. Do not skip any!\n2. Answer based ONLY on the Document Text provided.\n3. You MUST write your entire answer strictly in ${targetLang}.\n4. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY.\n5. If the answer cannot be found in the provided text, state that clearly.`;
+        let prompt = `You are an expert Document Assistant. DOCUMENT TEXT:\n${extractedContext}\n\nTARGET QUESTION(S) TO SOLVE:\n${finalQuestion}\nCRITICAL INSTRUCTIONS:\n1. Answer ALL questions provided. Do not skip any!\n2. Answer based ONLY on the Document Text provided.\n3. You MUST write your entire answer strictly in ${targetLang}.\n4. If ${targetLang} is Hindi, YOU MUST USE DEVANAGARI SCRIPT ONLY.`;
         
         const qaId = "qa_ans_" + Date.now(); window.requestCache[qaId] = { type: 'qa', prompt: prompt, targetLang: targetLang, finalQuestion: finalQuestion };
         let ansObj = await callGeminiText("You are a helpful document assistant.", prompt); let cleanAns = ansObj.text.replace(/[\*&#_]/g, ''); let provider = ansObj.provider;
         pBar.style.width = "100%"; statusTxt.innerText = "✅ Done!"; outBox.style.position = "relative";
-        outBox.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div style="margin-top:10px; font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div><div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div><div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div><div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${qaId}')">📋 Copy</button></div>${getRetryButtonsHtml(qaId)}</div>`;
+        outBox.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div style="margin-top:10px; font-size:13px; color:#93c5fd; margin-bottom:5px; font-weight:600;">Your Question:</div><div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; font-size:14px; border:1px solid rgba(255,255,255,0.05);">${finalQuestion.replace(/\n/g, '<br>')}</div><div style="font-size:13px; color:#22c55e; margin-bottom:5px; font-weight:600;">Answer (${targetLang}):</div><div id="${qaId}" style="font-size:15px;">${cleanAns.replace(/\n/g, '<br>')}</div><div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; display:flex; flex-direction:column; gap:12px; width:100%;"><div style="display:flex; gap:10px; width:100%;"><button class="btn green" style="padding:10px; flex:1; font-size:13px; border-radius:20px;" onclick="speakAndHighlight('${qaId}')">🔊 Listen</button><button class="btn" style="padding:10px; flex:1; font-size:13px; background:#475569; color:white; border-radius:20px;" onclick="copyToClipboard('${qaId}')">📋 Copy</button></div></div>`;
         if (window.MathJax) { MathJax.typesetClear([outBox]); MathJax.typesetPromise([outBox]); }
         saveToHistory('qa', finalQuestion, outBox.innerHTML, qaSourceImages[0], provider); window.toggleChatButton(false);
     } catch(e) { window.toggleChatButton(false); if (e.name === 'AbortError') { statusTxt.innerText = "⚠️ Stopped by user."; pBar.style.background = "#f59e0b"; } else { statusTxt.innerText = "❌ Error Occurred"; pBar.style.background = "var(--red)"; outBox.innerHTML = "Error: " + e.message; } }
@@ -878,105 +835,5 @@ window.restoreSession = function(e, id) {
     else if (item.type === 'translation') { const inputField = document.getElementById("inputText"); const outputBox = document.getElementById("translatedText"); if(inputField && outputBox) { inputField.value = item.question || ""; outputBox.innerHTML = item.answer || ""; let parts = item.answer.split("Hard Words:"); if(parts[1] && document.getElementById("hardWords")) { document.getElementById("hardWords").innerHTML = parts[1].trim(); } } }
     else if (item.type === 'image_translation' && container) { container.innerHTML = ''; interactionsToRestore.forEach(inter => { appendUserBubble(inter.question, inter.image, containerId); let lId = appendAiLoading(containerId); const bbl = document.getElementById(lId).querySelector('.bubble'); bbl.innerHTML = inter.answer; }); scrollToBottom(containerId); } 
     else if (item.type === 'qa') { const outBox = document.getElementById("qaAnswerBox") || document.getElementById("qaResult"); const statusTxt = document.getElementById("qaStatusText"); const pBar = document.getElementById("qaProgressBar"); if(outBox) { const lastInter = interactionsToRestore[interactionsToRestore.length - 1]; outBox.innerHTML = lastInter.answer; if(pBar) pBar.style.width = "100%"; if(statusTxt) statusTxt.innerText = "Restored from History"; } else if (container) { container.innerHTML = ''; interactionsToRestore.forEach(inter => { appendUserBubble(inter.question, inter.image, containerId); let lId = appendAiLoading(containerId); document.getElementById(lId).querySelector('.bubble').innerHTML = inter.answer; }); scrollToBottom(containerId); } }
-    else if (item.type === 'youtube') { let ytInput = document.getElementById('ytSearchInput') || document.getElementById('searchInput'); let ytBtn = document.getElementById('ytSearchBtn') || document.getElementById('searchBtn'); if (ytInput && ytBtn && interactionsToRestore.length > 0) { ytInput.value = interactionsToRestore[0].question.replace("YouTube Search: ", ""); let status = document.getElementById('ytStatus'); if (status) status.innerHTML = `⏳ Loaded from history. Re-triggering search ranking...`; ytBtn.click(); } }
-    else if (item.type === 'quiz') { let reviewContainer = document.getElementById('reviewContainer'); if (reviewContainer) { let setup = document.getElementById('quizSetup'); if(setup) setup.classList.remove('active'); let active = document.getElementById('quizActive'); if(active) active.classList.remove('active'); let results = document.getElementById('quizResults'); if(results) results.classList.add('active'); reviewContainer.innerHTML = interactionsToRestore[0].answer; let subText = document.getElementById('resultSubtext'); if (subText) subText.innerText = item.title || "Restored Quiz"; let scoreMatch = interactionsToRestore[0].answer.match(/Score:\s*(\d+)\s*out\s*of\s*(\d+)/i); if(scoreMatch) { let elC = document.getElementById('statCorrect'); if(elC) elC.innerText = scoreMatch[1]; let elT = document.getElementById('statTotal'); if(elT) elT.innerText = scoreMatch[2]; let elW = document.getElementById('statWrong'); if(elW) elW.innerText = parseInt(scoreMatch[2]) - parseInt(scoreMatch[1]); } if (window.MathJax) MathJax.typesetPromise([reviewContainer]).catch(e=>console.log(e)); } }
     showToast("🔄 Session Restored Successfully");
 };
-
-// 🛑 TTS & VIDEO ENGINE 🛑
-function formatTime(sec) { let m = Math.floor(sec / 60); let s = Math.floor(sec % 60); return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s); }
-function startVideoTimer(totalChars) { clearInterval(videoTickInterval); videoTotalEst = Math.max(5, Math.floor(totalChars / (14 * videoSpeed))); document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(videoTotalEst)}`; videoTickInterval = setInterval(() => { if(!isVideoPaused && window.speechSynthesis.speaking) { videoElapsed += 1; let displayTotal = videoTotalEst; if(videoElapsed > videoTotalEst) displayTotal = videoElapsed; document.getElementById('vTimeDisplay').innerText = `${formatTime(videoElapsed)} / ${formatTime(displayTotal)}`; } }, 1000); }
-function resetVideoActivity() { const top = document.getElementById('vTopBar'); const bot = document.getElementById('vControlsContainer'); const ov = document.getElementById('videoGuiOverlay'); if(top) top.style.opacity = '1'; if(bot) bot.style.opacity = '1'; if(ov) ov.style.cursor = 'default'; clearTimeout(hideControlsTimer); hideControlsTimer = setTimeout(() => { if(!isVideoPaused) { if(top) top.style.opacity = '0'; if(bot) bot.style.opacity = '0'; if(ov) ov.style.cursor = 'none'; } }, 3000); }
-function toggleVideoFullscreen() { const ov = document.getElementById('videoGuiOverlay'); if (!document.fullscreenElement) { if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{}); if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); } else { document.exitFullscreen().catch(()=>{}); if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } }
-function updateVideoVolume(val) { currentVideoVolume = parseFloat(val); if (activeVideoUtterance) activeVideoUtterance.volume = currentVideoVolume; resetVideoActivity(); }
-
-function initVideoGui() {
-    if(!window.latestMathSolution) return;
-    videoElapsed = 0; isVideoPaused = false; 
-    const ov = document.createElement('div'); ov.id = 'videoGuiOverlay';
-    ov.style.cssText = "position:fixed; inset:0; background:radial-gradient(circle, #1e293b 0%, #000000 100%); z-index:9999; display:flex; flex-direction:column; font-family:'Poppins', sans-serif; touch-action:none;";
-    ov.innerHTML = `
-        <div id="vTopBar" style="position:absolute; top:0; left:0; right:0; padding:20px; background:linear-gradient(rgba(0,0,0,0.9), transparent); display:flex; justify-content:space-between; transition: opacity 0.3s; z-index:100;">
-            <div style="color:white; font-weight:bold; font-size:18px;">🔴 AI TUTOR LIVE</div><button onclick="exitVideoGui()" style="background:rgba(239, 68, 68, 0.2); border:1px solid var(--red); color:white; padding:5px 15px; border-radius:5px; cursor:pointer;">Exit</button>
-        </div>
-        <div style="position:absolute; left:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, -1)"></div>
-        <div style="position:absolute; right:0; top:60px; bottom:100px; width:40%; z-index:50;" onclick="handleVideoTap(event, 1)"></div>
-        <div id="skipIndLeft" style="position:absolute; left:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏪</div>
-        <div id="skipIndRight" style="position:absolute; right:10%; top:50%; transform:translateY(-50%); font-size:40px; color:white; opacity:0; z-index:51; pointer-events:none; transition:0.2s; background:rgba(0,0,0,0.5); padding:20px; border-radius:50%;">⏩</div>
-        <div id="videoDisplayArea" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:60px 20px; overflow-y:auto; padding-bottom:100px; position:relative; z-index:10;">
-            <div id="videoContent" style="font-size: 36px; font-weight: 700; color: #fff; line-height: 1.8; max-width: 900px; width:100%; text-align:left; background:rgba(0,0,0,0.4); padding:40px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.5);"></div>
-        </div>
-        <div id="vControlsContainer" style="position:absolute; bottom:0; left:0; right:0; padding:20px; background:linear-gradient(transparent, rgba(0,0,0,0.95)); transition: opacity 0.3s; z-index:100;">
-           <div style="width:100%; height:20px; cursor:pointer; display:flex; align-items:center;" onclick="seekVideo(event)"><div style="width:100%; height:5px; background:rgba(255,255,255,0.2); border-radius:3px; position:relative;" id="vProgressBarBg"><div style="height:100%; width:0%; background:#3b82f6; border-radius:3px; transition: width 0.1s linear;" id="vProgressBar"></div></div></div>
-           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:5px;">
-               <div style="display:flex; align-items:center; gap:20px;"><button id="vPlayBtn" onclick="toggleVideoPause()" style="background:none; border:none; color:white; font-size:26px; cursor:pointer;">⏸️</button><span id="vTimeDisplay" style="color:#cbd5e1; font-size:14px; font-weight:500; font-family:monospace;">00:00 / 00:00</span></div>
-               <div style="display:flex; align-items:center; gap:20px;"><div style="display:flex; align-items:center; gap:5px;"><span style="color:white; font-size:16px;">🔊</span><input type="range" id="vVolumeSlider" min="0" max="1" step="0.1" value="${currentVideoVolume}" onchange="updateVideoVolume(this.value)" style="width:70px; accent-color:#3b82f6; cursor:pointer;"></div><button onclick="cycleVideoSpeed()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:14px; font-weight:bold; cursor:pointer; border-radius:10px; padding:5px 12px;" id="vSpeedTxt">${videoSpeed}x</button><button onclick="toggleVideoFullscreen()" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;" title="Fullscreen">🔲</button></div>
-           </div>
-        </div>
-    `;
-    document.body.appendChild(ov); 
-    if(ov.requestFullscreen) ov.requestFullscreen().catch(()=>{}); if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
-    ov.addEventListener('mousemove', resetVideoActivity); ov.addEventListener('touchstart', resetVideoActivity); resetVideoActivity(); playFractionVideo(0);
-}
-
-window.handleVideoTap = function(e, dir) { const now = Date.now(); if (now - (e.target.lastTap || 0) < 300) { skipVideo(dir); e.target.lastTap = 0; } else { e.target.lastTap = now; resetVideoActivity(); } };
-window.skipVideo = function(dir) { const ind = document.getElementById(dir === 1 ? 'skipIndRight' : 'skipIndLeft'); if(ind) { ind.style.opacity = '1'; setTimeout(()=>ind.style.opacity='0', 400); } window.speechSynthesis.cancel(); const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== ''); let target = videoLineIndex + dir; if(target < 0) target = 0; if(target >= lines.length) target = lines.length - 1; videoElapsed = Math.floor((target / lines.length) * videoTotalEst); playFractionVideo(target, false, isVideoPaused); };
-window.seekVideo = function(e) { const barBg = document.getElementById('vProgressBarBg'); const rect = barBg.getBoundingClientRect(); const clickX = e.clientX - rect.left; const percent = Math.max(0, Math.min(1, clickX / rect.width)); const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== ''); let targetLine = Math.floor(percent * lines.length); if(targetLine >= lines.length) targetLine = lines.length - 1; window.speechSynthesis.cancel(); videoElapsed = Math.floor((targetLine / lines.length) * videoTotalEst); playFractionVideo(targetLine, false, isVideoPaused); };
-function exitVideoGui() { window.speechSynthesis.cancel(); clearInterval(videoTickInterval); clearTimeout(hideControlsTimer); const ov = document.getElementById('videoGuiOverlay'); if(ov) { if (document.fullscreenElement) document.exitFullscreen().catch(()=>{}); ov.remove(); } if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
-function cycleVideoSpeed() { videoSpeed = videoSpeed === 0.75 ? 1.0 : (videoSpeed === 1.0 ? 1.5 : (videoSpeed === 1.5 ? 2.0 : 0.75)); document.getElementById('vSpeedTxt').innerText = videoSpeed + 'x'; const wasPaused = isVideoPaused; window.speechSynthesis.cancel(); resetVideoActivity(); playFractionVideo(videoLineIndex, true, wasPaused); }
-function toggleVideoPause() { const btn = document.getElementById('vPlayBtn'); if (isVideoPaused) { isVideoPaused = false; window.speechSynthesis.resume(); if(btn) btn.innerHTML = "⏸️"; } else { isVideoPaused = true; window.speechSynthesis.pause(); if(btn) btn.innerHTML = "▶️"; } resetVideoActivity(); }
-function replayVideo() { window.speechSynthesis.cancel(); videoLineIndex = 0; videoElapsed = 0; isVideoPaused = false; document.getElementById('vPlayBtn').innerHTML = "⏸️"; playFractionVideo(0); }
-
-async function playFractionVideo(startIndex = 0, preserveContent = false, pauseAfterStart = false) {
-    const token = ++videoRunToken; const content = document.getElementById("videoContent"); if (!content) return;
-    const lines = window.latestMathSolution.split('\n').filter(l => l.trim() !== '');
-    videoLineIndex = Math.min(startIndex, Math.max(lines.length - 1, 0));
-    
-    if (!preserveContent) { content.innerHTML = ""; for(let i=0; i<videoLineIndex; i++) { let div = document.createElement("div"); div.dataset.videoLine = i; div.className = "video-line-card"; div.innerHTML = lines[i]; content.appendChild(div); if (window.MathJax) MathJax.typesetPromise([div]); } }
-    startVideoTimer(window.latestMathSolution.length); const pBar = document.getElementById('vProgressBar');
-
-    for(let i=videoLineIndex; i<lines.length; i++) {
-        if(token !== videoRunToken || !document.getElementById('videoGuiOverlay')) return;
-        videoLineIndex = i; if(pBar) pBar.style.width = ((i / lines.length) * 100) + '%';
-        const lineText = lines[i]; const cleanSpeech = formatHindiSpeechText(lineText);
-        const u = new SpeechSynthesisUtterance(cleanSpeech); activeVideoUtterance = u;
-        if(availableVoices.length === 0) availableVoices = window.speechSynthesis.getVoices();
-        let premium = availableVoices.find(v => v.name === 'Google हिन्दी' || v.name === 'Google Hindi' || (v.name.includes('Google') && v.lang.includes('hi')));
-        if (premium) u.voice = premium; u.lang = 'hi-IN'; u.rate = videoSpeed; u.volume = currentVideoVolume;
-
-       let lineDiv = document.querySelector(`[data-video-line="${i}"]`);
-        if (!lineDiv) { lineDiv = document.createElement("div"); lineDiv.dataset.videoLine = i; lineDiv.className = "video-line-card"; lineDiv.style.color = "#ffffff"; lineDiv.style.textShadow = "0 2px 5px rgba(0,0,0,1)"; content.appendChild(lineDiv); }
-        lineDiv.innerHTML = lineText; lineDiv.classList.add("active");
-        if (window.MathJax && !lineDiv.hasAttribute('data-math-done')) { MathJax.typesetClear([lineDiv]); await MathJax.typesetPromise([lineDiv]); lineDiv.setAttribute('data-math-done', 'true'); }
-        setTimeout(() => { if(content.parentElement) content.parentElement.scrollTo({ top: content.parentElement.scrollHeight, behavior: "smooth" }); }, 10);
-
-        window.speechSynthesis.speak(u);
-        if (pauseAfterStart) { window.speechSynthesis.pause(); isVideoPaused = true; const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "▶️"; pauseAfterStart = false; }
-        let estimatedDurationMs = (cleanSpeech.length / 13.5) * 1000 / videoSpeed; let startTime = Date.now();
-        let waitInterval = setInterval(() => { if (isVideoPaused) startTime += 50; let elapsed = Date.now() - startTime; if (elapsed >= estimatedDurationMs) clearInterval(waitInterval); }, 50);
-
-        await new Promise(r => { u.onend = r; u.onerror = r; setTimeout(r, Math.max(estimatedDurationMs + 500, 2000)); });
-        lineDiv.classList.remove("active"); if(token !== videoRunToken) return;
-    }
-    if(pBar) pBar.style.width = '100%'; clearInterval(videoTickInterval); const playBtn = document.getElementById('vPlayBtn'); if(playBtn) playBtn.innerHTML = "🔄"; resetVideoActivity();
-}
-
-let recognition; let isRecording = false;
-function getActiveTextInput() { return document.getElementById("searchInput") || document.getElementById("inputText") || document.getElementById("mathInstructionInput") || document.getElementById("qaQuestionInput"); }
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) { const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; recognition = new SpeechRec(); recognition.continuous = false; recognition.interimResults = true; recognition.onstart = () => { isRecording = true; const mic = document.getElementById("micBtn"); if(mic) { mic.classList.add("recording"); mic.style.background = "rgba(239, 68, 68, 0.8)"; mic.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.8)"; } }; recognition.onresult = (e) => { let tr = ""; for (let i = 0; i < e.results.length; i++) tr += e.results[i][0].transcript; const inp = getActiveTextInput(); if(inp) inp.value = tr; }; recognition.onerror = () => stopRecording(); recognition.onend = () => stopRecording(); }
-window.toggleRecording = function() { if (!recognition) return showToast("⚠️ Microphone not supported on this browser."); if (isRecording) { recognition.stop(); } else { const langEl = document.getElementById("voiceSourceLang"); recognition.lang = langEl ? langEl.value : "hi-IN"; const inp = getActiveTextInput(); if(inp) inp.value = "Listening..."; recognition.start(); } };
-window.stopRecording = function() { isRecording = false; const mic = document.getElementById("micBtn"); if(mic) { mic.classList.remove("recording"); mic.style.background = "rgba(255, 255, 255, 0.08)"; mic.style.boxShadow = "none"; } const inp = getActiveTextInput(); if(inp && inp.value === "Listening...") inp.value = ""; };
-
-// EXPORT TO WINDOW
-window.toggleSidebar = toggleSidebar; 
-window.openCamera = openCamera; 
-window.closeCamera = closeCamera; 
-window.switchCamera = switchCamera; 
-window.capturePhoto = capturePhoto; 
-window.clearMathImage = clearMathImage; 
-window.executeMathFlow = executeMathFlow; 
-window.speakAndHighlight = speakAndHighlight; 
-window.restoreSession = restoreSession; 
-window.copyToClipboard = copyToClipboard; 
-window.showToast = showToast; 
-window.viewPhotoFullscreen = viewPhotoFullscreen;
