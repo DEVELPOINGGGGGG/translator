@@ -171,7 +171,14 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary) !import
 /* ==========================================================================
    🔥 10. CHAT BUBBLES: ZERO SQUISH & BUTTONS FORCED VISIBLE 🔥
    ========================================================================== */
-.chat-msg { display: flex; width: 100%; margin-bottom: 30px; animation: bounceInBubble 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.chat-msg { 
+    display: flex; 
+    width: 100%; 
+    margin-bottom: 30px; 
+    padding-left: 15px;  /* <--- THIS FIXES THE AI BUBBLE */
+    padding-right: 15px; /* <--- THIS FIXES THE USER BUBBLE */
+    animation: bounceInBubble 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
 .chat-user { justify-content: flex-end; }
 .chat-ai { justify-content: flex-start; }
 .bubble { max-width: 92%; padding: 22px; border-radius: 24px; line-height: 1.8; position: relative; transition: transform 0.3s ease; }
