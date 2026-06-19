@@ -30,35 +30,9 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1.2); } }
         
-        .digital-paper-container {
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 5px;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
-        }
-        
-        .digital-paper {
-            background-color: #fdfbf7; 
-            background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px);
-            line-height: 30px;
-            padding: 30px 20px 30px 65px;
-            position: relative;
-            font-family: 'Kalam', cursive; 
-            font-size: 20px;
-            color: #1e3a8a; 
-            min-width: 300px;
-            white-space: pre-wrap; 
-        }
-        
-        .digital-paper::before {
-            content: '';
-            position: absolute;
-            top: 0; bottom: 0; left: 45px;
-            width: 2px;
-            background: #fca5a5; 
-        }
+        .digital-paper-container { width: 100%; overflow-x: auto; margin-top: 5px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); margin-bottom: 10px; }
+        .digital-paper { background-color: #fdfbf7; background-image: repeating-linear-gradient(transparent, transparent 29px, #93c5fd 29px, #93c5fd 30px); line-height: 30px; padding: 30px 20px 30px 65px; position: relative; font-family: 'Kalam', cursive; font-size: 20px; color: #1e3a8a; min-width: 300px; white-space: pre-wrap; }
+        .digital-paper::before { content: ''; position: absolute; top: 0; bottom: 0; left: 45px; width: 2px; background: #fca5a5; }
     </style>
 </head>
 <body>
@@ -140,14 +114,15 @@
   </div>
   <div class="chat-input-area">
     <div class="image-preview-chip" id="mathPreviewChip">
-        <div class="image-preview-close" id="clearMathImgBtn" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; font-size:12px; cursor:pointer;">✕</div>
+        <div class="image-preview-close" id="clearMathImgBtn" onclick="clearMathImage()" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:50%; width:20px; height:20px; display:flex; justify-content:center; align-items:center; font-size:12px; cursor:pointer;">✕</div>
     </div>
+    
     <div class="chat-input-wrapper">
         <input type="file" id="mathGalleryInput" accept="image/*" style="display:none;" onchange="handleMathGallery(event)">
         <button class="chat-action-btn" id="galleryBtn" onclick="document.getElementById('mathGalleryInput').click()" title="Upload Image" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;">📁</button>
         <button class="chat-action-btn" id="openMathCameraBtn" onclick="openCamera('math')" title="Take Photo">📷</button>
         <textarea id="mathInstructionInput" placeholder="Ask math question, paste or attach image... (Press Enter)"></textarea>
-        <button class="chat-action-btn send" id="sendMathBtn">↑</button>
+        <button class="chat-action-btn send" id="sendMathBtn" onclick="executeMathFlow()">↑</button>
     </div>
   </div>
 </div>
@@ -159,7 +134,7 @@
     </div>
     <div class="cameraControls">
         <button id="toggleFlashBtn" class="cam-icon-btn">🔦</button>
-        <div id="capturePhotoBtn" class="cameraCircle"></div>
+        <div id="capturePhotoBtn" class="cameraCircle" onclick="capturePhoto()"></div>
         <button id="switchCameraBtn" class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
     <canvas id="captureCanvas" style="display:none;"></canvas>
@@ -178,8 +153,8 @@
 </div>
 
 <script>
-    let currentMathLang = "Hindi"; 
-    let currentMathImage = null; // The robust image variable used by local processes
+    let currentMathLang = "Hindi";
+    let currentMathImage = null;
 
     window.toggleMathLanguage = function() {
         const langText = document.getElementById('langText');
@@ -194,117 +169,41 @@
         }
     };
 
-    // Helper to set both local and global image variables simultaneously
     window.setMathImage = function(base64) {
         currentMathImage = base64;
-        if (typeof window.capturedImage !== 'undefined') {
-            window.capturedImage = base64; // Syncs main.js's variable directly
-        }
+        if (typeof window.capturedImage !== 'undefined') window.capturedImage = base64;
         const chip = document.getElementById("mathPreviewChip");
-        if(chip) {
-            chip.style.backgroundImage = `url(${base64})`;
-            chip.style.display = "block";
-        }
+        if(chip) { chip.style.backgroundImage = `url(${base64})`; chip.style.display = "block"; }
     };
 
-    // Gallery / File Explorer Event Handler
     window.handleMathGallery = function(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+        const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             window.setMathImage(e.target.result);
             if(typeof showToast === 'function') showToast("✅ Image attached!");
         };
         reader.readAsDataURL(file);
-        event.target.value = ""; // Reset the input
+        event.target.value = "";
     };
 
-    // Core injection to intercept, fix, and align logic loaded by main.js
-    window.addEventListener('DOMContentLoaded', () => {
-        // We defer this slightly to ensure main.js has fully initialized its variables
-        setTimeout(() => {
-            // Overrides the buggy clear function imported from main.js
-            window.clearMathImage = function(e) {
-                if(e) e.stopPropagation();
-                
-                // Nuke all image references
-                currentMathImage = null;
-                if (typeof window.capturedImage !== 'undefined') {
-                    window.capturedImage = null;
-                }
-                
-                // Hide the UI
-                const chip = document.getElementById("mathPreviewChip");
-                if(chip) {
-                    chip.style.display = "none";
-                    chip.style.backgroundImage = "none";
-                }
-            };
-            
-            // Re-bind the Close/X button to the new robust clear function
-            const clearBtn = document.getElementById('clearMathImgBtn');
-            if (clearBtn) clearBtn.onclick = window.clearMathImage;
-
-            // Intercept `executeMathFlow` from main.js to perform the missing variable sync
-            const originalExecute = window.executeMathFlow;
-            if (originalExecute) {
-                window.executeMathFlow = async function() {
-                    // Synchronize the camera capture from main.js into our local sender variable
-                    if (typeof window.capturedImage !== 'undefined' && window.capturedImage) {
-                        currentMathImage = window.capturedImage;
-                    }
-                    
-                    // Run the core math solver flow
-                    await originalExecute();
-                    
-                    // Post-run cleanup to ensure the image does not bleed into the next question
-                    window.clearMathImage(); 
+    document.getElementById("mathInstructionInput").addEventListener("paste", function(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let index in items) {
+            const item = items[index];
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    window.setMathImage(event.target.result);
+                    if(typeof showToast === 'function') showToast("✅ Image pasted!");
                 };
-                
-                // Re-bind the physical SEND button to our synced interceptor
-                const sendBtn = document.getElementById("sendMathBtn");
-                if(sendBtn) sendBtn.onclick = window.executeMathFlow;
-                
-                // Completely detach main.js's buggy keyboard listener and re-apply a clean one
-                const inputEl = document.getElementById("mathInstructionInput");
-                if (inputEl) {
-                    const newEl = inputEl.cloneNode(true);
-                    inputEl.parentNode.replaceChild(newEl, inputEl);
-                    
-                    // Standard Enter Key Submission
-                    newEl.addEventListener("keypress", function(e) {
-                        if (e.key === "Enter" && !e.shiftKey) { 
-                            e.preventDefault(); 
-                            window.executeMathFlow(); 
-                        }
-                    });
-                    
-                    // NEW: Clipboard Paste Event Listener
-                    newEl.addEventListener("paste", function(e) {
-                        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                        for (let index in items) {
-                            const item = items[index];
-                            if (item.kind === 'file' && item.type.startsWith('image/')) {
-                                const blob = item.getAsFile();
-                                const reader = new FileReader();
-                                reader.onload = function(event) {
-                                    window.setMathImage(event.target.result);
-                                    if(typeof showToast === 'function') showToast("✅ Image pasted from clipboard!");
-                                };
-                                reader.readAsDataURL(blob);
-                                e.preventDefault(); // Stop raw image blobs pasting as corrupt text
-                            }
-                        }
-                    });
-                }
+                reader.readAsDataURL(blob);
+                e.preventDefault();
             }
-        }, 800); // 800ms guarantees execution happens after main.js binds
+        }
     });
 
-    // =======================================================
-    // 🔗 SECURE FULL-CHAT WHATSAPP SHARE ENGINE
-    // =======================================================
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
         const messages = historyDiv.querySelectorAll(".chat-msg");
