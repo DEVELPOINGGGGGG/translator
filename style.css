@@ -371,3 +371,33 @@ body:not(.dark-mode) strong,
     position: relative; /* Allows absolute positioned elements inside to stay contained */
     margin-top: 15px; 
 }
+/* Fix for Cloudflare Image Generation overflowing */
+.creator-output-img {
+    max-width: 100%;
+    max-height: 55vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Fix for Video Titles invisible in White Mode */
+body:not(.dark-mode) .yt-grid .card div[style*="color: #f8fafc"] {
+    color: var(--text-main) !important;
+}
+
+/* Hide TTS Player smoothly when done */
+.tts-mini-player {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-surface);
+    padding: 10px 20px;
+    border-radius: 30px;
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 10000;
+    border: 1px solid var(--primary);
+}
