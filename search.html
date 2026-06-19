@@ -8,93 +8,142 @@
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-    <script>MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };</script>
+    <script>
+        MathJax = { 
+            options: { ignoreHtmlClass: 'code-box', processHtmlClass: 'markdown-body' },
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            svg: { fontCache: 'global' }, chtml: { displayAlign: 'left' }
+        };
+    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <style>
-        /* ===== UNIVERSAL CSS ===== */
-        :root { --bg: #0f172a; --surface: #1e293b; --primary: #3b82f6; --text: #f8fafc; --muted: #94a3b8; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        /* ===== TOP BAR & AUDIO PLAYER ===== */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--surface); border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 50; }
-        .app-title { font-size: 20px; font-weight: 800; background: linear-gradient(90deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .settings-btn { background: none; border: none; font-size: 24px; cursor: pointer; transition: 0.2s; }
-        
-        #topAudioPlayer { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 2px solid #3b82f6; border-radius: 30px; padding: 10px 20px; z-index: 1000; align-items: center; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .audio-btn { background: #3b82f6; border: none; color: white; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .audio-btn.red { background: #ef4444; }
+        /* ===== ULTRA PREMIUM GLASS THEME ===== */
+        :root {
+            --bg-base: #0f172a; --glass-bg: rgba(30, 41, 59, 0.65); --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc; --text-muted: #94a3b8; --primary: #3b82f6; --accent: #8b5cf6;
+            --glow-1: rgba(59, 130, 246, 0.2); --glow-2: rgba(139, 92, 246, 0.2); --shadow: rgba(0, 0, 0, 0.3);
+            --ai-bubble: rgba(30, 41, 59, 0.85); --user-bubble: linear-gradient(135deg, #3b82f6, #60a5fa);
+            --app-font-scale: 1;
+        }
 
-        /* ===== MAIN CHAT AREA ===== */
-        .chat-container { flex: 1; overflow-y: auto; padding: 20px 15px 120px 15px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         
-        /* Solves the sticky border glitch */
-        .chat-msg { display: flex; width: 100%; padding: 0 10px; }
-        .chat-user { justify-content: flex-end; }
-        .chat-ai { justify-content: flex-start; }
-        
-        .bubble { max-width: 85%; padding: 15px 20px; border-radius: 20px; font-size: 15px; line-height: 1.5; word-wrap: break-word; position: relative; }
-        .chat-user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 5px; box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
-        .chat-ai .bubble { background: var(--surface); color: var(--text); border-bottom-left-radius: 5px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        
-        /* Action Buttons on AI Message */
-        .msg-actions { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .action-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 15px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .action-btn:hover { background: var(--primary); }
+        body { 
+            background-color: var(--bg-base); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
+            background-image: radial-gradient(circle at 15% 50%, var(--glow-1), transparent 50%), radial-gradient(circle at 85% 30%, var(--glow-2), transparent 50%);
+            background-attachment: fixed;
+        }
 
-        /* ===== EPIC THINKING ANIMATION ===== */
-        .epic-loader { display: flex; align-items: center; gap: 10px; padding: 10px; }
-        .glowing-orb { width: 25px; height: 25px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #a855f7); animation: pulseOrb 1s infinite alternate; box-shadow: 0 0 15px #3b82f6; }
-        @keyframes pulseOrb { 0% { transform: scale(0.8); opacity: 0.7; box-shadow: 0 0 10px #3b82f6; } 100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 25px #a855f7; } }
-        .loader-text { font-weight: 600; background: linear-gradient(90deg, #3b82f6, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: blink 1.5s infinite; }
+        .glass { background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px var(--shadow); }
+
+        /* ===== TOP BAR ===== */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; z-index: 50; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; margin: 0 10px 10px 10px; }
+        .app-title { font-size: 22px; font-weight: 900; background: linear-gradient(90deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .settings-btn { background: transparent; border: none; font-size: 24px; cursor: pointer; transition: transform 0.2s; color: var(--text-main); }
+        .settings-btn:hover { transform: rotate(45deg); color: var(--primary); }
+
+        /* ===== AUDIO PLAYER ===== */
+        #topAudioPlayer { display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); border-radius: 30px; padding: 10px 20px; z-index: 1000; align-items: center; gap: 15px; animation: slideDown 0.4s ease; border: 1px solid var(--primary); }
+        @keyframes slideDown { 0% { transform: translate(-50%, -20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+        .audio-btn { background: var(--primary); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
+        .audio-btn:hover { transform: scale(1.1); } .audio-btn.red { background: #ef4444; }
+
+        /* ===== CHAT AREA & BUBBLES ===== */
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px 15px 140px 15px; display: flex; flex-direction: column; gap: 24px; scroll-behavior: smooth; }
+        .chat-container::-webkit-scrollbar { width: 6px; } .chat-container::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+        
+        .chat-msg { display: flex; width: 100%; padding: 0 10px; animation: slideUpFade 0.4s ease forwards; }
+        @keyframes slideUpFade { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        .chat-user { justify-content: flex-end; } .chat-ai { justify-content: flex-start; }
+        
+        .bubble { max-width: 85%; padding: 18px 24px; border-radius: 24px; font-size: calc(15px * var(--app-font-scale)); line-height: 1.6; word-wrap: break-word; position: relative; }
+        .chat-user .bubble { background: var(--user-bubble); color: white; border-bottom-right-radius: 6px; box-shadow: 0 10px 25px var(--glow-1); }
+        .chat-ai .bubble { background: var(--ai-bubble); color: var(--text-main); border-bottom-left-radius: 6px; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px var(--shadow); backdrop-filter: blur(10px); }
+
+        /* Perfect Markdown Parsing */
+        .markdown-body { font-family: inherit; font-size: inherit; }
+        .markdown-body p, .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body ul { margin-bottom: 12px; }
+        .markdown-body strong { font-weight: 800; color: #fff; }
+        .markdown-body code:not(.code-body code) { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #cbd5e1; }
+
+        /* 🛑 BLACK BOX CODE PLAYER 🛑 */
+        .code-box { background: #0d1117; color: #c9d1d9; border-radius: 12px; margin: 15px 0; border: 1px solid #30363d; overflow: hidden; font-family: monospace; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .code-header { background: #161b22; padding: 10px 15px; display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid #30363d; gap: 8px; }
+        .code-body { padding: 15px; overflow-x: auto; font-size: calc(13px * var(--app-font-scale)); white-space: pre-wrap; line-height: 1.5; font-family: monospace !important; }
+        .play-btn { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
+
+        .msg-actions { margin-top: 15px; border-top: 1px solid var(--glass-border); padding-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .action-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-main); padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; backdrop-filter: blur(5px); }
+        .action-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+
+        /* AI Thinking Animation */
+        .epic-loader { display: flex; align-items: center; gap: 15px; padding: 10px 5px; }
+        .hologram-orb { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); animation: breathe 1.5s infinite alternate; box-shadow: 0 0 20px var(--primary); }
+        @keyframes breathe { 0% { transform: scale(0.85); box-shadow: 0 0 10px var(--primary); } 100% { transform: scale(1.15); box-shadow: 0 0 30px var(--accent); } }
+        .loader-text { font-weight: 700; background: linear-gradient(90deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        /* ===== INPUT AREA & + MENU ===== */
-        .input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg); padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; }
-        .input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--surface); border-radius: 25px; padding: 8px 15px; border: 1px solid rgba(255,255,255,0.2); }
+        /* ===== INPUT AREA & MENU ===== */
+        .input-area { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 800px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        .input-wrapper { display: flex; align-items: flex-end; gap: 10px; border-radius: 30px; padding: 10px 15px; transition: 0.3s; }
+        .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 10px 40px var(--glow-1); }
         
-        .icon-btn { background: transparent; border: none; color: var(--muted); font-size: 24px; cursor: pointer; padding: 5px; transition: 0.2s; }
-        .icon-btn:hover { color: var(--primary); }
-        .send-btn { background: var(--primary); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .icon-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 20px; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; flex-shrink: 0; }
+        .icon-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+        .send-btn { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; flex-shrink: 0; transition: 0.2s; box-shadow: 0 4px 15px var(--glow-1); }
+        .send-btn:hover { transform: scale(1.1); }
         
-        textarea { flex: 1; background: transparent; border: none; color: white; font-size: 16px; resize: none; max-height: 120px; padding: 10px 0; outline: none; }
-        
-        /* The + Menu */
-        #plusMenu { display: none; position: absolute; bottom: 80px; left: 15px; background: var(--surface); border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 200; width: 200px; }
-        .menu-item { background: transparent; border: none; color: white; padding: 15px 20px; text-align: left; font-size: 15px; font-weight: bold; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .menu-item:hover { background: rgba(59,130,246,0.2); color: var(--primary); }
+        textarea { flex: 1; background: transparent; border: none; color: var(--text-main); font-size: 16px; resize: none; max-height: 150px; padding: 12px 5px; outline: none; font-weight: 500; }
 
-        /* Feature Chips */
-        #attachmentChip, #photoModeChip { display: none; align-items: center; gap: 10px; background: rgba(59,130,246,0.2); color: #60a5fa; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; width: max-content; margin-bottom: 10px; border: 1px solid #3b82f6; }
-        .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; }
+        #plusMenu { display: none; position: absolute; bottom: 85px; left: 10px; border-radius: 20px; flex-direction: column; overflow: hidden; z-index: 200; width: 220px; transform-origin: bottom left; animation: popUp 0.3s ease; }
+        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .menu-item { background: transparent; border: none; color: var(--text-main); padding: 16px 20px; text-align: left; font-size: 15px; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .menu-item:hover { background: var(--glow-1); padding-left: 25px; }
 
-        /* ===== MODALS (Camera, Settings, Voice, Sources) ===== */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 999999; justify-content: center; align-items: center; }
-        .modal-content { background: var(--surface); border: 2px solid var(--primary); border-radius: 20px; padding: 25px; width: 90%; max-width: 400px; color: white; position: relative; }
-        .modal-close { position: absolute; top: 15px; right: 15px; background: #ef4444; border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; }
+        .status-chip { display: none; align-items: center; gap: 10px; background: var(--glass-bg); color: var(--text-main); padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; width: max-content; border: 1px solid var(--primary); animation: slideInLeft 0.3s ease; }
+        @keyframes slideInLeft { 0% { transform: translateX(-20px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+        .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; }
+
+        /* ===== MODALS ===== */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 999999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { border-radius: 24px; padding: 30px; width: 90%; max-width: 420px; position: relative; animation: popUp 0.4s ease; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 15px; right: 15px; background: var(--glass-border); border: none; color: var(--text-main); width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .modal-close:hover { background: #ef4444; color: white; transform: rotate(90deg); }
+
+        .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 14px; font-weight: 600; }
+        .setting-select, .setting-input { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; padding: 10px; border-radius: 10px; outline: none; font-size: 13px; width: 160px; }
+        .font-btns { display: flex; gap: 5px; }
+        .font-btn { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; transition: 0.2s; }
+        .font-btn.active { background: var(--primary); border-color: var(--primary); }
+
+        /* HTML Live Preview Modal */
+        #htmlPreviewModal { flex-direction: column; padding: 0; background: #000; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #161b22; width: 100%; color: white; font-weight: bold; border-bottom: 1px solid #30363d; }
+        #htmlPreviewFrame { flex: 1; width: 100%; height: calc(100vh - 60px); border: none; background: white; }
 
         /* Camera Specific */
-        #cameraModal { flex-direction: column; background: black; }
+        #cameraModal { flex-direction: column; background: #000; padding: 0; }
         #cameraVideo { width: 100%; height: 100%; object-fit: cover; }
         .cam-controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; align-items: center; gap: 40px; }
-        .cam-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; cursor: pointer; }
-        .cam-capture { width: 70px; height: 70px; background: white; border: 4px solid #cbd5e1; border-radius: 50%; cursor: pointer; }
+        .cam-btn { background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: none; color: white; width: 56px; height: 56px; border-radius: 50%; font-size: 24px; cursor: pointer; }
+        .cam-capture { width: 80px; height: 80px; background: white; border: 6px solid #cbd5e1; border-radius: 50%; cursor: pointer; }
         
-        .welcome-screen { text-align: center; margin-top: 50px; opacity: 0.8; }
-        .welcome-screen h1 { color: var(--primary); margin-bottom: 15px; }
-        .welcome-screen p { margin-bottom: 10px; font-size: 14px; }
+        .welcome-screen { text-align: center; margin-top: 10vh; opacity: 0.9; }
+        .welcome-screen h1 { font-size: 32px; margin-bottom: 20px; background: linear-gradient(90deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .welcome-card { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 25px; border-radius: 20px; margin: 10px auto; max-width: 450px; text-align: left; line-height: 1.8; box-shadow: 0 10px 30px var(--shadow); }
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
 
-    <div class="top-bar">
+    <div class="top-bar glass" id="appTopBar">
         <div class="app-title">AI PRO SUITE</div>
-        <button class="settings-btn" onclick="document.getElementById('settingsModal').style.display='flex'">⚙️</button>
+        <button class="settings-btn" onclick="openModal('settingsModal')">⚙️</button>
     </div>
 
-    <div id="topAudioPlayer">
-        <span style="font-weight: bold; color: #60a5fa;">🔊 Playing Answer...</span>
+    <div id="topAudioPlayer" class="glass">
+        <span style="font-weight: bold; color: var(--primary); font-size: 14px;">🔊 Playing Audio...</span>
         <button class="audio-btn" onclick="window.speechSynthesis.pause()">⏸</button>
         <button class="audio-btn" onclick="window.speechSynthesis.resume()">▶</button>
         <button class="audio-btn red" onclick="stopAudio()">⏹</button>
@@ -102,61 +151,82 @@
 
     <div class="chat-container" id="chatBox">
         <div class="welcome-screen" id="welcomeScreen">
-            <h1>Welcome to Deep Search</h1>
-            <p>1. Type anything or click <b>+</b> to upload files.</p>
-            <p>2. Uploading a Book/PDF makes me memorize it instantly.</p>
-            <p>3. Turn on <b>Photo Gen</b> to generate images.</p>
+            <h1>Deep AI PRO System</h1>
+            <div class="welcome-card">
+                <p style="font-weight: 800; font-size: 16px; color: var(--primary); margin-bottom: 10px;">⚡ SYSTEM ONLINE</p>
+                <p>• <b>Smart Code:</b> Generates black-box code with HTML Play button.</p>
+                <p>• <b>Universal Uploader:</b> Attach PDFs, Python, Java, Images via <b>+</b>.</p>
+                <p>• <b>AI Personality:</b> Customize exact AI behaviors in settings.</p>
+                <p>• <b>Photo Engine:</b> Toggle Art mode via <b>+</b> menu.</p>
+            </div>
         </div>
     </div>
 
-    <div class="input-area">
-        <div id="attachmentChip">📎 <span id="attachName">File.pdf</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
-        <div id="photoModeChip">🎨 Photo Gen Mode Active <button class="chip-close" onclick="togglePhotoMode()">✕</button></div>
+    <div class="input-area" id="appInputArea">
+        <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">File</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
+        <div id="photoModeChip" class="status-chip" style="border-color: var(--accent);">🎨 Photo Gen ON <button class="chip-close" onclick="togglePhotoMode()">✕</button></div>
 
-        <div id="plusMenu">
+        <div id="plusMenu" class="glass">
             <button class="menu-item" onclick="openCamera()">📷 Open Camera</button>
             <button class="menu-item" onclick="document.getElementById('fileUploader').click()">📎 Upload File</button>
             <button class="menu-item" onclick="togglePhotoMode()" id="photoModeMenuBtn">🎨 Turn On Photo Gen</button>
         </div>
 
-        <div class="input-wrapper">
-            <input type="file" id="fileUploader" accept="image/*,.pdf,.txt,.html,.py,.java,.bat,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none;" onchange="handleFileUpload(event)">
-            <button class="icon-btn" id="plusBtn" onclick="togglePlusMenu(event)">➕</button>
+        <div class="input-wrapper glass">
+            <input type="file" id="fileUploader" accept="image/*,.pdf,.txt,.html,.py,.java,.bat,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv" style="display:none;" onchange="handleFileUpload(event)">
+            <button class="icon-btn" onclick="togglePlusMenu(event)">➕</button>
             <textarea id="userInput" placeholder="Ask anything, upload docs, or generate art..." rows="1" oninput="this.style.height = ''; this.style.height = Math.min(this.scrollHeight, 120) + 'px';"></textarea>
-            <button class="icon-btn" onclick="document.getElementById('voiceModal').style.display='flex'">🎤</button>
-            <button class="send-btn" onclick="executeSearch()">🚀</button>
+            <button class="icon-btn" onclick="openModal('voiceModal')">🎤</button>
+            <button class="send-btn" id="sendBtn" onclick="executeSearch()">🚀</button>
         </div>
     </div>
 
     <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="document.getElementById('settingsModal').style.display='none'">✕</button>
-            <h2 style="color:var(--primary); margin-bottom:20px;">Settings</h2>
-            <button class="menu-item" style="width:100%; border:1px solid #3b82f6; border-radius:10px; margin-bottom:10px;" onclick="toggleFocus()">🧘‍♂️ Toggle Focus Mode</button>
-            <button class="menu-item" style="width:100%; border:1px solid #ef4444; border-radius:10px; color:#ef4444;" onclick="clearChat()">🗑️ Clear Conversation</button>
+        <div class="modal-content glass">
+            <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+            <h2 style="color:var(--primary); margin-bottom:20px;">AI Customization</h2>
+            
+            <div class="setting-row"><span>🤖 API Engine:</span><select class="setting-select" id="modelSelector"><option value="auto">⚡ Auto Router</option><option value="api_5">🔥 Force API 5</option><option value="api_2">🔋 Force API 2</option></select></div>
+            <div class="setting-row"><span>🌍 Language:</span><select class="setting-select" id="appLang"><option value="English">English</option><option value="Hindi">Hindi</option></select></div>
+            <div class="setting-row"><span>🎭 AI Tone:</span><select class="setting-select" id="aiTone"><option value="Standard">Standard</option><option value="Professional">Professional</option><option value="Casual">Casual</option></select></div>
+            <div class="setting-row"><span>🔠 Font Size:</span><div class="font-btns"><button class="font-btn" onclick="setFont(0.85, this)">Small</button><button class="font-btn active" onclick="setFont(1, this)">Normal</button><button class="font-btn" onclick="setFont(1.15, this)">Large</button></div></div>
+            
+            <div style="margin-top:20px; font-weight:bold; color:var(--accent); font-size: 14px; margin-bottom: 5px;">🧠 Custom AI Personality / Rules:</div>
+            <textarea id="customInstructions" placeholder="E.g. Always answer in bullet points, call me Boss..." style="width:100%; height:80px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; border-radius:10px; padding:10px; font-size:13px; resize:none; margin-bottom:20px;"></textarea>
+
+            <button class="action-btn" style="width:100%; padding:12px; margin-bottom:10px;" onclick="toggleFocus()">🧘‍♂️ Toggle Focus Mode</button>
+            <button class="action-btn" style="width:100%; padding:12px; background:rgba(239,68,68,0.1); color:#ef4444; border-color:#ef4444;" onclick="clearChat()">🗑️ Wipe Chat Memory</button>
         </div>
     </div>
 
     <div id="voiceModal" class="modal">
-        <div class="modal-content" style="text-align: center;">
-            <button class="modal-close" onclick="document.getElementById('voiceModal').style.display='none'">✕</button>
-            <h2 style="margin-bottom:20px;">Voice Input</h2>
-            <button class="action-btn" style="background:var(--primary); padding:15px; font-size:16px; margin-bottom:10px; width:100%;" onclick="startVoice('en-US')">🗣️ Speak in English</button>
-            <button class="action-btn" style="background:#10b981; padding:15px; font-size:16px; width:100%;" onclick="startVoice('hi-IN')">🗣️ हिंदी में बोलें (Hindi)</button>
+        <div class="modal-content glass" style="text-align: center;">
+            <button class="modal-close" onclick="closeModal('voiceModal')">✕</button>
+            <h2 style="margin-bottom:25px;">Voice Dictation</h2>
+            <button class="action-btn" style="width:100%; background:var(--primary); color:white; padding:15px; font-size:16px; margin-bottom:15px; border:none;" onclick="startVoice('en-US')">🗣️ Speak in English</button>
+            <button class="action-btn" style="width:100%; background:#10b981; color:white; padding:15px; font-size:16px; border:none;" onclick="startVoice('hi-IN')">🗣️ हिंदी में बोलें (Hindi)</button>
         </div>
+    </div>
+
+    <div id="htmlPreviewModal" class="modal" style="display:none; padding:0; z-index: 1000000;">
+        <div class="preview-header">
+            <span>🌐 Live Code Browser</span>
+            <button class="action-btn" style="background:#ef4444; border:none; color:white;" onclick="document.getElementById('htmlPreviewModal').style.display='none'">✕ Close Preview</button>
+        </div>
+        <iframe id="htmlPreviewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
     </div>
 
     <div id="sourcesModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="document.getElementById('sourcesModal').style.display='none'">✕</button>
+        <div class="modal-content glass">
+            <button class="modal-close" onclick="closeModal('sourcesModal')">✕</button>
             <h2 style="margin-bottom:20px; color:#10b981;">🌐 Web Sources</h2>
-            <div id="sourcesList" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;"></div>
+            <div id="sourcesList" style="display:flex; flex-direction:column; gap:12px; max-height:350px; overflow-y:auto;"></div>
         </div>
     </div>
 
-    <div id="cameraModal" class="modal" style="padding:0;">
+    <div id="cameraModal" class="modal" style="padding:0; border-radius:0;">
         <video id="cameraVideo" autoplay playsinline></video>
-        <button style="position:absolute; top:20px; right:20px; background:#ef4444; color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:20px; z-index:100;" onclick="closeCamera()">✕</button>
+        <button style="position:absolute; top:25px; right:25px; background:rgba(239,68,68,0.8); backdrop-filter:blur(10px); color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; z-index:100; cursor:pointer;" onclick="closeCamera()">✕</button>
         <div class="cam-controls">
             <button class="cam-btn" id="flashBtn" onclick="toggleFlash()">🔦</button>
             <div class="cam-capture" onclick="takePhoto()"></div>
@@ -166,16 +236,41 @@
     </div>
 
     <script>
-        // System State
+        // --- BLACK BOX CODE RENDERER (Marked.js) ---
+        const renderer = new marked.Renderer();
+        renderer.code = function(code, language) {
+            let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html') || safeCode.toLowerCase().includes('&lt;!doctype html');
+            let playBtnStr = isHtml ? `<button class="action-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
+            return `<div class="code-box"><div class="code-header">${playBtnStr}<button class="action-btn" onclick="copyCodeEngine(this)">📋 Copy</button></div><div class="code-body">${safeCode}</div></div>`;
+        };
+        marked.setOptions({ renderer: renderer });
+
+        function copyCodeEngine(btn) {
+            const codeText = btn.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(codeText);
+            const orig = btn.innerText; btn.innerText = "✅ Copied"; btn.style.background = "#10b981";
+            setTimeout(() => { btn.innerText = orig; btn.style.background = ""; }, 2000);
+        }
+
+        window.playHtmlCode = function(btn) {
+            const rawCode = btn.parentElement.nextElementSibling.innerText;
+            document.getElementById('htmlPreviewFrame').srcdoc = rawCode;
+            document.getElementById('htmlPreviewModal').style.display = 'flex';
+        }
+
+        // --- SYSTEM STATE ---
         let isPhotoMode = false;
-        let bookMemory = "";
+        let documentMemory = "";
         let uploadedImage = null;
-        let chatHistory = [];
         let camStream = null;
         let camFacing = "environment";
         let isFlash = false;
+        let isProcessing = false;
 
-        // UI Controls
+        // --- MODALS & MENUS ---
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
         function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
         
@@ -186,14 +281,31 @@
             closePlusMenu();
         }
 
-        function toggleFocus() { document.body.style.background = document.body.style.background === 'black' ? 'var(--bg)' : 'black'; document.getElementById('settingsModal').style.display='none'; }
-        
-        function clearChat() { document.getElementById("chatBox").innerHTML = document.getElementById("welcomeScreen").outerHTML; chatHistory = []; document.getElementById('settingsModal').style.display='none'; }
+        function setFont(scale, btn) { 
+            document.documentElement.style.setProperty('--app-font-scale', scale); 
+            document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active')); 
+            btn.classList.add('active'); 
+        }
 
-        // Audio Player
+        function toggleFocus() { 
+            const topBar = document.getElementById('appTopBar');
+            const inputArea = document.getElementById('appInputArea');
+            const isFocus = topBar.style.display !== 'none';
+            topBar.style.display = isFocus ? 'none' : 'flex';
+            inputArea.style.display = isFocus ? 'none' : 'flex';
+            closeModal('settingsModal'); 
+        }
+        
+        function clearChat() { 
+            document.getElementById("chatBox").innerHTML = document.getElementById("welcomeScreen").outerHTML; 
+            document.getElementById("welcomeScreen").style.display = 'block';
+            documentMemory = ""; uploadedImage = null; clearAttachment();
+            closeModal('settingsModal'); 
+        }
+
+        // --- AUDIO & COPY ---
         function playAudio(btn) {
-            const textId = btn.getAttribute('data-target');
-            const text = document.getElementById(textId).innerText;
+            const text = document.getElementById(btn.getAttribute('data-target')).innerText;
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
             u.onstart = () => document.getElementById("topAudioPlayer").style.display = "flex";
@@ -202,42 +314,37 @@
         }
         function stopAudio() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
 
-        // Copy Text
         function copyText(btn) {
-            const textId = btn.getAttribute('data-target');
-            navigator.clipboard.writeText(document.getElementById(textId).innerText);
-            btn.innerText = "✅ Copied";
-            setTimeout(() => btn.innerText = "📋 Copy", 2000);
+            navigator.clipboard.writeText(document.getElementById(btn.getAttribute('data-target')).innerText);
+            const orig = btn.innerHTML; btn.innerHTML = "✅ Copied";
+            setTimeout(() => btn.innerHTML = orig, 2000);
         }
 
-        // Voice Recognition
+        // --- VOICE INPUT ---
         function startVoice(lang) {
-            document.getElementById('voiceModal').style.display='none';
-            if(!('webkitSpeechRecognition' in window)) return alert("Voice not supported here.");
-            const rec = new webkitSpeechRecognition();
-            rec.lang = lang;
+            closeModal('voiceModal');
+            if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice not supported on this browser.");
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new SpeechRec(); rec.lang = lang;
             rec.onstart = () => document.getElementById("userInput").value = "Listening...";
             rec.onresult = (e) => document.getElementById("userInput").value = e.results[0][0].transcript;
             rec.start();
         }
 
-        // Camera Engine
+        // --- BULLETPROOF CAMERA ---
         async function openCamera() {
-            closePlusMenu();
-            const mod = document.getElementById("cameraModal");
-            mod.style.display = "flex";
+            closePlusMenu(); openModal('cameraModal');
             try {
                 if(camStream) camStream.getTracks().forEach(t => t.stop());
                 camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } });
-                const v = document.getElementById("cameraVideo");
-                v.srcObject = camStream;
+                document.getElementById("cameraVideo").srcObject = camStream;
                 setTimeout(async () => {
                     const track = camStream.getVideoTracks()[0];
                     if (track.getCapabilities().torch && camFacing === "environment") { isFlash = true; await track.applyConstraints({ advanced: [{ torch: true }] }); document.getElementById('flashBtn').innerText = "💡"; }
                 }, 500);
-            } catch(e) { alert("Camera error."); }
+            } catch(e) { alert("Camera Access Denied."); closeModal('cameraModal'); }
         }
-        function closeCamera() { document.getElementById("cameraModal").style.display = "none"; if(camStream) camStream.getTracks().forEach(t=>t.stop()); isFlash=false; document.getElementById('flashBtn').innerText = "🔦"; }
+        function closeCamera() { closeModal('cameraModal'); if(camStream) camStream.getTracks().forEach(t=>t.stop()); isFlash=false; document.getElementById('flashBtn').innerText = "🔦"; }
         async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
         async function toggleFlash() { if(!camStream) return; const track = camStream.getVideoTracks()[0]; if(track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } }
         function takePhoto() {
@@ -246,11 +353,11 @@
             c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
             uploadedImage = c.toDataURL("image/jpeg", 0.7);
             document.getElementById("attachmentChip").style.display = "flex";
-            document.getElementById("attachName").innerText = "Photo Captured";
-            closeCamera();
+            document.getElementById("attachName").innerText = "Photo Captured 📷";
+            documentMemory = ""; closeCamera();
         }
 
-        // File Uploader (PDF, TXT, HTML, Python, etc)
+        // --- UNIVERSAL FILE UPLOADER ---
         function handleFileUpload(e) {
             const file = e.target.files[0]; if(!file) return;
             document.getElementById("attachmentChip").style.display = "flex";
@@ -258,119 +365,142 @@
             closePlusMenu();
 
             if (file.type.startsWith('image/')) {
-                const r = new FileReader(); r.onload = (ev) => { uploadedImage = ev.target.result; bookMemory = ""; }; r.readAsDataURL(file);
+                const r = new FileReader(); r.onload = (ev) => { uploadedImage = ev.target.result; documentMemory = ""; }; r.readAsDataURL(file);
             } else if (file.name.endsWith('.pdf')) {
                 const r = new FileReader();
                 r.onload = async function() {
-                    const typedarray = new Uint8Array(this.result);
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    let text = "";
-                    for(let i=1; i<=pdf.numPages; i++){
-                        const p = await pdf.getPage(i);
-                        const c = await p.getTextContent();
-                        text += c.items.map(item=>item.str).join(' ');
-                    }
-                    bookMemory = text; uploadedImage = null;
+                    try {
+                        const typedarray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let text = "";
+                        for(let i=1; i<=pdf.numPages; i++){
+                            const p = await pdf.getPage(i); const c = await p.getTextContent();
+                            text += c.items.map(item=>item.str).join(' ');
+                        }
+                        documentMemory = text; uploadedImage = null;
+                    } catch(err) { alert("Failed to read PDF."); clearAttachment(); }
                 };
                 r.readAsArrayBuffer(file);
             } else {
-                const r = new FileReader(); r.onload = (ev) => { bookMemory = ev.target.result; uploadedImage = null; }; r.readAsText(file);
+                const r = new FileReader(); r.onload = (ev) => { documentMemory = ev.target.result; uploadedImage = null; }; r.readAsText(file);
             }
+            e.target.value = "";
         }
-        function clearAttachment() { bookMemory = ""; uploadedImage = null; document.getElementById("attachmentChip").style.display = "none"; }
+        function clearAttachment() { documentMemory = ""; uploadedImage = null; document.getElementById("attachmentChip").style.display = "none"; }
 
-        // AI Execution Pipeline
+        document.getElementById("userInput").addEventListener("keypress", function(e) { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeSearch(); } });
+
+        // --- TYPEWRITER ENGINE (Preserves Markdown/HTML Structure) ---
+        function runInsaneTypewriter(targetElement, fullHtml, callback) {
+            let tempDiv = document.createElement('div'); tempDiv.innerHTML = fullHtml;
+            let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
+            let totalLength = tempDiv.innerText.length || 1; let targetDuration = totalLength < 500 ? 5000 : 15000; 
+            let intervalTime = 30; let totalTicks = targetDuration / intervalTime; let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
+
+            function typeNextNode() {
+                if (nodeIndex >= nodes.length) { if(callback) callback(); return; }
+                let currentNode = nodes[nodeIndex].cloneNode(true);
+                if (currentNode.nodeType === Node.TEXT_NODE) {
+                    let text = currentNode.textContent; let span = document.createElement('span'); targetElement.appendChild(span); let charIndex = 0;
+                    let interval = setInterval(() => {
+                        if (charIndex >= text.length) { clearInterval(interval); nodeIndex++; typeNextNode(); } 
+                        else { span.textContent += text.substring(charIndex, charIndex + textChunks); charIndex += textChunks; }
+                    }, intervalTime);
+                } else { targetElement.appendChild(currentNode); nodeIndex++; typeNextNode(); }
+            }
+            typeNextNode();
+        }
+
+        // --- AI EXECUTION PIPELINE ---
         async function executeSearch() {
-            const inp = document.getElementById("userInput");
-            let q = inp.value.trim();
-            if (!q && !uploadedImage && !bookMemory) return;
+            if(isProcessing) return;
+            const inp = document.getElementById("userInput"); let q = inp.value.trim();
+            if (!q && !uploadedImage && !documentMemory) return;
 
+            isProcessing = true; document.getElementById("sendBtn").innerHTML = "⏳";
             document.getElementById("welcomeScreen").style.display = "none";
             const chatBox = document.getElementById("chatBox");
 
-            // User Message
-            let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${uploadedImage ? `<img src="${uploadedImage}" style="max-width:100%; border-radius:10px; margin-bottom:10px;"><br>` : ''}${q}</div></div>`;
+            // Build User Bubble
+            let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${uploadedImage ? `<img src="${uploadedImage}" style="max-width:100%; border-radius:12px; margin-bottom:10px;"><br>` : ''}${q.replace(/\n/g, '<br>')}</div></div>`;
             chatBox.insertAdjacentHTML('beforeend', userHtml);
             inp.value = ""; inp.style.height = ''; chatBox.scrollTop = chatBox.scrollHeight;
 
-            // Loading Animation
+            // Epic Glowing Loader
             const loadId = "load_" + Date.now();
-            chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble epic-loader"><div class="glowing-orb"></div><span class="loader-text">AI is thinking...</span></div></div>`);
+            chatBox.insertAdjacentHTML('beforeend', `
+                <div class="chat-msg chat-ai" id="${loadId}">
+                    <div class="bubble epic-loader">
+                        <div class="hologram-orb"></div>
+                        <span class="loader-text">AI is synthesizing...</span>
+                    </div>
+                </div>`);
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
                 if (isPhotoMode) {
                     await handlePhotoGeneration(q, loadId);
-                    if(isPhotoMode) togglePhotoMode(); // Auto turn off
+                    if(isPhotoMode) togglePhotoMode(); 
                 } else {
                     await handleTextSearch(q, loadId);
                 }
             } catch(e) {
-                document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444;">❌ Error: ${e.message}</div>`;
+                document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border-color:#ef4444;">❌ Error: ${e.message}</div>`;
             }
-            clearAttachment();
+            
+            isProcessing = false; document.getElementById("sendBtn").innerHTML = "🚀"; clearAttachment();
         }
 
-        // The Complex Photo Generation Loop
+        // Photo Gen Loop
         async function handlePhotoGeneration(prompt, loadId) {
-            let bestImage = null;
-            let hfPrompt = prompt + " , NO CHINESE TEXT, NO LETTERS, ONLY ART."; // Prevents text to avoid Chinese words
-            
+            let bestImage = null; let safePrompt = prompt.replace(/[^\x00-\x7F]/g, "") + " , pristine, 8k, masterpiece, no text, no lettering."; 
             for(let i=0; i<3; i++) {
-                document.getElementById(loadId).querySelector('.loader-text').innerText = `Generating Art (Attempt ${i+1}/3)...`;
-                
-                // 1. Generate Image (Using standard endpoint)
-                const res = await fetch("/api/hf-search-image", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({prompt: hfPrompt})});
+                document.getElementById(loadId).querySelector('.loader-text').innerText = `🎨 Painting Art (Iteration ${i+1}/3)...`;
+                const res = await fetch("/api/hf-search-image", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({prompt: safePrompt})});
                 const data = await res.json();
-                if(data.imageBase64) bestImage = data.imageBase64;
-                
-                // 2. Ideally, send `bestImage` to Gemini Vision here to rate it. 
-                // Since this requires a custom backend loop, we accept the image if it exists.
-                if(bestImage) break;
+                if(data.imageBase64) { bestImage = data.imageBase64; break; }
             }
-
             if(bestImage) {
                 document.getElementById(loadId).innerHTML = `
                     <div class="bubble">
-                        <div style="font-size:10px; color:var(--primary); font-weight:bold; margin-bottom:10px;">✨ PHOTO GENERATED</div>
-                        <img src="${bestImage}" style="width:100%; border-radius:10px;">
+                        <div style="font-size:10px; color:var(--primary); font-weight:800; letter-spacing:1px; margin-bottom:12px;">✨ AI VISION ENGINE</div>
+                        <img src="${bestImage}" style="width:100%; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,0.5);">
                     </div>`;
-            } else {
-                throw new Error("Failed to generate photo after 3 attempts.");
-            }
+            } else throw new Error("Failed to render image after 3 passes.");
         }
 
-        // Text & Data Search (Routing via Server.js)
+        // Text Search & AI Router
         async function handleTextSearch(prompt, loadId) {
-            let sysPrompt = "You are an elite AI. Answer clearly.";
-            if(bookMemory) sysPrompt += `\n\nCRITICAL KNOWLEDGE BASE:\n${bookMemory}\nAnswer the user based on this book data first.`;
+            const lang = document.getElementById("appLang").value;
+            const tone = document.getElementById("aiTone").value;
+            const customRules = document.getElementById("customInstructions").value.trim();
+            const forcedRoute = document.getElementById("modelSelector").value;
+            
+            let sysPrompt = `You are the ultimate AI. Language: ${lang}. Tone: ${tone}. Use double asterisks ** for bold. Use \\frac for fractions. NEVER output HTML tags for formatting text, use Markdown.`;
+            if (customRules) sysPrompt += `\n\nCRITICAL USER INSTRUCTIONS (FOLLOW THESE EXACTLY):\n${customRules}`;
+            if(documentMemory) sysPrompt += `\n\nCRITICAL KNOWLEDGE BASE (USE THIS TO ANSWER FIRST):\n${documentMemory}`;
 
-            // Routing logic based on prompt content
-            let isMathOrCode = /math|solve|calculate|code|python|java|html|translate/i.test(prompt);
-            let targetProvider = isMathOrCode ? "api_5" : "api_1"; // Connects to your server.js logic
+            let isMathOrCode = /math|solve|calculate|code|python|java|html|script|translate/i.test(prompt);
+            let targetProvider = forcedRoute !== "auto" ? forcedRoute : (isMathOrCode ? "api_5" : "api_1"); 
 
             const payload = { userPrompt: prompt, systemPrompt: sysPrompt, imageBase64: uploadedImage, providerOverride: targetProvider };
             const res = await fetch("/api/smart-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
             const data = await res.json();
 
-            if(!res.ok) throw new Error(data.error || "API Failed");
+            if(!res.ok) throw new Error(data.error || "Neural network timeout.");
 
             let textId = "txt_" + loadId;
-            let htmlContent = marked.parse(data.text);
+            let mathParsedText = data.text.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
+            let htmlContent = marked.parse(mathParsedText);
             
-            // Build Sources UI if URLs are present
-            let sourceBtnHtml = "";
-            let urlRegex = /(https?:\/\/[^\s]+)/g;
-            let urls = data.text.match(urlRegex);
-            if(urls) {
-                window['sources_' + loadId] = urls;
-                sourceBtnHtml = `<button class="action-btn" onclick="openSources('${loadId}')">🔗 View Sources</button>`;
-            }
+            // Web Sources
+            let sourceBtnHtml = ""; let urlRegex = /(https?:\/\/[^\s]+)/g; let urls = data.text.match(urlRegex);
+            if(urls) { window['sources_' + loadId] = urls; sourceBtnHtml = `<button class="action-btn" onclick="openSources('${loadId}')">🔗 Sources</button>`; }
 
             document.getElementById(loadId).innerHTML = `
                 <div class="bubble">
-                    <div style="font-size:10px; color:var(--primary); font-weight:bold; margin-bottom:10px;">✨ BY ${data.provider || 'AI ROUTER'}</div>
-                    <div id="${textId}">${htmlContent}</div>
+                    <div style="font-size:10px; color:var(--primary); font-weight:800; letter-spacing:1px; margin-bottom:12px; text-transform:uppercase;">✨ SECURED VIA ${data.provider || 'AI ROUTER'}</div>
+                    <div id="${textId}" class="markdown-body"></div>
                     <div class="msg-actions">
                         <button class="action-btn" data-target="${textId}" onclick="playAudio(this)">🔊 Listen</button>
                         <button class="action-btn" data-target="${textId}" onclick="copyText(this)">📋 Copy</button>
@@ -378,14 +508,15 @@
                     </div>
                 </div>`;
             
-            if(window.MathJax) MathJax.typesetPromise([document.getElementById(loadId)]);
+            runInsaneTypewriter(document.getElementById(textId), htmlContent, () => {
+                if(window.MathJax) MathJax.typesetPromise([document.getElementById(loadId)]);
+            });
         }
 
         function openSources(loadId) {
-            const urls = window['sources_' + loadId];
-            const list = document.getElementById("sourcesList");
-            list.innerHTML = urls.map(url => `<a href="${url.replace(/[\)\.\"]+$/, '')}" target="_blank" style="color:var(--primary); text-decoration:none; background:rgba(59,130,246,0.1); padding:10px; border-radius:10px; word-break:break-all;">${url}</a>`).join('');
-            document.getElementById("sourcesModal").style.display = "flex";
+            const urls = window['sources_' + loadId]; const list = document.getElementById("sourcesList");
+            list.innerHTML = urls.map(url => `<a href="${url.replace(/[\)\.\"]+$/, '')}" target="_blank" style="color:var(--primary); text-decoration:none; background:var(--glass-bg); padding:12px; border-radius:12px; border:1px solid var(--glass-border); word-break:break-all;">${url}</a>`).join('');
+            openModal("sourcesModal");
         }
     </script>
 </body>
