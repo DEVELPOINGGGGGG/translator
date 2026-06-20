@@ -13,12 +13,14 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?version=4.8.0"></script>
-    <!-- localforage is critical for saving history without quota limits -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
     <script>
         MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            tex: { 
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']] 
+            },
             startup: { typeset: false } 
         };
     </script>
@@ -30,42 +32,53 @@
         .quiz-setup, .quiz-active, .quiz-results { display: none !important; animation: fadeIn 0.4s ease; }
         .quiz-setup.active, .quiz-active.active, .quiz-results.active { display: flex !important; flex-direction: column !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         .quiz-btn { background: linear-gradient(135deg, #a855f7, #7e22ce); color: white; padding: 16px; border-radius: 30px; font-size: 18px; font-weight: 800; width: 100%; border: none; cursor: pointer; box-shadow: 0 10px 30px rgba(168,85,247,0.4); margin-top: 25px; transition: 0.2s; text-align: center; }
         .quiz-btn:active { transform: scale(0.97); }
         input[type="number"].standard, select.standard { width: 100%; padding: 15px 20px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; border-radius: 12px; outline: none; font-size: 15px; box-sizing: border-box; appearance: none; }
         input[type="number"].standard:focus, select.standard:focus { border-color: #c084fc; background: rgba(15, 23, 42, 0.9); }
-        
         .option-btn { background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: left; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; word-wrap: break-word; }
         .option-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: #38bdf8; }
         .option-btn.selected { background: rgba(56, 189, 248, 0.2) !important; border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.3) !important; }
         
-        .mic-btn { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; color: #ef4444; padding: 25px; border-radius: 50%; font-size: 30px; cursor: pointer; transition: 0.3s; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; margin: 20px auto; }
-        .mic-btn.recording { background: #ef4444; color: white; animation: pulseRed 1s infinite; box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
-
         .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px 10px; border-radius: 15px; text-align: center; flex: 1 1 28%; min-width: 80px; }
         .stat-box .num { font-size: 32px; font-weight: 900; }
-        .result-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; }
         
+        .result-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; }
+        @keyframes loadingSweep { 0% { left: -30%; width: 30%; } 50% { width: 50%; } 100% { left: 100%; width: 30%; } }
+        @keyframes fadeToast { 0% { opacity: 0; bottom: 10px; } 10% { opacity: 1; bottom: 30px; } 90% { opacity: 1; bottom: 30px; } 100% { opacity: 0; bottom: 10px; } }
         select.standard option { background: #0f172a; color: white; }
         .subj-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: center; font-weight: 600; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
         .subj-btn:hover { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; }
-        .topic-btn { background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 15px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .topic-btn:hover { background: rgba(56, 189, 248, 0.2); border-color: #38bdf8; }
-
+        
         .subj-scroll-container { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 10px; -webkit-overflow-scrolling: touch; }
         .subj-scroll-container::-webkit-scrollbar { width: 4px; }
         .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
 
+        /* Brain Loader Animation */
         .brain-loader { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 30px auto; height: 50px; }
         .brain-loader span { width: 15px; height: 15px; background: #a855f7; border-radius: 50%; animation: brainBounce 1.2s infinite ease-in-out; box-shadow: 0 0 10px rgba(168,85,247,0.5); }
         .brain-loader span:nth-child(2) { animation-delay: -0.2s; background: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.5); }
         .brain-loader span:nth-child(3) { animation-delay: -0.4s; background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
         @keyframes brainBounce { 0%, 80%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-20px) scale(1.2); } }
 
-        .timer-box { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 5px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: 0.3s; }
+        /* Timer UI */
+        .timer-box {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
         .timer-box.hurry { animation: pulseRed 1s infinite; }
-        @keyframes pulseRed { 0% { background: rgba(239, 68, 68, 0.15); } 50% { background: rgba(239, 68, 68, 0.4); color: #fff; } 100% { background: rgba(239, 68, 68, 0.15); } }
+        
+        /* Mic Buttons */
+        .mic-btn-main { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; color: #ef4444; padding: 20px; border-radius: 50%; font-size: 24px; cursor: pointer; transition: 0.3s; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 15px auto; box-shadow: 0 0 15px rgba(239,68,68,0.2); }
+        .mic-btn-main.recording { background: #ef4444; color: white; animation: pulseRed 1s infinite; box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
     </style>
 </head>
 <body>
@@ -89,9 +102,9 @@
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+
 </div>
 
-<!-- SUBJECT MODAL -->
 <div id="subjectModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
     <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
@@ -99,8 +112,8 @@
             <button id="closeSubjectModalBtn" class="closeBtn" style="position:static; margin: 0; width: 40px; height: 40px;">✕</button>
         </div>
         <div class="subj-scroll-container">
-            <button class="subj-btn main-subj">Math</button>
             <button class="subj-btn main-subj">Science</button>
+            <button class="subj-btn main-subj">Math</button>
             <button class="subj-btn main-subj">Computer Science</button>
             <button class="subj-btn main-subj">English Grammar</button>
             <button class="subj-btn main-subj">Hindi Grammar</button>
@@ -112,7 +125,6 @@
     </div>
 </div>
 
-<!-- TOPIC MODAL -->
 <div id="topicModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100001; align-items: center; justify-content: center; padding: 20px;">
     <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; max-height: 85vh;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
@@ -123,9 +135,23 @@
     </div>
 </div>
 
+<div id="speakModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); z-index: 100002; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; align-items: center;">
+        <h3 style="color: white; margin: 0 0 15px 0; font-size: 20px;">🎙️ Speak Your Answer</h3>
+        <button id="speakMicBtn" class="mic-btn-main" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">🎤</button>
+        <div id="speakStatus" style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Hold to speak...</div>
+        
+        <textarea id="speakTranscript" readonly style="width: 100%; height: 100px; background: rgba(0,0,0,0.3); color: white; border: 1px solid #38bdf8; border-radius: 12px; padding: 10px; margin-bottom: 20px; resize: none; font-size:15px; font-weight:600;" placeholder="Your spoken answer will appear here... Cannot be edited manually."></textarea>
+        
+        <div style="display: flex; width: 100%; gap: 10px;">
+            <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px;" onclick="clearRecording()">🔄 Re-Record</button>
+            <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px;" onclick="saveSpeakAnswer()">✅ Save Answer</button>
+        </div>
+    </div>
+</div>
+
 <div class="page active quiz-page-container" id="quizPageContainer">
     
-    <!-- SETUP SCREEN -->
     <div id="quizSetup" class="card quiz-card quiz-setup active" style="padding: 30px;">
         <h2 class="cardTitle" style="color: #a855f7; font-size: 26px; margin-bottom: 25px; text-align: center;">AI Quiz Generator</h2>
         
@@ -136,6 +162,7 @@
                 <option value="English">English</option>
                 <option value="Hinglish">Hinglish</option>
             </select>
+            <div id="langLockMsg" style="font-size: 11px; color: #f59e0b; margin-top: 5px; display: none;">Language locked for this subject.</div>
         </div>
 
         <div style="text-align: left; margin-bottom: 18px;">
@@ -148,8 +175,8 @@
         </div>
 
         <div style="text-align: left; margin-bottom: 18px;">
-            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject <span style="font-size:11px; font-weight:normal; color:#64748b;">(Optional)</span></label>
-            <div id="quizSubjectSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Subject <span style="font-size:11px; font-weight:normal; color:#64748b;">(Optional - Leave blank for random)</span></label>
+            <div id="quizSubjectSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
                 <span id="selectedSubjectText">Select Subject... (Or Leave Blank)</span>
                 <span style="font-size: 12px;">▼</span>
             </div>
@@ -162,7 +189,7 @@
                     <span style="font-size: 15px;">🌐</span> English
                 </button>
             </div>
-            <div id="quizTopicSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+            <div id="quizTopicSelector" style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 15px 20px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
                 <span id="selectedTopicText">Select Topic... (Or Leave Blank)</span>
                 <span style="font-size: 12px;">▼</span>
             </div>
@@ -172,7 +199,7 @@
             <div style="flex: 1; text-align: left;">
                 <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Class / Grade</label>
                 <select id="quizClass" class="standard" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);">
-                    <option value="" disabled selected>Select...</option>
+                    <option value="" disabled selected>Select Class...</option>
                     <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
                     <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
                     <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
@@ -181,14 +208,25 @@
             </div>
             <div style="flex: 1; text-align: left;">
                 <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">Questions</label>
-                <input type="number" id="quizCount" class="standard" min="1" max="30" value="5">
+                <input type="number" id="quizCount" class="standard" min="1" max="25" value="5">
             </div>
         </div>
 
-        <div style="text-align: left; margin-bottom: 18px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">            
-            <label style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 14px; cursor: pointer; font-weight: 500;">
+        <div style="text-align: left; margin-bottom: 18px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+            <label style="color: #cbd5e1; font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block;">AI Engine Priority</label>
+            <select id="modelPriority" class="standard" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
+                <option value="gemini,cloudflare,groq" selected>💎 Gemini → Cloudflare → Groq</option>
+                <option value="groq,cloudflare,gemini">⚡ Groq → Cloudflare → Gemini</option>
+            </select>
+            
+            <label style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 14px; cursor: pointer; font-weight: 500; margin-bottom: 10px;">
                 <input type="checkbox" id="enableTimer" checked style="width: 18px; height: 18px; accent-color: #22c55e; cursor: pointer;">
                 ⏱️ Enable Question Timer
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 14px; cursor: pointer; font-weight: 500;">
+                <input type="checkbox" id="divideMode" style="width: 18px; height: 18px; accent-color: #a855f7; cursor: pointer;">
+                Divide Questions to Model (Simultaneous)
             </label>
         </div>
 
@@ -200,7 +238,6 @@
         </div>
     </div>
 
-    <!-- ACTIVE QUIZ SCREEN -->
     <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
         <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden;">
             <div id="quizProgressBar" style="height: 100%; width: 0%; background: #38bdf8; transition: width 0.3s ease;"></div>
@@ -218,10 +255,9 @@
         
         <div id="optionsContainer" style="display: flex; flex-direction: column;"></div>
         
-        <div id="micContainer" style="display:none; text-align:center;">
-            <button id="micBtn" class="mic-btn" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">🎤</button>
-            <div id="micStatus" style="font-size: 13px; color: #94a3b8; margin-top: 10px;">Hold microphone button to speak</div>
-            <div id="micResultText" style="font-size: 15px; color: #22c55e; font-weight:600; margin-top: 10px; min-height: 20px;"></div>
+        <div id="verbalActionContainer" style="display:none; text-align:center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.2);">
+            <div id="verbalRecordedPreview" style="font-size: 14px; color: #22c55e; margin-bottom: 15px; font-weight: 600; min-height: 20px;">No answer recorded yet.</div>
+            <button onclick="openSpeakGui()" class="btn" style="background: #38bdf8; color: white; padding: 12px 25px; border-radius: 20px; font-size: 16px; width: 100%;">🗣️ Open Speaker GUI</button>
         </div>
 
         <div style="display: flex; gap: 15px; margin-top: 25px;">
@@ -230,7 +266,6 @@
         </div>
     </div>
 
-    <!-- RESULTS SCREEN -->
     <div id="quizResults" class="card quiz-card quiz-results" style="background: transparent; border: none; padding: 0;">
         <div id="pdfExportArea" class="card" style="padding: 30px; width: 100%; box-sizing: border-box; background-color: #0f172a; color: white;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -258,7 +293,6 @@
 <script src="main.js" defer></script>
 
 <script>
-    // System Utilities
     function toggleSidebar() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
@@ -276,95 +310,72 @@
         setTimeout(() => t.remove(), 3000);
     }
 
-    let chosenSubject = "";
-    let chosenTopic = "";
-    let topicLang = "en"; 
-    let timerInterval;
-    let timeLeft = 60;
-    let quizData = [];
-    let currentQuestionIndex = 0;
-    let userAnswers = [];
-
-    // Audio & Speech Recognition Vars - CRASH FIXED
-    let mediaRecorder;
-    let audioChunks = [];
-    let currentAudioUrl = null;
-    let currentTranscript = "";
-    let isRecordingActive = false;
-    let recognition = null;
-    let streamReference = null; // Store stream to forcefully kill it and free memory
-    
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-    }
-
-    // MASSIVE COMPREHENSIVE TOPIC DICTIONARY (Nothing missing, +5 advanced added per subject)
     const topicData = {
-        "Math": [
-            { en: "Algebra", hi: "बीजगणित" }, { en: "Geometry", hi: "ज्यामिति" }, 
-            { en: "Calculus", hi: "कैलकुलस" }, { en: "Trigonometry", hi: "त्रिकोणमिति" }, 
-            { en: "Arithmetic", hi: "अंकगणित" }, { en: "Fractions & Decimals", hi: "भिन्न और दशमलव" }, 
-            { en: "Statistics", hi: "सांख्यिकी" }, { en: "Probability", hi: "प्रायिकता" }, 
-            { en: "Number System", hi: "संख्या प्रणाली" }, { en: "Matrices", hi: "मैट्रिक्स" },
-            { en: "Topology", hi: "टोपोलॉजी" }, { en: "Number Theory", hi: "संख्या सिद्धांत" },
-            { en: "Discrete Mathematics", hi: "असतत गणित" }, { en: "Cryptography Basics", hi: "क्रिप्टोग्राफी मूल बातें" },
-            { en: "Differential Equations", hi: "अवकल समीकरण" }
+        "Math": [ 
+            { en: "Number System", hi: "संख्या पद्धति" }, { en: "Algebra", hi: "बीजगणित" }, { en: "Geometry", hi: "ज्यामिति" }, 
+            { en: "Trigonometry", hi: "त्रिकोणमिति" }, { en: "Mensuration", hi: "क्षेत्रमिति" }, { en: "Statistics", hi: "सांख्यिकी" }, 
+            { en: "Probability", hi: "प्रायिकता" }, { en: "Fractions & Decimals", hi: "भिन्न और दशमलव" }, 
+            { en: "Linear Equations", hi: "रैखिक समीकरण" }, { en: "Quadratic Equations", hi: "द्विघात समीकरण" }, 
+            { en: "Polynomials", hi: "बहुपद" }, { en: "Coordinate Geometry", hi: "निर्देशांक ज्यामिति" }, 
+            { en: "Surface Area and Volume", hi: "पृष्ठीय क्षेत्रफल और आयतन" } 
         ],
-        "Science": [
-            { en: "Physics", hi: "भौतिक विज्ञान" }, { en: "Chemistry", hi: "रसायन विज्ञान" }, 
-            { en: "Biology", hi: "जीव विज्ञान" }, { en: "Astronomy", hi: "खगोल विज्ञान" }, 
-            { en: "Environmental Science", hi: "पर्यावरण विज्ञान" }, { en: "Human Anatomy", hi: "मानव शरीर रचना" },
-            { en: "Genetics", hi: "आनुवंशिकी" }, { en: "Quantum Mechanics Basics", hi: "क्वांटम यांत्रिकी की मूल बातें" },
-            { en: "Earth Science", hi: "पृथ्वी विज्ञान" }, { en: "Oceanography", hi: "समुद्र विज्ञान" },
-            { en: "Botany", hi: "वनस्पति विज्ञान" }
+        "Science": [ 
+            { en: "Physics (General)", hi: "भौतिक विज्ञान (सामान्य)" }, { en: "Chemistry (General)", hi: "रसायन विज्ञान (सामान्य)" }, 
+            { en: "Biology (General)", hi: "जीव विज्ञान (सामान्य)" }, { en: "Motion", hi: "गति" }, 
+            { en: "Force & Laws of Motion", hi: "बल और गति के नियम" }, { en: "Gravitation", hi: "गुरुत्वाकर्षण" },
+            { en: "Work and Energy", hi: "कार्य और ऊर्जा" }, { en: "Sound", hi: "ध्वनि" }, 
+            { en: "Structure of the Atom", hi: "परमाणु की संरचना" }, { en: "Matter in Our Surroundings", hi: "हमारे आस-पास के पदार्थ" },
+            { en: "Tissues", hi: "ऊतक" }, { en: "Diversity in Living Organisms", hi: "जीवों में विविधता" },
+            { en: "Natural Resources", hi: "प्राकृतिक संपदा" }, { en: "Light - Reflection & Refraction", hi: "प्रकाश - परावर्तन तथा अपवर्तन" },
+            { en: "Electricity", hi: "विद्युत" }, { en: "Magnetic Effects of Electric Current", hi: "विद्युत धारा के चुंबकीय प्रभाव" }
+        ],
+        "SST": [ 
+            { en: "The French Revolution", hi: "फ्रांसीसी क्रांति" }, { en: "Socialism in Europe and the Russian Revolution", hi: "यूरोप में समाजवाद एवं रूसी क्रांति" }, 
+            { en: "Nazism and the Rise of Hitler", hi: "नात्सीवाद और हिटलर का उदय" }, { en: "Forest Society and Colonialism", hi: "वन्य समाज एवं उपनिवेशवाद" },
+            { en: "Pastoralists in the Modern World", hi: "आधुनिक विश्व में चरवाहे" }, { en: "India - Size and Location", hi: "भारत - आकार और स्थिति" },
+            { en: "Physical Features of India", hi: "भारत का भौतिक स्वरूप" }, { en: "Drainage", hi: "अपवाह" },
+            { en: "Climate", hi: "जलवायु" }, { en: "Natural Vegetation and Wildlife", hi: "प्राकृतिक वनस्पति तथा वन्य प्राणी" },
+            { en: "Population", hi: "जनसंख्या" }, { en: "What is Democracy? Why Democracy?", hi: "लोकतंत्र क्या? लोकतंत्र क्यों?" },
+            { en: "Constitutional Design", hi: "संविधान निर्माण" }, { en: "Electoral Politics", hi: "चुनावी राजनीति" },
+            { en: "Working of Institutions", hi: "संस्थाओं का कामकाज" }, { en: "Democratic Rights", hi: "लोकतांत्रिक अधिकार" },
+            { en: "The Story of Village Palampur", hi: "पालमपुर गाँव की कहानी" }, { en: "People as Resource", hi: "संसाधन के रूप में लोग" },
+            { en: "Poverty as a Challenge", hi: "निर्धनता: एक चुनौती" }, { en: "Food Security in India", hi: "भारत में खाद्य सुरक्षा" },
+            { en: "Nationalism in India", hi: "भारत में राष्ट्रवाद" }, { en: "The Making of a Global World", hi: "भूमंडलीकृत विश्व का बनना" },
+            { en: "The Age of Industrialization", hi: "औद्योगीकरण की युग" }, { en: "Print Culture and the Modern World", hi: "मुद्रण संस्कृति और आधुनिक दुनिया" },
+            { en: "Resources and Development", hi: "संसाधन और विकास" }, { en: "Water Resources", hi: "जल संसाधन" },
+            { en: "Agriculture", hi: "कृषि" }, { en: "Power Sharing", hi: "सत्ता की साझेदारी" }, { en: "Federalism", hi: "संघवाद" },
+            { en: "Gender, Religion and Caste", hi: "जाति, धर्म और लैंगिक मसले" }, { en: "Political Parties", hi: "राजनीतिक दल" },
+            { en: "Outcomes of Democracy", hi: "लोकतंत्र के परिणाम" }, { en: "Sectors of the Indian Economy", hi: "भारतीय अर्थव्यवस्था के क्षेत्रक" }
+        ],
+        "English Grammar": [ 
+            { en: "Tenses", hi: "Tenses" }, { en: "Nouns & Pronouns", hi: "Nouns & Pronouns" }, 
+            { en: "Active & Passive Voice", hi: "Active & Passive Voice" }, { en: "Direct & Indirect Speech", hi: "Direct & Indirect Speech" },
+            { en: "Prepositions", hi: "Prepositions" }, { en: "Conjunctions", hi: "Conjunctions" },
+            { en: "Articles", hi: "Articles" }, { en: "Subject-Verb Agreement", hi: "Subject-Verb Agreement" },
+            { en: "Modals", hi: "Modals" }, { en: "Idioms & Phrases", hi: "Idioms & Phrases" },
+            { en: "Sentence Rearrangement", hi: "Sentence Rearrangement" }
+        ],
+        "Hindi Grammar": [ 
+            { en: "संज्ञा और सर्वनाम", hi: "संज्ञा और सर्वनाम" }, { en: "मुहावरे और लोकोक्तियाँ", hi: "मुहावरे और लोकोक्तियाँ" }, 
+            { en: "संधि और समास", hi: "संधि और समास" }, { en: "विलोम और पर्यायवाची", hi: "विलोम और पर्यायवाची" },
+            { en: "रस (Ras)", hi: "रस" }, { en: "अलंकार (Alankar)", hi: "अलंकार" },
+            { en: "प्रत्यय और उपसर्ग", hi: "प्रत्यय और उपसर्ग" }, { en: "वाक्य भेद", hi: "वाक्य भेद" },
+            { en: "पत्र लेखन (Format)", hi: "पत्र लेखन (प्रारूप)" }, { en: "अनुच्छेद लेखन", hi: "अनुच्छेद लेखन" }
         ],
         "Computer Science": [
-            { en: "Programming Basics", hi: "प्रोग्रामिंग की मूल बातें" }, { en: "Data Structures", hi: "डेटा संरचनाएं" },
-            { en: "Algorithms", hi: "एल्गोरिदम" }, { en: "Networking", hi: "नेटवर्किंग" },
-            { en: "Databases (SQL)", hi: "डेटाबेस (SQL)" }, { en: "Hardware & Architecture", hi: "हार्डवेयर और वास्तुकला" },
-            { en: "Artificial Intelligence", hi: "कृत्रिम बुद्धिमत्ता (AI)" }, { en: "Cybersecurity Basics", hi: "साइबर सुरक्षा मूल बातें" },
-            { en: "Operating Systems", hi: "ऑपरेटिंग सिस्टम" }, { en: "Cloud Computing", hi: "क्लाउड कंप्यूटिंग" },
-            { en: "Web Development", hi: "वेब विकास" }
-        ],
-        "English Grammar": [
-            { en: "Nouns & Pronouns", hi: "Nouns & Pronouns" }, { en: "Verbs & Tenses", hi: "Verbs & Tenses" },
-            { en: "Adjectives & Adverbs", hi: "Adjectives & Adverbs" }, { en: "Prepositions", hi: "Prepositions" },
-            { en: "Conjunctions", hi: "Conjunctions" }, { en: "Subject-Verb Agreement", hi: "Subject-Verb Agreement" },
-            { en: "Idioms & Phrases", hi: "Idioms & Phrases" }, { en: "Direct & Indirect Speech", hi: "Direct & Indirect Speech" },
-            { en: "Active & Passive Voice", hi: "Active & Passive Voice" }, { en: "Punctuation Rules", hi: "Punctuation Rules" },
-            { en: "Sentence Diagramming", hi: "Sentence Diagramming" }
-        ],
-        "Hindi Grammar": [
-            { en: "Sangya (Noun)", hi: "संज्ञा" }, { en: "Sarvnam (Pronoun)", hi: "सर्वनाम" },
-            { en: "Visheshan (Adjective)", hi: "विशेषण" }, { en: "Kriya (Verb)", hi: "क्रिया" },
-            { en: "Kaal (Tense)", hi: "काल" }, { en: "Vachya (Voice)", hi: "वाच्य" },
-            { en: "Sandhi", hi: "संधि" }, { en: "Samas", hi: "समास" },
-            { en: "Alankar", hi: "अलंकार" }, { en: "Muhavare", hi: "मुहावरे" },
-            { en: "Paryayvachi Shabd", hi: "पर्यायवाची शब्द" }
-        ],
-        "SST": [
-            { en: "Civics & Government", hi: "नागरिक शास्त्र और सरकार" }, { en: "Economics", hi: "अर्थशास्त्र" },
-            { en: "Demographics", hi: "जनसांख्यिकी" }, { en: "Indian Constitution", hi: "भारतीय संविधान" },
-            { en: "Global Trade", hi: "वैश्विक व्यापार" }, { en: "Human Rights", hi: "मानवाधिकार" },
-            { en: "Political Science Basics", hi: "राजनीति विज्ञान मूल बातें" }, { en: "Sociology", hi: "समाजशास्त्र" },
-            { en: "Anthropology", hi: "मानव विज्ञान" }
+            { en: "Computer Networks", hi: "कंप्यूटर नेटवर्किंग" }, { en: "Database Management (DBMS)", hi: "डेटाबेस मैनेजमेंट" },
+            { en: "HTML & CSS Basics", hi: "HTML और CSS मूल बातें" }, { en: "Python Programming", hi: "पायथन प्रोग्रामिंग" },
+            { en: "Data Structures", hi: "डेटा संरचना (Data Structures)" }, { en: "Cyber Security", hi: "साइबर सुरक्षा" },
+            { en: "Operating Systems", hi: "ऑपरेटिंग सिस्टम" }, { en: "Binary Mathematics", hi: "बाइनरी गणित" }
         ],
         "Geography": [
-            { en: "Physical Geography", hi: "भौतिक भूगोल" }, { en: "World Maps & Continents", hi: "विश्व मानचित्र और महाद्वीप" },
-            { en: "Climate & Weather", hi: "जलवायु और मौसम" }, { en: "Topography", hi: "स्थलाकृति" },
-            { en: "Cartography", hi: "मानचित्रकला" }, { en: "Geopolitics", hi: "भू-राजनीति" },
-            { en: "Urban Planning", hi: "शहरी नियोजन" }, { en: "Natural Disasters", hi: "प्राकृतिक आपदाएं" },
-            { en: "Glaciology", hi: "हिमनद विज्ञान" }
+            { en: "World Geography", hi: "विश्व का भूगोल" }, { en: "Physical Geography", hi: "भौतिक भूगोल" },
+            { en: "Human Geography", hi: "मानव भूगोल" }, { en: "Maps and Topography", hi: "मानचित्र और स्थलाकृति" },
+            { en: "Environment and Ecology", hi: "पर्यावरण और पारिस्थितिकी" }
         ],
         "History": [
             { en: "Ancient History", hi: "प्राचीन इतिहास" }, { en: "Medieval History", hi: "मध्यकालीन इतिहास" },
-            { en: "Modern History", hi: "आधुनिक इतिहास" }, { en: "World Wars I & II", hi: "प्रथम और द्वितीय विश्व युद्ध" },
-            { en: "Industrial Revolution", hi: "औद्योगिक क्रांति" }, { en: "Renaissance Period", hi: "पुनर्जागरण काल" },
-            { en: "Ancient Egypt", hi: "प्राचीन मिस्र" }, { en: "Indus Valley Civilization", hi: "सिंधु घाटी सभ्यता" },
-            { en: "Cold War Era", hi: "शीत युद्ध युग" }
+            { en: "Modern World History", hi: "आधुनिक विश्व इतिहास" }, { en: "Industrial Revolution", hi: "औद्योगिक क्रांति" }
         ],
         "GK": [
             { en: "Current Affairs", hi: "सामयिकी (करंट अफेयर्स)" }, { en: "Sports & Games", hi: "खेल-कूद" },
@@ -375,110 +386,263 @@
         ]
     };
 
-    // UI Wireups
+    let chosenSubject = "";
+    let chosenTopic = "";
+    let topicLang = "en"; 
+    let timerInterval;
+    let timeLeft = 60;
+
+    document.getElementById('quizLanguage').addEventListener('change', (e) => {
+        topicLang = (e.target.value === 'Hindi') ? 'hi' : 'en';
+        document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
+        if(chosenSubject) renderTopics();
+    });
+
     const subjModal = document.getElementById('subjectModal');
-    const topicModal = document.getElementById('topicModal');
-    
     document.getElementById('quizSubjectSelector').addEventListener('click', () => { subjModal.style.display = 'flex'; });
     document.getElementById('closeSubjectModalBtn').addEventListener('click', () => { subjModal.style.display = 'none'; });
-    
-    document.getElementById('quizTopicSelector').addEventListener('click', () => { if(chosenSubject) topicModal.style.display = 'flex'; });
-    document.getElementById('closeTopicModalBtn').addEventListener('click', () => { topicModal.style.display = 'none'; });
 
     document.querySelectorAll('.main-subj').forEach(btn => {
         btn.addEventListener('click', (e) => {
             chosenSubject = e.target.innerText;
-            document.getElementById('selectedSubjectText').innerText = chosenSubject;
-            document.getElementById('selectedSubjectText').style.color = "white";
+            const textEl = document.getElementById('selectedSubjectText');
+            textEl.innerText = chosenSubject;
+            // Removed white color overwrite here!
             subjModal.style.display = 'none';
+
+            const langSelect = document.getElementById('quizLanguage');
+            const langLockMsg = document.getElementById('langLockMsg');
             
-            chosenTopic = "";
-            document.getElementById('selectedTopicText').innerText = "Select Topic... (Or Leave Blank)";
-            document.getElementById('topicContainer').style.display = 'block';
-            renderTopics();
+            if (chosenSubject === "English Grammar") {
+                langSelect.value = "English";
+                langSelect.style.pointerEvents = "none";
+                langSelect.style.opacity = "0.5";
+                langLockMsg.style.display = "block";
+            } else if (chosenSubject === "Hindi Grammar") {
+                langSelect.value = "Hindi";
+                langSelect.style.pointerEvents = "none";
+                langSelect.style.opacity = "0.5";
+                langLockMsg.style.display = "block";
+            } else {
+                langSelect.style.pointerEvents = "auto";
+                langSelect.style.opacity = "1";
+                langLockMsg.style.display = "none";
+            }
+
+            topicLang = (langSelect.value === 'Hindi') ? 'hi' : 'en';
+            document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
+
+            if (topicData[chosenSubject]) {
+                document.getElementById('topicContainer').style.display = 'block';
+                chosenTopic = "";
+                document.getElementById('selectedTopicText').innerText = "Select Topic... (Or Leave Blank)";
+                renderTopics();
+            } else {
+                document.getElementById('topicContainer').style.display = 'none';
+                chosenTopic = "";
+            }
         });
     });
 
+    const topicModal = document.getElementById('topicModal');
     document.getElementById('topicLangToggle').addEventListener('click', () => {
-        topicLang = topicLang === "en" ? "hi" : "en";
-        document.getElementById('topicLangToggle').innerHTML = topicLang === "en" ? `<span style="font-size: 15px;">🌐</span> English` : `<span style="font-size: 15px;">🌐</span> हिंदी`;
+        topicLang = topicLang === 'en' ? 'hi' : 'en';
+        document.getElementById('topicLangToggle').innerHTML = `<span style="font-size: 15px;">🌐</span> ${topicLang === 'en' ? 'English' : 'हिंदी'}`;
         renderTopics();
+        if (chosenTopic && topicData[chosenSubject]) {
+            const found = topicData[chosenSubject].find(t => t.en === chosenTopic || t.hi === chosenTopic);
+            if(found) { chosenTopic = found[topicLang]; document.getElementById('selectedTopicText').innerText = chosenTopic; }
+        }
     });
+
+    document.getElementById('quizTopicSelector').addEventListener('click', () => { if(topicData[chosenSubject]) topicModal.style.display = 'flex'; });
+    document.getElementById('closeTopicModalBtn').addEventListener('click', () => { topicModal.style.display = 'none'; });
 
     function renderTopics() {
         const container = document.getElementById('topicListContainer');
         container.innerHTML = '';
-        if(topicData[chosenSubject]) {
-            topicData[chosenSubject].forEach(t => {
-                const btn = document.createElement('button');
-                btn.className = 'topic-btn';
-                btn.innerText = t[topicLang];
-                btn.onclick = () => {
-                    chosenTopic = t.en;
-                    document.getElementById('selectedTopicText').innerText = t[topicLang];
-                    document.getElementById('selectedTopicText').style.color = "white";
-                    topicModal.style.display = 'none';
-                };
-                container.appendChild(btn);
-            });
-        }
+        if(!topicData[chosenSubject]) return;
+        topicData[chosenSubject].forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'subj-btn';
+            btn.innerText = t[topicLang];
+            btn.onclick = () => {
+                chosenTopic = t[topicLang];
+                document.getElementById('selectedTopicText').innerText = chosenTopic;
+                // Removed white color overwrite here!
+                topicModal.style.display = 'none';
+            };
+            container.appendChild(btn);
+        });
     }
 
-    // API Call
-    async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language) {
+    let quizData = [];
+    let currentQuestionIndex = 0;
+    let userAnswers = [];
+    
+    // Audio Rec Vars
+    let mediaRecorder;
+    let audioChunks = [];
+    let currentAudioUrl = null;
+    let currentTranscript = "";
+    let isRecordingActive = false;
+    let recognition = null;
+    let streamReference = null;
+    
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+    }
+
+    const setupEl = document.getElementById('quizSetup'), activeEl = document.getElementById('quizActive'), resultsEl = document.getElementById('quizResults');
+    const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadingContainer = document.getElementById('loadingAnimationContainer');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // VERY IMPORTANT: YOUR ORIGINAL FETCH CHUNK AND ROBUST FALLBACK LOGIC
+    async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
-        1. LANGUAGE: The ENTIRE quiz (questions, options, and explanations) MUST be strictly in ${language.toUpperCase()}. Do not provide English options if the user selected Hindi.
-        2. NO HINTS IN OPTIONS: Ensure all 4 options look uniformly plausible in the selected language.
-        3. All numbers MUST be standard English Arabic numerals (0-9).
-        4. Return ONLY a valid JSON array. NO markdown code blocks.
+        1. DIFFICULTY SCALING: The difficulty level MUST strictly match Class ${grade} academic standards.
+        2. LANGUAGE: The ENTIRE quiz (questions, options, and explanations) MUST be strictly in ${language.toUpperCase()}. Even if the topic name is English, write everything in ${language}.
+        3. NO HINTS IN OPTIONS (CRITICAL): The 4 items in the "options" array MUST be identical in format. DO NOT add any extra English meanings, translations, or hints to the correct option.
+        4. ALL NUMBERS MUST be standard English Arabic numerals (0-9). DO NOT use Hindi numerals.
+        5. Use LaTeX for ALL math equations. Wrap inline math in $...$ and display math in $$...$$.
+        6. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
+        7. Return ONLY a valid JSON array. NO markdown code blocks. NO extra conversational text.
         Format exactly like this:
         [
           {
-            "question": "What is 2+2?",
-            "options": ["3", "4", "5", "6"],
-            "correctOption": "4",
-            "explanation": "Because 2+2 equals 4."
+            "question": "What is $\\\\frac{1}{2} + \\\\frac{1}{4}$?",
+            "options": ["$\\\\frac{3}{4}$", "1", "0", "$\\\\frac{1}{8}$"],
+            "correctOption": "$\\\\frac{3}{4}$",
+            "explanation": "Because $\\\\frac{2}{4} + \\\\frac{1}{4} = \\\\frac{3}{4}$."
           }
         ]`;
 
         const response = await fetch('/api/gemini-text', {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ systemPrompt: "You are a strict data-only API. Output nothing except the requested JSON array.", userPrompt: prompt, providerOverride: "gemini" })
+            body: JSON.stringify({ 
+                systemPrompt: "You are a strict data-only API. Output nothing except the requested JSON array.",
+                userPrompt: prompt,
+                providerOverride: providerOverride
+            })
         });
         
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Failed to fetch from server.");
+
         let rawText = data.text;
-        let startIdx = rawText.indexOf('['); let endIdx = rawText.lastIndexOf(']');
-        let parsedArray = JSON.parse(rawText.substring(startIdx, endIdx + 1));
+        let startIdx = rawText.indexOf('[');
+        let endIdx = rawText.lastIndexOf(']');
+        if (startIdx === -1 || endIdx === -1) throw new Error("AI did not return the correct array format.");
+
+        let cleanJsonString = rawText.substring(startIdx, endIdx + 1);
+        let parsedArray;
+        
+        try {
+            parsedArray = JSON.parse(cleanJsonString);
+        } catch (err) {
+            console.error("JSON Parsing failed for this chunk:", cleanJsonString);
+            throw new Error("AI returned malformed data (Syntax Error). Please try again.");
+        }
 
         return parsedArray.map(item => ({
-            question: item.question,
-            options: item.options,
-            correctOption: item.correctOption,
-            explanation: item.explanation
+            question: item.question || item.q || "Question text missing",
+            options: item.options || item.choices || ["A", "B", "C", "D"],
+            correctOption: item.correctOption || item.correct_option || item.answer || item.correctAnswer || item.correct || "",
+            explanation: item.explanation || item.reason || item.reasoning || item.desc || "No explanation provided."
         }));
     }
 
-    document.getElementById('startQuizBtn').addEventListener('click', async () => {
+    async function robustFetchChunk(chunkCount, grade, topicStr, language, modelQueue) {
+        for (let i = 0; i < modelQueue.length; i++) {
+            let currentModel = modelQueue[i];
+            try {
+                console.log(`Trying ${chunkCount} questions with ${currentModel}`);
+                return await fetchQuizChunk(chunkCount, grade, topicStr, language, currentModel);
+            } catch (e) {
+                console.warn(`[Fallback Triggered] ${currentModel} failed:`, e);
+            }
+        }
+        throw new Error("All models in the queue failed for this chunk.");
+    }
+
+    startBtn.addEventListener('click', async () => {
         const grade = document.getElementById('quizClass').value;
         const language = document.getElementById('quizLanguage').value;
         const quizMode = document.getElementById('quizModeSelect').value;
         let count = parseInt(document.getElementById('quizCount').value);
         
+        const modelPriorityStr = document.getElementById('modelPriority').value;
+        const isDivideMode = document.getElementById('divideMode').checked;
+
         if(!grade) { showToast("⚠️ Please select a Class/Grade."); return; }
         
-        document.getElementById('startQuizBtn').style.display = 'none';
-        document.getElementById('loadingAnimationContainer').style.display = 'block';
+        if(isNaN(count) || count < 1) count = 5;
+        if(count > 25) count = 25; // Adjusted MAX to 25 per user request
+
+        // HIDE Aa BUTTON!
+        const fDock = document.getElementById('fontSizeDock');
+        if (fDock) fDock.style.display = 'none';
+
+        startBtn.style.display = 'none';
+        loadingContainer.style.display = 'block';
         
-        let finalTopicStr = chosenSubject ? `${chosenSubject} - ${chosenTopic}` : "Mixed topics across multiple random academic subjects";
-        window.activeQuizTitle = chosenSubject || "Mixed Subjects";
+        let finalTopicStr = "";
+        let displayTitleStr = "";
         
+        if (!chosenSubject) {
+            finalTopicStr = "Mixed topics across multiple random academic subjects";
+            displayTitleStr = "Mixed Subjects";
+            document.getElementById('quizTag').innerText = `Mixed Subjects • Class ${grade}`;
+        } else if (!chosenTopic) {
+            finalTopicStr = `A random mix of all topics within the subject: ${chosenSubject}`;
+            displayTitleStr = `${chosenSubject} (Mixed Topics)`;
+            document.getElementById('quizTag').innerText = `${chosenSubject} (Mixed) • Class ${grade}`;
+        } else {
+            finalTopicStr = `${chosenSubject} - ${chosenTopic}`;
+            displayTitleStr = `${chosenSubject} - ${chosenTopic}`;
+            document.getElementById('quizTag').innerText = `${finalTopicStr} • Class ${grade}`;
+        }
+        
+        const baseModelOrder = modelPriorityStr.split(','); 
+
         try {
-            let result = await fetchQuizChunk(count, grade, finalTopicStr, language);
-            
-            quizData = result.map(q => {
+            let allFetchedQuestions = [];
+
+            if (isDivideMode) {
+                setupStatus.innerHTML = "Dividing workload across AI Models simultaneously...";
+                let chunk1 = Math.ceil(count / 3);
+                let chunk2 = Math.ceil((count - chunk1) / 2);
+                let chunk3 = count - chunk1 - chunk2;
+                const promises = [];
+                if (chunk1 > 0) promises.push(robustFetchChunk(chunk1, grade, finalTopicStr, language, [baseModelOrder[0], baseModelOrder[1], baseModelOrder[2]]));
+                if (chunk2 > 0) promises.push(robustFetchChunk(chunk2, grade, finalTopicStr, language, [baseModelOrder[1], baseModelOrder[2], baseModelOrder[0]]));
+                if (chunk3 > 0) promises.push(robustFetchChunk(chunk3, grade, finalTopicStr, language, [baseModelOrder[2], baseModelOrder[0], baseModelOrder[1]]));
+                const results = await Promise.all(promises);
+                allFetchedQuestions = results.flat();
+            } else {
+                setupStatus.innerHTML = `Connecting to ${baseModelOrder[0].toUpperCase()} AI Engine...`;
+                let chunks = [];
+                let remaining = count;
+                while(remaining > 0) {
+                    let c = Math.min(remaining, 15);
+                    chunks.push(c);
+                    remaining -= c;
+                }
+                for (let c of chunks) {
+                    let result = await robustFetchChunk(c, grade, finalTopicStr, language, baseModelOrder);
+                    allFetchedQuestions = allFetchedQuestions.concat(result);
+                }
+            }
+
+            if(allFetchedQuestions.length === 0) throw new Error("AI returned empty quiz array. Please try again.");
+
+            // Assign Mokhik/Verbal Mode
+            quizData = allFetchedQuestions.slice(0, count).map(q => {
                 let isVerbal = false;
                 if(quizMode === 'mokhik') isVerbal = true;
                 if(quizMode === 'mixed') isVerbal = Math.random() > 0.5;
@@ -487,15 +651,19 @@
 
             currentQuestionIndex = 0;
             userAnswers = [];
+            window.activeQuizTitle = displayTitleStr;
             
-            document.getElementById('quizSetup').classList.remove('active');
-            document.getElementById('quizActive').classList.add('active');
+            setupEl.classList.remove('active');
+            activeEl.classList.add('active');
             renderQuestion();
 
         } catch(err) {
-            showToast("⚠️ Generation error. Try again!");
-            document.getElementById('startQuizBtn').style.display = 'block';
-            document.getElementById('loadingAnimationContainer').style.display = 'none';
+            console.error("Quiz Generation Failed:", err);
+            setupStatus.innerHTML = `❌ Error: Generation failed. Try asking for fewer questions.`;
+            showToast("⚠️ Generation error. Click start again!");
+            startBtn.style.display = 'block';
+            loadingContainer.style.display = 'none';
+            if (fDock) fDock.style.display = 'flex'; // Restore if failed
         }
     });
 
@@ -510,19 +678,26 @@
         }
         
         timerContainer.style.display = 'flex';
-        timeLeft = (chosenSubject === "Math") ? 120 : 45;
+        // 120s for Math, 60s for all others as requested
+        timeLeft = (chosenSubject === "Math") ? 120 : 60;
         
         const timerText = document.getElementById('timerText');
-        timerText.innerText = timeLeft + "s";
         timerContainer.classList.remove('hurry');
+        timerText.innerText = timeLeft + "s";
 
         timerInterval = setInterval(() => {
             timeLeft--;
             timerText.innerText = timeLeft + "s";
-            if(timeLeft <= 10) timerContainer.classList.add('hurry');
+            
+            if(timeLeft <= 10) {
+                timerContainer.classList.add('hurry');
+            }
+
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                if (!userAnswers[currentQuestionIndex]) userAnswers[currentQuestionIndex] = "Skipped";
+                if (!userAnswers[currentQuestionIndex]) {
+                    userAnswers[currentQuestionIndex] = "Skipped";
+                }
                 handleNextQuestion();
             }
         }, 1000);
@@ -532,40 +707,38 @@
         startTimer(); 
         currentAudioUrl = null;
         currentTranscript = "";
+        document.getElementById('speakTranscript').value = "";
+        document.getElementById('verbalRecordedPreview').innerText = "No answer recorded yet.";
 
         const qData = quizData[currentQuestionIndex];
-        document.getElementById('quizProgressBar').style.width = (((currentQuestionIndex) / quizData.length) * 100) + '%';
+        const progressPct = ((currentQuestionIndex) / quizData.length) * 100;
+        document.getElementById('quizProgressBar').style.width = progressPct + '%';
         document.getElementById('quizProgress').innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+        
         document.getElementById('questionText').innerHTML = String(qData.question).replace(/</g, "&lt;").replace(/>/g, "&gt;");
         
         const optsContainer = document.getElementById('optionsContainer');
-        const micContainer = document.getElementById('micContainer');
+        const verbalActionContainer = document.getElementById('verbalActionContainer');
         const verbalBadge = document.getElementById('verbalModeBadge');
         
         optsContainer.innerHTML = '';
-        document.getElementById('micResultText').innerText = '';
 
         if (qData.isVerbal) {
             optsContainer.style.display = 'none';
-            micContainer.style.display = 'block';
+            verbalActionContainer.style.display = 'block';
             verbalBadge.style.display = 'block';
-            
-            // Speak text securely
-            if('speechSynthesis' in window) {
-                speechSynthesis.cancel(); // kill previous
-                let utter = new SpeechSynthesisUtterance(document.getElementById('questionText').innerText);
-                utter.lang = document.getElementById('quizLanguage').value === 'Hindi' ? 'hi-IN' : 'en-US';
-                speechSynthesis.speak(utter);
-            }
         } else {
             optsContainer.style.display = 'flex';
-            micContainer.style.display = 'none';
+            verbalActionContainer.style.display = 'none';
             verbalBadge.style.display = 'none';
             
+            const prevAns = userAnswers[currentQuestionIndex];
             qData.options.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
                 btn.innerHTML = String(opt).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                if (prevAns && opt === prevAns && prevAns !== "Skipped") btn.classList.add('selected'); 
+                
                 btn.onclick = () => { 
                     userAnswers[currentQuestionIndex] = opt; 
                     Array.from(optsContainer.children).forEach(c => c.classList.remove('selected'));
@@ -575,18 +748,29 @@
             });
         }
 
-        document.getElementById('nextBtn').innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
-        if (window.MathJax) MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')]);
+        nextBtn.innerText = currentQuestionIndex === quizData.length - 1 ? 'Finish 🏆' : 'Next ➡️';
+
+        if (window.MathJax) {
+            MathJax.typesetPromise([document.getElementById('questionText'), document.getElementById('optionsContainer')]);
+        }
     }
 
-    // Audio Recording - MEMORY LEAK CRASH FIXED
+    // SPEAK GUI LOGIC
+    function openSpeakGui() {
+        document.getElementById('speakModal').style.display = 'flex';
+    }
+    
+    function closeSpeakGui() {
+        document.getElementById('speakModal').style.display = 'none';
+    }
+
     async function startRecording() {
         if(isRecordingActive) return;
         isRecordingActive = true;
-        const btn = document.getElementById('micBtn');
+        const btn = document.getElementById('speakMicBtn');
         btn.classList.add('recording');
-        document.getElementById('micStatus').innerText = "Listening... Speak your answer";
-        document.getElementById('micResultText').innerText = "";
+        document.getElementById('speakStatus').innerText = "Listening... Speak your answer";
+        document.getElementById('speakTranscript').value = "";
         currentTranscript = "";
 
         try {
@@ -601,7 +785,6 @@
             mediaRecorder.onstop = () => {
                 const blob = new Blob(audioChunks, { type: 'audio/webm' });
                 currentAudioUrl = URL.createObjectURL(blob);
-                saveVerbalAnswer();
             };
             
             mediaRecorder.start();
@@ -615,12 +798,12 @@
                         if (e.results[i].isFinal) currentTranscript += e.results[i][0].transcript;
                         else interimTranscript += e.results[i][0].transcript;
                     }
-                    document.getElementById('micResultText').innerText = currentTranscript || interimTranscript;
+                    document.getElementById('speakTranscript').value = currentTranscript || interimTranscript;
                 };
             }
         } catch (e) {
             console.error(e);
-            showToast("Microphone access denied or error!");
+            showToast("⚠️ Microphone access denied or error!");
             stopRecording();
         }
     }
@@ -629,27 +812,42 @@
         if(!isRecordingActive) return;
         isRecordingActive = false;
         
-        document.getElementById('micBtn').classList.remove('recording');
-        document.getElementById('micStatus').innerText = "Saved. Hold again to re-record.";
+        document.getElementById('speakMicBtn').classList.remove('recording');
+        document.getElementById('speakStatus').innerText = "Recording stopped. You can save or re-record.";
         
-        // Force kill media recorder & tracks to stop memory leaks
         try {
             if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
             if(streamReference) streamReference.getTracks().forEach(track => track.stop());
             if(recognition) recognition.stop();
-        } catch(err) {
-            console.error("Cleanup error", err);
-        }
+        } catch(err) { console.error("Cleanup error", err); }
     }
 
-    function saveVerbalAnswer() {
+    function clearRecording() {
+        currentAudioUrl = null;
+        currentTranscript = "";
+        document.getElementById('speakTranscript').value = "";
+        document.getElementById('speakStatus').innerText = "Hold to speak...";
+    }
+
+    function saveSpeakAnswer() {
+        let finalTxt = currentTranscript || document.getElementById('speakTranscript').value || "Audio Only";
+        if(finalTxt.trim() === "" && !currentAudioUrl) {
+            showToast("⚠️ Please record an answer first!");
+            return;
+        }
+        
         userAnswers[currentQuestionIndex] = {
             isVerbal: true,
-            text: currentTranscript || document.getElementById('micResultText').innerText || "Audio Only",
+            text: finalTxt,
             audioUrl: currentAudioUrl
         };
+        
+        document.getElementById('verbalRecordedPreview').innerText = `🎙️ Saved: "${finalTxt}"`;
+        closeSpeakGui();
+        showToast("✅ Audio Answer Saved!");
     }
 
+    // Lenient Evaluation Logic
     function isLenientMatch(userText, correctText) {
         if(!userText || userText === "Audio Only") return false;
         let u = userText.toLowerCase().trim();
@@ -663,30 +861,40 @@
         return cWords.length > 0 && (matches / cWords.length) >= 0.4;
     }
 
+    // Navigation
     document.getElementById('skipBtn').addEventListener('click', () => {
         userAnswers[currentQuestionIndex] = "Skipped";
         handleNextQuestion();
     });
 
-    document.getElementById('nextBtn').addEventListener('click', () => {
+    nextBtn.addEventListener('click', () => {
         const qData = quizData[currentQuestionIndex];
-        if (qData.isVerbal && !currentAudioUrl && !currentTranscript) return showToast("⚠️ Please record your answer first!");
-        if (!qData.isVerbal && !userAnswers[currentQuestionIndex]) return showToast("⚠️ Please select an answer first!");
+        if (qData.isVerbal && (!userAnswers[currentQuestionIndex] || !userAnswers[currentQuestionIndex].text)) {
+            return showToast("⚠️ Please open Speaker GUI and record an answer first!");
+        }
+        if (!qData.isVerbal && !userAnswers[currentQuestionIndex]) {
+            return showToast("⚠️ Please select an answer first! Wait for timer to skip.");
+        }
         handleNextQuestion();
     });
 
     function handleNextQuestion() {
         clearInterval(timerInterval);
-        if('speechSynthesis' in window) speechSynthesis.cancel();
-        
         currentQuestionIndex++;
-        if (currentQuestionIndex >= quizData.length) finishQuiz(); 
-        else renderQuestion();
+        if (currentQuestionIndex >= quizData.length) {
+            finishQuiz(); 
+        } else {
+            renderQuestion();
+        }
     }
 
     function finishQuiz() {
-        document.getElementById('quizActive').classList.remove('active');
-        document.getElementById('quizResults').classList.add('active');
+        activeEl.classList.remove('active');
+        resultsEl.classList.add('active');
+        
+        // Restore Aa Button
+        const fDock = document.getElementById('fontSizeDock');
+        if (fDock) fDock.style.display = 'flex';
         
         let correctCount = 0;
         let reviewHtml = '';
@@ -701,89 +909,200 @@
 
             if (userAns === "Skipped") {
                 displayAns = "- (Skipped / Time Out)";
-                colorClass = '#f59e0b'; statusIcon = '⏳';
+                colorClass = '#f59e0b'; // orange
+                statusIcon = '⏳';
             } else if (q.isVerbal) {
                 isCorrect = isLenientMatch(userAns.text, q.correctOption);
-                if(isCorrect) { correctCount++; statusIcon = '✅'; colorClass = '#22c55e'; }
+                if (isCorrect) { correctCount++; statusIcon = '✅'; colorClass = '#22c55e'; }
                 displayAns = `🎙️ "${userAns.text}"`;
-                if(userAns.audioUrl) audioHtml = `<div style="margin-top:8px;"><audio controls src="${userAns.audioUrl}" style="height:35px; width:100%; border-radius:30px;"></audio></div>`;
+                // Add audio player if it exists
+                if (userAns.audioUrl) {
+                    audioHtml = `<div style="margin-top:8px;"><audio controls src="${userAns.audioUrl}" style="height:35px; width:100%; border-radius:30px;"></audio></div>`;
+                }
             } else {
                 isCorrect = String(userAns).trim() === String(q.correctOption).trim();
                 if (isCorrect) { correctCount++; statusIcon = '✅'; colorClass = '#22c55e'; }
                 displayAns = String(userAns).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             }
             
+            const safeQ = String(q.question).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeC = String(q.correctOption).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const safeE = String(q.explanation).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
             reviewHtml += `
             <div class="result-card">
-                <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">${index + 1}. ${q.question}</div>
+                <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">${index + 1}. ${safeQ}</div>
                 <div style="font-size: 13px; margin-bottom: 5px;">
                     <span style="color: #94a3b8;">Your Answer:</span> <span style="color: ${colorClass}; font-weight: 600;">${statusIcon} ${displayAns}</span>
                 </div>
                 ${audioHtml}
                 <div style="font-size: 13px; margin-top: 10px; margin-bottom: 10px;">
-                    <span style="color: #94a3b8;">Correct Answer:</span> <span style="color: #22c55e; font-weight: 600;">${q.correctOption}</span>
+                    <span style="color: #94a3b8;">Correct Answer:</span> <span style="color: #22c55e; font-weight: 600;">${safeC}</span>
                 </div>
                 <div style="font-size: 14px; color: #ffffff; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #a855f7; margin-top: 8px; font-weight: 500;">
-                    <b>Explanation:</b> ${q.explanation}
+                    <b>Explanation:</b> ${safeE}
                 </div>
             </div>`;
         });
 
+        const grade = document.getElementById('quizClass').value;
         const total = quizData.length;
-        const percentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-        let perfMsg = percentage >= 90 ? "Outstanding! You have mastered this! 🌟" : percentage >= 70 ? "Great job! Keep it up! 👏" : percentage >= 40 ? "Good effort, study more to master this. 📚" : "Needs improvement. Review concepts. 📖";
-        let perfColor = percentage >= 90 ? "#22c55e" : percentage >= 70 ? "#38bdf8" : percentage >= 40 ? "#f59e0b" : "#ef4444";
 
-        document.getElementById('resultSubtext').innerText = `${window.activeQuizTitle} - Class ${document.getElementById('quizClass').value}`;
-        document.getElementById('performanceMessage').innerHTML = `<span style="color: ${perfColor};">${perfMsg}</span> <br><span style="font-size: 13px; color: #94a3b8; font-weight: normal; margin-top: 5px; display: inline-block;">Score: ${percentage}%</span>`;
+        const percentage = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+        let perfMsg = "";
+        let perfColor = "";
+        if (percentage >= 90) { perfMsg = "Outstanding! You have mastered this topic! 🌟"; perfColor = "#22c55e"; }
+        else if (percentage >= 70) { perfMsg = "Great job! Keep up the good work! 👏"; perfColor = "#38bdf8"; }
+        else if (percentage >= 40) { perfMsg = "Good effort, but you need to study more to master this. 📚"; perfColor = "#f59e0b"; }
+        else { perfMsg = "Needs improvement. Please review the concepts and try again. 📖"; perfColor = "#ef4444"; }
+
+        document.getElementById('performanceMessage').innerHTML = `<span style="color: ${perfColor};">${perfMsg}</span> <br><span style="font-size: 13px; color: #94a3b8; font-weight: normal; margin-top: 5px; display: inline-block;">You scored ${percentage}% marks.</span>`;
+
+        document.getElementById('resultSubtext').innerText = `${window.activeQuizTitle} - Class ${grade}`;
         document.getElementById('statCorrect').innerText = correctCount;
         document.getElementById('statWrong').innerText = total - correctCount;
         document.getElementById('statTotal').innerText = total;
         document.getElementById('reviewContainer').innerHTML = reviewHtml;
 
         if (window.MathJax) MathJax.typesetPromise([document.getElementById('reviewContainer')]);
+        
+        // ===============================================
+        // YOUR ORIGINAL HISTORY SAVING FUNCTION RESTORED!
+        // ===============================================
+        saveQuizToHistory(window.activeQuizTitle, grade, correctCount, total, reviewHtml);
+    }
 
-        // ==========================================
-        // AUTO-SAVE TO HISTORY FOR history.html
-        // ==========================================
-        const quizHistoryData = {
-            id: Date.now(),
-            date: new Date().toISOString(),
-            subject: chosenSubject || "Mixed Quiz",
-            topic: chosenTopic || "Mixed Topics",
-            grade: document.getElementById('quizClass').value,
-            score: percentage,
-            correct: correctCount,
-            total: total,
-            quizData: quizData,
-            userAnswers: userAnswers.map(ans => {
-                // Strip blob URLs since they can't be stored long-term, keep text
-                if(ans && ans.isVerbal) {
-                    return { isVerbal: true, text: ans.text };
-                }
-                return ans;
-            })
-        };
+    // ORIGINAL HISTORY SAVER - SAVES DIRECTLY TO main.js aiHistory!
+    function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
+        if (typeof localforage !== 'undefined') {
+            let sessionId = Date.now();
+            let percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+            let formattedAnswer = `<div style="font-size:16px; font-weight:bold; color:#22c55e;">Score: ${correct} out of ${total} (${percentage}%)</div><hr style="border-color:rgba(255,255,255,0.1); margin:10px 0;">${htmlDetails}`;
+            
+            let histItem = { 
+                id: sessionId, 
+                type: 'quiz', 
+                title: `${subject} Quiz (${correct}/${total})`, 
+                interactions: [{ question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, answer: formattedAnswer, provider: "AI Quiz Engine" }], 
+                provider: "AI Quiz Engine", 
+                question: `Take a ${total}-question quiz on ${subject} for Class ${grade}.`, 
+                answer: formattedAnswer 
+            };
 
-        localforage.getItem('ai_pro_quiz_history').then(history => {
-            if (!history) history = [];
-            history.unshift(quizHistoryData); // Add to beginning
-            localforage.setItem('ai_pro_quiz_history', history).then(() => {
-                showToast("✅ Quiz securely saved to History!");
+            localforage.getItem('aiHistory').then(function(history) {
+                history = history || [];
+                history.unshift(histItem);
+                localforage.setItem('aiHistory', history);
+                console.log("Quiz saved to history successfully.");
+            }).catch(function(err) {
+                console.error("Failed to save quiz history", err);
             });
-        }).catch(err => console.error("Error saving history:", err));
+        }
     }
 
     function downloadPDF() {
         const element = document.getElementById('pdfExportArea');
+        const filenameSafe = window.activeQuizTitle ? window.activeQuizTitle.replace(/\s+/g, '_') : 'Mixed_Quiz';
+        
+        // Strict background styling applied inline to prevent white/blank PDFs and preserve font rendering
         element.style.backgroundColor = "#0f172a";
         element.style.color = "#ffffff";
+        
+        // letterRendering true fixes Hindi/foreign characters in html2canvas
         html2pdf().set({ 
-            margin: 10, filename: `AI_Quiz_Result_${Date.now()}.pdf`, 
+            margin: 10, 
+            filename: `AI_Quiz_Result_${filenameSafe}.pdf`, 
             image: { type: 'jpeg', quality: 0.98 }, 
-            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, 
+            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a', letterRendering: true }, 
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
         }).from(element).save().then(() => showToast("✅ PDF Downloaded!"));
+    }
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        checkForHistoryRestore();
+    });
+
+    function checkForHistoryRestore() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const restoreId = urlParams.get('restore');
+        
+        if (restoreId) {
+            try {
+                let history = [];
+                try { history = JSON.parse(localStorage.getItem('aiHistory') || '[]'); } catch(e) {}
+                
+                if (typeof localforage !== 'undefined') {
+                    localforage.getItem('aiHistory').then(data => {
+                        let merged = data || history;
+                        let item = merged.find(i => i.id == restoreId);
+                        if (item && item.interactions && item.interactions.length > 0) {
+                            executeQuizRestoration(item.interactions[0].answer, item.title || "Restored Quiz Review");
+                        }
+                    });
+                } else {
+                    let item = history.find(i => i.id == restoreId);
+                    if (item && item.interactions && item.interactions.length > 0) {
+                        executeQuizRestoration(item.interactions[0].answer, item.title || "Restored Quiz Review");
+                    }
+                }
+            } catch (err) {
+                console.error("Quiz session restoration failed:", err);
+            }
+        }
+    }
+
+    function executeQuizRestoration(savedHtmlTable, quizTitle) {
+        const setupView = document.getElementById('quizSetup');
+        const activeView = document.getElementById('quizActive');
+        const resultsView = document.getElementById('quizResults');
+        
+        if (setupView) setupView.classList.remove('active');
+        if (activeView) activeView.classList.remove('active');
+        if (resultsView) resultsView.classList.add('active');
+        
+        const reviewContainer = document.getElementById('reviewContainer');
+        const subtextHeader = document.getElementById('resultSubtext');
+        
+        if (reviewContainer) {
+            reviewContainer.innerHTML = savedHtmlTable;
+            if (window.MathJax) {
+                MathJax.typesetPromise([reviewContainer]).catch(e => console.log("MathJax error:", e));
+            }
+        }
+        if (subtextHeader) {
+            subtextHeader.innerText = quizTitle;
+        }
+
+        let scoreMatch = savedHtmlTable.match(/Score:\s*(\d+)\s*out\s*of\s*(\d+)/i);
+        if (scoreMatch) {
+            const correctCount = parseInt(scoreMatch[1]);
+            const totalCount = parseInt(scoreMatch[2]);
+            
+            const elCorrect = document.getElementById('statCorrect');
+            const elTotal = document.getElementById('statTotal');
+            const elWrong = document.getElementById('statWrong');
+            
+            if (elCorrect) elCorrect.innerText = correctCount;
+            if (elTotal) elTotal.innerText = totalCount;
+            if (elWrong) elWrong.innerText = totalCount - correctCount;
+
+            const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+            let perfMsg = "";
+            let perfColor = "";
+            if (percentage >= 90) { perfMsg = "Outstanding! You have mastered this topic! 🌟"; perfColor = "#22c55e"; }
+            else if (percentage >= 70) { perfMsg = "Great job! Keep up the good work! 👏"; perfColor = "#38bdf8"; }
+            else if (percentage >= 40) { perfMsg = "Good effort, but you need to study more to master this. 📚"; perfColor = "#f59e0b"; }
+            else { perfMsg = "Needs improvement. Please review the concepts and try again. 📖"; perfColor = "#ef4444"; }
+            
+            let pContainer = document.getElementById('performanceMessage');
+            if(pContainer) pContainer.innerHTML = `<span style="color: ${perfColor};">${perfMsg}</span> <br><span style="font-size: 13px; color: #94a3b8; font-weight: normal; margin-top: 5px; display: inline-block;">You scored ${percentage}% marks.</span>`;
+        }
+        
+        if (typeof showToast === "function") {
+            showToast("🔄 Quiz Session Restored");
+        }
     }
 </script>
 </body>
