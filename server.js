@@ -133,45 +133,64 @@ async function processQueue() {
 
         const page = await browser.newPage();
         
-        // Listen to console events inside the browser
-        page.on('console', msg => console.log('[Headless Browser Log]:', msg.text()));
-        
-        // 🚀 FIX 1: Load the main Hugging Face URL so security origins match perfectly
-        console.log("[Queue] Loading parent Hugging Face Space...");
-        await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
-            waitUntil: 'networkidle2', 
-            timeout: 60000
+        // Block heavy tracking/analytics ads that break network idle on Render
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            const resourceType = req.resourceType();
+            const url = req.url();
+            if (url.includes('google-analytics') || url.includes('analytics') || resourceType === 'font') {
+                req.abort();
+            } else {
+                req.continue();
+            }
         });
 
-        console.log("[Queue] Parent page loaded. Locating Gradio iframe wrapper...");
+        page.on('console', msg => console.log('[Headless Browser Log]:', msg.text()));
         
-        // 🚀 FIX 2: Wait for the iframe element to appear on the page
-        await page.waitForSelector('iframe[src*="hf.space"]', { timeout: 30000 });
-        const iframeElement = await page.$('iframe[src*="hf.space"]');
-        const frame = await iframeElement.contentFrame();
-        
-        if (!frame) throw new Error("Could not access the internal Gradio frame.");
+        console.log("[Queue] Loading parent Hugging Face Space...");
+        // 🚀 FIX 1: Use domcontentloaded so tracking requests don't cause timeouts
+        await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
+            waitUntil: 'domcontentloaded', 
+            timeout: 45000
+        });
 
-        console.log("[Queue] Internal frame connected successfully. Finding textbox...");
+        console.log("[Queue] Basic DOM loaded. Polling for the internal Gradio frame...");
         
-        // Now find the text box inside the verified secure frame
+        // 🚀 FIX 2: Fast retry loop to hook into the secure content frame immediately
+        let frame = null;
+        for (let attempt = 0; attempt < 30; attempt++) {
+            const iframes = await page.$$('iframe');
+            for (const iframe of iframes) {
+                const src = await iframe.evaluate(el => el.src || "");
+                if (src.includes('hf.space') || src.includes('gradio')) {
+                    frame = await iframe.contentFrame();
+                    break;
+                }
+            }
+            if (frame) break;
+            await new Promise(r => setTimeout(r, 1000)); // wait 1 sec before retrying
+        }
+
+        if (!frame) throw new Error("Gradio iframe failed to mount within time limit.");
+        console.log("[Queue] Internal frame linked! Finding textbox...");
+        
         const textareaSelector = 'textarea[data-testid="textbox"]';
-        await frame.waitForSelector(textareaSelector, { timeout: 30000 });
+        await frame.waitForSelector(textareaSelector, { timeout: 20000 });
         
-        // Clear box and type the prompt inside the frame context
+        // Type the prompt into the target element inside the secure frame context
         await frame.click(textareaSelector, { clickCount: 3 });
         await frame.type(textareaSelector, currentRequest.prompt);
         
         console.log("[Queue] Clicking Generate button inside frame...");
         await frame.evaluate(() => {
             const btns = Array.from(document.querySelectorAll('button'));
-            const genBtn = btns.find(b => b.innerText.includes('Generate'));
+            const genBtn = btns.find(b => b.innerText.includes('Generate') || b.className.includes('primary'));
             if(genBtn) genBtn.click();
         });
 
-        console.log("[Queue] Submitted. Actively watching frame for output image...");
+        console.log("[Queue] Submitted. Watching frame for output image (Resolves dynamically)...");
         
-        // 🚀 FIX 3: Watch for the image inside the frame context instead of the top page
+        // Polling loop inside the frame context to instantly catch the WebP source url
         const imageHandle = await frame.waitForFunction(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
@@ -184,7 +203,6 @@ async function processQueue() {
         }, { timeout: 45000, polling: 500 });
 
         const imageSrc = await imageHandle.jsonValue();
-
         if (!imageSrc) throw new Error("Could not locate the generated image element.");
 
         console.log("[Queue] Success! Final image grabbed: " + imageSrc);
@@ -199,7 +217,7 @@ async function processQueue() {
                 if (debugPages.length > 0) {
                     const screenshotPath = path.join(__dirname, 'debug_error.png');
                     await debugPages[0].screenshot({ path: screenshotPath });
-                    console.log(`[Debug] Screenshot saved to: ${screenshotPath}`);
+                    console.log(`[Debug] Screen layout saved to: ${screenshotPath}`);
                 }
             } catch (screenshotErr) {
                 console.error("[Debug] Failed to capture screenshot:", screenshotErr.message);
