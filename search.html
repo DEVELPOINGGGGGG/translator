@@ -39,8 +39,52 @@
 
         @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.4; } 100% { transform: scale(1.2); opacity: 1; } }
 
-        .advanced-spinner { width: 45px; height: 45px; border: 4px solid var(--border-light); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Fluid Progress Bar Animation */
+        .processing-container {
+            display: flex;
+            flex-direction: column;
+            padding: 15px 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: max-content;
+            min-width: 150px;
+        }
+        .processing-text {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            animation: pulseText 1.5s infinite;
+        }
+        .progress-bar-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar-fluid {
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #3b82f6, #a855f7, transparent);
+            position: absolute;
+            animation: slideFluid 1.2s infinite ease-in-out;
+        }
+        @keyframes slideFluid {
+            0% { left: -60%; }
+            100% { left: 100%; }
+        }
+        @keyframes pulseText {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
 
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
@@ -50,12 +94,12 @@
         #exitFocusBtn:hover { transform: scale(1.1); }
         body.focus-mode #exitFocusBtn { display: flex; }
 
-        #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
+        #settingsModal, #notesModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100000; justify-content: center; align-items: center; }
         .settings-content { background: var(--bg-surface); border: 2px solid var(--primary); border-radius: 20px; padding: 25px; width: 90%; max-width: 420px; box-shadow: 0 15px 40px rgba(0,0,0,0.5); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
         .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 14px; color: var(--text-main); font-weight: 600; }
-        .setting-select, .setting-input { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; width: 140px; }
+        .setting-select, .setting-input { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 10px; border-radius: 8px; outline: none; font-size: 13px; width: 140px; }
         .font-btns { display: flex; gap: 5px; }
         .font-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: 0.2s; }
         .font-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
@@ -88,7 +132,7 @@
         .uploaded-thumbnail-frame:hover { opacity: 0.85; }
 
         .action-row { margin-top:15px; border-top:1px solid var(--border-light); padding-top:12px; display:flex; gap:10px; position:relative; align-items:center; }
-        .action-btn { background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:4px; transition: 0.2s; }
+        .action-btn { background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); border-radius:8px; padding:8px 12px; font-size:13px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:6px; transition: 0.2s; width: 100%; justify-content: flex-start;}
         .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
         .global-options-btn { background: none; border: none; font-size: 24px; color: var(--text-main); cursor: pointer; padding: 0 5px; transition: color 0.2s; }
@@ -169,6 +213,21 @@
         </div>
     </div>
 
+    <div id="notesModal">
+        <div class="settings-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
+                <h3 style="margin:0; color:var(--primary);">📝 Create Chapter Notes</h3>
+                <button onclick="document.getElementById('notesModal').style.display='none'" style="background:#ef4444; color:white; border:none; width:25px; height:25px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <input type="text" id="notePublisher" placeholder="Book Publisher (e.g., NCERT)" class="setting-input" style="width:100%;">
+                <input type="text" id="noteSubject" placeholder="Book Name / Subject (e.g., 9th Grade Science)" class="setting-input" style="width:100%;">
+                <input type="text" id="noteChapter" placeholder="Chapter Name (e.g., Gravitation or Sound)" class="setting-input" style="width:100%;">
+                <button onclick="generateNotes()" style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; margin-top:10px; font-size: 15px;">✨ Generate Notes</button>
+            </div>
+        </div>
+    </div>
+
     <div id="htmlPreviewModal">
         <div class="preview-header"><span style="display:flex; align-items:center; gap:8px;">🌐 Live Web Preview</span><button class="preview-close" onclick="document.getElementById('htmlPreviewModal').style.display='none'">✕ Close</button></div>
         <iframe id="htmlPreviewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
@@ -231,13 +290,19 @@
             <button onclick="clearPdfFile()" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold; font-size:14px;">✕</button>
         </div>
 
-        <div class="chat-input-wrapper" style="display:flex; align-items:flex-end; gap:8px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+        <div class="chat-input-wrapper" style="position:relative; display:flex; align-items:flex-end; gap:8px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:24px; padding:6px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
             
             <input type="file" id="universalUploadInput" accept="image/*,.pdf,.html,.py,.java,.bat,.txt,.md,.csv" style="display:none;" onchange="handleUniversalUpload(event)">
             
-            <button type="button" class="chat-action-btn" onclick="openLocalCamera()" title="Take Photo" style="background:transparent; border:none; font-size:20px; cursor:pointer;">📷</button>
+            <div id="actionMenu" style="display:none; position:absolute; bottom:65px; left:5px; background:var(--bg-surface); border:1px solid var(--border-light); border-radius:16px; padding:12px; box-shadow:0 10px 40px rgba(0,0,0,0.6); flex-direction:column; gap:8px; z-index:100; min-width: 160px; animation: slideUp 0.2s ease;">
+                <button class="action-btn" onclick="openLocalCamera(); toggleActionMenu();">📷 Open Camera</button>
+                <button class="action-btn" onclick="document.getElementById('universalUploadInput').click(); toggleActionMenu();">📎 Upload Files</button>
+                <button class="action-btn" onclick="activateImageMode(); toggleActionMenu();" style="color:#a855f7;">🎨 Paint Image</button>
+                <div style="height:1px; background:var(--border-light); margin:4px 0;"></div>
+                <button class="action-btn" onclick="document.getElementById('notesModal').style.display='flex'; toggleActionMenu();" style="color:#10b981;">📝 Create Notes</button>
+            </div>
             
-            <button type="button" class="chat-action-btn" onclick="document.getElementById('universalUploadInput').click()" title="Upload File" style="background:transparent; border:none; font-size:20px; cursor:pointer;">📎</button>
+            <button type="button" class="chat-action-btn" onclick="toggleActionMenu()" title="More Actions" style="background:var(--primary); color:white; border:none; font-size:22px; cursor:pointer; border-radius:50%; width:45px; height:45px; display:flex; justify-content:center; align-items:center; flex-shrink:0; box-shadow: 0 4px 10px rgba(59,130,246,0.4); transition:0.2s;">➕</button>
             
             <textarea id="searchInput" placeholder="Ask anything, upload files/code, solve logic..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; line-height: 1.5;"></textarea>
             
@@ -262,7 +327,31 @@
         let localFacing = "environment";
         let localFlashOn = false;
 
-        // 🛑 BULLETPROOF FILE UPLOADER (Handles Images, PDFs, Code, TXT)
+        function toggleActionMenu() {
+            const menu = document.getElementById('actionMenu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        // Generate Notes Connection
+        function generateNotes() {
+            const pub = document.getElementById('notePublisher').value.trim();
+            const sub = document.getElementById('noteSubject').value.trim();
+            const chap = document.getElementById('noteChapter').value.trim();
+            
+            if(!pub || !sub || !chap) {
+                showToast("⚠️ Please fill all fields to generate notes.");
+                return;
+            }
+
+            document.getElementById('notesModal').style.display = 'none';
+            
+            const notePrompt = `Create comprehensive, highly structured, and detailed academic notes for:\nChapter: "${chap}"\nSubject: "${sub}"\nPublisher/Syllabus: "${pub}"\n\nPlease structure this clearly with headings, subheadings, key definitions, important formulas (if applicable), and a brief chapter summary at the end. Use Hindi/English mix if appropriate based on standard syllabus language.`;
+            
+            document.getElementById("searchInput").value = notePrompt;
+            runMainPipeline(); 
+        }
+
+        // 🛑 BULLETPROOF FILE UPLOADER
         window.handleUniversalUpload = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -298,7 +387,6 @@
                 reader.readAsArrayBuffer(file);
             } 
             else {
-                // Treats HTML, Python, Java, BAT, TXT files as plain text
                 showToast("⏳ Reading Code/Text File...");
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -309,10 +397,10 @@
                 };
                 reader.readAsText(file);
             }
-            event.target.value = ''; // Reset the input
+            event.target.value = ''; 
         };
 
-        // 🛑 BULLETPROOF CAMERA ENGINE (Local to Search)
+        // 🛑 BULLETPROOF CAMERA ENGINE
         window.openLocalCamera = async function() { 
             const mod = document.getElementById("cameraModal"); 
             mod.style.display = "flex"; mod.style.opacity = "1"; mod.classList.add("active"); 
@@ -414,8 +502,19 @@
         }
 
         function setSearchMode(mode) { activeSearchMode = mode; document.getElementById('modeLocalBtn').classList.toggle('active', mode === 'local'); document.getElementById('modeWebBtn').classList.toggle('active', mode === 'web'); }
-        function activateImageMode() { imageGenerationModeActive = true; document.getElementById("floatingModeChip").style.display = "flex"; document.getElementById("searchInput").placeholder = "Describe the image you want Flux to paint..."; document.getElementById("searchInput").focus(); }
-        function disableImageMode() { imageGenerationModeActive = false; document.getElementById("floatingModeChip").style.display = "none"; document.getElementById("searchInput").placeholder = "Ask anything, upload files/code, solve logic..."; }
+        
+        function activateImageMode() { 
+            imageGenerationModeActive = true; 
+            document.getElementById("floatingModeChip").style.display = "flex"; 
+            document.getElementById("searchInput").placeholder = "Describe the image you want AI to paint..."; 
+            document.getElementById("searchInput").focus(); 
+        }
+        
+        function disableImageMode() { 
+            imageGenerationModeActive = false; 
+            document.getElementById("floatingModeChip").style.display = "none"; 
+            document.getElementById("searchInput").placeholder = "Ask anything, upload files/code, solve logic..."; 
+        }
 
         try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
 
@@ -456,7 +555,7 @@
 
         function showWelcomeMessage() {
             const chatContainer = document.getElementById("searchChatHistory");
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;"><div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));"><div class="ai-signature">✨ DEEP AI PRO SYSTEM</div><b style="color:var(--primary); font-size:18px;">👋 Search & Code System Online.</b><br><br><div style="font-size:14px; line-height: 1.6;">• <b>Universal Uploader:</b> Attach Images, PDFs, HTML, Python, Java & more!<br>• <b>Live Camera:</b> Snap photos directly into chat.<br></div></div></div>`);
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" style="animation: slideInUp 0.5s ease;"><div class="bubble" style="border: 1px solid var(--primary); background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));"><div class="ai-signature">✨ DEEP AI PRO SYSTEM</div><b style="color:var(--primary); font-size:18px;">👋 Search & Creation System Online.</b><br><br><div style="font-size:14px; line-height: 1.6;">• Click <b>➕</b> to Upload files, generate Images, or Create Study Notes.<br>• Ask any logic, coding, or math question!</div></div></div>`);
             safeScroll();
         }
 
@@ -516,17 +615,25 @@
         function runMainPipeline() { 
             const inp = document.getElementById("searchInput"); 
             const textValue = inp.value.trim(); 
-            if (imageGenerationModeActive) { runDirectImageGeneration(textValue); disableImageMode(); } 
-            else { runStandaloneTextSearch(); } 
+            if (imageGenerationModeActive) { 
+                runDirectImageGeneration(textValue); 
+                disableImageMode(); 
+            } 
+            else { 
+                runStandaloneTextSearch(); 
+            } 
         }
 
-async function runDirectImageGeneration(promptText) {
+        // ==========================================
+        // 🚀 ENHANCED IMAGE GENERATION UI/UX FLOW
+        // ==========================================
+        async function runDirectImageGeneration(promptText) {
             if(!promptText) return; 
             document.getElementById("sendSearchBtn").innerHTML = "🚀";
             const chatContainer = document.getElementById("searchChatHistory"); 
             const loadId = "img_load_" + Date.now();
             
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">🎨 <b>Art Request:</b><br>${promptText}</div></div><div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:max-content;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div><div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div><div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div></div></div></div>`);
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">🎨 <b>Art Request:</b><br>${promptText}</div></div><div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div class="processing-container"><div class="processing-text">⚙️ Processing...</div><div class="progress-bar-track"><div class="progress-bar-fluid"></div></div></div></div></div>`);
             document.getElementById("searchInput").value = ""; safeScroll(); 
             
             try {
@@ -556,9 +663,9 @@ async function runDirectImageGeneration(promptText) {
                 const optionsHtml = `
                     <div style="margin-bottom:12px; font-weight:600;">✨ <b>Select a style for your image:</b></div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
-                        <button onclick="executeFinalImageGen('${loadId}', \`${options[0].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s;">1️⃣ ${options[0]}</button>
-                        <button onclick="executeFinalImageGen('${loadId}', \`${options[1].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s;">2️⃣ ${options[1]}</button>
-                        <button onclick="executeFinalImageGen('${loadId}', \`${options[2].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s;">3️⃣ ${options[2]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[0].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s; font-size:13px; line-height:1.4;">1️⃣ ${options[0]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[1].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s; font-size:13px; line-height:1.4;">2️⃣ ${options[1]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[2].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s; font-size:13px; line-height:1.4;">3️⃣ ${options[2]}</button>
                         <button onclick="executeFinalImageGen('${loadId}', \`${promptText.replace(/`/g, '')}\`)" style="text-align:center; padding:10px; border-radius:10px; border:1px dashed var(--text-muted); background:transparent; color:var(--text-main); font-weight:bold; cursor:pointer; margin-top:5px;">✏️ No, use my exact prompt</button>
                     </div>
                 `;
@@ -571,18 +678,16 @@ async function runDirectImageGeneration(promptText) {
             }
         }
 
-        // Helper function that actually triggers the server backend script
+        // Send to Server Puppeteer backend
         window.executeFinalImageGen = async function(loadId, finalPrompt) {
             const loadBubble = document.getElementById(loadId).querySelector('.bubble');
             
-            // Show loading state while image generates
             loadBubble.innerHTML = `
                 <div class="ai-signature">✨ RENDERING ENGINE ACTIVE</div>
-                <div style="font-size:12px; margin-bottom:10px; color:var(--primary); font-style:italic;">🎨 Painting: "${finalPrompt}"</div>
-                <div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; width:max-content;">
-                    <div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div>
-                    <div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div>
-                    <div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div>
+                <div style="font-size:12px; margin-bottom:10px; color:var(--text-main); font-style:italic;">🎨 Painting: "${finalPrompt}"</div>
+                <div class="processing-container" style="width:100%; box-sizing:border-box;">
+                    <div class="processing-text">🚀 Generating Image...</div>
+                    <div class="progress-bar-track"><div class="progress-bar-fluid"></div></div>
                 </div>
             `;
             safeScroll();
@@ -602,6 +707,9 @@ async function runDirectImageGeneration(promptText) {
             }
         }
 
+        // ==========================================
+        // TEXT SEARCH AND LOGIC PIPELINE
+        // ==========================================
         async function runStandaloneTextSearch() {
             const inp = document.getElementById("searchInput"); let q = inp.value.trim(); 
             if(!q && uploadedImages.length === 0 && !persistentPdfMemory) return; 
@@ -617,7 +725,6 @@ async function runDirectImageGeneration(promptText) {
             let currentImagesToSave = [...uploadedImages]; 
             let imageToUseForApi = uploadedImages.length > 0 ? uploadedImages[0] : null;
 
-            // 🛑 CHAT MEMORY FIX: If no new image, grab the last one from history so the AI can still "see" it!
             if (!imageToUseForApi && sessionMessages.length > 0) {
                 for (let i = sessionMessages.length - 1; i >= 0; i--) {
                     if (sessionMessages[i].imgs && sessionMessages[i].imgs.length > 0) {
@@ -633,11 +740,11 @@ async function runDirectImageGeneration(promptText) {
             let lowercaseQ = q.toLowerCase(); const codingKeywords = ['code', 'html', 'css', 'javascript', 'python', 'script', 'react', 'tailwind']; let isCodingRequest = codingKeywords.some(kw => lowercaseQ.includes(kw));
             let requiresImageTrigger = ["चित्र", "नक्शा", "map", "diagram", "picture"].some(kw => lowercaseQ.includes(kw));
 
+            // Added safe loading structure with the fluid bar!
             const loadId = "txt_load_" + Date.now();
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:max-content;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div><div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div><div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div></div></div></div>`);
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div class="processing-container"><div class="processing-text">⚙️ Thinking...</div><div class="progress-bar-track"><div class="progress-bar-fluid"></div></div></div></div></div>`);
             safeScroll();
 
-            // 🛑 FULL HISTORY LOGGING FOR PERFECT MEMORY
             let historyLog = "";
             if (sessionMessages.length > 0) {
                 historyLog = "--- MEMORY OF PREVIOUS MESSAGES IN THIS CHAT ---\n";
@@ -668,15 +775,20 @@ async function runDirectImageGeneration(promptText) {
                 }
 
                 let processedMathAns = processMath(cleanAns); let finalHtml = marked.parse(processedMathAns);
-
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<div class="ai-signature">✨ BY ${activeResolvedChannel}</div><div id="text_${loadId}" class="markdown-body"></div><div class="action-row"><button class="action-btn" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button><button class="action-btn" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy</button></div><div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
+                
+                // Extremely safe assignment to prevent undefined errors
+                const targetBubble = document.getElementById(loadId).querySelector('.bubble');
+                targetBubble.innerHTML = `<div class="ai-signature">✨ BY ${activeResolvedChannel}</div><div id="text_${loadId}" class="markdown-body"></div><div class="action-row"><button class="action-btn" style="width:auto;" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button><button class="action-btn" style="width:auto;" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy</button></div><div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
                 
                 runInsaneTypewriter(document.getElementById(`text_${loadId}`), finalHtml, () => {
                     if (window.MathJax) MathJax.typesetPromise([document.getElementById(loadId)]);
                     if (requiresImageTrigger) runDirectImageGeneration(q, `attached_image_zone_${loadId}`);
                 });
             } catch (err) { 
-                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Pipeline Failure: ${err.message}</span>`; 
+                const errorBubble = document.getElementById(loadId).querySelector('.bubble');
+                if (errorBubble) {
+                    errorBubble.innerHTML = `<div style="background:rgba(239, 68, 68, 0.1); border:1px solid #ef4444; padding:15px; border-radius:10px; color:#ef4444; font-weight:bold;">❌ Pipeline Failure:<br><span style="font-size:12px; font-weight:normal;">${err.message}</span></div>`;
+                }
             } finally { 
                 window.isProcessing = false; 
                 document.getElementById("sendSearchBtn").innerHTML = "🚀"; 
