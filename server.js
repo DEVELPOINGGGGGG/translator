@@ -118,7 +118,6 @@ async function processQueue() {
     try {
         console.log(`[Queue] Processing: ${currentRequest.prompt}`);
         
-        // Launch headless browser (Render optimized)
         browser = await puppeteer.launch({
             headless: true,
             executablePath: '/opt/render/project/src/.puppeteer_cache/chrome/linux-127.0.6533.88/chrome-linux64/chrome',
@@ -134,6 +133,9 @@ async function processQueue() {
 
         const page = await browser.newPage();
         
+        // Console log listener to capture page errors in Render logs
+        page.on('console', msg => console.log('[Headless Browser Log]:', msg.text()));
+        
         console.log("[Queue] Loading direct Hugging Face Space...");
         await page.goto('https://anycoderapps-z-image-turbo.hf.space', {
             waitUntil: 'domcontentloaded',
@@ -141,15 +143,12 @@ async function processQueue() {
         });
 
         console.log("[Queue] Page loaded. Finding textbox...");
-
         const textareaSelector = 'textarea[data-testid="textbox"]';
         await page.waitForSelector(textareaSelector, { timeout: 30000 });
         
-        // Clear box and type the prompt
         await page.click(textareaSelector, { clickCount: 3 });
         await page.type(textareaSelector, currentRequest.prompt);
         
-        // Click the generate button
         console.log("[Queue] Clicking Generate button...");
         await page.evaluate(() => {
             const btns = Array.from(document.querySelectorAll('button'));
@@ -157,42 +156,50 @@ async function processQueue() {
             if(genBtn) genBtn.click();
         });
 
-        console.log("[Queue] Submitted. Actively watching for output image (up to 60s)...");
+        console.log("[Queue] Submitted. Actively watching for output image...");
         
-        // 🚀 THE FIX: Actively watch the DOM for the generated image file instead of blindly waiting 18 seconds.
-        // It checks the page every 1 second until the image is found or 60 seconds pass.
         const imageHandle = await page.waitForFunction(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
                 const src = img.src || "";
-                // Gradio reliably uses 'gradio_api/file' in the source URL of generated files
-                // Or if it's placed inside the specific test-id container
                 if (src.includes('gradio_api/file') || (img.closest('div[data-testid="image"]') && src.length > 50)) {
                     return src;
                 }
             }
-            return false; // Keep watching
-        }, { timeout: 60000, polling: 1000 });
+            return false;
+        }, { timeout: 45000, polling: 500 });
 
-        // Extract the final URL string from the watcher
         const imageSrc = await imageHandle.jsonValue();
 
         if (!imageSrc) throw new Error("Could not locate the generated image element.");
 
         console.log("[Queue] Success! Final image grabbed: " + imageSrc);
-        
         currentRequest.resolve({ imageBase64: imageSrc });
 
     } catch (error) {
         console.error("[Queue Error]:", error.message);
+        
+        // 📷 RENDER DEBUGGING: If it fails, take a screenshot and save it to your static folder
+        if (browser) {
+            try {
+                const debugPages = await browser.pages();
+                if (debugPages.length > 0) {
+                    const screenshotPath = path.join(__dirname, 'debug_error.png');
+                    await debugPages[0].screenshot({ path: screenshotPath });
+                    console.log(`[Debug] Screenshot saved successfully at: ${screenshotPath}`);
+                    console.log(`[Debug] You can view it by going to: your-app-url.onrender.com/debug_error.png`);
+                }
+            } catch (screenshotErr) {
+                console.error("[Debug] Failed to capture screenshot:", screenshotErr.message);
+            }
+        }
+        
         currentRequest.reject(error);
     } finally {
         if (browser) {
             await browser.close().catch(e => console.log("Browser close error:", e.message));
         }
         isProcessingQueue = false;
-        
-        // Proceed to next request in queue
         setTimeout(processQueue, 1000);
     }
 }
