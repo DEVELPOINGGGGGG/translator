@@ -1,136 +1,587 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Book Deep Study</title>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f172a">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .book-hero { text-align:center; margin-bottom:22px; }
-    .book-hero h1 { font-size:clamp(28px,6vw,48px); font-weight:900; background:linear-gradient(90deg,#38bdf8,#8b5cf6,#f43f5e); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-    .book-hero p { color:var(--text-muted); max-width:900px; margin:10px auto 0; line-height:1.7; }
-    .book-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:18px; }
-    .book-panel { background:linear-gradient(145deg,var(--bg-surface),var(--input-bg)); border:1px solid var(--border-light); border-radius:24px; padding:18px; box-shadow:var(--glass-shadow); }
-    .book-panel label { display:block; font-weight:900; color:var(--primary); margin-bottom:10px; text-transform:uppercase; letter-spacing:.8px; font-size:12px; }
-    .quick-chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
-    .chip { border:1px solid var(--border-light); background:var(--input-bg); color:var(--text-main); border-radius:999px; padding:9px 13px; font-weight:800; cursor:pointer; transition:.25s; }
-    .chip:hover,.chip.active { background:var(--primary); color:#fff; transform:translateY(-2px); box-shadow:0 8px 20px var(--primary-glow); }
-    .chapter-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:12px; }
-    .chapter-card { text-align:left; border:1px solid var(--border-light); background:var(--input-bg); border-radius:18px; padding:14px; cursor:pointer; transition:.25s; }
-    .chapter-card:hover,.chapter-card.active { border-color:var(--primary); transform:translateY(-3px); box-shadow:0 10px 24px var(--primary-glow); }
-    .chapter-num { font-size:12px; font-weight:900; color:var(--secondary); text-transform:uppercase; }
-    .chapter-name { margin-top:5px; font-weight:800; }
-    .study-shell { display:grid; grid-template-columns:minmax(240px,330px) 1fr; gap:16px; align-items:start; }
-    .study-sidebar { position:sticky; top:90px; }
-    .study-actions { display:grid; gap:10px; }
-    .study-actions button { justify-content:flex-start; text-align:left; }
-    .chat-window { min-height:520px; display:flex; flex-direction:column; }
-    .book-chat-log { flex:1; overflow-y:auto; max-height:58vh; padding:8px 0; }
-    .book-input-row { display:flex; gap:10px; align-items:flex-end; margin-top:12px; }
-    .book-input-row textarea { resize:none; min-height:58px; }
-    .small-note { color:var(--text-muted); font-size:12px; line-height:1.6; margin-top:10px; }
-    @media (max-width: 840px) { .study-shell { grid-template-columns:1fr; } .study-sidebar { position:static; } .book-input-row { flex-direction:column; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Book Deep Study</title>
+    
+    <!-- Fonts & MathJax -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script>
+      MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* Base Styling & Locked Screen */
+        :root {
+            --bg-base: #020617;
+            --bg-surface: rgba(30, 41, 59, 0.7);
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --accent: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-light: rgba(255,255,255,0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        body, html {
+            margin: 0; padding: 0; 
+            width: 100vw; height: 100dvh; 
+            background: radial-gradient(circle at top left, #0f172a, #020617);
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden; /* SCREEN IS LOCKED */
+        }
+
+        .app-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
+
+        /* Premium Topbar */
+        .topbar {
+            height: 75px; 
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 25px; border-bottom: 1px solid var(--border-light); 
+            flex-shrink: 0; z-index: 10;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+        }
+
+        .title-text {
+            font-size: 24px; font-weight: 800; letter-spacing: 1px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: gradientShine 3s linear infinite;
+        }
+
+        .settings-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); color: white;
+            padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; 
+            display: none; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.15); transform: scale(1.05);
+        }
+
+        /* Wizard Steps */
+        .wizard-container {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px; overflow-y: auto; 
+        }
+
+        .step-card {
+            background: var(--bg-surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-light);
+            border-radius: 24px; padding: 40px; width: 100%; max-width: 500px;
+            box-shadow: var(--glass-shadow); display: none; text-align: center;
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .step-card.active { display: block; }
+
+        h2 { margin-top: 0; color: var(--primary); font-size: 26px; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
+        label { display: block; text-align: left; margin-bottom: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 13px; letter-spacing: 1px;}
+
+        select, input[type="text"] {
+            width: 100%; background: rgba(0,0,0,0.5); color: white;
+            border: 2px solid var(--border-light); border-radius: 14px;
+            padding: 16px; font-size: 16px; margin-bottom: 25px; outline: none; box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input[type="text"]:focus { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-row { display: flex; gap: 15px; justify-content: space-between; }
+        
+        button.btn {
+            flex: 1; padding: 16px; border: none; border-radius: 14px;
+            font-size: 16px; font-weight: 800; cursor: pointer; color: white;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        button.btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5); }
+        button.btn.secondary { background: rgba(255,255,255,0.1); border: 1px solid var(--border-light); box-shadow: none; }
+        button.btn.secondary:hover { background: rgba(255,255,255,0.2); }
+        button.btn.start-btn { background: linear-gradient(135deg, #10b981, #047857); font-size: 18px; padding: 20px; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);}
+
+        /* Premium Chat Interface */
+        .chat-container { display: none; flex-direction: column; flex: 1; height: calc(100% - 75px); }
+
+        .chat-scroll-area {
+            flex: 1; overflow-y: auto; padding: 25px;
+            display: flex; flex-direction: column; gap: 25px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-msg { display: flex; width: 100%; animation: slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .chat-user { justify-content: flex-end; }
+        .chat-ai { justify-content: flex-start; }
+
+        .bubble {
+            max-width: 80%; padding: 18px 24px; border-radius: 24px;
+            line-height: 1.8; font-size: 15px; position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .bubble:hover { transform: translateY(-2px); }
+        
+        .chat-user .bubble { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: white; border-bottom-right-radius: 6px; 
+        }
+        .chat-ai .bubble { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-bottom-left-radius: 6px; 
+            color: var(--text-main);
+        }
+        
+        .bubble img { max-width: 100%; border-radius: 12px; margin-top: 15px; border: 2px solid rgba(255,255,255,0.1); }
+
+        /* Glassmorphism Input Area */
+        .chat-input-area {
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 20px; border-top: 1px solid var(--border-light); 
+            display: flex; gap: 15px; align-items: flex-end; z-index: 10;
+        }
+
+        .chat-input-wrapper {
+            flex: 1; background: rgba(0,0,0,0.6); border: 1px solid var(--border-light);
+            border-radius: 24px; display: flex; align-items: center; padding: 8px 18px;
+            transition: all 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .chat-input-wrapper:focus-within {
+            border-color: var(--primary); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        textarea {
+            flex: 1; background: transparent; border: none; color: white;
+            font-family: inherit; font-size: 16px; resize: none;
+            padding: 12px 0; outline: none; max-height: 120px;
+        }
+
+        .icon-btn {
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 26px; cursor: pointer; padding: 10px; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon-btn:hover { color: var(--primary); transform: scale(1.1); }
+        .send-btn { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: white; border-radius: 50%; width: 45px; height: 45px; padding: 0;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); margin-left: 10px;
+        }
+        .send-btn:hover { transform: scale(1.1) rotate(15deg); }
+
+        #imagePreviewContainer { display: none; margin-bottom: 15px; position: relative; width: max-content; }
+        .img-chip { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 2px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: bounceIn 0.3s ease; }
+        .remove-img-btn { position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:24px; height:24px; font-size:12px; font-weight:bold; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: 0.2s; }
+        .remove-img-btn:hover { transform: scale(1.2); }
+
+        /* Premium Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.8) translateY(20px); } 60% { opacity: 1; transform: scale(1.05) translateY(-5px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes gradientShine { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        
+        /* Animated Typing Indicator */
+        .typing-indicator { display: flex; gap: 5px; padding: 5px 10px; align-items: center; }
+        .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: typingPulse 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typingPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px var(--primary); } }
+    </style>
 </head>
 <body>
-<div class="overlay" id="overlay"></div>
-<div class="topbar"><div class="menuBtn" onclick="toggleSidebar()">☰</div><div class="appTitle">📚 Book Deep Study</div></div>
-<div class="sidebar" id="sidebar">
-  <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
-  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-  <button onclick="window.location.href='books.html'" class="active">📚 Book Deep Study</button>
-  <button onclick="window.location.href='maths.html'">🧮 Math Solver (Gemini)</button>
-  <button onclick="window.location.href='search.html'">🔎 Deep Search (Groq)</button>
-  <button onclick="window.location.href='youtube.html'">▶️ YouTube Search</button>
-  <button onclick="window.location.href='quiz.html'">📝 Take a Quiz!</button>
-  <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
+
+<div class="app-container">
+    <div class="topbar">
+        <div class="title-text">Book Deep Study AI</div>
+        <button class="settings-btn" id="settingsBtn" onclick="openSettings()">⚙️ Settings</button>
+    </div>
+
+    <!-- WIZARD STEPS -->
+    <div class="wizard-container" id="wizardContainer">
+        
+        <!-- Step 1: Publisher -->
+        <div class="step-card active" id="step-1">
+            <h2>Step 1: Board</h2>
+            <label>Select Publisher / Board:</label>
+            <select id="publisherSelect">
+                <option value="" selected disabled>-- Select Publisher --</option>
+                <option value="NCERT">NCERT</option>
+                <option value="SCERT">SCERT</option>
+                <option value="Bihar Board">Bihar Board</option>
+                <option value="CBSE Reference">CBSE Reference</option>
+                <option value="Arihant">Arihant</option>
+                <option value="Oswaal">Oswaal</option>
+                <option value="S Chand">S Chand</option>
+                <option value="Pradeep">Pradeep</option>
+                <option value="Other">Other Publisher</option>
+            </select>
+            <div class="btn-row">
+                <button class="btn" onclick="nextStep(2)">Next ➔</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Subject -->
+        <div class="step-card" id="step-2">
+            <h2>Step 2: Subject</h2>
+            <label>Select Subject:</label>
+            <select id="subjectSelect" onchange="populateChapters()">
+                <option value="" selected disabled>-- Select Subject --</option>
+                <option value="Science">Science</option>
+                <option value="Physics">Physics</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Biology">Biology</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Social Science">Social Science</option>
+                <option value="History">History</option>
+                <option value="Geography">Geography</option>
+                <option value="Civics">Civics</option>
+                <option value="Economics">Economics</option>
+                <option value="English">English</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Sanskrit">Sanskrit</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Accountancy">Accountancy</option>
+                <option value="Business Studies">Business Studies</option>
+                <option value="Other">Other Subject</option>
+            </select>
+            <div class="btn-row">
+                <button class="btn secondary" onclick="nextStep(1)">⬅ Back</button>
+                <button class="btn" onclick="nextStep(3)">Next ➔</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Class -->
+        <div class="step-card" id="step-3">
+            <h2>Step 3: Class</h2>
+            <label>Select Class:</label>
+            <select id="classSelect">
+                <option value="" selected disabled>-- Select Class --</option>
+                <option value="Class 1">Class 1</option>
+                <option value="Class 2">Class 2</option>
+                <option value="Class 3">Class 3</option>
+                <option value="Class 4">Class 4</option>
+                <option value="Class 5">Class 5</option>
+                <option value="Class 6">Class 6</option>
+                <option value="Class 7">Class 7</option>
+                <option value="Class 8">Class 8</option>
+                <option value="Class 9">Class 9</option>
+                <option value="Class 10">Class 10</option>
+                <option value="Class 11">Class 11</option>
+                <option value="Class 12">Class 12</option>
+            </select>
+            <div class="btn-row">
+                <button class="btn secondary" onclick="nextStep(2)">⬅ Back</button>
+                <button class="btn" onclick="nextStep(4)">Next ➔</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Chapter -->
+        <div class="step-card" id="step-4">
+            <h2>Step 4: Chapter</h2>
+            <label>Select Chapter (From List):</label>
+            <select id="chapterSelect">
+                <option value="" selected disabled>-- Select Subject First --</option>
+            </select>
+            
+            <label style="margin-top:20px; color:var(--primary);">Or, Type Chapter Name in Hindi (Optional):</label>
+            <input type="text" id="manualChapter" placeholder="e.g. अध्याय 2: ध्वनि">
+            
+            <div class="btn-row">
+                <button class="btn secondary" onclick="nextStep(3)">⬅ Back</button>
+                <button class="btn" onclick="nextStep(5)">Next ➔</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Summary & Start -->
+        <div class="step-card" id="step-5">
+            <h2>System Ready</h2>
+            <div id="selectionSummary" style="text-align:left; background:rgba(0,0,0,0.4); border: 1px solid var(--border-light); padding:20px; border-radius:16px; margin-bottom:25px; color:var(--text-main); font-weight:500; line-height:2;"></div>
+            
+            <button class="btn start-btn" onclick="startConversation()">Initialize AI Tutor 🚀</button>
+            <br><br>
+            <button class="btn secondary" onclick="nextStep(4)">⬅ Edit Details</button>
+        </div>
+    </div>
+
+    <!-- PREMIUM CHAT INTERFACE -->
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-scroll-area" id="chatHistory">
+            <!-- Messages appear here -->
+        </div>
+
+        <div class="chat-input-area">
+            <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+            
+            <div style="display:flex; flex-direction:column; flex:1;">
+                <div id="imagePreviewContainer">
+                    <img id="imgChip" class="img-chip">
+                    <button class="remove-img-btn" onclick="removeImage()">✖</button>
+                </div>
+                <div class="chat-input-wrapper">
+                    <button class="icon-btn" onclick="document.getElementById('imageInput').click()" title="Upload Image">📷</button>
+                    <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
+                    <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<main class="page active" style="top:70px; padding-top:30px;">
-  <section class="book-hero">
-    <h1>Choose Publisher → Subject → Class → Chapter</h1>
-    <p>Pick NCERT, SCERT, Bihar Board, CBSE support books, or any custom publisher. Then open a Deep Search style AI study window for notes, Q&A, objective questions, summaries, and saved history.</p>
-  </section>
-
-  <section class="book-grid">
-    <div class="book-panel"><label for="publisherSelect">1. Publisher / Board</label><select id="publisherSelect"></select><input id="customPublisher" placeholder="Type other publisher / board name" style="display:none; margin-top:10px;"></div>
-    <div class="book-panel"><label for="subjectSelect">2. Subject</label><select id="subjectSelect"></select><input id="customSubject" placeholder="Type other subject" style="display:none; margin-top:10px;"></div>
-    <div class="book-panel"><label for="classSelect">3. Class</label><select id="classSelect"></select></div>
-    <div class="book-panel"><label for="chapterSelect">4. Chapter</label><select id="chapterSelect"></select></div>
-  </section>
-
-  <section class="book-panel">
-    <label>Chapter finder if the list is wrong</label>
-    <div class="book-grid" style="margin-bottom:0;">
-      <input id="manualChapterNo" placeholder="Chapter number, eg: 1">
-      <input id="manualChapterName" placeholder="Chapter name, eg: Resources and Development">
-      <button class="btn blue" onclick="findChapterPublisher()">🔍 Find Publisher</button>
-    </div>
-    <div id="finderResult" class="small-note"></div>
-    <div id="chapterCards" class="chapter-list"></div>
-  </section>
-
-  <section class="study-shell" style="margin-top:16px;">
-    <aside class="book-panel study-sidebar">
-      <label>Selected book data</label>
-      <div id="selectionSummary" style="font-weight:800; line-height:1.8;"></div>
-      <div class="small-note">The built-in catalog gives common school options. If exact chapter names differ by edition, type the correct chapter name/number and AI will use your provided data.</div>
-      <div class="quick-chips" id="quickChips"></div>
-      <div class="study-actions" style="margin-top:14px;">
-        <button class="btn blue" onclick="askPreset('Create clean exam notes with headings, definitions, key points, and examples.')">📝 Create Notes</button>
-        <button class="btn green" onclick="askPreset('Solve likely textbook question answers for this chapter in simple language.')">✅ Solve Q&A</button>
-        <button class="btn" onclick="askPreset('Create 20 objective questions with answers and explanations.')">🎯 Objective Questions</button>
-        <button class="btn red" onclick="clearBookHistory()">🗑️ Clear History</button>
-      </div>
-    </aside>
-    <section class="book-panel chat-window">
-      <label>AI chapter window</label>
-      <div id="bookChatLog" class="book-chat-log"></div>
-      <div class="book-input-row">
-        <textarea id="bookPrompt" placeholder="Ask about this chapter: make short notes, explain topic, create quiz, solve exercise..."></textarea>
-        <button class="chat-action-btn send" onclick="sendBookPrompt()">➤</button>
-      </div>
-    </section>
-  </section>
-</main>
-
 <script>
-const publishers = ['NCERT','SCERT','Bihar Board','CBSE Reference','Arihant','Oswaal','S Chand','Pradeep','Together With','R D Sharma','R S Aggarwal','Other Publisher'];
-const subjects = ['English','Hindi','Sanskrit','Urdu','Mathematics','Science','Physics','Chemistry','Biology','Social Science','History','Geography','Civics / Political Science','Economics','Environmental Studies','Computer Science','Information Technology','Accountancy','Business Studies','Home Science','Physical Education','Art Education','Music','Other Subject'];
-const classList = ['Class 1','Class 2','Class 3','Class 4','Class 5','Class 6','Class 7','Class 8','Class 9','Class 10','Class 11','Class 12'];
-const chapterBanks = {
-  'Social Science':['What, Where, How and When?','New Kings and Kingdoms','Resources and Development','Forest and Wildlife Resources','Water Resources','Agriculture','Minerals and Energy Resources','Manufacturing Industries','Power Sharing','Federalism','Democracy and Diversity','Development','Sectors of the Indian Economy','Money and Credit'],
-  'Science':['Food: Where Does It Come From?','Components of Food','Fibre to Fabric','Sorting Materials into Groups','Separation of Substances','Changes Around Us','Life Processes','Control and Coordination','How do Organisms Reproduce?','Light - Reflection and Refraction','Electricity','Magnetic Effects of Electric Current','Carbon and its Compounds','Heredity and Evolution'],
-  'Mathematics':['Knowing Our Numbers','Whole Numbers','Playing with Numbers','Basic Geometrical Ideas','Integers','Fractions','Decimals','Linear Equations','Triangles','Coordinate Geometry','Real Numbers','Polynomials','Pair of Linear Equations','Quadratic Equations','Arithmetic Progressions','Statistics','Probability'],
-  'English':['A Letter to God','Nelson Mandela: Long Walk to Freedom','Two Stories about Flying','From the Diary of Anne Frank','The Hundred Dresses','Glimpses of India','Mijbil the Otter','Madam Rides the Bus','The Sermon at Benares','The Proposal'],
-  'Hindi':['साखी','सबद','राम-लक्ष्मण-परशुराम संवाद','आत्मकथ्य','उत्साह और अट नहीं रही है','यह दंतुरित मुस्कान','फसल','नेताजी का चश्मा','बालगोबिन भगत','लखनवी अंदाज़'],
-  'History':['The Rise of Nationalism in Europe','Nationalism in India','The Making of a Global World','The Age of Industrialisation','Print Culture and the Modern World'],
-  'Geography':['Resources and Development','Forest and Wildlife Resources','Water Resources','Agriculture','Minerals and Energy Resources','Manufacturing Industries','Lifelines of National Economy'],
-  'Civics / Political Science':['Power Sharing','Federalism','Gender, Religion and Caste','Political Parties','Outcomes of Democracy'],
-  'Economics':['Development','Sectors of the Indian Economy','Money and Credit','Globalisation and the Indian Economy','Consumer Rights']
-};
-let bookHistory = JSON.parse(localStorage.getItem('bookStudyHistory') || '[]');
-function fill(id, arr){ document.getElementById(id).innerHTML = arr.map(v=>`<option value="${v}">${v}</option>`).join(''); }
-function toggleSidebar(){ const s=document.getElementById('sidebar'), o=document.getElementById('overlay'); const a=!s.classList.contains('active'); s.classList.toggle('active',a); o.classList.toggle('active',a); document.body.classList.toggle('sidebar-open',a); }
-document.getElementById('overlay').onclick=toggleSidebar;
-function currentPublisher(){ return publisherSelect.value.includes('Other') ? (customPublisher.value || 'Custom Publisher') : publisherSelect.value; }
-function currentSubject(){ return subjectSelect.value.includes('Other') ? (customSubject.value || 'Custom Subject') : subjectSelect.value; }
-function chaptersForSubject(){ const s=currentSubject(); return chapterBanks[s] || chapterBanks[s.replace(' / Political Science','')] || Array.from({length:16},(_,i)=>`Chapter ${i+1}`); }
-function refreshChapters(){ const chapters=chaptersForSubject(); chapterSelect.innerHTML=chapters.map((c,i)=>`<option value="${i+1}|${c}">Chapter ${i+1}: ${c}</option>`).join(''); renderChapterCards(); updateSummary(); }
-function selectedChapter(){ const [no,name]=(chapterSelect.value || '1|Chapter 1').split('|'); return {no,name}; }
-function renderChapterCards(){ const ch=chaptersForSubject(); chapterCards.innerHTML=ch.map((c,i)=>`<div class="chapter-card" onclick="chapterSelect.value='${i+1}|${c.replace(/'/g,"&#39;")}'; updateSummary();"><div class="chapter-num">Chapter ${i+1}</div><div class="chapter-name">${c}</div></div>`).join(''); }
-function updateSummary(){ const c=selectedChapter(); selectionSummary.innerHTML=`Publisher: ${currentPublisher()}<br>Subject: ${currentSubject()}<br>${classSelect.value}<br>Chapter ${c.no}: ${c.name}`; }
-function findChapterPublisher(){ const no=manualChapterNo.value.trim(); const name=manualChapterName.value.trim().toLowerCase(); const matches=[]; Object.entries(chapterBanks).forEach(([sub, chapters])=>chapters.forEach((ch,i)=>{ if((no && String(i+1)===no) || (name && ch.toLowerCase().includes(name))) matches.push(`${sub} - Chapter ${i+1}: ${ch}`); })); finderResult.innerHTML = matches.length ? `<b>Possible matches:</b><br>${matches.slice(0,20).join('<br>')}` : 'No exact built-in match. Choose Other Publisher/Subject and type the real chapter name; AI can still study it.'; if(name){ const opt=document.createElement('option'); opt.value=`${no || '?'}|${manualChapterName.value}`; opt.textContent=`Chapter ${no || '?'}: ${manualChapterName.value}`; chapterSelect.prepend(opt); chapterSelect.value=opt.value; updateSummary(); }}
-function addMsg(role,text){ const div=document.createElement('div'); div.className=`chat-msg chat-${role==='user'?'user':'ai'}`; div.innerHTML=`<div class="bubble">${text.replace(/\n/g,'<br>')}</div>`; bookChatLog.appendChild(div); bookChatLog.scrollTop=bookChatLog.scrollHeight; }
-function saveTurn(role,text){ bookHistory.push({time:new Date().toISOString(), selection:selectionSummary.innerText, role, text}); localStorage.setItem('bookStudyHistory', JSON.stringify(bookHistory.slice(-80))); }
-async function sendBookPrompt(custom){ const prompt=(custom || bookPrompt.value).trim(); if(!prompt) return; bookPrompt.value=''; const c=selectedChapter(); const context=`Use school textbook data and explain simply. Publisher/Board: ${currentPublisher()}. Subject: ${currentSubject()}. Class: ${classSelect.value}. Chapter ${c.no}: ${c.name}. User task: ${prompt}`; addMsg('user', prompt); saveTurn('user', prompt); addMsg('ai','Thinking with book context...'); try{ const res=await fetch('/api/gemini-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemPrompt:'You are a textbook study assistant. Use the selected publisher, subject, class, and chapter as context. If exact book edition is uncertain, say so and provide useful syllabus-aligned help. Save-friendly formatting with headings, bullets, tables when useful, and Hindi-English support.',userPrompt:context})}); const data=await res.json(); bookChatLog.lastChild.remove(); const answer=data.text || data.error || 'No answer returned.'; addMsg('ai', answer); saveTurn('ai', answer); }catch(e){ bookChatLog.lastChild.remove(); addMsg('ai','Error: '+e.message); }}
-function askPreset(text){ sendBookPrompt(text); }
-function clearBookHistory(){ localStorage.removeItem('bookStudyHistory'); bookHistory=[]; bookChatLog.innerHTML=''; addMsg('ai','History cleared. Choose a chapter and ask anything.'); }
-function init(){ fill('publisherSelect',publishers); fill('subjectSelect',subjects); fill('classSelect',classList); publisherSelect.onchange=()=>{customPublisher.style.display=publisherSelect.value.includes('Other')?'block':'none'; updateSummary();}; subjectSelect.onchange=()=>{customSubject.style.display=subjectSelect.value.includes('Other')?'block':'none'; refreshChapters();}; classSelect.onchange=updateSummary; chapterSelect.onchange=updateSummary; customPublisher.oninput=updateSummary; customSubject.oninput=refreshChapters; refreshChapters(); quickChips.innerHTML=['Summary','Important dates/terms','Explain in Hindi','Exercise answers','5 mark answers','MCQ test'].map(x=>`<button class="chip" onclick="askPreset('${x} for this chapter')">${x}</button>`).join(''); if(bookHistory.length) bookHistory.slice(-8).forEach(m=>addMsg(m.role,m.text)); else addMsg('ai','Welcome! Select publisher, subject, class, and chapter. Then ask me to create notes, solve questions, or make objective questions.'); }
-init();
+    // 🛑 ALL CHAPTER NAMES STRICTLY IN HINDI 🛑
+    const chapterBanks = {
+        'Science': ['हमारे आस-पास के पदार्थ', 'क्या हमारे आस-पास के पदार्थ शुद्ध हैं', 'परमाणु एवं अणु', 'परमाणु की संरचना', 'जीवन की मौलिक इकाई', 'ऊतक', 'जीवों में विविधता', 'गति', 'बल तथा गति के नियम', 'गुरुत्वाकर्षण', 'कार्य तथा ऊर्जा', 'ध्वनि', 'हम बीमार क्यों होते हैं', 'प्राकृतिक संपदा', 'खाद्य संसाधनों में सुधार'],
+        'Physics': ['भौतिक जगत', 'मात्रक और मापन', 'सरल रेखा में गति', 'समतल में गति', 'गति के नियम', 'कार्य, ऊर्जा और शक्ति', 'कणों के निकाय तथा घूर्णी गति', 'गुरुत्वाकर्षण', 'ठोसों के यांत्रिक गुण', 'तरलों के यांत्रिक गुण', 'द्रव्य के तापीय गुण', 'ऊष्मागतिकी', 'अणुगति सिद्धांत', 'दोलन', 'तरंगें'],
+        'Chemistry': ['रसायन विज्ञान की कुछ मूल अवधारणाएँ', 'परमाणु की संरचना', 'तत्वों का वर्गीकरण', 'रासायनिक आबंधन', 'द्रव्य की अवस्थाएँ', 'ऊष्मागतिकी', 'साम्यावस्था', 'अपचयोपचय अभिक्रियाएँ', 'हाइड्रोजन', 's-ब्लॉक तत्व', 'p-ब्लॉक तत्व', 'कार्बनिक रसायन', 'हाइड्रोकार्बन', 'पर्यावरणीय रसायन'],
+        'Mathematics': ['समुच्चय', 'संबंध एवं फलन', 'त्रिकोणमितीय फलन', 'गणितीय आगमन का सिद्धांत', 'सम्मिश्र संख्याएँ', 'रैखिक असमिकाएँ', 'क्रमचय और संचय', 'द्विपद प्रमेय', 'अनुक्रम तथा श्रेणी', 'सरल रेखाएँ', 'शंकु परिच्छेद', 'त्रिविमीय ज्यामिति का परिचय', 'सीमा और अवकलज', 'गणितीय विवेचन', 'सांख्यिकी', 'प्रायिकता'],
+        'History': ['फ्रांसीसी क्रांति', 'यूरोप में समाजवाद एवं रूसी क्रांति', 'नात्सीवाद और हिटलर का उदय', 'वन्य समाज और उपनिवेशवाद', 'आधुनिक विश्व में चरवाहे'],
+        'Geography': ['भारत - आकार और स्थिति', 'भारत का भौतिक स्वरूप', 'अपवाह', 'जलवायु', 'प्राकृतिक वनस्पति तथा वन्य प्राणी', 'जनसंख्या'],
+        'Social Science': ['सत्ता की साझेदारी', 'संघवाद', 'लोकतंत्र और विविधता', 'जाति, धर्म और लैंगिक मसले', 'जन-संघर्ष और आंदोलन', 'राजनीतिक दल', 'लोकतंत्र के परिणाम', 'लोकतंत्र की चुनौतियाँ'],
+        'Economics': ['पालमपुर गाँव की कहानी', 'संसाधन के रूप में लोग', 'निर्धनता : एक चुनौती', 'भारत में खाद्य सुरक्षा'],
+        'Hindi': ['दो बैलों की कथा', 'ल्हासा की ओर', 'उपभोक्तावाद की संस्कृति', 'साँवले सपनों की याद', 'नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया', 'प्रेमचंद के फटे जूते', 'मेरे बचपन के दिन', 'एक कुत्ता और एक मैना', 'साखियाँ एवं सबद', 'वाख', 'सवैये', 'कैदी और कोकिला', 'ग्राम श्री']
+    };
+
+    let selectedData = {};
+    let currentImageBase64 = null;
+
+    window.onload = function() {
+        let savedHistory = localStorage.getItem('bookChatHistory_v2');
+        let savedSettings = localStorage.getItem('bookSettings_v2');
+        if (savedHistory && savedSettings) {
+            selectedData = JSON.parse(savedSettings);
+            document.getElementById('wizardContainer').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block';
+            document.getElementById('chatHistory').innerHTML = savedHistory;
+            scrollToBottom();
+        }
+    };
+
+    function nextStep(step) {
+        if(step === 2 && !document.getElementById('publisherSelect').value) return alert("Please select a Publisher!");
+        if(step === 3 && !document.getElementById('subjectSelect').value) return alert("Please select a Subject!");
+        if(step === 4 && !document.getElementById('classSelect').value) return alert("Please select a Class!");
+        
+        document.querySelectorAll('.step-card').forEach(el => el.classList.remove('active'));
+        document.getElementById(`step-${step}`).classList.add('active');
+
+        if(step === 5) {
+            let pub = document.getElementById('publisherSelect').value;
+            let sub = document.getElementById('subjectSelect').value;
+            let cls = document.getElementById('classSelect').value;
+            let chapList = document.getElementById('chapterSelect').value;
+            let chapMan = document.getElementById('manualChapter').value;
+            let finalChap = chapMan ? chapMan : chapList;
+
+            if(!finalChap) {
+                nextStep(4);
+                return alert("Please select or type a chapter!");
+            }
+
+            selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
+            document.getElementById('selectionSummary').innerHTML = 
+                `<span style="color:var(--primary)">Publisher:</span> ${pub}<br>
+                 <span style="color:var(--secondary)">Subject:</span> ${sub}<br>
+                 <span style="color:var(--accent)">Class:</span> ${cls}<br>
+                 <span style="color:#10b981">Chapter:</span> ${finalChap}`;
+        }
+    }
+
+    function populateChapters() {
+        let sub = document.getElementById('subjectSelect').value;
+        let chapSelect = document.getElementById('chapterSelect');
+        
+        // Dynamically grab Hindi chapters or generate generic Hindi numbers if unknown subject
+        let chapters = chapterBanks[sub];
+        if (!chapters) {
+            chapters = Array.from({length: 20}, (_, i) => `अध्याय ${i+1}`);
+        }
+        
+        chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
+        chapters.forEach((chap, i) => {
+            chapSelect.innerHTML += `<option value="अध्याय ${i+1}: ${chap}">अध्याय ${i+1}: ${chap}</option>`;
+        });
+    }
+
+    function startConversation() {
+        document.getElementById('wizardContainer').style.display = 'none';
+        document.getElementById('chatContainer').style.display = 'flex';
+        document.getElementById('settingsBtn').style.display = 'block';
+        
+        localStorage.setItem('bookSettings_v2', JSON.stringify(selectedData));
+
+        if(document.getElementById('chatHistory').innerHTML.trim() === "") {
+            addAiMessage(`Hello! I am your advanced AI tutor for **${selectedData.subject}**. \n\nWe are focusing on **${selectedData.chapter}** for **${selectedData.class}**. You can ask me to solve exercises, create notes, or explain complex topics. Let's begin!`);
+        }
+    }
+
+    function openSettings() {
+        document.getElementById('chatContainer').style.display = 'none';
+        document.getElementById('settingsBtn').style.display = 'none';
+        document.getElementById('wizardContainer').style.display = 'flex';
+        nextStep(1); 
+    }
+
+    // Image Upload Logic
+    function handleImageSelect(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentImageBase64 = e.target.result;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+            document.getElementById('imgChip').src = currentImageBase64;
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    function removeImage() {
+        currentImageBase64 = null;
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+        document.getElementById('imageInput').value = '';
+    }
+
+    function handleEnter(e) {
+        if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    }
+
+    function scrollToBottom() {
+        const chatHist = document.getElementById('chatHistory');
+        chatHist.scrollTop = chatHist.scrollHeight;
+    }
+
+    function appendUserMessage(text, imgBase64) {
+        let imgHtml = imgBase64 ? `<br><img src="${imgBase64}">` : "";
+        let escapedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-msg chat-user";
+        msgDiv.innerHTML = `<div class="bubble">${escapedText}${imgHtml}</div>`;
+        document.getElementById('chatHistory').appendChild(msgDiv);
+        scrollToBottom();
+    }
+
+    async function sendMessage() {
+        const inputEl = document.getElementById('chatInput');
+        const text = inputEl.value.trim();
+        const img = currentImageBase64;
+
+        if(!text && !img) return;
+
+        appendUserMessage(text, img);
+        inputEl.value = "";
+        removeImage(); 
+
+        // 🛑 PREMIUM ANIMATED TYPING INDICATOR 🛑
+        const loadingId = "load_" + Date.now();
+        const loadDiv = document.createElement("div");
+        loadDiv.className = "chat-msg chat-ai";
+        loadDiv.id = loadingId;
+        loadDiv.innerHTML = `
+            <div class="bubble">
+                <div class="typing-indicator">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>`;
+        document.getElementById('chatHistory').appendChild(loadDiv);
+        scrollToBottom();
+
+        // System Prompt
+        const sysPrompt = `You are a premium AI expert tutor. STRICT RULES:
+1. Provide accurate, deeply detailed answers.
+2. Structure your answers logically. Use **bolding** for important words.
+3. NEVER write everything on a single line. ALWAYS add double spacing (\\n\\n) between paragraphs, points, or lists to ensure readability.
+4. If there is math, USE LaTeX formats (e.g. $$ \\frac{a}{b} $$ or $x^2$).
+Context: Teaching ${selectedData.class}, ${selectedData.subject}, ${selectedData.chapter} from ${selectedData.publisher}.`;
+
+        const payload = img ? 
+            { imageBase64: img, userPrompt: text || "Analyze this image.", systemPrompt: sysPrompt } : 
+            { userPrompt: text, systemPrompt: sysPrompt };
+        
+        const endpoint = img ? "/api/gemini-vision" : "/api/gemini-text";
+
+        try {
+            const r = await fetch(endpoint, {
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify(payload)
+            });
+            const data = await r.json();
+            
+            if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
+
+            document.getElementById(loadingId).remove();
+            addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
+
+        } catch(err) {
+            document.getElementById(loadingId).querySelector('.bubble').innerHTML = "❌ <b style='color:#ef4444;'>Connection Error:</b> " + err.message;
+            saveHistory();
+        }
+    }
+
+    // Typewriter Engine & Latex
+    function addAiMessage(text, typewrite = false) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-msg chat-ai";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        msgDiv.appendChild(bubble);
+        document.getElementById('chatHistory').appendChild(msgDiv);
+
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b style="color:var(--primary);">$1</b>');
+        
+        if(typewrite) {
+            let i = 0;
+            bubble.innerHTML = "";
+            let interval = setInterval(() => {
+                if(i < formattedText.length) {
+                    let char = formattedText[i];
+                    if(char === '<') {
+                        let end = formattedText.indexOf('>', i);
+                        if(end !== -1) {
+                            bubble.innerHTML += formattedText.substring(i, end + 1);
+                            i = end + 1;
+                        } else { bubble.innerHTML += char; i++; }
+                    } else if (char === '\n') {
+                        bubble.innerHTML += '<br>'; i++;
+                    } else {
+                        bubble.innerHTML += char; i++;
+                    }
+                    scrollToBottom();
+                } else {
+                    clearInterval(interval);
+                    if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
+                    saveHistory();
+                }
+            }, 8); // Ultra-fast premium typing speed
+        } else {
+            bubble.innerHTML = formattedText.replace(/\n/g, '<br>');
+            if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
+            saveHistory();
+            scrollToBottom();
+        }
+    }
+
+    function saveHistory() {
+        const histHTML = document.getElementById('chatHistory').innerHTML;
+        localStorage.setItem('bookChatHistory_v2', histHTML);
+    }
 </script>
 </body>
 </html>
