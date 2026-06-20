@@ -118,67 +118,78 @@ async function processQueue() {
     try {
         console.log(`[Queue] Processing: ${currentRequest.prompt}`);
         
+        // Launch headless browser (keeping your Render executable path!)
         browser = await puppeteer.launch({
-            headless: "new",
+            headless: true, // Ensure it runs silently on the server
             executablePath: '/opt/render/project/src/.puppeteer_cache/chrome/linux-127.0.6533.88/chrome-linux64/chrome',
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process']
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox', 
+                '--disable-dev-shm-usage', 
+                '--disable-gpu', 
+                '--single-process',
+                '--window-size=1280,800' // Better viewport for Gradio UI
+            ]
         });
 
         const page = await browser.newPage();
         
-        // Go to the Z-Image-Turbo Hugging Face Space
-        await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
+        // 🚀 THE FIX: Go directly to the embedded space URL, bypassing the iframe entirely!
+        console.log("[Queue] Loading direct Hugging Face Space...");
+        await page.goto('https://anycoderapps-z-image-turbo.hf.space', {
             waitUntil: 'domcontentloaded',
             timeout: 60000
         });
 
-        console.log("[Queue] Page loaded. Accessing Hugging Face iframe...");
-        
-        // CRITICAL FIX: Hugging Face runs the UI inside an iframe. We must extract it.
-        await page.waitForSelector('iframe', { timeout: 30000 });
-        const elementHandle = await page.$('iframe');
-        const frame = await elementHandle.contentFrame();
+        console.log("[Queue] Page loaded. Finding textbox...");
 
-        if (!frame) throw new Error("Could not find the Gradio iframe.");
-
-        console.log("[Queue] Iframe accessed. Finding textbox...");
-
-        // Wait for the specific textarea inside the iframe
+        // Wait for the specific textarea
         const textareaSelector = 'textarea[data-testid="textbox"]';
-        await frame.waitForSelector(textareaSelector, { timeout: 30000 });
+        await page.waitForSelector(textareaSelector, { timeout: 30000 });
         
         // Clear box and type the AI-enhanced prompt
-        await frame.click(textareaSelector, { clickCount: 3 });
-        await frame.type(textareaSelector, currentRequest.prompt);
+        await page.click(textareaSelector, { clickCount: 3 });
+        await page.type(textareaSelector, currentRequest.prompt);
         
-        // Click the generate button inside the iframe
+        // Click the generate button
         console.log("[Queue] Clicking Generate button...");
-        await frame.click('button.primary');
+        await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button'));
+            const genBtn = btns.find(b => b.innerText.includes('Generate'));
+            if(genBtn) genBtn.click();
+        });
 
-        console.log("[Queue] Submitted. Waiting for output image to generate...");
+        console.log("[Queue] Submitted. Waiting ~18 seconds for output image to generate...");
         
-        // Wait specifically for the Gradio image output tag inside the iframe
-        await frame.waitForSelector('img[src*="gradio_api/file"]', { timeout: 90000 });
+        // Let the GPU backend process the image
+        await new Promise(r => setTimeout(r, 18000)); 
 
-        // Let the image finish rendering completely (WebP takes a moment to paint)
-        console.log("[Queue] Image detected. Letting it finalize rendering...");
-        await new Promise(r => setTimeout(r, 4000)); 
-
-        const imageSrc = await frame.evaluate(() => {
-            const img = document.querySelector('img[src*="gradio_api/file"]');
+        // Extract the generated image URL just like we did in Python
+        const imageSrc = await page.evaluate(() => {
+            let img = document.querySelector('div[data-testid="image"] img');
+            if (!img) img = document.querySelector('img.svelte-1jk6tax');
+            if (!img) {
+                // Absolute fallback: Find any image containing gradio API paths
+                const imgs = Array.from(document.querySelectorAll('img'));
+                img = imgs.find(i => i.src && (i.src.includes('gradio_api/file') || i.src.includes('space')));
+            }
             return img ? img.src : null;
         });
 
-        if (!imageSrc) throw new Error("Could not extract image source URL.");
+        if (!imageSrc) throw new Error("Could not locate the generated image element.");
 
-        console.log("[Queue] Success! Final image grabbed.");
+        console.log("[Queue] Success! Final image grabbed: " + imageSrc);
+        
+        // Note: The UI calls this 'imageBase64' but passing the Hugging Face URL string works perfectly in your HTML!
         currentRequest.resolve({ imageBase64: imageSrc });
 
     } catch (error) {
         console.error("[Queue Error]:", error.message);
         currentRequest.reject(error);
     } finally {
-        if (browser) await browser.close();
+        if (browser) {
+            await browser.close().catch(e => console.log("Browser close error:", e.message));
+        }
         isProcessingQueue = false;
         
         // Proceed to next request in queue safely
