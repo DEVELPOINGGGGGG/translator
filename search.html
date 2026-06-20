@@ -405,12 +405,20 @@
         }
 
         // --- 9. AI EXECUTION & LIMITS ---
+// --- 9. AI EXECUTION & LIMITS ---
         function checkDailyImageLimit() {
             const today = new Date().toDateString();
             let usage = JSON.parse(localStorage.getItem('geminiImgUsage') || '{"count": 0, "date": ""}');
             if (usage.date !== today) usage = { count: 0, date: today };
-            if (usage.count >= 5) { showToast("❌ Daily limit of 5 Gemini images reached. Try again tomorrow!"); return false; }
-            usage.count++; localStorage.setItem('geminiImgUsage', JSON.stringify(usage)); return true;
+            
+            // 🚀 INCREASED TO 15 IMAGES PER DAY
+            if (usage.count >= 15) { 
+                showToast("❌ Daily limit of 15 Image Generations reached. Try again tomorrow!"); 
+                return false; 
+            }
+            usage.count++; 
+            localStorage.setItem('geminiImgUsage', JSON.stringify(usage)); 
+            return true;
         }
 
         async function runMainSearch() {
@@ -460,12 +468,16 @@
         // ==========================================
         // 🚀 ENHANCED IMAGE GENERATION UI/UX FLOW
         // ==========================================
-        async function handlePhotoGeneration(promptText, loadId, savedImages) {
+async function handlePhotoGeneration(promptText, loadId, savedImages) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">OPTIMIZING PROMPTS...</div><div class="data-bar"></div></div>`;
 
             try {
-                // Step 1: Send the base prompt to Gemini to enhance it
-                const enhancePrompt = `You are an elite AI prompt engineer. The user wants an image of: "${promptText}". 
+                // 🚀 UPGRADED GEMINI PROMPT: Forces Flux to explicitly draw English text and labels seamlessly!
+                const enhancePrompt = `You are an elite AI image prompt engineer optimizing for the Flux model (which is excellent at typography). 
+                The user wants an image based on: "${promptText}". 
+                
+                If the user asks for a map, diagram, or anything requiring text, explicitly instruct the image generator to write bold, clear ENGLISH text on the image. (Example: "A detailed map of India with the text 'MAHARASHTRA' and 'DELHI' written boldly in English across the states"). 
+                
                 Create 3 completely distinct, highly detailed, visually stunning, 4k resolution text-to-image prompts. 
                 STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."]. Do NOT output markdown, backticks, or any other text.`;
 
