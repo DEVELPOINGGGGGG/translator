@@ -133,32 +133,46 @@ async function processQueue() {
 
         const page = await browser.newPage();
         
-        // Console log listener to capture page errors in Render logs
+        // Listen to console events inside the browser
         page.on('console', msg => console.log('[Headless Browser Log]:', msg.text()));
         
-        console.log("[Queue] Loading direct Hugging Face Space...");
-        await page.goto('https://anycoderapps-z-image-turbo.hf.space', {
-            waitUntil: 'domcontentloaded',
+        // 🚀 FIX 1: Load the main Hugging Face URL so security origins match perfectly
+        console.log("[Queue] Loading parent Hugging Face Space...");
+        await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
+            waitUntil: 'networkidle2', 
             timeout: 60000
         });
 
-        console.log("[Queue] Page loaded. Finding textbox...");
+        console.log("[Queue] Parent page loaded. Locating Gradio iframe wrapper...");
+        
+        // 🚀 FIX 2: Wait for the iframe element to appear on the page
+        await page.waitForSelector('iframe[src*="hf.space"]', { timeout: 30000 });
+        const iframeElement = await page.$('iframe[src*="hf.space"]');
+        const frame = await iframeElement.contentFrame();
+        
+        if (!frame) throw new Error("Could not access the internal Gradio frame.");
+
+        console.log("[Queue] Internal frame connected successfully. Finding textbox...");
+        
+        // Now find the text box inside the verified secure frame
         const textareaSelector = 'textarea[data-testid="textbox"]';
-        await page.waitForSelector(textareaSelector, { timeout: 30000 });
+        await frame.waitForSelector(textareaSelector, { timeout: 30000 });
         
-        await page.click(textareaSelector, { clickCount: 3 });
-        await page.type(textareaSelector, currentRequest.prompt);
+        // Clear box and type the prompt inside the frame context
+        await frame.click(textareaSelector, { clickCount: 3 });
+        await frame.type(textareaSelector, currentRequest.prompt);
         
-        console.log("[Queue] Clicking Generate button...");
-        await page.evaluate(() => {
+        console.log("[Queue] Clicking Generate button inside frame...");
+        await frame.evaluate(() => {
             const btns = Array.from(document.querySelectorAll('button'));
             const genBtn = btns.find(b => b.innerText.includes('Generate'));
             if(genBtn) genBtn.click();
         });
 
-        console.log("[Queue] Submitted. Actively watching for output image...");
+        console.log("[Queue] Submitted. Actively watching frame for output image...");
         
-        const imageHandle = await page.waitForFunction(() => {
+        // 🚀 FIX 3: Watch for the image inside the frame context instead of the top page
+        const imageHandle = await frame.waitForFunction(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
                 const src = img.src || "";
@@ -179,15 +193,13 @@ async function processQueue() {
     } catch (error) {
         console.error("[Queue Error]:", error.message);
         
-        // 📷 RENDER DEBUGGING: If it fails, take a screenshot and save it to your static folder
         if (browser) {
             try {
                 const debugPages = await browser.pages();
                 if (debugPages.length > 0) {
                     const screenshotPath = path.join(__dirname, 'debug_error.png');
                     await debugPages[0].screenshot({ path: screenshotPath });
-                    console.log(`[Debug] Screenshot saved successfully at: ${screenshotPath}`);
-                    console.log(`[Debug] You can view it by going to: your-app-url.onrender.com/debug_error.png`);
+                    console.log(`[Debug] Screenshot saved to: ${screenshotPath}`);
                 }
             } catch (screenshotErr) {
                 console.error("[Debug] Failed to capture screenshot:", screenshotErr.message);
