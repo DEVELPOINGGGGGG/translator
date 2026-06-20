@@ -119,79 +119,99 @@ async function processQueue() {
         console.log(`[Queue] Processing: ${currentRequest.prompt}`);
         
         browser = await puppeteer.launch({
-            headless: true, // Must remain true for Render
+            headless: true, // Required for Render
             executablePath: '/opt/render/project/src/.puppeteer_cache/chrome/linux-127.0.6533.88/chrome-linux64/chrome',
             args: [
                 '--no-sandbox', 
                 '--disable-setuid-sandbox', 
                 '--disable-dev-shm-usage', 
-                '--disable-gpu', 
-                '--single-process',
+                '--disable-gpu',
                 '--window-size=1280,800',
-                '--disable-blink-features=AutomationControlled',
-                '--disable-web-security'
+                '--disable-blink-features=AutomationControlled'
             ]
         });
 
         const page = await browser.newPage();
         
-        // 🚀 THE MAGIC SHIELD: Disguise the bot completely to stop the white screen crashes
+        // 🛡️ Stealth: Disguise as a real Windows PC
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
         await page.evaluateOnNewDocument(() => {
-            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-            window.navigator.chrome = { runtime: {} };
-            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            Object.defineProperty(navigator, 'webdriver', { get: () => false });
         });
 
-        // Filter out that annoying (but harmless) postMessage warning so your logs stay clean
+        // Filter out annoying warnings to keep your Render logs clean
         page.on('console', msg => {
             const text = msg.text();
             if (!text.includes('Unrecognized feature') && !text.includes('postMessage')) {
-                console.log('[Browser Log]:', text);
+                console.log('[Browser]:', text);
             }
         });
         
-        console.log("[Queue] Loading direct Gradio Space...");
+        console.log("[Queue] Loading Parent HuggingFace Space...");
         
-        // 🚀 GO DIRECTLY TO THE SOURCE. No more nested iframe detachment issues.
-        await page.goto('https://anycoderapps-z-image-turbo.hf.space', {
+        // 🚀 MUST load the parent page so Gradio's postMessage doesn't cause a white screen crash
+        await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
             waitUntil: 'domcontentloaded', 
             timeout: 60000
         });
 
-        console.log("[Queue] Page loaded. Waiting for Gradio UI to paint...");
+        console.log("[Queue] Parent loaded. Scanning for the Gradio App iframe...");
         
-        // 🚀 VISIBILITY CHECK: This guarantees the page is NOT a white screen before typing
+        // Wait for the iframe container to exist
+        await page.waitForSelector('iframe', { timeout: 30000 });
+        
+        let targetFrame = null;
         const textareaSelector = 'textarea[data-testid="textbox"]';
-        await page.waitForSelector(textareaSelector, { visible: true, timeout: 45000 });
+
+        // 🚀 SMART POLLER: Wait for the iframe to actually paint the UI, ensuring no white screen interactions
+        for (let attempt = 0; attempt < 45; attempt++) {
+            const frames = page.frames();
+            const spaceFrame = frames.find(f => f.url().includes('hf.space') || f.url().includes('anycoderapps'));
+            
+            if (spaceFrame) {
+                try {
+                    // Check if Svelte has painted the textarea on the screen yet
+                    const isReady = await spaceFrame.evaluate((sel) => {
+                        const el = document.querySelector(sel);
+                        return el && el.offsetParent !== null; // Must be visible
+                    }, textareaSelector);
+                    
+                    if (isReady) {
+                        targetFrame = spaceFrame;
+                        break; // UI is ready! Break the loop.
+                    }
+                } catch (e) {
+                    // Ignore context errors while iframe redirects
+                }
+            }
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        if (!targetFrame) throw new Error("Gradio iframe failed to initialize the UI (Stuck on loading).");
+
+        console.log("[Queue] UI is fully painted inside the frame! Typing prompt...");
         
-        console.log("[Queue] Textbox found and fully visible! Typing prompt...");
-        
-        // Clear box and type
-        await page.click(textareaSelector, { clickCount: 3 });
-        await page.keyboard.press('Backspace'); 
-        await page.type(textareaSelector, currentRequest.prompt);
+        // Target the frame context to type the prompt safely
+        await targetFrame.click(textareaSelector, { clickCount: 3 });
+        await targetFrame.keyboard.press('Backspace'); 
+        await targetFrame.type(textareaSelector, currentRequest.prompt);
         
         console.log("[Queue] Clicking Generate button...");
-        await page.evaluate(() => {
+        await targetFrame.evaluate(() => {
             const btns = Array.from(document.querySelectorAll('button'));
             const genBtn = btns.find(b => b.innerText.includes('Generate') || b.className.includes('primary'));
             if(genBtn) genBtn.click();
         });
 
-        console.log("[Queue] Submitted! Actively monitoring DOM for the generated image...");
+        console.log("[Queue] Submitted! Actively monitoring frame for the output image...");
         
-        // 🚀 SMART POLLER: Instantly grabs the image the millisecond it actually finishes rendering
-        const imageHandle = await page.waitForFunction(() => {
+        // Watch specifically inside the frame for the generated WebP file
+        const imageHandle = await targetFrame.waitForFunction(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
                 const src = img.src || "";
                 if (!src.includes('avatar') && (src.includes('gradio_api/file') || (img.closest('div[data-testid="image"]') && src.length > 50))) {
-                    // Safety check: Ensure the image is fully downloaded, not a broken 0px placeholder
-                    if (img.complete && img.naturalHeight !== 0) {
-                        return src;
-                    }
+                    return src;
                 }
             }
             return false;
