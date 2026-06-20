@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Pro Suite - Smart Quiz</title>
     
     <link rel="manifest" href="/manifest.json">
@@ -14,6 +14,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?version=4.8.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <script>
         MathJax = {
@@ -27,11 +29,12 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        .quiz-page-container { width: 100% !important; max-width: 600px !important; margin: 70px auto 0 auto !important; display: flex !important; flex-direction: column !important; padding: 30px 20px 150px 20px !important; }
+        .quiz-page-container { width: 100% !important; max-width: 600px !important; margin: 70px auto 0 auto !important; display: flex !important; flex-direction: column !important; padding: 30px 20px 150px 20px !important; transition: opacity 0.3s; }
         .quiz-card { width: 100% !important; flex-shrink: 0 !important; }
         .quiz-setup, .quiz-active, .quiz-results { display: none !important; animation: fadeIn 0.4s ease; }
         .quiz-setup.active, .quiz-active.active, .quiz-results.active { display: flex !important; flex-direction: column !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .quiz-btn { background: linear-gradient(135deg, #a855f7, #7e22ce); color: white; padding: 16px; border-radius: 30px; font-size: 18px; font-weight: 800; width: 100%; border: none; cursor: pointer; box-shadow: 0 10px 30px rgba(168,85,247,0.4); margin-top: 25px; transition: 0.2s; text-align: center; }
         .quiz-btn:active { transform: scale(0.97); }
         input[type="number"].standard, select.standard { width: 100%; padding: 15px 20px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; border-radius: 12px; outline: none; font-size: 15px; box-sizing: border-box; appearance: none; }
@@ -42,10 +45,8 @@
         
         .stat-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px 10px; border-radius: 15px; text-align: center; flex: 1 1 28%; min-width: 80px; }
         .stat-box .num { font-size: 32px; font-weight: 900; }
-        
         .result-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: left; word-wrap: break-word; }
-        @keyframes loadingSweep { 0% { left: -30%; width: 30%; } 50% { width: 50%; } 100% { left: 100%; width: 30%; } }
-        @keyframes fadeToast { 0% { opacity: 0; bottom: 10px; } 10% { opacity: 1; bottom: 30px; } 90% { opacity: 1; bottom: 30px; } 100% { opacity: 0; bottom: 10px; } }
+        
         select.standard option { background: #0f172a; color: white; }
         .subj-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 15px; border-radius: 12px; font-size: 16px; text-align: center; font-weight: 600; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
         .subj-btn:hover { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; }
@@ -54,34 +55,39 @@
         .subj-scroll-container::-webkit-scrollbar { width: 4px; }
         .subj-scroll-container::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
 
-        /* Brain Loader Animation */
-        .brain-loader { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 30px auto; height: 50px; }
-        .brain-loader span { width: 15px; height: 15px; background: #a855f7; border-radius: 50%; animation: brainBounce 1.2s infinite ease-in-out; box-shadow: 0 0 10px rgba(168,85,247,0.5); }
-        .brain-loader span:nth-child(2) { animation-delay: -0.2s; background: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.5); }
-        .brain-loader span:nth-child(3) { animation-delay: -0.4s; background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
-        @keyframes brainBounce { 0%, 80%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-20px) scale(1.2); } }
-
         /* Timer UI */
-        .timer-box {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #ef4444;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .timer-box.hurry { animation: pulseRed 1s infinite; }
+        .timer-box { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 5px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: 0.3s; }
+        .timer-box.hurry { animation: pulseRedText 1s infinite; }
+        @keyframes pulseRedText { 0% { background: rgba(239, 68, 68, 0.15); } 50% { background: rgba(239, 68, 68, 0.4); color: #fff; } 100% { background: rgba(239, 68, 68, 0.15); } }
         
         /* Mic Buttons */
         .mic-btn-main { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; color: #ef4444; padding: 20px; border-radius: 50%; font-size: 24px; cursor: pointer; transition: 0.3s; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 15px auto; box-shadow: 0 0 15px rgba(239,68,68,0.2); }
-        .mic-btn-main.recording { background: #ef4444; color: white; animation: pulseRed 1s infinite; box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
+        .mic-btn-main.recording { background: #ef4444; color: white; animation: pulseRedText 1s infinite; box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
+
+        /* YOUTUBE APP ANIMATED LOADER */
+        #global-loader { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; padding: 12px 30px; border-radius: 50px; font-weight: 800; font-size: 16px; box-shadow: 0 10px 30px rgba(255,8,68,0.5); z-index: 10000; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; gap: 12px; pointer-events: none;}
+        #global-loader.active { top: 30px; }
+        .spinner { width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* DANGER TIMER VIGNETTE (< 5s) */
+        #red-vignette { position: fixed; inset: 0; pointer-events: none; z-index: 9998; box-shadow: inset 0 0 0px rgba(239, 68, 68, 0); transition: box-shadow 0.3s ease; }
+        #red-vignette.active { animation: dangerFlash 0.8s infinite; }
+        @keyframes dangerFlash {
+            0% { box-shadow: inset 0 0 0px rgba(239, 68, 68, 0); }
+            50% { box-shadow: inset 0 0 80px rgba(239, 68, 68, 0.7), inset 0 0 20px rgba(239, 68, 68, 0.9); }
+            100% { box-shadow: inset 0 0 0px rgba(239, 68, 68, 0); }
+        }
     </style>
 </head>
 <body>
+
+<div id="red-vignette"></div>
+
+<div id="global-loader">
+    <div class="spinner" id="loaderSpinner"></div> 
+    <span id="loaderText">Loading...</span>
+</div>
 
 <div class="overlay" id="overlay"></div>
 <div class="topbar">
@@ -102,7 +108,6 @@
   <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
   <button onclick="window.location.href='qa.html'">📚 Document Q&A</button>
   <button onclick="window.location.href='history.html'">🕒 History & Downloads</button>
-
 </div>
 
 <div id="subjectModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center; padding: 20px;">
@@ -141,12 +146,21 @@
         <button id="speakMicBtn" class="mic-btn-main" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">🎤</button>
         <div id="speakStatus" style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Hold to speak...</div>
         
-        <textarea id="speakTranscript" readonly style="width: 100%; height: 100px; background: rgba(0,0,0,0.3); color: white; border: 1px solid #38bdf8; border-radius: 12px; padding: 10px; margin-bottom: 20px; resize: none; font-size:15px; font-weight:600;" placeholder="Your spoken answer will appear here... Cannot be edited manually."></textarea>
+        <textarea id="speakTranscript" readonly style="width: 100%; height: 100px; background: rgba(0,0,0,0.3); color: white; border: 1px solid #38bdf8; border-radius: 12px; padding: 10px; margin-bottom: 20px; resize: none; font-size:15px; font-weight:600;" placeholder="Your spoken answer will appear here..."></textarea>
         
         <div style="display: flex; width: 100%; gap: 10px;">
             <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px;" onclick="clearRecording()">🔄 Re-Record</button>
             <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px;" onclick="saveSpeakAnswer()">✅ Save Answer</button>
         </div>
+    </div>
+</div>
+
+<div id="pdfModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); z-index: 100003; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center;">
+        <div id="pdfModalSpinner" class="spinner" style="border-top-color: #ff0844; width: 40px; height: 40px; margin-bottom: 20px;"></div>
+        <h3 id="pdfModalText" style="color: white; margin: 0 0 20px 0; font-size: 20px;">Creating your PDF...</h3>
+        <button id="pdfManualBtn" class="btn blue" style="display: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold;">📥 Download Manually</button>
+        <button id="pdfCloseBtn" class="btn red" style="display: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 10px;" onclick="document.getElementById('pdfModal').style.display='none'">✖ Close</button>
     </div>
 </div>
 
@@ -231,11 +245,6 @@
         </div>
 
         <button id="startQuizBtn" class="quiz-btn">🚀 Generate & Start Quiz!</button>
-        
-        <div id="loadingAnimationContainer" style="display:none; text-align: center; margin-top: 20px; padding-bottom: 10px;">
-            <div class="brain-loader"><span></span><span></span><span></span></div>
-            <div id="setupStatus" style="font-size: 15px; color: #38bdf8; font-weight: 600; letter-spacing: 0.5px;">Building your smart quiz...</div>
-        </div>
     </div>
 
     <div id="quizActive" class="card quiz-card quiz-active" style="padding: 30px;">
@@ -293,6 +302,7 @@
 <script src="main.js" defer></script>
 
 <script>
+    // --- UI HELPERS ---
     function toggleSidebar() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("overlay");
@@ -308,6 +318,16 @@
         t.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #ef4444, #b91c1c); color:white; padding:12px 25px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:100000; font-weight:600; font-size: 14px; text-align:center; animation:fadeToast 3s forwards; pointer-events: none;";
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 3000);
+    }
+
+    // YT Style Global Loader Functions
+    function showGlobalLoader(text) {
+        document.getElementById('loaderText').innerText = text;
+        document.getElementById('global-loader').classList.add('active');
+        document.getElementById('loaderSpinner').style.display = 'block';
+    }
+    function hideGlobalLoader() {
+        document.getElementById('global-loader').classList.remove('active');
     }
 
     const topicData = {
@@ -407,7 +427,6 @@
             chosenSubject = e.target.innerText;
             const textEl = document.getElementById('selectedSubjectText');
             textEl.innerText = chosenSubject;
-            // Removed white color overwrite here!
             subjModal.style.display = 'none';
 
             const langSelect = document.getElementById('quizLanguage');
@@ -469,7 +488,6 @@
             btn.onclick = () => {
                 chosenTopic = t[topicLang];
                 document.getElementById('selectedTopicText').innerText = chosenTopic;
-                // Removed white color overwrite here!
                 topicModal.style.display = 'none';
             };
             container.appendChild(btn);
@@ -480,7 +498,7 @@
     let currentQuestionIndex = 0;
     let userAnswers = [];
     
-    // Audio Rec Vars
+    // Audio Rec Vars (FIXED VOICE RECORDING BUG)
     let mediaRecorder;
     let audioChunks = [];
     let currentAudioUrl = null;
@@ -492,15 +510,15 @@
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
+        recognition.continuous = true; // Keeps it running better
+        recognition.interimResults = true; // Gets live results
     }
 
     const setupEl = document.getElementById('quizSetup'), activeEl = document.getElementById('quizActive'), resultsEl = document.getElementById('quizResults');
-    const startBtn = document.getElementById('startQuizBtn'), setupStatus = document.getElementById('setupStatus'), loadingContainer = document.getElementById('loadingAnimationContainer');
+    const startBtn = document.getElementById('startQuizBtn');
     const nextBtn = document.getElementById('nextBtn');
 
-    // VERY IMPORTANT: YOUR ORIGINAL FETCH CHUNK AND ROBUST FALLBACK LOGIC
+    // ORIGINAL FETCH CHUNK AND ROBUST FALLBACK LOGIC
     async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
@@ -561,7 +579,6 @@
         for (let i = 0; i < modelQueue.length; i++) {
             let currentModel = modelQueue[i];
             try {
-                console.log(`Trying ${chunkCount} questions with ${currentModel}`);
                 return await fetchQuizChunk(chunkCount, grade, topicStr, language, currentModel);
             } catch (e) {
                 console.warn(`[Fallback Triggered] ${currentModel} failed:`, e);
@@ -582,14 +599,14 @@
         if(!grade) { showToast("⚠️ Please select a Class/Grade."); return; }
         
         if(isNaN(count) || count < 1) count = 5;
-        if(count > 25) count = 25; // Adjusted MAX to 25 per user request
+        if(count > 25) count = 25;
 
-        // HIDE Aa BUTTON!
+        // Hide Aa font doc
         const fDock = document.getElementById('fontSizeDock');
         if (fDock) fDock.style.display = 'none';
 
         startBtn.style.display = 'none';
-        loadingContainer.style.display = 'block';
+        showGlobalLoader("Building your smart quiz...");
         
         let finalTopicStr = "";
         let displayTitleStr = "";
@@ -614,7 +631,7 @@
             let allFetchedQuestions = [];
 
             if (isDivideMode) {
-                setupStatus.innerHTML = "Dividing workload across AI Models simultaneously...";
+                document.getElementById('loaderText').innerText = "Dividing workload across AI Models simultaneously...";
                 let chunk1 = Math.ceil(count / 3);
                 let chunk2 = Math.ceil((count - chunk1) / 2);
                 let chunk3 = count - chunk1 - chunk2;
@@ -625,7 +642,7 @@
                 const results = await Promise.all(promises);
                 allFetchedQuestions = results.flat();
             } else {
-                setupStatus.innerHTML = `Connecting to ${baseModelOrder[0].toUpperCase()} AI Engine...`;
+                document.getElementById('loaderText').innerText = `Connecting to ${baseModelOrder[0].toUpperCase()} AI Engine...`;
                 let chunks = [];
                 let remaining = count;
                 while(remaining > 0) {
@@ -641,7 +658,6 @@
 
             if(allFetchedQuestions.length === 0) throw new Error("AI returned empty quiz array. Please try again.");
 
-            // Assign Mokhik/Verbal Mode
             quizData = allFetchedQuestions.slice(0, count).map(q => {
                 let isVerbal = false;
                 if(quizMode === 'mokhik') isVerbal = true;
@@ -653,17 +669,17 @@
             userAnswers = [];
             window.activeQuizTitle = displayTitleStr;
             
+            hideGlobalLoader();
             setupEl.classList.remove('active');
             activeEl.classList.add('active');
             renderQuestion();
 
         } catch(err) {
             console.error("Quiz Generation Failed:", err);
-            setupStatus.innerHTML = `❌ Error: Generation failed. Try asking for fewer questions.`;
-            showToast("⚠️ Generation error. Click start again!");
+            hideGlobalLoader();
+            showToast("⚠️ Generation error. Try asking for fewer questions!");
             startBtn.style.display = 'block';
-            loadingContainer.style.display = 'none';
-            if (fDock) fDock.style.display = 'flex'; // Restore if failed
+            if (fDock) fDock.style.display = 'flex'; 
         }
     });
 
@@ -671,14 +687,16 @@
         clearInterval(timerInterval);
         const timerContainer = document.getElementById('timerContainer');
         const enableTimer = document.getElementById('enableTimer').checked;
+        const vignette = document.getElementById('red-vignette');
         
+        vignette.classList.remove('active');
+
         if (!enableTimer) {
             timerContainer.style.display = 'none';
             return;
         }
         
         timerContainer.style.display = 'flex';
-        // 120s for Math, 60s for all others as requested
         timeLeft = (chosenSubject === "Math") ? 120 : 60;
         
         const timerText = document.getElementById('timerText');
@@ -689,12 +707,20 @@
             timeLeft--;
             timerText.innerText = timeLeft + "s";
             
-            if(timeLeft <= 10) {
+            // Under 10s: Button flashes. Under 5s: Screen flashes red!
+            if(timeLeft <= 10 && timeLeft > 5) {
                 timerContainer.classList.add('hurry');
+                vignette.classList.remove('active');
+            } else if (timeLeft <= 5 && timeLeft > 0) {
+                timerContainer.classList.add('hurry');
+                vignette.classList.add('active');
+            } else {
+                vignette.classList.remove('active');
             }
 
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
+                vignette.classList.remove('active');
                 if (!userAnswers[currentQuestionIndex]) {
                     userAnswers[currentQuestionIndex] = "Skipped";
                 }
@@ -755,7 +781,7 @@
         }
     }
 
-    // SPEAK GUI LOGIC
+    // SPEAK GUI LOGIC (FIXED)
     function openSpeakGui() {
         document.getElementById('speakModal').style.display = 'flex';
     }
@@ -792,13 +818,19 @@
             if (recognition) {
                 recognition.lang = document.getElementById('quizLanguage').value === 'Hindi' ? 'hi-IN' : 'en-US';
                 recognition.start();
+                
+                // CORRECTED TRANSCRIPTION LOGIC
                 recognition.onresult = (e) => {
                     let interimTranscript = '';
                     for (let i = e.resultIndex; i < e.results.length; ++i) {
-                        if (e.results[i].isFinal) currentTranscript += e.results[i][0].transcript;
-                        else interimTranscript += e.results[i][0].transcript;
+                        if (e.results[i].isFinal) {
+                            currentTranscript += e.results[i][0].transcript + " ";
+                        } else {
+                            interimTranscript += e.results[i][0].transcript;
+                        }
                     }
-                    document.getElementById('speakTranscript').value = currentTranscript || interimTranscript;
+                    // Combine them properly in the text area so it writes instantly
+                    document.getElementById('speakTranscript').value = currentTranscript + interimTranscript;
                 };
             }
         } catch (e) {
@@ -830,11 +862,12 @@
     }
 
     function saveSpeakAnswer() {
-        let finalTxt = currentTranscript || document.getElementById('speakTranscript').value || "Audio Only";
-        if(finalTxt.trim() === "" && !currentAudioUrl) {
+        let finalTxt = document.getElementById('speakTranscript').value.trim();
+        if(finalTxt === "" && !currentAudioUrl) {
             showToast("⚠️ Please record an answer first!");
             return;
         }
+        if (finalTxt === "") finalTxt = "Audio Only";
         
         userAnswers[currentQuestionIndex] = {
             isVerbal: true,
@@ -847,7 +880,6 @@
         showToast("✅ Audio Answer Saved!");
     }
 
-    // Lenient Evaluation Logic
     function isLenientMatch(userText, correctText) {
         if(!userText || userText === "Audio Only") return false;
         let u = userText.toLowerCase().trim();
@@ -861,7 +893,6 @@
         return cWords.length > 0 && (matches / cWords.length) >= 0.4;
     }
 
-    // Navigation
     document.getElementById('skipBtn').addEventListener('click', () => {
         userAnswers[currentQuestionIndex] = "Skipped";
         handleNextQuestion();
@@ -880,21 +911,44 @@
 
     function handleNextQuestion() {
         clearInterval(timerInterval);
+        document.getElementById('red-vignette').classList.remove('active'); // Turn off red flash immediately
+        if('speechSynthesis' in window) speechSynthesis.cancel();
+        
         currentQuestionIndex++;
         if (currentQuestionIndex >= quizData.length) {
             finishQuiz(); 
         } else {
-            renderQuestion();
+            // Apply Beautiful Animation between questions
+            document.getElementById('quizPageContainer').style.opacity = '0.3';
+            showGlobalLoader("Loading Question...");
+            
+            setTimeout(() => {
+                hideGlobalLoader();
+                document.getElementById('quizPageContainer').style.opacity = '1';
+                renderQuestion();
+            }, 1000);
         }
     }
 
     function finishQuiz() {
         activeEl.classList.remove('active');
         resultsEl.classList.add('active');
+        document.getElementById('red-vignette').classList.remove('active');
         
         // Restore Aa Button
         const fDock = document.getElementById('fontSizeDock');
         if (fDock) fDock.style.display = 'flex';
+        
+        // Trigger Fireworks Animation
+        if(typeof confetti === 'function') {
+            const duration = 3000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#a855f7', '#38bdf8', '#22c55e', '#ef4444', '#f59e0b'] });
+                confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#a855f7', '#38bdf8', '#22c55e', '#ef4444', '#f59e0b'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
         
         let correctCount = 0;
         let reviewHtml = '';
@@ -909,13 +963,12 @@
 
             if (userAns === "Skipped") {
                 displayAns = "- (Skipped / Time Out)";
-                colorClass = '#f59e0b'; // orange
+                colorClass = '#f59e0b';
                 statusIcon = '⏳';
             } else if (q.isVerbal) {
                 isCorrect = isLenientMatch(userAns.text, q.correctOption);
                 if (isCorrect) { correctCount++; statusIcon = '✅'; colorClass = '#22c55e'; }
                 displayAns = `🎙️ "${userAns.text}"`;
-                // Add audio player if it exists
                 if (userAns.audioUrl) {
                     audioHtml = `<div style="margin-top:8px;"><audio controls src="${userAns.audioUrl}" style="height:35px; width:100%; border-radius:30px;"></audio></div>`;
                 }
@@ -929,6 +982,7 @@
             const safeC = String(q.correctOption).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const safeE = String(q.explanation).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+            // Added Expandable Detailed View Button
             reviewHtml += `
             <div class="result-card">
                 <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">${index + 1}. ${safeQ}</div>
@@ -939,8 +993,14 @@
                 <div style="font-size: 13px; margin-top: 10px; margin-bottom: 10px;">
                     <span style="color: #94a3b8;">Correct Answer:</span> <span style="color: #22c55e; font-weight: 600;">${safeC}</span>
                 </div>
-                <div style="font-size: 14px; color: #ffffff; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border-left: 4px solid #a855f7; margin-top: 8px; font-weight: 500;">
-                    <b>Explanation:</b> ${safeE}
+                
+                <div class="exp-preview" style="margin-top: 15px;">
+                    <button onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.innerHTML = this.nextElementSibling.style.display === 'none' ? '📖 View Detailed Explanation ⬇️' : '📖 Hide Explanation ⬆️';" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #38bdf8; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; width: 100%; text-align: center; transition: 0.2s;">📖 View Detailed Explanation ⬇️</button>
+                    <div style="display: none; font-size: 14px; color: #ffffff; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 4px solid #a855f7; margin-top: 8px; font-weight: 500; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="margin-bottom: 10px; color:#cbd5e1; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 8px;"><b>Question:</b> ${safeQ}</div>
+                        <div style="margin-bottom: 10px; color:#22c55e;"><b>Correct Logic:</b> ${safeC}</div>
+                        <div style="color: white; line-height: 1.5;"><b>Detailed Explanation:</b> <br>${safeE}</div>
+                    </div>
                 </div>
             </div>`;
         });
@@ -966,13 +1026,9 @@
 
         if (window.MathJax) MathJax.typesetPromise([document.getElementById('reviewContainer')]);
         
-        // ===============================================
-        // YOUR ORIGINAL HISTORY SAVING FUNCTION RESTORED!
-        // ===============================================
         saveQuizToHistory(window.activeQuizTitle, grade, correctCount, total, reviewHtml);
     }
 
-    // ORIGINAL HISTORY SAVER - SAVES DIRECTLY TO main.js aiHistory!
     function saveQuizToHistory(subject, grade, correct, total, htmlDetails) {
         if (typeof localforage !== 'undefined') {
             let sessionId = Date.now();
@@ -1000,22 +1056,70 @@
         }
     }
 
+    // CUSTOM PDF GENERATION GUI LOGIC
     function downloadPDF() {
+        const modal = document.getElementById('pdfModal');
+        const spinner = document.getElementById('pdfModalSpinner');
+        const text = document.getElementById('pdfModalText');
+        const manualBtn = document.getElementById('pdfManualBtn');
+        const closeBtn = document.getElementById('pdfCloseBtn');
+        
+        // Reset and show modal
+        modal.style.display = 'flex';
+        spinner.style.display = 'block';
+        text.innerText = "Creating your PDF...";
+        text.style.color = "white";
+        manualBtn.style.display = 'none';
+        closeBtn.style.display = 'none';
+
         const element = document.getElementById('pdfExportArea');
         const filenameSafe = window.activeQuizTitle ? window.activeQuizTitle.replace(/\s+/g, '_') : 'Mixed_Quiz';
         
-        // Strict background styling applied inline to prevent white/blank PDFs and preserve font rendering
+        // Ensure background is solid for the render
         element.style.backgroundColor = "#0f172a";
         element.style.color = "#ffffff";
         
-        // letterRendering true fixes Hindi/foreign characters in html2canvas
+        // Generate Blob using output('blob')
         html2pdf().set({ 
             margin: 10, 
             filename: `AI_Quiz_Result_${filenameSafe}.pdf`, 
             image: { type: 'jpeg', quality: 0.98 }, 
             html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a', letterRendering: true }, 
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-        }).from(element).save().then(() => showToast("✅ PDF Downloaded!"));
+        }).from(element).output('blob').then((blob) => {
+            const url = URL.createObjectURL(blob);
+            
+            // Auto download automatically once done
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AI_Quiz_Result_${filenameSafe}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Update GUI to Success State
+            spinner.style.display = 'none';
+            text.innerText = "✅ PDF Ready & Downloading!";
+            text.style.color = "#22c55e";
+            manualBtn.style.display = 'block';
+            closeBtn.style.display = 'block';
+            
+            // Wire up the manual button to the generated object URL
+            manualBtn.onclick = () => {
+                const manualA = document.createElement('a');
+                manualA.href = url;
+                manualA.download = `AI_Quiz_Result_${filenameSafe}.pdf`;
+                document.body.appendChild(manualA);
+                manualA.click();
+                document.body.removeChild(manualA);
+                showToast("✅ Manual Download Triggered");
+            };
+        }).catch((err) => {
+            spinner.style.display = 'none';
+            text.innerText = "❌ Failed to generate PDF.";
+            text.style.color = "#ef4444";
+            closeBtn.style.display = 'block';
+        });
     }
 </script>
 
