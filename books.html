@@ -22,23 +22,109 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             padding: 20px; padding-top: 100px;
+            width: 100%; box-sizing: border-box;
         }
 
         .step-card {
             width: 100%; max-width: 600px; display: none; text-align: center;
             animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: var(--bg-surface); padding: 30px; border-radius: 20px;
+            box-shadow: var(--glass-shadow); border: 1px solid var(--border-light);
+            box-sizing: border-box;
         }
 
         .step-card.active { display: block; }
-
-        .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; }
+        .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; font-size: 24px; }
         .step-card label { display: block; text-align: left; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px;}
 
-        .btn-row { display: flex; gap: 15px; justify-content: space-between; margin-top: 25px; }
-        .btn-row .btn { flex: 1; }
+        select.standard, input.standard {
+            width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border-light);
+            background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 16px; margin-bottom: 20px;
+            box-sizing: border-box; outline: none; transition: 0.3s;
+        }
+        select.standard:focus, input.standard:focus { border-color: var(--primary); }
 
-        /* Camera UI */
-        .cam-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-evenly; align-items: center; z-index: 9999999;}
+        .btn-row { display: flex; gap: 15px; justify-content: space-between; margin-top: 10px; }
+        .btn-row .btn { flex: 1; padding: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .btn-primary:hover { transform: translateY(-3px); }
+        .btn-secondary { background: #475569; }
+        
+        /* STRICT CHAT LAYOUT - Flexbox avoids all overlapping */
+        #chatPage { 
+            display: none; flex-direction: column; height: 100dvh; width: 100vw; 
+            position: absolute; inset: 0; background: var(--bg-base); z-index: 50; 
+            overflow: hidden;
+        }
+
+        .chat-scroll-area {
+            flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px;
+            display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
+        }
+
+        .msg { display: flex; width: 100%; flex-direction: column; animation: slideUpFade 0.3s ease; }
+        .user { align-items: flex-end; }
+        .ai { align-items: flex-start; }
+
+        .bubble {
+            max-width: 85%; padding: 16px 20px; border-radius: 20px;
+            line-height: 1.7; font-size: 15px; position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); word-wrap: break-word;
+        }
+        .user .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 4px; }
+        .ai .bubble { background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 4px; color: var(--text-main); }
+        .bubble img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+
+        /* PRESET CHIPS */
+        .preset-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .preset-btn { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--primary); 
+            color: var(--text-main); padding: 10px 15px; border-radius: 20px; 
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; 
+        }
+        .preset-btn:hover { background: var(--primary); color: white; }
+
+        /* INPUT AREA - Safe Flexbox Container */
+        .chat-input-area {
+            flex-shrink: 0; padding: 15px; background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px); border-top: 1px solid var(--border-light);
+            display: flex; flex-direction: column; width: 100%; box-sizing: border-box;
+            padding-bottom: env(safe-area-inset-bottom, 15px);
+        }
+
+        .chat-input-wrapper {
+            display: flex; align-items: flex-end; gap: 10px; width: 100%; box-sizing: border-box;
+            background: rgba(0,0,0,0.5); border: 1px solid var(--border-light);
+            border-radius: 24px; padding: 8px 15px;
+        }
+        .chat-input-wrapper:focus-within { border-color: var(--primary); }
+
+        textarea {
+            flex: 1; background: transparent; border: none; color: white;
+            font-family: inherit; font-size: 15px; resize: none;
+            padding: 10px 0; outline: none; max-height: 100px; min-height: 24px;
+        }
+
+        .icon-btn {
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+        }
+        .send-btn { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px;
+        }
+
+        #imagePreviewContainer { position: relative; margin-bottom: 10px; display: none; width: max-content; }
+        .img-chip { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 2px solid var(--primary); }
+        .remove-img-btn { position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:22px; height:22px; font-size:10px; cursor:pointer; }
+
+        @keyframes popInCard { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .typing-indicator { display: flex; gap: 5px; padding: 5px; align-items: center; }
+        .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: typingPulse 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typingPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -46,10 +132,10 @@
 <div class="overlay" id="overlay"></div>
 
 <!-- PREMIUM TOPBAR -->
-<div class="topbar" id="appTopbar">
+<div class="topbar" id="appTopbar" style="position: absolute; width: 100%; z-index: 100;">
     <div class="menuBtn" onclick="toggleSidebar()">☰</div>
     <div class="appTitle">📚 Book Deep Study</div>
-    <button class="btn" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
+    <button class="btn btn-primary" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
 </div>
 
 <!-- SIDEBAR -->
@@ -62,25 +148,13 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<!-- CAMERA OVERLAY -->
-<div id="cameraModal" class="cameraModal">
-    <button class="closeBtn" onclick="closeCamera()">✖</button>
-    <video id="cameraVideo" autoplay playsinline></video>
-    <div class="cam-controls">
-        <button class="cam-icon-btn" id="toggleFlashBtn">💡</button>
-        <div class="cameraCircle" onclick="capturePhoto()"></div>
-        <button class="cam-icon-btn" onclick="switchCamera()">🔄</button>
-    </div>
-</div>
-
 <!-- WIZARD STEPS -->
-<div class="page active" id="wizardPage">
+<div id="wizardPage">
     <div class="wizard-container" id="wizardContainer">
         
-        <!-- Step 1: Publisher -->
-        <div class="card step-card active" id="step-1">
+        <div class="step-card active" id="step-1">
             <h2>Step 1: Board / Publisher</h2>
-            <label>Select Publisher / Board:</label>
+            <label>Select Publisher:</label>
             <select id="publisherSelect" class="standard">
                 <option value="" selected disabled>-- Select Publisher --</option>
                 <option value="NCERT">NCERT</option>
@@ -91,15 +165,14 @@
                 <option value="Oswaal">Oswaal</option>
                 <option value="S Chand">S Chand</option>
                 <option value="Pradeep">Pradeep</option>
-                <option value="Other">Other Publisher</option>
+                <option value="Other">Other</option>
             </select>
             <div class="btn-row">
-                <button class="btn" onclick="nextStep(2)">Next ➔</button>
+                <button class="btn btn-primary" onclick="nextStep(2)">Next ➔</button>
             </div>
         </div>
 
-        <!-- Step 2: Class -->
-        <div class="card step-card" id="step-2">
+        <div class="step-card" id="step-2">
             <h2>Step 2: Class</h2>
             <label>Select Class:</label>
             <select id="classSelect" class="standard" onchange="triggerChapterFetch()">
@@ -118,13 +191,12 @@
                 <option value="Class 12">Class 12</option>
             </select>
             <div class="btn-row">
-                <button class="btn" style="background: #475569;" onclick="nextStep(1)">⬅ Back</button>
-                <button class="btn" onclick="nextStep(3)">Next ➔</button>
+                <button class="btn btn-secondary" onclick="nextStep(1)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="nextStep(3)">Next ➔</button>
             </div>
         </div>
 
-        <!-- Step 3: Subject -->
-        <div class="card step-card" id="step-3">
+        <div class="step-card" id="step-3">
             <h2>Step 3: Subject</h2>
             <label>Select Subject:</label>
             <select id="subjectSelect" class="standard" onchange="triggerChapterFetch()">
@@ -143,67 +215,65 @@
                 <option value="Hindi">Hindi</option>
                 <option value="Sanskrit">Sanskrit</option>
                 <option value="Computer Science">Computer Science</option>
+                <option value="Information Technology">Information Technology</option>
                 <option value="Accountancy">Accountancy</option>
                 <option value="Business Studies">Business Studies</option>
                 <option value="Physical Education">Physical Education</option>
                 <option value="Other">Other Subject</option>
             </select>
             <div class="btn-row">
-                <button class="btn" style="background: #475569;" onclick="nextStep(2)">⬅ Back</button>
-                <button class="btn" onclick="nextStep(4)">Next ➔</button>
+                <button class="btn btn-secondary" onclick="nextStep(2)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="nextStep(4)">Next ➔</button>
             </div>
         </div>
 
-        <!-- Step 4: Chapter (AI FETCH ENABLED) -->
-        <div class="card step-card" id="step-4">
+        <div class="step-card" id="step-4">
             <h2>Step 4: Chapter</h2>
             <label>Select Chapter (Names in Hindi):</label>
             <select id="chapterSelect" class="standard">
-                <option value="" selected disabled>-- Select Subject & Class First --</option>
+                <option value="" selected disabled>-- Select Subject First --</option>
             </select>
             
-            <label style="margin-top:20px;">Or, Type Chapter Name Manually:</label>
+            <label style="margin-top:10px;">Or Type Chapter Manually:</label>
             <input type="text" id="manualChapter" class="standard" placeholder="e.g. अध्याय 2: बल तथा गति">
             
             <div class="btn-row">
-                <button class="btn" style="background: #475569;" onclick="nextStep(3)">⬅ Back</button>
-                <button class="btn" onclick="nextStep(5)">Next ➔</button>
+                <button class="btn btn-secondary" onclick="nextStep(3)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="nextStep(5)">Next ➔</button>
             </div>
         </div>
 
-        <!-- Step 5: Summary & Start -->
-        <div class="card step-card" id="step-5">
-            <h2>System Ready</h2>
-            <div id="selectionSummary" style="text-align:left; background: var(--input-bg); border: 1px solid var(--border-light); padding:20px; border-radius:16px; margin-bottom:25px; font-weight:600; line-height:2;"></div>
+        <div class="step-card" id="step-5">
+            <h2>Ready!</h2>
+            <div id="selectionSummary" style="text-align:left; background: rgba(0,0,0,0.3); border: 1px solid var(--border-light); padding:15px; border-radius:12px; margin-bottom:20px; font-weight:600; line-height:2;"></div>
             
-            <button class="btn green" style="width: 100%; font-size: 18px; padding: 18px;" onclick="startConversation()">Initialize AI Tutor 🚀</button>
+            <button class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation()">Initialize AI Tutor 🚀</button>
             <div class="btn-row">
-                <button class="btn" style="background: #475569;" onclick="nextStep(4)">⬅ Edit Details</button>
+                <button class="btn btn-secondary" onclick="nextStep(4)">⬅ Edit Details</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- CHAT INTERFACE -->
-<div class="page chat-page-layout" id="chatPage" style="display: none;">
+<!-- STRICT CHAT INTERFACE -->
+<div id="chatPage">
     <div class="chat-scroll-area" id="chatHistory">
         <!-- Messages appear here -->
     </div>
 
+    <!-- Input Bar locked tightly to the bottom via Flexbox -->
     <div class="chat-input-area">
         <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
         
-        <div style="display:flex; flex-direction:column; flex:1;">
-            <div id="imagePreviewContainer" style="display:none; position:absolute; top:-70px; left:20px; z-index: 100;">
-                <img id="imgChip" class="image-preview-chip" style="display:block; margin:0;">
-                <div class="image-preview-close" onclick="removeImage()">✖</div>
-            </div>
-            
-            <div class="chat-input-wrapper">
-                <button class="chat-action-btn" style="background: transparent; box-shadow: none;" onclick="openCameraUI()" title="Upload Image">📷</button>
-                <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
-                <button class="chat-action-btn send" onclick="sendMessage()">➤</button>
-            </div>
+        <div id="imagePreviewContainer">
+            <img id="imgChip" class="img-chip">
+            <button class="remove-img-btn" onclick="removeImage()">✖</button>
+        </div>
+        
+        <div class="chat-input-wrapper">
+            <button class="icon-btn" onclick="document.getElementById('imageInput').click()">📷</button>
+            <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
+            <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
         </div>
     </div>
 </div>
@@ -214,23 +284,34 @@
         const a = !s.classList.contains("active");
         s.classList.toggle("active", a); o.classList.toggle("active", a);
     }
-    document.getElementById("overlay").onclick = toggleSidebar;
+    if (document.getElementById("overlay")) {
+        document.getElementById("overlay").onclick = toggleSidebar;
+    }
 
-    // 🛑 ALL CHAPTER NAMES IN HINDI 🛑
+    // EXPANDED LOCAL HINDI CHAPTERS
     const localChapterBanks = {
         'Science': ['हमारे आस-पास के पदार्थ', 'क्या हमारे आस-पास के पदार्थ शुद्ध हैं', 'परमाणु एवं अणु', 'परमाणु की संरचना', 'जीवन की मौलिक इकाई', 'ऊतक', 'जीवों में विविधता', 'गति', 'बल तथा गति के नियम', 'गुरुत्वाकर्षण', 'कार्य तथा ऊर्जा', 'ध्वनि', 'हम बीमार क्यों होते हैं', 'प्राकृतिक संपदा', 'खाद्य संसाधनों में सुधार'],
-        'Mathematics': ['समुच्चय', 'संबंध एवं फलन', 'त्रिकोणमितीय फलन', 'गणितीय आगमन का सिद्धांत', 'सम्मिश्र संख्याएँ', 'रैखिक असमिकाएँ', 'क्रमचय और संचय', 'द्विपद प्रमेय', 'अनुक्रम तथा श्रेणी', 'सरल रेखाएँ', 'शंकु परिच्छेद', 'त्रिविमीय ज्यामिति का परिचय', 'सीमा और अवकलज', 'गणितीय विवेचन', 'सांख्यिकी', 'प्रायिकता'],
+        'Physics': ['भौतिक जगत', 'मात्रक और मापन', 'सरल रेखा में गति', 'समतल में गति', 'गति के नियम', 'कार्य, ऊर्जा और शक्ति', 'कणों के निकाय तथा घूर्णी गति', 'गुरुत्वाकर्षण', 'ठोसों के यांत्रिक गुण', 'तरलों के यांत्रिक गुण', 'द्रव्य के तापीय गुण', 'ऊष्मागतिकी', 'अणुगति सिद्धांत', 'दोलन', 'तरंगें'],
+        'Chemistry': ['रसायन विज्ञान की कुछ मूल अवधारणाएँ', 'परमाणु की संरचना', 'तत्वों का वर्गीकरण', 'रासायनिक आबंधन', 'द्रव्य की अवस्थाएँ', 'ऊष्मागतिकी', 'साम्यावस्था', 'अपचयोपचय अभिक्रियाएँ', 'हाइड्रोजन', 's-ब्लॉक तत्व', 'p-ब्लॉक तत्व', 'कार्बनिक रसायन', 'हाइड्रोकार्बन', 'पर्यावरणीय रसायन'],
+        'Mathematics': ['समुच्चय', 'संबंध एवं फलन', 'त्रिकोणमितीय फलन', 'गणितीय आगमन का सिद्धांत', 'सम्मिश्र संख्याएँ', 'रैखिक असमिकाएँ', 'क्रमचय और संचय', 'द्विपद प्रमेय', 'अनुक्रम तथा श्रेणी', 'सरल रेखाएँ', 'शंकु परिच्छेद', 'त्रिविमीय ज्यामिति का परिचय', 'सीमा और अवकलज', 'सांख्यिकी', 'प्रायिकता'],
         'History': ['फ्रांसीसी क्रांति', 'यूरोप में समाजवाद एवं रूसी क्रांति', 'नात्सीवाद और हिटलर का उदय', 'वन्य समाज और उपनिवेशवाद', 'आधुनिक विश्व में चरवाहे'],
         'Geography': ['भारत - आकार और स्थिति', 'भारत का भौतिक स्वरूप', 'अपवाह', 'जलवायु', 'प्राकृतिक वनस्पति तथा वन्य प्राणी', 'जनसंख्या'],
-        'Hindi': ['दो बैलों की कथा', 'ल्हासा की ओर', 'उपभोक्तावाद की संस्कृति', 'साँवले सपनों की याद', 'नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया']
+        'Social Science': ['सत्ता की साझेदारी', 'संघवाद', 'लोकतंत्र और विविधता', 'जाति, धर्म और लैंगिक मसले', 'जन-संघर्ष और आंदोलन', 'राजनीतिक दल', 'लोकतंत्र के परिणाम', 'लोकतंत्र की चुनौतियाँ'],
+        'Economics': ['पालमपुर गाँव की कहानी', 'संसाधन के रूप में लोग', 'निर्धनता : एक चुनौती', 'भारत में खाद्य सुरक्षा'],
+        'Computer Science': ['कंप्यूटर सिस्टम', 'पायथन प्रोग्रामिंग', 'डेटाबेस कॉन्सेप्ट्स', 'नेटवर्किंग', 'साइबर सुरक्षा', 'डेटा संरचना'],
+        'Accountancy': ['लेखांकन का परिचय', 'लेखांकन के सिद्धांत', 'लेन-देनों का अभिलेखन', 'बैंक समाधान विवरण', 'ह्रास, प्रावधान और संचय'],
+        'Business Studies': ['व्यवसाय की प्रकृति एवं उद्देश्य', 'व्यावसायिक संगठन के स्वरूप', 'निजी, सार्वजनिक एवं भूमंडलीय उपक्रम', 'व्यावसायिक सेवाएँ', 'व्यवसाय की उभरती पद्धतियाँ'],
+        'Physical Education': ['खेलकूद में योजना', 'खेल और पोषण', 'योग और जीवन शैली', 'शारीरिक शिक्षा में परीक्षण और मापन', 'खेलकूद में मनोविज्ञान'],
+        'Hindi': ['दो बैलों की कथा', 'ल्हासा की ओर', 'उपभोक्तावाद की संस्कृति', 'साँवले सपनों की याद', 'नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया', 'प्रेमचंद के फटे जूते', 'साखियाँ एवं सबद', 'वाख', 'सवैये', 'कैदी और कोकिला'],
+        'English': ['The Last Lesson', 'Lost Spring', 'Deep Water', 'The Rattrap', 'Indigo', 'Poets and Pancakes', 'The Interview', 'Going Places']
     };
 
     let selectedData = {};
     let currentImageBase64 = null;
 
     window.onload = function() {
-        let savedHistory = localStorage.getItem('bookChatHistory_vEngUI');
-        let savedSettings = localStorage.getItem('bookSettings_vEngUI');
+        let savedHistory = localStorage.getItem('bookChatHistory_FinalRules');
+        let savedSettings = localStorage.getItem('bookSettings_FinalRules');
         if (savedHistory && savedSettings) {
             selectedData = JSON.parse(savedSettings);
             document.getElementById('wizardPage').style.display = 'none';
@@ -242,9 +323,9 @@
     };
 
     function nextStep(step) {
-        if(step === 2 && !document.getElementById('publisherSelect').value) return alert("Please select a Publisher!");
-        if(step === 3 && !document.getElementById('classSelect').value) return alert("Please select a Class!");
-        if(step === 4 && !document.getElementById('subjectSelect').value) return alert("Please select a Subject!");
+        if(step === 2 && !document.getElementById('publisherSelect').value) return alert("Select Publisher!");
+        if(step === 3 && !document.getElementById('classSelect').value) return alert("Select Class!");
+        if(step === 4 && !document.getElementById('subjectSelect').value) return alert("Select Subject!");
         
         document.querySelectorAll('.step-card').forEach(el => el.classList.remove('active'));
         document.getElementById(`step-${step}`).classList.add('active');
@@ -257,10 +338,7 @@
             let chapMan = document.getElementById('manualChapter').value;
             let finalChap = chapMan ? chapMan : chapList;
 
-            if(!finalChap) {
-                nextStep(4);
-                return alert("Please select or type a chapter!");
-            }
+            if(!finalChap) { nextStep(4); return alert("Select or type a chapter!"); }
 
             selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
             document.getElementById('selectionSummary').innerHTML = 
@@ -271,7 +349,6 @@
         }
     }
 
-    // 🛑 DYNAMIC AI CHAPTER FETCHING 🛑
     async function triggerChapterFetch() {
         let sub = document.getElementById('subjectSelect').value;
         let cls = document.getElementById('classSelect').value;
@@ -280,14 +357,14 @@
         if(!sub || !cls) return;
 
         let chapters = localChapterBanks[sub];
-        
         if (chapters) {
             chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
             chapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; });
         } else {
-            chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching Chapters from AI... --</option>';
+            chapSelect.innerHTML = '<option value="" selected disabled>-- Fetching from AI... --</option>';
             try {
-                const sysPrompt = "You are a textbook database. The user wants the standard chapter names for a specific subject and class. YOU MUST RETURN ONLY A VALID JSON ARRAY OF STRINGS containing the chapter names strictly translated to HINDI. DO NOT return markdown, backticks, or any other text. JUST THE JSON ARRAY.";
+                // Fetching Chapters from AI when not hardcoded
+                const sysPrompt = "You are an API. User sends Subject and Class. Return a JSON array of Strings containing the standard textbook chapter names TRANSLATED TO HINDI. ONLY output the JSON array, no extra text, no markdown block.";
                 const r = await fetch("/api/gemini-text", {
                     method: "POST", headers: {"Content-Type":"application/json"},
                     body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: `Class: ${cls}, Subject: ${sub}` })
@@ -297,14 +374,17 @@
                 let fetchedChapters = JSON.parse(cleanJson);
                 
                 chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
-                fetchedChapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; });
-                
-                localChapterBanks[sub] = fetchedChapters; // Cache it
+                fetchedChapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="अध्याय ${i+1}: ${chap}">अध्याय ${i+1}: ${chap}</option>`; });
             } catch(e) {
-                console.error("AI Fetch failed, defaulting to manual.", e);
-                chapSelect.innerHTML = '<option value="" selected disabled>-- Failed to load. Please type manually below --</option>';
+                chapSelect.innerHTML = '<option value="" selected disabled>-- Failed. Please type manually --</option>';
             }
         }
+    }
+
+    // PRESET COMMAND FUNCTION
+    function runPreset(cmd) {
+        document.getElementById('chatInput').value = cmd;
+        sendMessage();
     }
 
     function startConversation() {
@@ -312,10 +392,26 @@
         document.getElementById('chatPage').style.display = 'flex';
         document.getElementById('settingsBtn').style.display = 'block';
         
-        localStorage.setItem('bookSettings_vEngUI', JSON.stringify(selectedData));
+        localStorage.setItem('bookSettings_FinalRules', JSON.stringify(selectedData));
 
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
-            addAiMessage(`Hello! I am your advanced AI tutor for **${selectedData.subject}**. \n\nWe are focusing on **${selectedData.chapter}** for **${selectedData.class}**. I will answer all your questions in English. How can I help you today?`);
+            addAiMessage(`नमस्ते! मैं आपका एआई शिक्षक हूँ। \n\nहम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। \n\n**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।** यदि आप चाहते हैं कि मैं अंग्रेजी में बात करूँ, तो बस मुझे अंग्रेजी में बोलने के लिए कहें।\n\nआप नीचे दिए गए विकल्पों में से चुन सकते हैं या अपना खुद का सवाल पूछ सकते हैं:`);
+            
+            // Add Preset Option Chips immediately after initial message
+            setTimeout(() => {
+                const chipsDiv = document.createElement("div");
+                chipsDiv.className = "msg ai";
+                chipsDiv.innerHTML = `
+                    <div class="preset-chips">
+                        <button class="preset-btn" onclick="runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स (Generate Notes)</button>
+                        <button class="preset-btn" onclick="runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न (Objectives)</button>
+                        <button class="preset-btn" onclick="runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण (Analyze Chapter)</button>
+                    </div>
+                `;
+                document.getElementById('chatHistory').appendChild(chipsDiv);
+                scrollToBottom();
+                saveHistory();
+            }, 500);
         }
     }
 
@@ -324,61 +420,6 @@
         document.getElementById('settingsBtn').style.display = 'none';
         document.getElementById('wizardPage').style.display = 'block';
         nextStep(1); 
-    }
-
-    // 🛑 CAMERA ENGINE (NATIVE HTML) 🛑
-    let stream = null; let isFlashOn = false; let currentFacing = 'environment';
-    
-    async function openCameraUI() {
-        const modal = document.getElementById('cameraModal');
-        modal.classList.add('active');
-        await initCam();
-    }
-    
-    async function initCam() {
-        if(stream) stream.getTracks().forEach(t => t.stop());
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing } });
-            document.getElementById('cameraVideo').srcObject = stream;
-        } catch(e) { alert("Camera access failed."); closeCamera(); }
-    }
-
-    async function switchCamera() {
-        currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
-        isFlashOn = false;
-        await initCam();
-    }
-    
-    async function toggleFlash() {
-        if(!stream) return;
-        const track = stream.getVideoTracks()[0];
-        try {
-            if(track.getCapabilities().torch) {
-                isFlashOn = !isFlashOn;
-                await track.applyConstraints({ advanced: [{ torch: isFlashOn }] });
-                document.getElementById('toggleFlashBtn').innerText = isFlashOn ? "💡" : "🔦";
-            }
-        } catch(e) {}
-    }
-
-    function capturePhoto() {
-        const v = document.getElementById('cameraVideo');
-        const c = document.createElement('canvas');
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
-        currentImageBase64 = c.toDataURL('image/jpeg');
-        document.getElementById('imgChip').src = currentImageBase64;
-        document.getElementById('imagePreviewContainer').style.display = 'block';
-        closeCamera();
-    }
-
-    function closeCamera() {
-        document.getElementById('cameraModal').classList.remove('active');
-        if(stream) {
-            const track = stream.getVideoTracks()[0];
-            try { if(track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(e){}
-            stream.getTracks().forEach(t => t.stop());
-        }
     }
 
     function handleImageSelect(event) {
@@ -399,24 +440,9 @@
         document.getElementById('imageInput').value = '';
     }
 
-    function handleEnter(e) {
-        if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-    }
+    function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+    function scrollToBottom() { const chatHist = document.getElementById('chatHistory'); chatHist.scrollTop = chatHist.scrollHeight; }
 
-    function scrollToBottom() {
-        const chatHist = document.getElementById('chatHistory');
-        chatHist.scrollTop = chatHist.scrollHeight;
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        let t = document.createElement('div'); t.innerText = "✅ Copied!";
-        t.style.cssText = "position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:99999;";
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2000);
-    }
-
-    // 🛑 SEND MESSAGE TO AI 🛑
     async function sendMessage() {
         const inputEl = document.getElementById('chatInput');
         const text = inputEl.value.trim();
@@ -426,15 +452,9 @@
 
         // User Message UI
         const msgDiv = document.createElement("div");
-        msgDiv.className = "chat-msg chat-user";
-        let imgHtml = img ? `<img src="${img}" class="bubble-img"><br>` : "";
-        let escapedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
-        
-        msgDiv.innerHTML = `
-            <div class="bubble">
-                ${imgHtml}${escapedText}
-                <button onclick="copyToClipboard('${text.replace(/'/g, "\\'")}')" style="position:absolute; top:-10px; right:-10px; background:var(--primary); color:white; border:2px solid var(--bg-surface); border-radius:50%; width:28px; height:28px; font-size:12px; cursor:pointer;">📋</button>
-            </div>`;
+        msgDiv.className = "msg user";
+        let imgHtml = img ? `<img src="${img}"><br>` : "";
+        msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
         scrollToBottom();
 
@@ -444,37 +464,36 @@
         // AI Typing Indicator
         const loadingId = "load_" + Date.now();
         const loadDiv = document.createElement("div");
-        loadDiv.className = "chat-msg chat-ai";
+        loadDiv.className = "msg ai";
         loadDiv.id = loadingId;
-        loadDiv.innerHTML = `<div class="bubble"><div style="display:flex; gap:6px; padding:5px;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite;"></div><div style="width:10px; height:10px; background:var(--accent); border-radius:50%; animation:pulse 1s infinite 0.2s;"></div><div style="width:10px; height:10px; background:var(--secondary); border-radius:50%; animation:pulse 1s infinite 0.4s;"></div></div></div>`;
+        loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
         scrollToBottom();
 
-        // 🛑 AI RESPONSES STRICTLY IN ENGLISH 🛑
+        // 🛑 AI RULES: DEFAULT HINDI, ENGLISH IF ASKED 🛑
         const sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
-1. ALWAYS respond entirely in ENGLISH. Do not use Hindi for the explanation.
-2. Structure your answers logically. Use **bolding** for important words.
-3. NEVER write everything on a single line. ALWAYS add double spacing (\\n\\n) between paragraphs, points, or lists to ensure readability.
-4. If there is math, USE LaTeX formats (e.g. $$ \\frac{a}{b} $$ or $x^2$).
-Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapter: "${selectedData.chapter}" from the publisher ${selectedData.publisher}. Provide highly accurate, educational answers based on this context.`;
+1. DEFAULT LANGUAGE: You MUST respond entirely in HINDI (Devanagari script) by default.
+2. ENGLISH OVERRIDE: IF AND ONLY IF the user explicitly asks you to speak, talk, answer, or explain in English, you must switch and respond in ENGLISH. Otherwise, stick to Hindi.
+3. Use **bolding** for important terms.
+4. Add double spacing (\\n\\n) between paragraphs for readability.
+5. If there is math, USE LaTeX formats (e.g. $$ \\frac{a}{b} $$).
+Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}.`;
 
         const payload = img ? 
-            { imageBase64: img, userPrompt: text || "Analyze this context.", systemPrompt: sysPrompt } : 
+            { imageBase64: img, userPrompt: text || "चित्र का विश्लेषण करें।", systemPrompt: sysPrompt } : 
             { userPrompt: text, systemPrompt: sysPrompt };
         
-        const endpoint = img ? "/api/gemini-vision" : "/api/gemini-text";
-
         try {
+            const endpoint = img ? "/api/gemini-vision" : "/api/gemini-text";
             const r = await fetch(endpoint, {
                 method: "POST", headers: {"Content-Type":"application/json"},
                 body: JSON.stringify(payload)
             });
             const data = await r.json();
-            
             if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
 
             document.getElementById(loadingId).remove();
-            addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
+            await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
 
         } catch(err) {
             document.getElementById(loadingId).querySelector('.bubble').innerHTML = "❌ <b style='color:#ef4444;'>Error:</b> " + err.message;
@@ -482,37 +501,43 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         }
     }
 
-    // 🛑 TYPEWRITER EXACTLY 5 SECONDS 🛑
+    // 🛑 MATHEMATICALLY EXACT 5-SECOND TYPEWRITER 🛑
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div");
-        msgDiv.className = "chat-msg chat-ai";
+        msgDiv.className = "msg ai";
         const bubble = document.createElement("div");
         bubble.className = "bubble";
         msgDiv.appendChild(bubble);
         document.getElementById('chatHistory').appendChild(msgDiv);
 
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        let rawCleanText = text.replace(/'/g, "\\'").replace(/\n/g, " ");
 
         if(typewrite) {
+            // Force 5000ms duration.
             const duration = 5000;
-            const tickRate = Math.max(5, duration / (formattedText.length || 1));
+            // The time per character to make it exactly 5000ms
+            const tickRate = Math.max(1, duration / (formattedText.length || 1));
             
-            for (let i = 0; i < formattedText.length; i++) {
+            let currentHTML = "";
+            let i = 0;
+            
+            while(i < formattedText.length) {
                 let char = formattedText[i];
                 if(char === '<') {
                     let end = formattedText.indexOf('>', i);
                     if(end !== -1) {
-                        bubble.innerHTML += formattedText.substring(i, end + 1);
-                        i = end;
-                    } else { bubble.innerHTML += char; }
+                        currentHTML += formattedText.substring(i, end + 1);
+                        i = end + 1;
+                    } else { currentHTML += char; i++; }
                 } else if (char === '\n') {
-                    bubble.innerHTML += '<br>';
+                    currentHTML += '<br>'; i++;
                 } else {
-                    bubble.innerHTML += char;
+                    currentHTML += char; i++;
                 }
                 
-                if (i % 8 === 0) scrollToBottom();
+                bubble.innerHTML = currentHTML;
+                if (i % 10 === 0) scrollToBottom();
+                
                 await new Promise(r => setTimeout(r, tickRate));
             }
         } else {
@@ -520,17 +545,13 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         }
 
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
-        
-        // Add Copy Button to AI Message
-        bubble.innerHTML += `<button onclick="copyToClipboard('${rawCleanText}')" style="position:absolute; top:-10px; right:-10px; background:var(--bg-surface); color:var(--primary); border:2px solid var(--primary); border-radius:50%; width:28px; height:28px; font-size:12px; cursor:pointer;">📋</button>`;
-        
         saveHistory();
         scrollToBottom();
     }
 
     function saveHistory() {
         const histHTML = document.getElementById('chatHistory').innerHTML;
-        localStorage.setItem('bookChatHistory_vEngUI', histHTML);
+        localStorage.setItem('bookChatHistory_FinalRules', histHTML);
     }
 </script>
 </body>
