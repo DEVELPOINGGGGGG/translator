@@ -506,14 +506,14 @@
             }
         }
 
-        // Step 3: Send to Server Puppeteer backend
+       // Step 3: Send to Server Cloudflare Backend
         window.executeFinalImageGen = async function(loadId, finalPrompt) {
             document.getElementById(loadId).innerHTML = `
                 <div class="bubble">
-                    <div style="font-size:10px; color:var(--primary); font-weight:900; margin-bottom:10px;">✨ RENDERING ENGINE ACTIVE</div>
+                    <div style="font-size:10px; color:var(--primary); font-weight:900; margin-bottom:10px;">✨ CLOUDFLARE FLUX ENGINE</div>
                     <div style="font-size:12px; margin-bottom:15px; color:var(--text-main); font-style:italic;">🎨 Painting: "${finalPrompt}"</div>
                     <div class="ai-thinking" style="padding:0; min-width:auto;">
-                        <div class="thinking-text" style="color:#10b981;">GENERATING 4K IMAGE...</div>
+                        <div class="thinking-text" style="color:#10b981;">GENERATING LIGHTNING FAST...</div>
                         <div class="data-bar" style="background:rgba(16,185,129,0.2);"><div style="position:absolute; left:-50%; width:50%; height:100%; background:linear-gradient(90deg, transparent, #10b981, transparent); animation:scan 1.5s infinite linear;"></div></div>
                     </div>
                 </div>`;
@@ -522,19 +522,25 @@
             scrollArea.scrollTo(0, scrollArea.scrollHeight);
 
             try {
-                const response = await fetch("/api/hf-search-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: finalPrompt }) });
+                // 🚀 HITTING YOUR EXISTING CLOUDFLARE API ROUTE
+                const response = await fetch("/api/cloudflare-image", { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ prompt: finalPrompt }) 
+                });
                 const result = await response.json();
                 
-                if (result.imageBase64) { 
-                    let htmlAns = `<div style="font-size:10px; color:#10b981; font-weight:900; margin-bottom:10px;">✨ Z-IMAGE TURBO (FLUX)</div><img src="${result.imageBase64}" onclick="openFullImage('${result.imageBase64}')" style="width:100%; border-radius:12px; cursor:pointer;">`;
+                // Cloudflare route returns { image: "data:image/png;base64,..." }
+                if (result.image) { 
+                    let htmlAns = `<div style="font-size:10px; color:#10b981; font-weight:900; margin-bottom:10px;">✨ CLOUDFLARE FLUX (SCHNELL)</div><img src="${result.image}" onclick="openFullImage('${result.image}')" style="width:100%; border-radius:12px; cursor:pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">`;
                     document.getElementById(loadId).innerHTML = `<div class="bubble">${htmlAns}</div>`;
-                    saveInteractionToLocalForage(finalPrompt, htmlAns, [], "Z-Image Turbo");
+                    saveInteractionToLocalForage(finalPrompt, htmlAns, [], "Cloudflare Image");
                     scrollArea.scrollTo(0, scrollArea.scrollHeight);
                 } else { 
-                    throw new Error("No image data received."); 
+                    throw new Error(result.error || "No image data received."); 
                 }
             } catch (error) { 
-                document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Image generation queue failed. Backend timeout.</div>`; 
+                document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Cloudflare API Error: ${error.message}</div>`; 
             }
         };
 
