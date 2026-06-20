@@ -128,16 +128,14 @@ async function processQueue() {
                 '--disable-gpu', 
                 '--single-process',
                 '--window-size=1280,800',
-                '--disable-blink-features=AutomationControlled' // 🚀 FIX 1: Helps bypass basic bot detection
+                '--disable-blink-features=AutomationControlled'
             ]
         });
 
         const page = await browser.newPage();
         
-        // 🚀 FIX 2: Disguise the headless browser as a real Windows 11 Chrome user
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-        // Filter out the noisy sensor warnings from the logs to keep Render clean
         page.on('console', msg => {
             const text = msg.text();
             if (!text.includes('Unrecognized feature')) {
@@ -151,33 +149,40 @@ async function processQueue() {
             timeout: 60000
         });
 
-        console.log("[Queue] Basic DOM loaded. Polling for the internal Gradio frame...");
+        console.log("[Queue] Basic DOM loaded. Polling for a stable Gradio frame...");
         
+        // 🚀 THE FIX: Use page.frames() which is immune to detached DOM elements, 
+        // and check if the actual textarea exists before locking in our frame reference.
         let frame = null;
-        for (let attempt = 0; attempt < 30; attempt++) {
-            const iframes = await page.$$('iframe');
-            for (const iframe of iframes) {
-                const src = await iframe.evaluate(el => el.src || "");
-                if (src.includes('hf.space') || src.includes('gradio')) {
-                    frame = await iframe.contentFrame();
-                    break;
+        const textareaSelector = 'textarea[data-testid="textbox"]';
+        
+        for (let attempt = 0; attempt < 60; attempt++) {
+            try {
+                const frames = page.frames();
+                for (const f of frames) {
+                    const url = f.url();
+                    if (url.includes('hf.space') || url.includes('gradio')) {
+                        // Ask the frame: "Do you have the textbox yet?"
+                        const isReady = await f.evaluate((sel) => !!document.querySelector(sel), textareaSelector);
+                        if (isReady) {
+                            frame = f;
+                            break;
+                        }
+                    }
                 }
+            } catch (e) {
+                // Safely ignore "Execution context was destroyed" errors while HF swaps frames
             }
+
             if (frame) break;
             await new Promise(r => setTimeout(r, 1000));
         }
 
-        if (!frame) throw new Error("Gradio iframe failed to mount within time limit.");
-        console.log("[Queue] Internal frame linked! Waiting for Gradio UI to paint...");
+        if (!frame) throw new Error("Stable Gradio iframe with textarea failed to mount within time limit.");
+
+        console.log("[Queue] Stable frame linked and UI is ready! Typing prompt...");
         
-        // 🚀 FIX 3: Explicitly wait for the Gradio App container to ensure it is NOT a white screen
-        await frame.waitForSelector('gradio-app, #root', { timeout: 30000 });
-        
-        console.log("[Queue] Gradio UI is visible! Finding textbox...");
-        const textareaSelector = 'textarea[data-testid="textbox"]';
-        await frame.waitForSelector(textareaSelector, { timeout: 20000 });
-        
-        // Type the prompt
+        // We already know the selector exists because of the loop above, so we can interact immediately
         await frame.click(textareaSelector, { clickCount: 3 });
         await frame.type(textareaSelector, currentRequest.prompt);
         
@@ -194,7 +199,6 @@ async function processQueue() {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
                 const src = img.src || "";
-                // Ensure we don't accidentally grab the Hugging Face avatar icons
                 if (!src.includes('avatar') && (src.includes('gradio_api/file') || (img.closest('div[data-testid="image"]') && src.length > 50))) {
                     return src;
                 }
@@ -216,7 +220,6 @@ async function processQueue() {
                 const debugPages = await browser.pages();
                 if (debugPages.length > 0) {
                     const screenshotPath = require('path').join(__dirname, 'debug_error.png');
-                    // Take a full page screenshot to see everything
                     await debugPages[0].screenshot({ path: screenshotPath, fullPage: true }); 
                     console.log(`[Debug] Screen layout saved to: ${screenshotPath}`);
                 }
