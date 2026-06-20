@@ -127,36 +127,32 @@ async function processQueue() {
                 '--disable-dev-shm-usage', 
                 '--disable-gpu', 
                 '--single-process',
-                '--window-size=1280,800'
+                '--window-size=1280,800',
+                '--disable-blink-features=AutomationControlled' // 🚀 FIX 1: Helps bypass basic bot detection
             ]
         });
 
         const page = await browser.newPage();
         
-        // Block heavy tracking/analytics ads that break network idle on Render
-        await page.setRequestInterception(true);
-        page.on('request', (req) => {
-            const resourceType = req.resourceType();
-            const url = req.url();
-            if (url.includes('google-analytics') || url.includes('analytics') || resourceType === 'font') {
-                req.abort();
-            } else {
-                req.continue();
+        // 🚀 FIX 2: Disguise the headless browser as a real Windows 11 Chrome user
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+        // Filter out the noisy sensor warnings from the logs to keep Render clean
+        page.on('console', msg => {
+            const text = msg.text();
+            if (!text.includes('Unrecognized feature')) {
+                console.log('[Headless Browser Log]:', text);
             }
         });
-
-        page.on('console', msg => console.log('[Headless Browser Log]:', msg.text()));
         
         console.log("[Queue] Loading parent Hugging Face Space...");
-        // 🚀 FIX 1: Use domcontentloaded so tracking requests don't cause timeouts
         await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
             waitUntil: 'domcontentloaded', 
-            timeout: 45000
+            timeout: 60000
         });
 
         console.log("[Queue] Basic DOM loaded. Polling for the internal Gradio frame...");
         
-        // 🚀 FIX 2: Fast retry loop to hook into the secure content frame immediately
         let frame = null;
         for (let attempt = 0; attempt < 30; attempt++) {
             const iframes = await page.$$('iframe');
@@ -168,16 +164,20 @@ async function processQueue() {
                 }
             }
             if (frame) break;
-            await new Promise(r => setTimeout(r, 1000)); // wait 1 sec before retrying
+            await new Promise(r => setTimeout(r, 1000));
         }
 
         if (!frame) throw new Error("Gradio iframe failed to mount within time limit.");
-        console.log("[Queue] Internal frame linked! Finding textbox...");
+        console.log("[Queue] Internal frame linked! Waiting for Gradio UI to paint...");
         
+        // 🚀 FIX 3: Explicitly wait for the Gradio App container to ensure it is NOT a white screen
+        await frame.waitForSelector('gradio-app, #root', { timeout: 30000 });
+        
+        console.log("[Queue] Gradio UI is visible! Finding textbox...");
         const textareaSelector = 'textarea[data-testid="textbox"]';
         await frame.waitForSelector(textareaSelector, { timeout: 20000 });
         
-        // Type the prompt into the target element inside the secure frame context
+        // Type the prompt
         await frame.click(textareaSelector, { clickCount: 3 });
         await frame.type(textareaSelector, currentRequest.prompt);
         
@@ -188,14 +188,14 @@ async function processQueue() {
             if(genBtn) genBtn.click();
         });
 
-        console.log("[Queue] Submitted. Watching frame for output image (Resolves dynamically)...");
+        console.log("[Queue] Submitted. Watching frame for output image...");
         
-        // Polling loop inside the frame context to instantly catch the WebP source url
         const imageHandle = await frame.waitForFunction(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
                 const src = img.src || "";
-                if (src.includes('gradio_api/file') || (img.closest('div[data-testid="image"]') && src.length > 50)) {
+                // Ensure we don't accidentally grab the Hugging Face avatar icons
+                if (!src.includes('avatar') && (src.includes('gradio_api/file') || (img.closest('div[data-testid="image"]') && src.length > 50))) {
                     return src;
                 }
             }
@@ -215,8 +215,9 @@ async function processQueue() {
             try {
                 const debugPages = await browser.pages();
                 if (debugPages.length > 0) {
-                    const screenshotPath = path.join(__dirname, 'debug_error.png');
-                    await debugPages[0].screenshot({ path: screenshotPath });
+                    const screenshotPath = require('path').join(__dirname, 'debug_error.png');
+                    // Take a full page screenshot to see everything
+                    await debugPages[0].screenshot({ path: screenshotPath, fullPage: true }); 
                     console.log(`[Debug] Screen layout saved to: ${screenshotPath}`);
                 }
             } catch (screenshotErr) {
