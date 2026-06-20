@@ -520,17 +520,86 @@
             else { runStandaloneTextSearch(); } 
         }
 
-        async function runDirectImageGeneration(promptText) {
-            if(!promptText) return; document.getElementById("sendSearchBtn").innerHTML = "🚀";
-            const chatContainer = document.getElementById("searchChatHistory"); const loadId = "img_load_" + Date.now();
+async function runDirectImageGeneration(promptText) {
+            if(!promptText) return; 
+            document.getElementById("sendSearchBtn").innerHTML = "🚀";
+            const chatContainer = document.getElementById("searchChatHistory"); 
+            const loadId = "img_load_" + Date.now();
+            
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">🎨 <b>Art Request:</b><br>${promptText}</div></div><div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:max-content;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div><div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div><div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div></div></div></div>`);
             document.getElementById("searchInput").value = ""; safeScroll(); 
+            
             try {
-                const response = await fetch("/api/hf-search-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: promptText }) });
+                // Step 1: Send the base prompt to Gemini to enhance it
+                const enhancePrompt = `You are an elite AI prompt engineer. The user wants an image of: "${promptText}". 
+                Create 3 completely distinct, highly detailed, visually stunning, 4k resolution text-to-image prompts. 
+                STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."]. Do NOT output markdown, backticks, or any other text.`;
+
+                const res = await fetch("/api/gemini-text", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userPrompt: enhancePrompt, systemPrompt: "Return strictly a JSON array." })
+                });
+
+                const data = await res.json();
+                let options = [];
+                try {
+                    let cleanJson = data.text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                    options = JSON.parse(cleanJson);
+                } catch(e) {
+                    options = [promptText + " highly detailed, 4k UHD", promptText + " cinematic lighting, highly realistic", promptText + " vibrant colors, masterpiece"]; // Fallback if AI fails JSON
+                }
+
+                if(!Array.isArray(options) || options.length < 3) options = [promptText, promptText + " 4k", promptText + " realistic"];
+
+                // Step 2: Show the options to the user
+                const optionsHtml = `
+                    <div style="margin-bottom:12px; font-weight:600;">✨ <b>Select a style for your image:</b></div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[0].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s;">1️⃣ ${options[0]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[1].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s;">2️⃣ ${options[1]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[2].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s;">3️⃣ ${options[2]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${promptText.replace(/`/g, '')}\`)" style="text-align:center; padding:10px; border-radius:10px; border:1px dashed var(--text-muted); background:transparent; color:var(--text-main); font-weight:bold; cursor:pointer; margin-top:5px;">✏️ No, use my exact prompt</button>
+                    </div>
+                `;
+
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<div class="ai-signature">✨ AI PROMPT OPTIMIZER</div>${optionsHtml}`;
+                safeScroll();
+
+            } catch (error) { 
+                document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Prompt generation failed. Try again.</span>`; 
+            }
+        }
+
+        // Helper function that actually triggers the server backend script
+        window.executeFinalImageGen = async function(loadId, finalPrompt) {
+            const loadBubble = document.getElementById(loadId).querySelector('.bubble');
+            
+            // Show loading state while image generates
+            loadBubble.innerHTML = `
+                <div class="ai-signature">✨ RENDERING ENGINE ACTIVE</div>
+                <div style="font-size:12px; margin-bottom:10px; color:var(--primary); font-style:italic;">🎨 Painting: "${finalPrompt}"</div>
+                <div style="display:flex; gap:6px; padding:12px 20px; background:var(--input-bg); border:1px solid var(--border-light); border-radius:20px; width:max-content;">
+                    <div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite alternate;"></div>
+                    <div style="width:10px; height:10px; background:#f43f5e; border-radius:50%; animation:pulse 1s infinite alternate 0.2s;"></div>
+                    <div style="width:10px; height:10px; background:#10b981; border-radius:50%; animation:pulse 1s infinite alternate 0.4s;"></div>
+                </div>
+            `;
+            safeScroll();
+            
+            try {
+                const response = await fetch("/api/hf-search-image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: finalPrompt }) });
                 const result = await response.json();
-                if (result.imageBase64) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<div class="ai-signature">✨ BY FLUX ENGINE (RENDER API)</div><div class="ai-generated-img-container" onclick="openFullscreenImage('img_src_${loadId}')"><img src="${result.imageBase64}" id="img_src_${loadId}"></div>`; } 
-                else { throw new Error("No image data received."); }
-            } catch (error) { document.getElementById(loadId).querySelector('.bubble').innerHTML = `<span style="color:red; font-weight:bold;">❌ Image generation queue failed.</span>`; }
+                
+                if (result.imageBase64) { 
+                    loadBubble.innerHTML = `<div class="ai-signature">✨ BY FLUX (Z-IMAGE-TURBO)</div><div class="ai-generated-img-container" onclick="openFullscreenImage('img_src_${loadId}')"><img src="${result.imageBase64}" id="img_src_${loadId}"></div>`; 
+                    safeScroll();
+                } else { 
+                    throw new Error("No image data received."); 
+                }
+            } catch (error) { 
+                loadBubble.innerHTML = `<span style="color:red; font-weight:bold;">❌ Image generation queue failed. Backend timeout.</span>`; 
+            }
         }
 
         async function runStandaloneTextSearch() {
