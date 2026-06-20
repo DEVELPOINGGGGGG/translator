@@ -135,7 +135,10 @@
 <div class="topbar" id="appTopbar" style="position: absolute; width: 100%; z-index: 100;">
     <div class="menuBtn" onclick="toggleSidebar()">☰</div>
     <div class="appTitle">📚 Book Deep Study</div>
-    <button class="btn btn-primary" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
+    <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" id="clearBtn" style="padding: 8px 12px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
+        <button class="btn btn-primary" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
+    </div>
 </div>
 
 <!-- SIDEBAR -->
@@ -295,7 +298,7 @@
         'Chemistry': ['रसायन विज्ञान की कुछ मूल अवधारणाएँ', 'परमाणु की संरचना', 'तत्वों का वर्गीकरण', 'रासायनिक आबंधन', 'द्रव्य की अवस्थाएँ', 'ऊष्मागतिकी', 'साम्यावस्था', 'अपचयोपचय अभिक्रियाएँ', 'हाइड्रोजन', 's-ब्लॉक तत्व', 'p-ब्लॉक तत्व', 'कार्बनिक रसायन', 'हाइड्रोकार्बन', 'पर्यावरणीय रसायन'],
         'Mathematics': ['समुच्चय', 'संबंध एवं फलन', 'त्रिकोणमितीय फलन', 'गणितीय आगमन का सिद्धांत', 'सम्मिश्र संख्याएँ', 'रैखिक असमिकाएँ', 'क्रमचय और संचय', 'द्विपद प्रमेय', 'अनुक्रम तथा श्रेणी', 'सरल रेखाएँ', 'शंकु परिच्छेद', 'त्रिविमीय ज्यामिति का परिचय', 'सीमा और अवकलज', 'सांख्यिकी', 'प्रायिकता'],
         'History': ['फ्रांसीसी क्रांति', 'यूरोप में समाजवाद एवं रूसी क्रांति', 'नात्सीवाद और हिटलर का उदय', 'वन्य समाज और उपनिवेशवाद', 'आधुनिक विश्व में चरवाहे'],
-        'Geography': ['भारत - आकार और स्थिति', 'भारत का भौतिक स्वरूप', 'अपवाह', 'जलवायु', 'प्राकृतिक वनस्पति तथा वन्य प्राणी', 'जनसंख्या'],
+        'Geography': ['भारत - आकार और स्थिति', 'भारत का भौतिक स्वरूप', 'अपवाह', ' जलवायु', 'प्राकृतिक वनस्पति तथा वन्य प्राणी', 'जनसंख्या'],
         'Social Science': ['सत्ता की साझेदारी', 'संघवाद', 'लोकतंत्र और विविधता', 'जाति, धर्म और लैंगिक मसले', 'जन-संघर्ष और आंदोलन', 'राजनीतिक दल', 'लोकतंत्र के परिणाम', 'लोकतंत्र की चुनौतियाँ'],
         'Economics': ['पालमपुर गाँव की कहानी', 'संसाधन के रूप में लोग', 'निर्धनता : एक चुनौती', 'भारत में खाद्य सुरक्षा'],
         'Computer Science': ['कंप्यूटर सिस्टम', 'पायथन प्रोग्रामिंग', 'डेटाबेस कॉन्सेप्ट्स', 'नेटवर्किंग', 'साइबर सुरक्षा', 'डेटा संरचना'],
@@ -309,18 +312,33 @@
     let selectedData = {};
     let currentImageBase64 = null;
 
+    // 🛑 FLAWLESS RESTORE - OPENS DIRECTLY TO CONVERSATION 🛑
     window.onload = function() {
-        let savedHistory = localStorage.getItem('bookChatHistory_FinalRules');
-        let savedSettings = localStorage.getItem('bookSettings_FinalRules');
+        let savedHistory = localStorage.getItem('bookChatHistory_V100');
+        let savedSettings = localStorage.getItem('bookSettings_V100');
         if (savedHistory && savedSettings) {
             selectedData = JSON.parse(savedSettings);
             document.getElementById('wizardPage').style.display = 'none';
             document.getElementById('chatPage').style.display = 'flex';
             document.getElementById('settingsBtn').style.display = 'block';
+            document.getElementById('clearBtn').style.display = 'block';
             document.getElementById('chatHistory').innerHTML = savedHistory;
-            scrollToBottom();
+            
+            // Wait slightly for DOM to render then scroll down
+            setTimeout(() => {
+                const c = document.getElementById('chatHistory');
+                c.scrollTop = c.scrollHeight;
+            }, 100);
         }
     };
+
+    function clearChat() {
+        if(confirm("Are you sure you want to clear the chat history?")) {
+            localStorage.removeItem('bookChatHistory_V100');
+            document.getElementById('chatHistory').innerHTML = "";
+            startConversation(); // Restart initial greeting
+        }
+    }
 
     function nextStep(step) {
         if(step === 2 && !document.getElementById('publisherSelect').value) return alert("Select Publisher!");
@@ -363,7 +381,6 @@
         } else {
             chapSelect.innerHTML = '<option value="" selected disabled>-- Fetching from AI... --</option>';
             try {
-                // Fetching Chapters from AI when not hardcoded
                 const sysPrompt = "You are an API. User sends Subject and Class. Return a JSON array of Strings containing the standard textbook chapter names TRANSLATED TO HINDI. ONLY output the JSON array, no extra text, no markdown block.";
                 const r = await fetch("/api/gemini-text", {
                     method: "POST", headers: {"Content-Type":"application/json"},
@@ -391,33 +408,33 @@
         document.getElementById('wizardPage').style.display = 'none';
         document.getElementById('chatPage').style.display = 'flex';
         document.getElementById('settingsBtn').style.display = 'block';
+        document.getElementById('clearBtn').style.display = 'block';
         
-        localStorage.setItem('bookSettings_FinalRules', JSON.stringify(selectedData));
+        localStorage.setItem('bookSettings_V100', JSON.stringify(selectedData));
 
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
-            addAiMessage(`नमस्ते! मैं आपका एआई शिक्षक हूँ। \n\nहम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। \n\n**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।** यदि आप चाहते हैं कि मैं अंग्रेजी में बात करूँ, तो बस मुझे अंग्रेजी में बोलने के लिए कहें।\n\nआप नीचे दिए गए विकल्पों में से चुन सकते हैं या अपना खुद का सवाल पूछ सकते हैं:`);
+            // 🛑 THE 3 OPTIONS ARE INJECTED DIRECTLY INTO THE HTML SO THEY ARE SAVED FOREVER 🛑
+            let initialMessageHTML = `
+                नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>
+                हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>
+                **मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।** यदि आप चाहते हैं कि मैं अंग्रेजी में बात करूँ, तो बस मुझे अंग्रेजी में बोलने के लिए कहें।<br><br>
+                आप नीचे दिए गए विकल्पों में से चुन सकते हैं या अपना खुद का सवाल पूछ सकते हैं:
+                <div class="preset-chips" style="margin-top: 15px;">
+                    <button class="preset-btn" onclick="runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स (Generate Notes)</button>
+                    <button class="preset-btn" onclick="runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न (Objectives)</button>
+                    <button class="preset-btn" onclick="runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण (Analyze Chapter)</button>
+                </div>
+            `;
             
-            // Add Preset Option Chips immediately after initial message
-            setTimeout(() => {
-                const chipsDiv = document.createElement("div");
-                chipsDiv.className = "msg ai";
-                chipsDiv.innerHTML = `
-                    <div class="preset-chips">
-                        <button class="preset-btn" onclick="runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स (Generate Notes)</button>
-                        <button class="preset-btn" onclick="runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न (Objectives)</button>
-                        <button class="preset-btn" onclick="runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण (Analyze Chapter)</button>
-                    </div>
-                `;
-                document.getElementById('chatHistory').appendChild(chipsDiv);
-                scrollToBottom();
-                saveHistory();
-            }, 500);
+            // Call it directly without typewrite so buttons are active instantly
+            addAiMessage(initialMessageHTML, false);
         }
     }
 
     function openSettings() {
         document.getElementById('chatPage').style.display = 'none';
         document.getElementById('settingsBtn').style.display = 'none';
+        document.getElementById('clearBtn').style.display = 'none';
         document.getElementById('wizardPage').style.display = 'block';
         nextStep(1); 
     }
@@ -441,7 +458,6 @@
     }
 
     function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-    function scrollToBottom() { const chatHist = document.getElementById('chatHistory'); chatHist.scrollTop = chatHist.scrollHeight; }
 
     async function sendMessage() {
         const inputEl = document.getElementById('chatInput');
@@ -456,7 +472,10 @@
         let imgHtml = img ? `<img src="${img}"><br>` : "";
         msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
-        scrollToBottom();
+        
+        // Scroll once for user message
+        const c = document.getElementById('chatHistory');
+        c.scrollTop = c.scrollHeight;
 
         inputEl.value = "";
         removeImage(); 
@@ -468,7 +487,7 @@
         loadDiv.id = loadingId;
         loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
-        scrollToBottom();
+        c.scrollTop = c.scrollHeight; // Scroll down to see indicator
 
         // 🛑 AI RULES: DEFAULT HINDI, ENGLISH IF ASKED 🛑
         const sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
@@ -501,7 +520,7 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         }
     }
 
-    // 🛑 MATHEMATICALLY EXACT 5-SECOND TYPEWRITER 🛑
+    // 🛑 MATHEMATICALLY EXACT 5-SECOND TYPEWRITER (NO AUTO-SCROLL LOOP) 🛑
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div");
         msgDiv.className = "msg ai";
@@ -515,7 +534,6 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         if(typewrite) {
             // Force 5000ms duration.
             const duration = 5000;
-            // The time per character to make it exactly 5000ms
             const tickRate = Math.max(1, duration / (formattedText.length || 1));
             
             let currentHTML = "";
@@ -536,8 +554,8 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
                 }
                 
                 bubble.innerHTML = currentHTML;
-                if (i % 10 === 0) scrollToBottom();
                 
+                // NO SCROLLTOBOTTOM() INSIDE THIS LOOP AS REQUESTED
                 await new Promise(r => setTimeout(r, tickRate));
             }
         } else {
@@ -545,13 +563,17 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         }
 
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
+        
         saveHistory();
-        scrollToBottom();
+        
+        // Scroll once at the very end if needed, or don't. Left it just to align the final message cleanly.
+        const c = document.getElementById('chatHistory');
+        c.scrollTop = c.scrollHeight;
     }
 
     function saveHistory() {
         const histHTML = document.getElementById('chatHistory').innerHTML;
-        localStorage.setItem('bookChatHistory_FinalRules', histHTML);
+        localStorage.setItem('bookChatHistory_V100', histHTML);
     }
 </script>
 </body>
