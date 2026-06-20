@@ -125,28 +125,52 @@ async function processQueue() {
         });
 
         const page = await browser.newPage();
-        await page.goto('https://aichatbot12321-deep-ai-image-gen.hf.space/?__theme=system', {
+        
+        // Go to the specific Z-Image-Turbo link
+        await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
             waitUntil: 'domcontentloaded',
             timeout: 60000
         });
 
+        console.log("[Queue] Page loaded. Accessing Hugging Face iframe...");
+        
+        // HuggingFace Spaces run Gradio inside an iframe. We MUST interact with the iframe!
+        await page.waitForSelector('iframe', { timeout: 30000 });
+        const elementHandle = await page.$('iframe');
+        const frame = await elementHandle.contentFrame();
+
+        if (!frame) throw new Error("Could not find the Gradio iframe.");
+
+        // Wait for the specific textarea
         const textareaSelector = 'textarea[data-testid="textbox"]';
-        await page.waitForSelector(textareaSelector, { timeout: 20000 });
-        await page.type(textareaSelector, currentRequest.prompt);
-        await page.click('button.primary');
+        await frame.waitForSelector(textareaSelector, { timeout: 30000 });
+        
+        // Clear box and type the AI-enhanced prompt
+        await frame.click(textareaSelector, { clickCount: 3 });
+        await frame.type(textareaSelector, currentRequest.prompt);
+        
+        // Click the generate button
+        console.log("[Queue] Clicking Generate button...");
+        await frame.click('button.primary');
 
-        console.log("[Queue] Submitted. Waiting for image to appear...");
+        // Wait for processing to happen (Usually 10-20 seconds on HF)
+        console.log("[Queue] Waiting for output image to generate...");
+        
+        // Wait specifically for the Gradio image output tag
+        await frame.waitForSelector('img[src*="gradio_api/file"]', { timeout: 60000 });
 
-        await page.waitForSelector('img[src*="gradio_api/file"]', { timeout: 90000 });
+        // Let the image finish rendering completely (give it 3 extra seconds to load the WebP)
+        console.log("[Queue] Image detected. Letting it finalize rendering...");
+        await new Promise(r => setTimeout(r, 3000)); 
 
-        console.log("[Queue] Image detected. Waiting 10 seconds for final render...");
-        await new Promise(r => setTimeout(r, 10000)); 
-
-        const imageSrc = await page.evaluate(() => {
-            return document.querySelector('img[src*="gradio_api/file"]').src;
+        const imageSrc = await frame.evaluate(() => {
+            const img = document.querySelector('img[src*="gradio_api/file"]');
+            return img ? img.src : null;
         });
 
-        console.log("[Queue] Success! Final image grabbed.");
+        if (!imageSrc) throw new Error("Could not extract image source URL.");
+
+        console.log("[Queue] Success! Final image grabbed:", imageSrc);
         currentRequest.resolve({ imageBase64: imageSrc });
 
     } catch (error) {
@@ -155,6 +179,8 @@ async function processQueue() {
     } finally {
         if (browser) await browser.close();
         isProcessingQueue = false;
+        
+        // Proceed to next request in queue
         setTimeout(processQueue, 1000);
     }
 }
