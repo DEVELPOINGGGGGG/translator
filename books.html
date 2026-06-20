@@ -1,371 +1,240 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>पुस्तक अध्ययन (Book Deep Study)</title>
+    <title>Book Deep Study</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- SYSTEM DEFAULT STYLING & FONTS -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* Base Styling & Locked Screen */
-        :root {
-            --bg-base: #020617;
-            --bg-surface: rgba(30, 41, 59, 0.7);
-            --primary: #3b82f6;
-            --secondary: #8b5cf6;
-            --accent: #f43f5e;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-light: rgba(255,255,255,0.1);
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        body, html {
-            margin: 0; padding: 0; 
-            width: 100vw; height: 100dvh; 
-            background: radial-gradient(circle at top left, #0f172a, #020617);
-            color: var(--text-main);
-            font-family: 'Poppins', sans-serif;
-            overflow: hidden; /* SCREEN IS LOCKED */
-        }
-
-        .app-container { display: flex; flex-direction: column; height: 100%; width: 100%; }
-
-        /* Premium Topbar */
-        .topbar {
-            height: 75px; 
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 25px; border-bottom: 1px solid var(--border-light); 
-            flex-shrink: 0; z-index: 100;
-            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
-        }
-
-        .title-text {
-            font-size: 24px; font-weight: 800; letter-spacing: 1px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
-            background-size: 200% auto;
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            animation: gradientShine 3s linear infinite;
-        }
-
-        .settings-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); color: white;
-            padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: bold; 
-            display: none; transition: all 0.3s ease;
-        }
-        .settings-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.05); }
-
-        /* Wizard Steps */
+        /* Wizard Custom Layout over style.css base */
         .wizard-container {
-            flex: 1; display: flex; flex-direction: column;
+            display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            padding: 20px; overflow-y: auto; 
+            padding: 20px; padding-top: 100px;
         }
 
         .step-card {
-            background: var(--bg-surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-light);
-            border-radius: 24px; padding: 40px; width: 100%; max-width: 500px;
-            box-shadow: var(--glass-shadow); display: none; text-align: center;
-            animation: bounceIn 0.5s ease;
+            width: 100%; max-width: 600px; display: none; text-align: center;
+            animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .step-card.active { display: block; }
 
-        h2 { margin-top: 0; color: var(--primary); font-size: 26px; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
-        label { display: block; text-align: left; margin-bottom: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 13px; letter-spacing: 1px;}
+        .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; }
+        .step-card label { display: block; text-align: left; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px;}
 
-        select, input[type="text"] {
-            width: 100%; background: rgba(0,0,0,0.5); color: white;
-            border: 2px solid var(--border-light); border-radius: 14px;
-            padding: 16px; font-size: 16px; margin-bottom: 25px; outline: none; box-sizing: border-box;
-            transition: all 0.3s ease;
-        }
+        .btn-row { display: flex; gap: 15px; justify-content: space-between; margin-top: 25px; }
+        .btn-row .btn { flex: 1; }
 
-        select:focus, input[type="text"]:focus { 
-            border-color: var(--primary); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-row { display: flex; gap: 15px; justify-content: space-between; }
-        
-        button.btn {
-            flex: 1; padding: 16px; border: none; border-radius: 14px;
-            font-size: 16px; font-weight: 800; cursor: pointer; color: white;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-        
-        button.btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5); }
-        button.btn.secondary { background: rgba(255,255,255,0.1); border: 1px solid var(--border-light); box-shadow: none; }
-        button.btn.secondary:hover { background: rgba(255,255,255,0.2); }
-        button.btn.start-btn { background: linear-gradient(135deg, #10b981, #047857); font-size: 18px; padding: 20px; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);}
-
-        /* Premium Chat Interface */
-        .chat-container { display: none; flex-direction: column; flex: 1; height: calc(100% - 75px); position: relative; }
-
-        .chat-scroll-area {
-            flex: 1; overflow-y: auto; padding: 25px; padding-bottom: 150px;
-            display: flex; flex-direction: column; gap: 25px;
-            scroll-behavior: smooth;
-        }
-
-        .msg { display: flex; width: 100%; flex-direction: column; animation: slideUpFade 0.4s ease; }
-        .user { align-items: flex-end; }
-        .ai { align-items: flex-start; }
-
-        .bubble {
-            max-width: 80%; padding: 18px 24px; border-radius: 24px;
-            line-height: 1.8; font-size: 15px; position: relative;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: transform 0.2s;
-        }
-        .bubble:hover { transform: translateY(-2px); }
-        
-        .user .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 6px; }
-        .ai .bubble { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 6px; color: var(--text-main); }
-        
-        .bubble img { max-width: 100%; border-radius: 12px; margin-top: 15px; border: 2px solid rgba(255,255,255,0.1); }
-
-        .action-bar { display: flex; gap: 10px; margin-top: 8px; padding: 0 10px; }
-        .action-btn { font-size: 11px; cursor: pointer; color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 8px; transition: 0.2s; font-weight: bold; border: 1px solid var(--border-light); }
-        .action-btn:hover { background: var(--primary); color: white; }
-
-        /* Glassmorphism Input Area - Fixed at Bottom */
-        .chat-input-area {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            padding: 20px; border-top: 1px solid var(--border-light); 
-            display: flex; gap: 15px; align-items: flex-end; z-index: 50;
-        }
-
-        .chat-input-wrapper {
-            flex: 1; background: rgba(0,0,0,0.6); border: 1px solid var(--border-light);
-            border-radius: 24px; display: flex; align-items: center; padding: 8px 18px;
-            transition: all 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
-        }
-        .chat-input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-
-        textarea {
-            flex: 1; background: transparent; border: none; color: white;
-            font-family: inherit; font-size: 16px; resize: none;
-            padding: 12px 0; outline: none; max-height: 120px;
-        }
-
-        .icon-btn {
-            background: transparent; border: none; color: var(--text-muted);
-            font-size: 26px; cursor: pointer; padding: 10px; transition: 0.3s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .icon-btn:hover { color: var(--primary); transform: scale(1.1); }
-        .send-btn { 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-            color: white; border-radius: 50%; width: 45px; height: 45px; padding: 0;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); margin-left: 10px;
-        }
-        .send-btn:hover { transform: scale(1.1) rotate(15deg); }
-
-        #imagePreviewContainer { display: none; position: absolute; top: -75px; left: 20px; z-index: 60; }
-        .img-chip { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: bounceIn 0.3s ease; }
-        .remove-img-btn { position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:24px; height:24px; font-size:12px; font-weight:bold; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transition: 0.2s; }
-        .remove-img-btn:hover { transform: scale(1.2); }
-
-        /* Camera UI Overlay */
-        #cam-overlay { display: none; position: fixed; inset: 0; background: black; z-index: 10000; flex-direction: column; }
-        #cam-video { width: 100%; height: 100%; object-fit: cover; }
-        .cam-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-evenly; }
-        .cam-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 15px; border-radius: 50%; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px); }
-
-        /* TTS Player */
-        #tts-player { display: none; background: rgba(30, 41, 59, 0.95); padding: 15px; text-align: center; border-bottom: 1px solid var(--border-light); position: fixed; top: 0; width: 100%; z-index: 9999; box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
-
-        /* Premium Animations */
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.8) translateY(20px); } 60% { opacity: 1; transform: scale(1.05) translateY(-5px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
-        @keyframes gradientShine { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
-        
-        .typing-indicator { display: flex; gap: 5px; padding: 5px 10px; align-items: center; }
-        .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: typingPulse 1.4s infinite ease-in-out both; }
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typingPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px var(--primary); } }
+        /* Camera UI */
+        .cam-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-evenly; align-items: center; z-index: 9999999;}
     </style>
 </head>
 <body>
 
-<div id="tts-player">
-    <button class="btn" onclick="playTts()">▶ प्ले (Play)</button>
-    <button class="btn secondary" onclick="pauseTts()">⏸ रोकें (Pause)</button>
-    <button class="btn" style="background:#ef4444;" onclick="closeTts()">✖ बंद करें (Close)</button>
+<div class="overlay" id="overlay"></div>
+
+<!-- PREMIUM TOPBAR -->
+<div class="topbar" id="appTopbar">
+    <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+    <div class="appTitle">📚 Book Deep Study</div>
+    <button class="btn" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
 </div>
 
-<div id="cam-overlay">
-    <video id="cam-video" autoplay playsinline></video>
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
+  <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
+  <button onclick="window.location.href='books.html'" style="border-left: 4px solid var(--primary); color: var(--primary); background: var(--border-light);">📚 Book Deep Study</button>
+  <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
+  <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
+  <button onclick="window.location.href='history.html'">🕒 History</button>
+</div>
+
+<!-- CAMERA OVERLAY -->
+<div id="cameraModal" class="cameraModal">
+    <button class="closeBtn" onclick="closeCamera()">✖</button>
+    <video id="cameraVideo" autoplay playsinline></video>
     <div class="cam-controls">
-        <button class="cam-btn" onclick="toggleTorch()">💡</button>
-        <button class="cam-btn" style="transform:scale(1.2);" onclick="capture()">📸</button>
-        <button class="cam-btn" onclick="switchCamera()">🔄</button>
-        <button class="cam-btn" style="background:#ef4444; border-color:#ef4444;" onclick="closeCamera()">✖</button>
+        <button class="cam-icon-btn" id="toggleFlashBtn">💡</button>
+        <div class="cameraCircle" onclick="capturePhoto()"></div>
+        <button class="cam-icon-btn" onclick="switchCamera()">🔄</button>
     </div>
 </div>
 
-<div class="app-container">
-    <div class="topbar">
-        <div class="title-text">पुस्तक अध्ययन</div>
-        <button class="settings-btn" id="settingsBtn" onclick="openSettings()">⚙️ सेटिंग्स</button>
-    </div>
-
+<!-- WIZARD STEPS -->
+<div class="page active" id="wizardPage">
     <div class="wizard-container" id="wizardContainer">
         
-        <div class="step-card active" id="step-1">
-            <h2>चरण 1: बोर्ड</h2>
-            <label>प्रकाशक / बोर्ड चुनें:</label>
-            <select id="publisherSelect">
-                <option value="" selected disabled>-- प्रकाशक चुनें --</option>
-                <option value="एनसीईआरटी (NCERT)">एनसीईआरटी (NCERT)</option>
-                <option value="एससीईआरटी (SCERT)">एससीईआरटी (SCERT)</option>
-                <option value="बिहार बोर्ड (Bihar Board)">बिहार बोर्ड (Bihar Board)</option>
-                <option value="सीबीएसई (CBSE)">सीबीएसई (CBSE)</option>
-                <option value="अरिहंत (Arihant)">अरिहंत (Arihant)</option>
-                <option value="ओसवाल (Oswaal)">ओसवाल (Oswaal)</option>
-                <option value="एस चंद (S Chand)">एस चंद (S Chand)</option>
-                <option value="प्रदीप (Pradeep)">प्रदीप (Pradeep)</option>
-                <option value="अन्य">अन्य (Other)</option>
+        <!-- Step 1: Publisher -->
+        <div class="card step-card active" id="step-1">
+            <h2>Step 1: Board / Publisher</h2>
+            <label>Select Publisher / Board:</label>
+            <select id="publisherSelect" class="standard">
+                <option value="" selected disabled>-- Select Publisher --</option>
+                <option value="NCERT">NCERT</option>
+                <option value="SCERT">SCERT</option>
+                <option value="Bihar Board">Bihar Board</option>
+                <option value="CBSE Reference">CBSE Reference</option>
+                <option value="Arihant">Arihant</option>
+                <option value="Oswaal">Oswaal</option>
+                <option value="S Chand">S Chand</option>
+                <option value="Pradeep">Pradeep</option>
+                <option value="Other">Other Publisher</option>
             </select>
             <div class="btn-row">
-                <button class="btn" onclick="nextStep(2)">आगे बढ़ें ➔</button>
+                <button class="btn" onclick="nextStep(2)">Next ➔</button>
             </div>
         </div>
 
-        <div class="step-card" id="step-2">
-            <h2>चरण 2: विषय</h2>
-            <label>विषय चुनें:</label>
-            <select id="subjectSelect" onchange="populateChapters()">
-                <option value="" selected disabled>-- विषय चुनें --</option>
-                <option value="Science">विज्ञान (Science)</option>
-                <option value="Physics">भौतिकी (Physics)</option>
-                <option value="Chemistry">रसायन विज्ञान (Chemistry)</option>
-                <option value="Biology">जीव विज्ञान (Biology)</option>
-                <option value="Mathematics">गणित (Mathematics)</option>
-                <option value="Social Science">सामाजिक विज्ञान (Social Science)</option>
-                <option value="History">इतिहास (History)</option>
-                <option value="Geography">भूगोल (Geography)</option>
-                <option value="Civics">नागरिक शास्त्र (Civics)</option>
-                <option value="Economics">अर्थशास्त्र (Economics)</option>
-                <option value="English">अंग्रेज़ी (English)</option>
-                <option value="Hindi">हिंदी (Hindi)</option>
-                <option value="Computer Science">कंप्यूटर साइंस (Computer Science)</option>
-                <option value="Accountancy">लेखाशास्त्र (Accountancy)</option>
-                <option value="Business Studies">व्यवसाय अध्ययन (Business Studies)</option>
-                <option value="Other">अन्य (Other)</option>
+        <!-- Step 2: Class -->
+        <div class="card step-card" id="step-2">
+            <h2>Step 2: Class</h2>
+            <label>Select Class:</label>
+            <select id="classSelect" class="standard" onchange="triggerChapterFetch()">
+                <option value="" selected disabled>-- Select Class --</option>
+                <option value="Class 1">Class 1</option>
+                <option value="Class 2">Class 2</option>
+                <option value="Class 3">Class 3</option>
+                <option value="Class 4">Class 4</option>
+                <option value="Class 5">Class 5</option>
+                <option value="Class 6">Class 6</option>
+                <option value="Class 7">Class 7</option>
+                <option value="Class 8">Class 8</option>
+                <option value="Class 9">Class 9</option>
+                <option value="Class 10">Class 10</option>
+                <option value="Class 11">Class 11</option>
+                <option value="Class 12">Class 12</option>
             </select>
             <div class="btn-row">
-                <button class="btn secondary" onclick="nextStep(1)">⬅ पीछे</button>
-                <button class="btn" onclick="nextStep(3)">आगे बढ़ें ➔</button>
+                <button class="btn" style="background: #475569;" onclick="nextStep(1)">⬅ Back</button>
+                <button class="btn" onclick="nextStep(3)">Next ➔</button>
             </div>
         </div>
 
-        <div class="step-card" id="step-3">
-            <h2>चरण 3: कक्षा</h2>
-            <label>कक्षा चुनें:</label>
-            <select id="classSelect">
-                <option value="" selected disabled>-- कक्षा चुनें --</option>
-                <option value="कक्षा 1">कक्षा 1</option>
-                <option value="कक्षा 2">कक्षा 2</option>
-                <option value="कक्षा 3">कक्षा 3</option>
-                <option value="कक्षा 4">कक्षा 4</option>
-                <option value="कक्षा 5">कक्षा 5</option>
-                <option value="कक्षा 6">कक्षा 6</option>
-                <option value="कक्षा 7">कक्षा 7</option>
-                <option value="कक्षा 8">कक्षा 8</option>
-                <option value="कक्षा 9">कक्षा 9</option>
-                <option value="कक्षा 10">कक्षा 10</option>
-                <option value="कक्षा 11">कक्षा 11</option>
-                <option value="कक्षा 12">कक्षा 12</option>
+        <!-- Step 3: Subject -->
+        <div class="card step-card" id="step-3">
+            <h2>Step 3: Subject</h2>
+            <label>Select Subject:</label>
+            <select id="subjectSelect" class="standard" onchange="triggerChapterFetch()">
+                <option value="" selected disabled>-- Select Subject --</option>
+                <option value="Science">Science</option>
+                <option value="Physics">Physics</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Biology">Biology</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Social Science">Social Science</option>
+                <option value="History">History</option>
+                <option value="Geography">Geography</option>
+                <option value="Civics">Civics</option>
+                <option value="Economics">Economics</option>
+                <option value="English">English</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Sanskrit">Sanskrit</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Accountancy">Accountancy</option>
+                <option value="Business Studies">Business Studies</option>
+                <option value="Physical Education">Physical Education</option>
+                <option value="Other">Other Subject</option>
             </select>
             <div class="btn-row">
-                <button class="btn secondary" onclick="nextStep(2)">⬅ पीछे</button>
-                <button class="btn" onclick="nextStep(4)">आगे बढ़ें ➔</button>
+                <button class="btn" style="background: #475569;" onclick="nextStep(2)">⬅ Back</button>
+                <button class="btn" onclick="nextStep(4)">Next ➔</button>
             </div>
         </div>
 
-        <div class="step-card" id="step-4">
-            <h2>चरण 4: अध्याय</h2>
-            <label>सूची से अध्याय चुनें:</label>
-            <select id="chapterSelect">
-                <option value="" selected disabled>-- पहले विषय चुनें --</option>
+        <!-- Step 4: Chapter (AI FETCH ENABLED) -->
+        <div class="card step-card" id="step-4">
+            <h2>Step 4: Chapter</h2>
+            <label>Select Chapter (Names in Hindi):</label>
+            <select id="chapterSelect" class="standard">
+                <option value="" selected disabled>-- Select Subject & Class First --</option>
             </select>
             
-            <label style="margin-top:20px; color:var(--primary);">या, मैन्युअल रूप से अध्याय का नाम दर्ज करें:</label>
-            <input type="text" id="manualChapter" placeholder="उदा: अध्याय 2: ध्वनि">
+            <label style="margin-top:20px;">Or, Type Chapter Name Manually:</label>
+            <input type="text" id="manualChapter" class="standard" placeholder="e.g. अध्याय 2: बल तथा गति">
             
             <div class="btn-row">
-                <button class="btn secondary" onclick="nextStep(3)">⬅ पीछे</button>
-                <button class="btn" onclick="nextStep(5)">आगे बढ़ें ➔</button>
+                <button class="btn" style="background: #475569;" onclick="nextStep(3)">⬅ Back</button>
+                <button class="btn" onclick="nextStep(5)">Next ➔</button>
             </div>
         </div>
 
-        <div class="step-card" id="step-5">
-            <h2>सिस्टम तैयार है</h2>
-            <div id="selectionSummary" style="text-align:left; background:rgba(0,0,0,0.4); border: 1px solid var(--border-light); padding:20px; border-radius:16px; margin-bottom:25px; color:var(--text-main); font-weight:500; line-height:2;"></div>
+        <!-- Step 5: Summary & Start -->
+        <div class="card step-card" id="step-5">
+            <h2>System Ready</h2>
+            <div id="selectionSummary" style="text-align:left; background: var(--input-bg); border: 1px solid var(--border-light); padding:20px; border-radius:16px; margin-bottom:25px; font-weight:600; line-height:2;"></div>
             
-            <button class="btn start-btn" onclick="startConversation()">बातचीत शुरू करें 🚀</button>
-            <br><br>
-            <button class="btn secondary" onclick="nextStep(4)">⬅ बदलाव करें</button>
+            <button class="btn green" style="width: 100%; font-size: 18px; padding: 18px;" onclick="startConversation()">Initialize AI Tutor 🚀</button>
+            <div class="btn-row">
+                <button class="btn" style="background: #475569;" onclick="nextStep(4)">⬅ Edit Details</button>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="chat-container" id="chatContainer">
-        <div class="chat-scroll-area" id="chatHistory">
-            </div>
+<!-- CHAT INTERFACE -->
+<div class="page chat-page-layout" id="chatPage" style="display: none;">
+    <div class="chat-scroll-area" id="chatHistory">
+        <!-- Messages appear here -->
+    </div>
 
-        <div class="chat-input-area">
-            <div id="imagePreviewContainer">
-                <img id="imgChip" class="img-chip">
-                <button class="remove-img-btn" onclick="removeImage()">✖</button>
+    <div class="chat-input-area">
+        <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+        
+        <div style="display:flex; flex-direction:column; flex:1;">
+            <div id="imagePreviewContainer" style="display:none; position:absolute; top:-70px; left:20px; z-index: 100;">
+                <img id="imgChip" class="image-preview-chip" style="display:block; margin:0;">
+                <div class="image-preview-close" onclick="removeImage()">✖</div>
             </div>
             
             <div class="chat-input-wrapper">
-                <button class="icon-btn" onclick="openCamera()" title="कैमरा खोलें (Open Camera)">📷</button>
-                <textarea id="chatInput" placeholder="यहाँ अपना प्रश्न पूछें..." rows="1" onkeypress="handleEnter(event)"></textarea>
-                <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
+                <button class="chat-action-btn" style="background: transparent; box-shadow: none;" onclick="openCameraUI()" title="Upload Image">📷</button>
+                <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
+                <button class="chat-action-btn send" onclick="sendMessage()">➤</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 🛑 ALL CHAPTER NAMES STRICTLY IN HINDI 🛑
-    const chapterBanks = {
+    function toggleSidebar() {
+        const s = document.getElementById("sidebar"), o = document.getElementById("overlay");
+        const a = !s.classList.contains("active");
+        s.classList.toggle("active", a); o.classList.toggle("active", a);
+    }
+    document.getElementById("overlay").onclick = toggleSidebar;
+
+    // 🛑 ALL CHAPTER NAMES IN HINDI 🛑
+    const localChapterBanks = {
         'Science': ['हमारे आस-पास के पदार्थ', 'क्या हमारे आस-पास के पदार्थ शुद्ध हैं', 'परमाणु एवं अणु', 'परमाणु की संरचना', 'जीवन की मौलिक इकाई', 'ऊतक', 'जीवों में विविधता', 'गति', 'बल तथा गति के नियम', 'गुरुत्वाकर्षण', 'कार्य तथा ऊर्जा', 'ध्वनि', 'हम बीमार क्यों होते हैं', 'प्राकृतिक संपदा', 'खाद्य संसाधनों में सुधार'],
-        'Physics': ['भौतिक जगत', 'मात्रक और मापन', 'सरल रेखा में गति', 'समतल में गति', 'गति के नियम', 'कार्य, ऊर्जा और शक्ति', 'कणों के निकाय तथा घूर्णी गति', 'गुरुत्वाकर्षण', 'ठोसों के यांत्रिक गुण', 'तरलों के यांत्रिक गुण', 'द्रव्य के तापीय गुण', 'ऊष्मागतिकी', 'अणुगति सिद्धांत', 'दोलन', 'तरंगें'],
-        'Chemistry': ['रसायन विज्ञान की कुछ मूल अवधारणाएँ', 'परमाणु की संरचना', 'तत्वों का वर्गीकरण', 'रासायनिक आबंधन', 'द्रव्य की अवस्थाएँ', 'ऊष्मागतिकी', 'साम्यावस्था', 'अपचयोपचय अभिक्रियाएँ', 'हाइड्रोजन', 's-ब्लॉक तत्व', 'p-ब्लॉक तत्व', 'कार्बनिक रसायन', 'हाइड्रोकार्बन', 'पर्यावरणीय रसायन'],
         'Mathematics': ['समुच्चय', 'संबंध एवं फलन', 'त्रिकोणमितीय फलन', 'गणितीय आगमन का सिद्धांत', 'सम्मिश्र संख्याएँ', 'रैखिक असमिकाएँ', 'क्रमचय और संचय', 'द्विपद प्रमेय', 'अनुक्रम तथा श्रेणी', 'सरल रेखाएँ', 'शंकु परिच्छेद', 'त्रिविमीय ज्यामिति का परिचय', 'सीमा और अवकलज', 'गणितीय विवेचन', 'सांख्यिकी', 'प्रायिकता'],
         'History': ['फ्रांसीसी क्रांति', 'यूरोप में समाजवाद एवं रूसी क्रांति', 'नात्सीवाद और हिटलर का उदय', 'वन्य समाज और उपनिवेशवाद', 'आधुनिक विश्व में चरवाहे'],
         'Geography': ['भारत - आकार और स्थिति', 'भारत का भौतिक स्वरूप', 'अपवाह', 'जलवायु', 'प्राकृतिक वनस्पति तथा वन्य प्राणी', 'जनसंख्या'],
-        'Social Science': ['सत्ता की साझेदारी', 'संघवाद', 'लोकतंत्र और विविधता', 'जाति, धर्म और लैंगिक मसले', 'जन-संघर्ष और आंदोलन', 'राजनीतिक दल', 'लोकतंत्र के परिणाम', 'लोकतंत्र की चुनौतियाँ'],
-        'Economics': ['पालमपुर गाँव की कहानी', 'संसाधन के रूप में लोग', 'निर्धनता : एक चुनौती', 'भारत में खाद्य सुरक्षा'],
-        'Hindi': ['दो बैलों की कथा', 'ल्हासा की ओर', 'उपभोक्तावाद की संस्कृति', 'साँवले सपनों की याद', 'नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया', 'प्रेमचंद के फटे जूते', 'मेरे बचपन के दिन', 'एक कुत्ता और एक मैना', 'साखियाँ एवं सबद', 'वाख', 'सवैये', 'कैदी और कोकिला', 'ग्राम श्री']
+        'Hindi': ['दो बैलों की कथा', 'ल्हासा की ओर', 'उपभोक्तावाद की संस्कृति', 'साँवले सपनों की याद', 'नाना साहब की पुत्री देवी मैना को भस्म कर दिया गया']
     };
 
     let selectedData = {};
     let currentImageBase64 = null;
 
     window.onload = function() {
-        let savedHistory = localStorage.getItem('bookChatHistory_Hindi');
-        let savedSettings = localStorage.getItem('bookSettings_Hindi');
+        let savedHistory = localStorage.getItem('bookChatHistory_vEngUI');
+        let savedSettings = localStorage.getItem('bookSettings_vEngUI');
         if (savedHistory && savedSettings) {
             selectedData = JSON.parse(savedSettings);
-            document.getElementById('wizardContainer').style.display = 'none';
-            document.getElementById('chatContainer').style.display = 'flex';
+            document.getElementById('wizardPage').style.display = 'none';
+            document.getElementById('chatPage').style.display = 'flex';
             document.getElementById('settingsBtn').style.display = 'block';
             document.getElementById('chatHistory').innerHTML = savedHistory;
             scrollToBottom();
@@ -373,17 +242,16 @@
     };
 
     function nextStep(step) {
-        if(step === 2 && !document.getElementById('publisherSelect').value) return alert("कृपया प्रकाशक चुनें!");
-        if(step === 3 && !document.getElementById('subjectSelect').value) return alert("कृपया विषय चुनें!");
-        if(step === 4 && !document.getElementById('classSelect').value) return alert("कृपया कक्षा चुनें!");
+        if(step === 2 && !document.getElementById('publisherSelect').value) return alert("Please select a Publisher!");
+        if(step === 3 && !document.getElementById('classSelect').value) return alert("Please select a Class!");
+        if(step === 4 && !document.getElementById('subjectSelect').value) return alert("Please select a Subject!");
         
         document.querySelectorAll('.step-card').forEach(el => el.classList.remove('active'));
         document.getElementById(`step-${step}`).classList.add('active');
 
         if(step === 5) {
             let pub = document.getElementById('publisherSelect').value;
-            let subVal = document.getElementById('subjectSelect').value;
-            let subText = document.getElementById('subjectSelect').options[document.getElementById('subjectSelect').selectedIndex].text;
+            let sub = document.getElementById('subjectSelect').value;
             let cls = document.getElementById('classSelect').value;
             let chapList = document.getElementById('chapterSelect').value;
             let chapMan = document.getElementById('manualChapter').value;
@@ -391,86 +259,110 @@
 
             if(!finalChap) {
                 nextStep(4);
-                return alert("कृपया एक अध्याय चुनें या टाइप करें!");
+                return alert("Please select or type a chapter!");
             }
 
-            selectedData = { publisher: pub, subject: subText, subjectVal: subVal, class: cls, chapter: finalChap };
+            selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
             document.getElementById('selectionSummary').innerHTML = 
-                `<span style="color:var(--primary)">प्रकाशक:</span> ${pub}<br>
-                 <span style="color:var(--secondary)">विषय:</span> ${subText}<br>
-                 <span style="color:var(--accent)">कक्षा:</span> ${cls}<br>
-                 <span style="color:#10b981">अध्याय:</span> ${finalChap}`;
+                `<span style="color:var(--primary)">Publisher:</span> ${pub}<br>
+                 <span style="color:var(--secondary)">Class:</span> ${cls}<br>
+                 <span style="color:var(--accent)">Subject:</span> ${sub}<br>
+                 <span style="color:#10b981">Chapter:</span> ${finalChap}`;
         }
     }
 
-    function populateChapters() {
+    // 🛑 DYNAMIC AI CHAPTER FETCHING 🛑
+    async function triggerChapterFetch() {
         let sub = document.getElementById('subjectSelect').value;
+        let cls = document.getElementById('classSelect').value;
         let chapSelect = document.getElementById('chapterSelect');
         
-        let chapters = chapterBanks[sub];
-        if (!chapters) {
-            chapters = Array.from({length: 20}, (_, i) => `अध्याय ${i+1}`);
-        }
+        if(!sub || !cls) return;
+
+        let chapters = localChapterBanks[sub];
         
-        chapSelect.innerHTML = '<option value="" selected disabled>-- अध्याय चुनें --</option>';
-        chapters.forEach((chap, i) => {
-            chapSelect.innerHTML += `<option value="अध्याय ${i+1}: ${chap}">अध्याय ${i+1}: ${chap}</option>`;
-        });
+        if (chapters) {
+            chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
+            chapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; });
+        } else {
+            chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching Chapters from AI... --</option>';
+            try {
+                const sysPrompt = "You are a textbook database. The user wants the standard chapter names for a specific subject and class. YOU MUST RETURN ONLY A VALID JSON ARRAY OF STRINGS containing the chapter names strictly translated to HINDI. DO NOT return markdown, backticks, or any other text. JUST THE JSON ARRAY.";
+                const r = await fetch("/api/gemini-text", {
+                    method: "POST", headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: `Class: ${cls}, Subject: ${sub}` })
+                });
+                const data = await r.json();
+                let cleanJson = data.text.replace(/```json/g, '').replace(/```/g, '').trim();
+                let fetchedChapters = JSON.parse(cleanJson);
+                
+                chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
+                fetchedChapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; });
+                
+                localChapterBanks[sub] = fetchedChapters; // Cache it
+            } catch(e) {
+                console.error("AI Fetch failed, defaulting to manual.", e);
+                chapSelect.innerHTML = '<option value="" selected disabled>-- Failed to load. Please type manually below --</option>';
+            }
+        }
     }
 
     function startConversation() {
-        document.getElementById('wizardContainer').style.display = 'none';
-        document.getElementById('chatContainer').style.display = 'flex';
+        document.getElementById('wizardPage').style.display = 'none';
+        document.getElementById('chatPage').style.display = 'flex';
         document.getElementById('settingsBtn').style.display = 'block';
         
-        localStorage.setItem('bookSettings_Hindi', JSON.stringify(selectedData));
+        localStorage.setItem('bookSettings_vEngUI', JSON.stringify(selectedData));
 
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
-            addAiMessage(`नमस्ते! मैं आपका एआई शिक्षक हूँ। \n\nहम <b>${selectedData.class}</b> के <b>${selectedData.subject}</b> विषय के <b>${selectedData.chapter}</b> पर चर्चा करने के लिए तैयार हैं। आप मुझसे सवाल पूछ सकते हैं या नोट्स बनाने के लिए कह सकते हैं!`);
+            addAiMessage(`Hello! I am your advanced AI tutor for **${selectedData.subject}**. \n\nWe are focusing on **${selectedData.chapter}** for **${selectedData.class}**. I will answer all your questions in English. How can I help you today?`);
         }
     }
 
     function openSettings() {
-        document.getElementById('chatContainer').style.display = 'none';
+        document.getElementById('chatPage').style.display = 'none';
         document.getElementById('settingsBtn').style.display = 'none';
-        document.getElementById('wizardContainer').style.display = 'flex';
+        document.getElementById('wizardPage').style.display = 'block';
         nextStep(1); 
     }
 
-    // 🛑 CAMERA & IMAGE ENGINE 🛑
-    let stream = null; let isTorch = false; let facingMode = 'environment';
+    // 🛑 CAMERA ENGINE (NATIVE HTML) 🛑
+    let stream = null; let isFlashOn = false; let currentFacing = 'environment';
     
-    async function openCamera() {
-        document.getElementById('cam-overlay').style.display = 'flex';
+    async function openCameraUI() {
+        const modal = document.getElementById('cameraModal');
+        modal.classList.add('active');
         await initCam();
     }
     
     async function initCam() {
-        if (stream) stream.getTracks().forEach(t => t.stop());
+        if(stream) stream.getTracks().forEach(t => t.stop());
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-            document.getElementById('cam-video').srcObject = stream;
-        } catch(e) { alert("कैमरा एक्सेस नहीं मिल पाया। (Camera access failed)"); closeCamera(); }
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing } });
+            document.getElementById('cameraVideo').srcObject = stream;
+        } catch(e) { alert("Camera access failed."); closeCamera(); }
     }
 
-    function switchCamera() {
-        facingMode = facingMode === 'environment' ? 'user' : 'environment';
-        isTorch = false;
-        initCam();
+    async function switchCamera() {
+        currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
+        isFlashOn = false;
+        await initCam();
     }
     
-    function toggleTorch() {
+    async function toggleFlash() {
         if(!stream) return;
         const track = stream.getVideoTracks()[0];
-        const caps = track.getCapabilities();
-        if(caps.torch) {
-            isTorch = !isTorch;
-            track.applyConstraints({ advanced: [{ torch: isTorch }] });
-        } else { alert("फ्लैशलाइट समर्थित नहीं है। (Flashlight not supported)"); }
+        try {
+            if(track.getCapabilities().torch) {
+                isFlashOn = !isFlashOn;
+                await track.applyConstraints({ advanced: [{ torch: isFlashOn }] });
+                document.getElementById('toggleFlashBtn').innerText = isFlashOn ? "💡" : "🔦";
+            }
+        } catch(e) {}
     }
 
-    function capture() {
-        const v = document.getElementById('cam-video');
+    function capturePhoto() {
+        const v = document.getElementById('cameraVideo');
         const c = document.createElement('canvas');
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
@@ -481,17 +373,30 @@
     }
 
     function closeCamera() {
-        document.getElementById('cam-overlay').style.display = 'none';
+        document.getElementById('cameraModal').classList.remove('active');
         if(stream) {
             const track = stream.getVideoTracks()[0];
-            if(track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] });
+            try { if(track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(e){}
             stream.getTracks().forEach(t => t.stop());
         }
     }
 
+    function handleImageSelect(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentImageBase64 = e.target.result;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+            document.getElementById('imgChip').src = currentImageBase64;
+        };
+        reader.readAsDataURL(file);
+    }
+    
     function removeImage() {
         currentImageBase64 = null;
         document.getElementById('imagePreviewContainer').style.display = 'none';
+        document.getElementById('imageInput').value = '';
     }
 
     function handleEnter(e) {
@@ -505,21 +410,13 @@
 
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text);
-        alert('कॉपी किया गया! (Copied!)');
+        let t = document.createElement('div'); t.innerText = "✅ Copied!";
+        t.style.cssText = "position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:99999;";
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
     }
 
-    // 🛑 TTS Engine 🛑
-    function listenText(text) {
-        document.getElementById('tts-player').style.display = 'block';
-        window.speechSynthesis.cancel();
-        window.u = new SpeechSynthesisUtterance(text);
-        window.u.lang = 'hi-IN'; // Speak in Hindi
-        window.speechSynthesis.speak(window.u);
-    }
-    function playTts() { window.speechSynthesis.resume(); }
-    function pauseTts() { window.speechSynthesis.pause(); }
-    function closeTts() { window.speechSynthesis.cancel(); document.getElementById('tts-player').style.display = 'none'; }
-
+    // 🛑 SEND MESSAGE TO AI 🛑
     async function sendMessage() {
         const inputEl = document.getElementById('chatInput');
         const text = inputEl.value.trim();
@@ -527,16 +424,16 @@
 
         if(!text && !img) return;
 
-        // User Message
+        // User Message UI
         const msgDiv = document.createElement("div");
-        msgDiv.className = "msg user";
-        let imgHtml = img ? `<img src="${img}" style="max-width:100%; border-radius:10px; margin-bottom:10px;"><br>` : "";
+        msgDiv.className = "chat-msg chat-user";
+        let imgHtml = img ? `<img src="${img}" class="bubble-img"><br>` : "";
         let escapedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
         
         msgDiv.innerHTML = `
-            <div class="bubble">${imgHtml}${escapedText}</div>
-            <div class="action-bar" style="justify-content: flex-end;">
-                <div class="action-btn" onclick="copyToClipboard('${text.replace(/'/g, "\\'")}')">📋 कॉपी (Copy)</div>
+            <div class="bubble">
+                ${imgHtml}${escapedText}
+                <button onclick="copyToClipboard('${text.replace(/'/g, "\\'")}')" style="position:absolute; top:-10px; right:-10px; background:var(--primary); color:white; border:2px solid var(--bg-surface); border-radius:50%; width:28px; height:28px; font-size:12px; cursor:pointer;">📋</button>
             </div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
         scrollToBottom();
@@ -547,28 +444,22 @@
         // AI Typing Indicator
         const loadingId = "load_" + Date.now();
         const loadDiv = document.createElement("div");
-        loadDiv.className = "msg ai";
+        loadDiv.className = "chat-msg chat-ai";
         loadDiv.id = loadingId;
-        loadDiv.innerHTML = `
-            <div class="bubble">
-                <div class="typing-indicator">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-            </div>`;
+        loadDiv.innerHTML = `<div class="bubble"><div style="display:flex; gap:6px; padding:5px;"><div style="width:10px; height:10px; background:var(--primary); border-radius:50%; animation:pulse 1s infinite;"></div><div style="width:10px; height:10px; background:var(--accent); border-radius:50%; animation:pulse 1s infinite 0.2s;"></div><div style="width:10px; height:10px; background:var(--secondary); border-radius:50%; animation:pulse 1s infinite 0.4s;"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
         scrollToBottom();
 
-        const sysPrompt = `You are a premium AI expert tutor. STRICT RULES:
-1. ALWAYS respond in Hindi (Devanagari script). 
-2. Use **bolding** for important words.
-3. NEVER write everything on a single line. ALWAYS add double spacing (\\n\\n) between paragraphs.
+        // 🛑 AI RESPONSES STRICTLY IN ENGLISH 🛑
+        const sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
+1. ALWAYS respond entirely in ENGLISH. Do not use Hindi for the explanation.
+2. Structure your answers logically. Use **bolding** for important words.
+3. NEVER write everything on a single line. ALWAYS add double spacing (\\n\\n) between paragraphs, points, or lists to ensure readability.
 4. If there is math, USE LaTeX formats (e.g. $$ \\frac{a}{b} $$ or $x^2$).
-Context: Teaching ${selectedData.class}, ${selectedData.subject}, ${selectedData.chapter} from ${selectedData.publisher}.`;
+Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapter: "${selectedData.chapter}" from the publisher ${selectedData.publisher}. Provide highly accurate, educational answers based on this context.`;
 
         const payload = img ? 
-            { imageBase64: img, userPrompt: text || "इस चित्र का विश्लेषण करें।", systemPrompt: sysPrompt } : 
+            { imageBase64: img, userPrompt: text || "Analyze this context.", systemPrompt: sysPrompt } : 
             { userPrompt: text, systemPrompt: sysPrompt };
         
         const endpoint = img ? "/api/gemini-vision" : "/api/gemini-text";
@@ -580,7 +471,7 @@ Context: Teaching ${selectedData.class}, ${selectedData.subject}, ${selectedData
             });
             const data = await r.json();
             
-            if(!r.ok) throw new Error(data.error || "सर्वर से नहीं जुड़ सका।");
+            if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
 
             document.getElementById(loadingId).remove();
             addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
@@ -591,21 +482,19 @@ Context: Teaching ${selectedData.class}, ${selectedData.subject}, ${selectedData
         }
     }
 
-    // 🛑 EXACT 5-SECOND TYPEWRITER ENGINE & BOLD PARSER 🛑
+    // 🛑 TYPEWRITER EXACTLY 5 SECONDS 🛑
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div");
-        msgDiv.className = "msg ai";
+        msgDiv.className = "chat-msg chat-ai";
         const bubble = document.createElement("div");
         bubble.className = "bubble";
         msgDiv.appendChild(bubble);
         document.getElementById('chatHistory').appendChild(msgDiv);
 
-        // Convert *bold* to <b>bold</b>
-        let formattedText = text.replace(/\*(.*?)\*/g, '<b style="color:var(--primary);">$1</b>');
+        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
         let rawCleanText = text.replace(/'/g, "\\'").replace(/\n/g, " ");
 
         if(typewrite) {
-            // Calculate exactly 5 seconds (5000ms)
             const duration = 5000;
             const tickRate = Math.max(5, duration / (formattedText.length || 1));
             
@@ -623,22 +512,17 @@ Context: Teaching ${selectedData.class}, ${selectedData.subject}, ${selectedData
                     bubble.innerHTML += char;
                 }
                 
-                if (i % 5 === 0) scrollToBottom();
+                if (i % 8 === 0) scrollToBottom();
                 await new Promise(r => setTimeout(r, tickRate));
             }
         } else {
             bubble.innerHTML = formattedText.replace(/\n/g, '<br>');
         }
 
-        // Apply MathJax
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
         
-        // Add Action Buttons for AI Message
-        msgDiv.innerHTML += `
-            <div class="action-bar">
-                <div class="action-btn" onclick="listenText('${rawCleanText}')">🔊 सुनें (Listen)</div>
-                <div class="action-btn" onclick="copyToClipboard('${rawCleanText}')">📋 कॉपी (Copy)</div>
-            </div>`;
+        // Add Copy Button to AI Message
+        bubble.innerHTML += `<button onclick="copyToClipboard('${rawCleanText}')" style="position:absolute; top:-10px; right:-10px; background:var(--bg-surface); color:var(--primary); border:2px solid var(--primary); border-radius:50%; width:28px; height:28px; font-size:12px; cursor:pointer;">📋</button>`;
         
         saveHistory();
         scrollToBottom();
@@ -646,7 +530,7 @@ Context: Teaching ${selectedData.class}, ${selectedData.subject}, ${selectedData
 
     function saveHistory() {
         const histHTML = document.getElementById('chatHistory').innerHTML;
-        localStorage.setItem('bookChatHistory_Hindi', histHTML);
+        localStorage.setItem('bookChatHistory_vEngUI', histHTML);
     }
 </script>
 </body>
