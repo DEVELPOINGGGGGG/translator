@@ -37,8 +37,6 @@
         .chat-time { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; opacity: 0.7; }
         mjx-container[jax="CHTML"][display="true"] { overflow-x: auto !important; overflow-y: hidden !important; max-width: 100%; padding-bottom: 5px; scrollbar-width: thin; }
 
-        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.4; } 100% { transform: scale(1.2); opacity: 1; } }
-
         /* Fluid Progress Bar Animation */
         .processing-container {
             display: flex;
@@ -49,7 +47,7 @@
             border-radius: 16px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             width: max-content;
-            min-width: 150px;
+            min-width: 180px;
         }
         .processing-text {
             font-size: 13px;
@@ -77,17 +75,12 @@
             position: absolute;
             animation: slideFluid 1.2s infinite ease-in-out;
         }
-        @keyframes slideFluid {
-            0% { left: -60%; }
-            100% { left: 100%; }
-        }
-        @keyframes pulseText {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
+        @keyframes slideFluid { 0% { left: -60%; } 100% { left: 100%; } }
+        @keyframes pulseText { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
         body.focus-mode .topbar { display: none !important; }
         body.focus-mode .chat-input-area { display: none !important; }
+        body.focus-mode #actionMenu { display: none !important; } /* Hidden in focus */
         body.focus-mode #searchChatHistory { padding-top: 20px !important; padding-bottom: 120px !important; margin-top: 0 !important; height: 100vh; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; }
         
         #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; z-index: 100000; background: #ef4444; color: white; border: 2px solid white; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); justify-content: center; align-items: center; transition: transform 0.2s ease; }
@@ -159,7 +152,7 @@
         #multiImageManager::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
     </style>
 </head>
-<body class="chat-page-layout" onclick="closeAllMenus(event)">
+<body class="chat-page-layout">
 
     <button id="exitFocusBtn" onclick="toggleFocusMode()" title="Exit Focus Mode">✕</button>
 
@@ -173,7 +166,7 @@
             <button onclick="document.getElementById('settingsModal').style.display='flex'; updateBrainDisplay();" title="System Settings" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--primary); transition: 0.2s;">⚙️</button>
             
             <div style="position:relative;">
-                <button class="global-options-btn" onclick="toggleGlobalMenu(event)">⋮</button>
+                <button class="global-options-btn" id="globalMenuTrigger" onclick="toggleGlobalMenu(event)">⋮</button>
                 <div id="globalOptionsMenu">
                     <button onclick="openFeedbackDialog()">📝 Submit Feedback</button>
                     <button onclick="window.location.reload()">🔄 Refresh App</button>
@@ -220,9 +213,10 @@
                 <button onclick="document.getElementById('notesModal').style.display='none'" style="background:#ef4444; color:white; border:none; width:25px; height:25px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px;">
+                <input type="text" id="noteClass" placeholder="Class / Grade (e.g., 9th Grade)" class="setting-input" style="width:100%;">
                 <input type="text" id="notePublisher" placeholder="Book Publisher (e.g., NCERT)" class="setting-input" style="width:100%;">
-                <input type="text" id="noteSubject" placeholder="Book Name / Subject (e.g., 9th Grade Science)" class="setting-input" style="width:100%;">
-                <input type="text" id="noteChapter" placeholder="Chapter Name (e.g., Gravitation or Sound)" class="setting-input" style="width:100%;">
+                <input type="text" id="noteSubject" placeholder="Book Name / Subject (e.g., Science)" class="setting-input" style="width:100%;">
+                <input type="text" id="noteChapter" placeholder="Chapter Name (e.g., Gravitation)" class="setting-input" style="width:100%;">
                 <button onclick="generateNotes()" style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; margin-top:10px; font-size: 15px;">✨ Generate Notes</button>
             </div>
         </div>
@@ -302,7 +296,7 @@
                 <button class="action-btn" onclick="document.getElementById('notesModal').style.display='flex'; toggleActionMenu();" style="color:#10b981;">📝 Create Notes</button>
             </div>
             
-            <button type="button" class="chat-action-btn" onclick="toggleActionMenu()" title="More Actions" style="background:var(--primary); color:white; border:none; font-size:22px; cursor:pointer; border-radius:50%; width:45px; height:45px; display:flex; justify-content:center; align-items:center; flex-shrink:0; box-shadow: 0 4px 10px rgba(59,130,246,0.4); transition:0.2s;">➕</button>
+            <button type="button" class="chat-action-btn" id="plusMenuTrigger" onclick="toggleActionMenu(event)" title="More Actions" style="background:var(--primary); color:white; border:none; font-size:22px; cursor:pointer; border-radius:50%; width:45px; height:45px; display:flex; justify-content:center; align-items:center; flex-shrink:0; box-shadow: 0 4px 10px rgba(59,130,246,0.4); transition:0.2s;">➕</button>
             
             <textarea id="searchInput" placeholder="Ask anything, upload files/code, solve logic..." style="flex:1; background:transparent; border:none; padding:12px 5px; font-size:15px; min-height:45px; color:var(--text-main); outline:none; resize:none; line-height: 1.5;"></textarea>
             
@@ -327,25 +321,42 @@
         let localFacing = "environment";
         let localFlashOn = false;
 
-        function toggleActionMenu() {
+        // --- GLOBAL CLICK LISTENER FOR CLOSING MENUS ---
+        document.addEventListener('click', function(event) {
+            const actionMenu = document.getElementById('actionMenu');
+            const plusBtn = document.getElementById('plusMenuTrigger');
+            if (actionMenu.style.display === 'flex' && !actionMenu.contains(event.target) && !plusBtn.contains(event.target)) {
+                actionMenu.style.display = 'none';
+            }
+
+            const globalMenu = document.getElementById('globalOptionsMenu');
+            const globalBtn = document.getElementById('globalMenuTrigger');
+            if (globalMenu.style.display === 'flex' && !globalMenu.contains(event.target) && !globalBtn.contains(event.target)) {
+                globalMenu.style.display = 'none';
+            }
+        });
+
+        function toggleActionMenu(event) {
+            if(event) event.stopPropagation();
             const menu = document.getElementById('actionMenu');
             menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
         }
 
         // Generate Notes Connection
         function generateNotes() {
+            const cls = document.getElementById('noteClass').value.trim();
             const pub = document.getElementById('notePublisher').value.trim();
             const sub = document.getElementById('noteSubject').value.trim();
             const chap = document.getElementById('noteChapter').value.trim();
             
-            if(!pub || !sub || !chap) {
+            if(!cls || !pub || !sub || !chap) {
                 showToast("⚠️ Please fill all fields to generate notes.");
                 return;
             }
 
             document.getElementById('notesModal').style.display = 'none';
             
-            const notePrompt = `Create comprehensive, highly structured, and detailed academic notes for:\nChapter: "${chap}"\nSubject: "${sub}"\nPublisher/Syllabus: "${pub}"\n\nPlease structure this clearly with headings, subheadings, key definitions, important formulas (if applicable), and a brief chapter summary at the end. Use Hindi/English mix if appropriate based on standard syllabus language.`;
+            const notePrompt = `Create comprehensive, highly structured, and detailed academic notes for:\nClass/Grade: "${cls}"\nChapter: "${chap}"\nSubject: "${sub}"\nPublisher/Syllabus: "${pub}"\n\nPlease structure this clearly with headings, subheadings, key definitions, important formulas (if applicable), and a brief chapter summary at the end. Use Hindi/English mix if appropriate based on standard syllabus language.`;
             
             document.getElementById("searchInput").value = notePrompt;
             runMainPipeline(); 
@@ -469,15 +480,19 @@
         marked.setOptions({ renderer: renderer });
 
         function copyToClipboardEngine(btn) {
-            const codeText = btn.parentElement.nextElementSibling.innerText;
-            navigator.clipboard.writeText(codeText).then(() => {
+            const codeBox = btn.closest('.code-box');
+            const codeBody = codeBox.querySelector('.code-body');
+            navigator.clipboard.writeText(codeBody.textContent).then(() => {
                 const originalText = btn.innerText; btn.innerText = 'Copied! ✓'; btn.style.background = '#10b981';
                 setTimeout(() => { btn.innerText = originalText; btn.style.background = ''; }, 2000);
             });
         }
 
+        // FIXED: Play HTML button logic
         window.playHtmlCode = function(btn) {
-            const rawCode = btn.parentElement.nextElementSibling.innerText;
+            const codeBox = btn.closest('.code-box');
+            const codeBody = codeBox.querySelector('.code-body');
+            const rawCode = codeBody.textContent; 
             let sanitizedCode = rawCode.replace(/<script\s+src=["'][^>]*polyfill\.io[^>]*>[\s\S]*?<\/script>/gi, '');
             document.getElementById('htmlPreviewFrame').srcdoc = sanitizedCode;
             document.getElementById('htmlPreviewModal').style.display = 'flex';
@@ -518,16 +533,38 @@
 
         try { aiBrain = JSON.parse(localStorage.getItem('aiBrain') || '[]'); } catch(e) {}
 
+        // SECURE AUTO-SAVE & RESTORE SYSTEM
+        function saveLocalBackup() {
+            try { localStorage.setItem('localChatBackup', JSON.stringify(sessionMessages)); } catch(e) {}
+        }
+
         window.restoreSession = function(e, id) {
             if(e) e.stopPropagation(); 
-            const item = window.appHistory.find(i => String(i.id) === String(id)); 
-            if(!item) return; 
-
+            const item = window.appHistory ? window.appHistory.find(i => String(i.id) === String(id)) : null; 
+            
             const container = document.getElementById("searchChatHistory"); 
             if (!container) return; 
             container.innerHTML = '';
             
-            const interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
+            let interactionsToRestore = [];
+            
+            // If ID provided, load from main history, else try local backup
+            if(item) {
+                interactionsToRestore = item.interactions || [{ question: item.question, answer: item.answer, image: item.image, provider: item.provider }];
+            } else if (!id) {
+                try {
+                    let backup = JSON.parse(localStorage.getItem('localChatBackup'));
+                    if(backup && backup.length > 0) {
+                        interactionsToRestore = backup.map(m => ({question: m.q, answer: m.a, image: m.imgs && m.imgs.length > 0 ? m.imgs[0] : null, provider: "System Backup"}));
+                    }
+                } catch(err){}
+            }
+
+            if(interactionsToRestore.length === 0) {
+                showWelcomeMessage();
+                return;
+            }
+
             sessionMessages = interactionsToRestore.map(inter => ({ q: inter.question, a: inter.answer, imgs: inter.image ? [inter.image] : [] }));
             
             interactionsToRestore.forEach((inter, idx) => {
@@ -535,7 +572,7 @@
                 container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgHtml}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
                 
                 let lId = "search_restored_" + Date.now() + "_" + idx;
-                container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${lId}"><div class="bubble"><div class="ai-signature">✨ BY ${inter.provider || "AI"}</div><div id="text_${lId}" class="markdown-body"></div></div></div>`);
+                container.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${lId}"><div class="bubble"><div class="ai-signature">✨ MEMORY RESTORED</div><div id="text_${lId}" class="markdown-body"></div></div></div>`);
                 
                 let cleanAns = inter.answer;
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
@@ -543,13 +580,13 @@
                 if (window.MathJax) MathJax.typesetPromise([document.getElementById(lId)]);
             });
             container.scrollTop = container.scrollHeight;
-            showToast("🔄 Session Restored!");
         };
 
         document.addEventListener("DOMContentLoaded", () => {
             const restoreId = new URLSearchParams(window.location.search).get('restore');
             if (restoreId) { setTimeout(() => window.restoreSession(null, restoreId), 500); } 
-            else if (sessionMessages.length === 0) { showWelcomeMessage(); }
+            else { window.restoreSession(null, null); } // Try to load backup on boot
+            
             document.getElementById("searchInput").addEventListener("keypress", (e) => { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runMainPipeline(); } });
         });
 
@@ -559,8 +596,7 @@
             safeScroll();
         }
 
-        function toggleGlobalMenu(e) { e.stopPropagation(); const m = document.getElementById('globalOptionsMenu'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
-        function closeAllMenus(e) { document.getElementById('globalOptionsMenu').style.display = 'none'; }
+        function toggleGlobalMenu(e) { if(e) e.stopPropagation(); const m = document.getElementById('globalOptionsMenu'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; }
         function openFeedbackDialog() { document.getElementById('globalOptionsMenu').style.display = 'none'; document.getElementById('feedbackText').value = ""; document.getElementById('feedbackFormState').style.display = 'block'; document.getElementById('feedbackLoadingState').style.display = 'none'; document.getElementById('feedbackSuccessState').style.display = 'none'; document.getElementById('feedbackOverlay').style.display = 'flex'; }
         function closeFeedbackDialog() { document.getElementById('feedbackOverlay').style.display = 'none'; }
         async function submitFeedbackApi() { const userChanges = document.getElementById('feedbackText').value.trim(); if(!userChanges) return showToast("⚠️ Please type your feedback first."); document.getElementById('feedbackFormState').style.display = 'none'; document.getElementById('feedbackLoadingState').style.display = 'flex'; try { const payload = { message: userChanges }; const res = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); if(res.ok) { document.getElementById('feedbackLoadingState').style.display = 'none'; document.getElementById('feedbackSuccessState').style.display = 'flex'; setTimeout(() => closeFeedbackDialog(), 2500); } else { showToast("❌ Server Block."); closeFeedbackDialog(); } } catch(err) { showToast("❌ Network error."); closeFeedbackDialog(); } }
@@ -572,27 +608,47 @@
         function safeScroll() { const c = document.getElementById("searchChatHistory"); c.scrollTop = c.scrollHeight; }
         function updateBrainDisplay() { document.getElementById("aiBrainDisplay").value = aiBrain.join('\n'); }
         function clearBrain() { if(confirm("Permanently erase memory?")) { aiBrain = []; localStorage.removeItem('aiBrain'); updateBrainDisplay(); showToast("🧠 Memory Wiped."); } }
-        function clearSearchChat() { if(confirm("Clear chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; uploadedImages = []; updateImageUI(); clearPdfFile(); showWelcomeMessage(); } }
+        function clearSearchChat() { if(confirm("Clear chat?")) { document.getElementById("searchChatHistory").innerHTML = ''; sessionMessages = []; localStorage.removeItem('localChatBackup'); uploadedImages = []; updateImageUI(); clearPdfFile(); showWelcomeMessage(); } }
         function copyResponseToClipboard(id) { navigator.clipboard.writeText(document.getElementById(id).innerText); showToast("📋 Copied!"); }
 
-        function runInsaneTypewriter(targetElement, fullHtml, callback) {
-            let tempDiv = document.createElement('div'); tempDiv.innerHTML = fullHtml;
-            let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
-            let totalLength = tempDiv.innerText.length || 1; let targetDuration = totalLength < 500 ? 7500 : 22500; 
-            let intervalTime = 30; let totalTicks = targetDuration / intervalTime; let textChunks = Math.max(1, Math.ceil(totalLength / totalTicks));
-
-            function typeNextNode() {
-                if (nodeIndex >= nodes.length) { if(callback) callback(); return; }
-                let currentNode = nodes[nodeIndex].cloneNode(true);
-                if (currentNode.nodeType === Node.TEXT_NODE) {
-                    let text = currentNode.textContent; let span = document.createElement('span'); targetElement.appendChild(span); let charIndex = 0;
-                    let interval = setInterval(() => {
-                        if (charIndex >= text.length) { clearInterval(interval); nodeIndex++; typeNextNode(); } 
-                        else { span.textContent += text.substring(charIndex, charIndex + textChunks); charIndex += textChunks; }
-                    }, intervalTime);
-                } else { targetElement.appendChild(currentNode); nodeIndex++; typeNextNode(); }
+        // ==========================================
+        // 🛡️ REWRITTEN DOM TYPEWRITER ENGINE (NO HTML TAGS)
+        // ==========================================
+        async function typeNodeRecursive(node, container, speed = 8) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                let text = node.textContent;
+                let textNode = document.createTextNode('');
+                container.appendChild(textNode);
+                for (let i = 0; i < text.length; i++) {
+                    textNode.textContent += text[i];
+                    safeScroll(); // ensure scrolling keeps up
+                    await new Promise(r => setTimeout(r, speed));
+                }
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                let el = document.createElement(node.tagName);
+                Array.from(node.attributes).forEach(attr => el.setAttribute(attr.name, attr.value));
+                container.appendChild(el);
+                for (let child of Array.from(node.childNodes)) {
+                    await typeNodeRecursive(child, el, speed);
+                }
             }
-            typeNextNode();
+        }
+
+        function runInsaneTypewriter(targetElement, fullHtml, callback) {
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = fullHtml;
+            targetElement.innerHTML = '';
+            
+            (async () => {
+                // Determine speed based on length so it doesn't take forever for huge code blocks
+                let textLen = tempDiv.innerText.length;
+                let dynamicSpeed = textLen > 1000 ? 1 : (textLen > 500 ? 3 : 8);
+
+                for (let child of Array.from(tempDiv.childNodes)) {
+                    await typeNodeRecursive(child, targetElement, dynamicSpeed);
+                }
+                if (callback) callback();
+            })();
         }
 
         window.startTts = function(id) { window.speechSynthesis.cancel(); let cleanSpeechText = document.getElementById(id).innerText.replace(/[\*\#\_\`]/g, ''); let currentUtterance = new SpeechSynthesisUtterance(cleanSpeechText); currentUtterance.lang = document.getElementById("appLang").value; window.speechSynthesis.speak(currentUtterance); };
@@ -633,11 +689,10 @@
             const chatContainer = document.getElementById("searchChatHistory"); 
             const loadId = "img_load_" + Date.now();
             
-            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">🎨 <b>Art Request:</b><br>${promptText}</div></div><div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div class="processing-container"><div class="processing-text">⚙️ Processing...</div><div class="progress-bar-track"><div class="progress-bar-fluid"></div></div></div></div></div>`);
+            chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user" style="animation: slideInUp 0.3s;"><div class="bubble">🎨 <b>Art Request:</b><br>${promptText}</div></div><div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div class="processing-container"><div class="processing-text">⚙️ Processing Options...</div><div class="progress-bar-track"><div class="progress-bar-fluid"></div></div></div></div></div>`);
             document.getElementById("searchInput").value = ""; safeScroll(); 
             
             try {
-                // Step 1: Send the base prompt to Gemini to enhance it
                 const enhancePrompt = `You are an elite AI prompt engineer. The user wants an image of: "${promptText}". 
                 Create 3 completely distinct, highly detailed, visually stunning, 4k resolution text-to-image prompts. 
                 STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."]. Do NOT output markdown, backticks, or any other text.`;
@@ -654,12 +709,11 @@
                     let cleanJson = data.text.replace(/```json/gi, '').replace(/```/gi, '').trim();
                     options = JSON.parse(cleanJson);
                 } catch(e) {
-                    options = [promptText + " highly detailed, 4k UHD", promptText + " cinematic lighting, highly realistic", promptText + " vibrant colors, masterpiece"]; // Fallback if AI fails JSON
+                    options = [promptText + " highly detailed, 4k UHD", promptText + " cinematic lighting, highly realistic", promptText + " vibrant colors, masterpiece"];
                 }
 
                 if(!Array.isArray(options) || options.length < 3) options = [promptText, promptText + " 4k", promptText + " realistic"];
 
-                // Step 2: Show the options to the user
                 const optionsHtml = `
                     <div style="margin-bottom:12px; font-weight:600;">✨ <b>Select a style for your image:</b></div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -740,7 +794,6 @@
             let lowercaseQ = q.toLowerCase(); const codingKeywords = ['code', 'html', 'css', 'javascript', 'python', 'script', 'react', 'tailwind']; let isCodingRequest = codingKeywords.some(kw => lowercaseQ.includes(kw));
             let requiresImageTrigger = ["चित्र", "नक्शा", "map", "diagram", "picture"].some(kw => lowercaseQ.includes(kw));
 
-            // Added safe loading structure with the fluid bar!
             const loadId = "txt_load_" + Date.now();
             chatContainer.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble" style="background:transparent; box-shadow:none; padding:0;"><div class="processing-container"><div class="processing-text">⚙️ Thinking...</div><div class="progress-bar-track"><div class="progress-bar-fluid"></div></div></div></div></div>`);
             safeScroll();
@@ -761,14 +814,23 @@
                 const payload = { userPrompt: advancedPrompt, systemPrompt: "You are an elite AI system.", imageBase64: imageToUseForApi || null, isCode: isCodingRequest, providerOverride: selectedTierOnStartup };
                 const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 150000); 
                 const response = await fetch("/api/smart-search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: controller.signal });
-                clearTimeout(timeoutId); const data = await response.json();
+                clearTimeout(timeoutId); 
+                
+                let data;
+                try {
+                    data = await response.json();
+                } catch(parseErr) {
+                    throw new Error("Received malformed JSON from API. Backend crashed or returned HTML block.");
+                }
                 
                 if (!response.ok) throw new Error(data.error || "Server cascade failed.");
+                if (!data.text) throw new Error("API returned success but no text payload.");
 
                 let activeResolvedChannel = data.provider || "SYSTEM ROUTER"; let cleanAns = data.text;
                 if (cleanAns.includes('<!DOCTYPE html>') && !cleanAns.includes('```')) cleanAns = cleanAns.replace(/(<!DOCTYPE html>[\s\S]*?<\/html>)/gi, "\n```html\n$1\n```\n");
 
                 sessionMessages.push({ q: q, a: cleanAns, imgs: currentImagesToSave });
+                saveLocalBackup(); // Auto-save locally
                 
                 if (typeof window.saveToHistory === 'function') {
                     window.saveToHistory('search', q, cleanAns, currentImagesToSave[0] || null, activeResolvedChannel);
@@ -776,7 +838,6 @@
 
                 let processedMathAns = processMath(cleanAns); let finalHtml = marked.parse(processedMathAns);
                 
-                // Extremely safe assignment to prevent undefined errors
                 const targetBubble = document.getElementById(loadId).querySelector('.bubble');
                 targetBubble.innerHTML = `<div class="ai-signature">✨ BY ${activeResolvedChannel}</div><div id="text_${loadId}" class="markdown-body"></div><div class="action-row"><button class="action-btn" style="width:auto;" onclick="startTts('text_${loadId}')" title="Read Aloud">🔊 Listen</button><button class="action-btn" style="width:auto;" onclick="copyResponseToClipboard('text_${loadId}')">📋 Copy</button></div><div id="attached_image_zone_${loadId}" style="margin-top:10px;"></div>`;
                 
@@ -787,7 +848,7 @@
             } catch (err) { 
                 const errorBubble = document.getElementById(loadId).querySelector('.bubble');
                 if (errorBubble) {
-                    errorBubble.innerHTML = `<div style="background:rgba(239, 68, 68, 0.1); border:1px solid #ef4444; padding:15px; border-radius:10px; color:#ef4444; font-weight:bold;">❌ Pipeline Failure:<br><span style="font-size:12px; font-weight:normal;">${err.message}</span></div>`;
+                    errorBubble.innerHTML = `<div style="background:rgba(239, 68, 68, 0.1); border:1px solid #ef4444; padding:15px; border-radius:10px; color:#ef4444; font-weight:bold;">❌ API Disconnected or Failed:<br><span style="font-size:12px; font-weight:normal; color:var(--text-main);">${err.message}</span></div>`;
                 }
             } finally { 
                 window.isProcessing = false; 
