@@ -4,7 +4,6 @@ const path = require("path");
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
-const puppeteer = require('puppeteer'); 
 
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first'); 
@@ -103,170 +102,7 @@ async function tryProviders(providers, requestFn, override = null) {
 }
 
 // ==========================================
-// 🛡️ ULTRA-LOW RAM HEADLESS BROWSER QUEUE
-// ==========================================
-let imageQueue = [];
-let isProcessingQueue = false;
-
-async function processQueue() {
-    if (imageQueue.length === 0 || isProcessingQueue) return;
-    
-    isProcessingQueue = true;
-    const currentRequest = imageQueue.shift();
-    let browser = null;
-    
-    try {
-        console.log(`[Queue] Processing: ${currentRequest.prompt}`);
-        
-        browser = await puppeteer.launch({
-            headless: true, // Required for Render
-            executablePath: '/opt/render/project/src/.puppeteer_cache/chrome/linux-127.0.6533.88/chrome-linux64/chrome',
-            args: [
-                '--no-sandbox', 
-                '--disable-setuid-sandbox', 
-                '--disable-dev-shm-usage', 
-                '--disable-gpu',
-                '--window-size=1280,800',
-                '--disable-blink-features=AutomationControlled'
-            ]
-        });
-
-        const page = await browser.newPage();
-        
-        // 🛡️ Stealth: Disguise as a real Windows PC
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        await page.evaluateOnNewDocument(() => {
-            Object.defineProperty(navigator, 'webdriver', { get: () => false });
-        });
-
-        // Filter out annoying warnings to keep your Render logs clean
-        page.on('console', msg => {
-            const text = msg.text();
-            if (!text.includes('Unrecognized feature') && !text.includes('postMessage')) {
-                console.log('[Browser]:', text);
-            }
-        });
-        
-        console.log("[Queue] Loading Parent HuggingFace Space...");
-        
-        // 🚀 MUST load the parent page so Gradio's postMessage doesn't cause a white screen crash
-        await page.goto('https://huggingface.co/spaces/anycoderapps/Z-Image-Turbo', {
-            waitUntil: 'domcontentloaded', 
-            timeout: 60000
-        });
-
-        console.log("[Queue] Parent loaded. Scanning for the Gradio App iframe...");
-        
-        // Wait for the iframe container to exist
-        await page.waitForSelector('iframe', { timeout: 30000 });
-        
-        let targetFrame = null;
-        const textareaSelector = 'textarea[data-testid="textbox"]';
-
-        // 🚀 SMART POLLER: Wait for the iframe to actually paint the UI, ensuring no white screen interactions
-        for (let attempt = 0; attempt < 45; attempt++) {
-            const frames = page.frames();
-            const spaceFrame = frames.find(f => f.url().includes('hf.space') || f.url().includes('anycoderapps'));
-            
-            if (spaceFrame) {
-                try {
-                    // Check if Svelte has painted the textarea on the screen yet
-                    const isReady = await spaceFrame.evaluate((sel) => {
-                        const el = document.querySelector(sel);
-                        return el && el.offsetParent !== null; // Must be visible
-                    }, textareaSelector);
-                    
-                    if (isReady) {
-                        targetFrame = spaceFrame;
-                        break; // UI is ready! Break the loop.
-                    }
-                } catch (e) {
-                    // Ignore context errors while iframe redirects
-                }
-            }
-            await new Promise(r => setTimeout(r, 1000));
-        }
-
-        if (!targetFrame) throw new Error("Gradio iframe failed to initialize the UI (Stuck on loading).");
-
-        console.log("[Queue] UI is fully painted inside the frame! Typing prompt...");
-        
-        // Target the frame context to type the prompt safely
-        await targetFrame.click(textareaSelector, { clickCount: 3 });
-        await targetFrame.keyboard.press('Backspace'); 
-        await targetFrame.type(textareaSelector, currentRequest.prompt);
-        
-        console.log("[Queue] Clicking Generate button...");
-        await targetFrame.evaluate(() => {
-            const btns = Array.from(document.querySelectorAll('button'));
-            const genBtn = btns.find(b => b.innerText.includes('Generate') || b.className.includes('primary'));
-            if(genBtn) genBtn.click();
-        });
-
-        console.log("[Queue] Submitted! Actively monitoring frame for the output image...");
-        
-        // Watch specifically inside the frame for the generated WebP file
-        const imageHandle = await targetFrame.waitForFunction(() => {
-            const imgs = Array.from(document.querySelectorAll('img'));
-            for (const img of imgs) {
-                const src = img.src || "";
-                if (!src.includes('avatar') && (src.includes('gradio_api/file') || (img.closest('div[data-testid="image"]') && src.length > 50))) {
-                    return src;
-                }
-            }
-            return false;
-        }, { timeout: 60000, polling: 500 });
-
-        const imageSrc = await imageHandle.jsonValue();
-        if (!imageSrc) throw new Error("Could not locate the generated image element.");
-
-        console.log("[Queue] Success! Final image grabbed: " + imageSrc);
-        currentRequest.resolve({ imageBase64: imageSrc });
-
-    } catch (error) {
-        console.error("[Queue Error]:", error.message);
-        
-        if (browser) {
-            try {
-                const debugPages = await browser.pages();
-                if (debugPages.length > 0) {
-                    const screenshotPath = require('path').join(__dirname, 'debug_error.png');
-                    await debugPages[0].screenshot({ path: screenshotPath, fullPage: true }); 
-                    console.log(`[Debug] Screen layout saved to: ${screenshotPath}`);
-                }
-            } catch (screenshotErr) {
-                console.error("[Debug] Failed to capture screenshot:", screenshotErr.message);
-            }
-        }
-        
-        currentRequest.reject(error);
-    } finally {
-        if (browser) {
-            await browser.close().catch(e => console.log("Browser close error:", e.message));
-        }
-        isProcessingQueue = false;
-        setTimeout(processQueue, 1000);
-    }
-}
-async function handleHFSearchImage(req, res) {
-    try {
-        const body = JSON.parse(await readRequestBody(req));
-        const prompt = body.prompt;
-        if (!prompt) return sendJson(res, 400, { error: "Prompt is required" });
-
-        new Promise((resolve, reject) => {
-            imageQueue.push({ prompt, resolve, reject });
-            processQueue();
-        })
-        .then(result => sendJson(res, 200, result))
-        .catch(err => sendJson(res, 500, { error: "Headless generation failed: " + err.message }));
-    } catch (e) {
-        return sendJson(res, 502, { error: e.message });
-    }
-}
-
-// ==========================================
-// 🚀 NEW: THE BEAST MODE SMART SEARCH ROUTER
+// 🚀 THE BEAST MODE SMART SEARCH ROUTER
 // ==========================================
 async function handleSmartSearch(req, res) {
     try {
@@ -276,7 +112,6 @@ async function handleSmartSearch(req, res) {
         const isCode = body.isCode === true;
         const imgBase64 = body.imageBase64 || null;
         
-        // 🛑 FIXED: Pull the exact override setting from the frontend
         const override = body.providerOverride || null;
 
         const providersList = imgBase64 ? VISION_PROVIDERS : TEXT_PROVIDERS;
@@ -291,10 +126,10 @@ async function handleSmartSearch(req, res) {
         const pGroq = providersList.find(p => p.type === 'groq');
 
        if (isCode) {
-            console.log("🛠️ SMART ROUTER: Code Request Detected. Initiating High-Performance Cascade (5->4->3->2->1->CF->GROQ)");
+            console.log("🛠️ SMART ROUTER: Code Request Detected. Initiating High-Performance Cascade");
             orderedProviders = [p5, p4, p3, p2, p1, pCf, pGroq].filter(Boolean);
         } else {
-            console.log("📝 SMART ROUTER: Text Request Detected. Initiating Standard Cascade (1->2->3->4->5->CF->GROQ)");
+            console.log("📝 SMART ROUTER: Text Request Detected. Initiating Standard Cascade");
             orderedProviders = [p1, p2, p3, p4, p5, pCf, pGroq].filter(Boolean);
         }
 
@@ -356,7 +191,7 @@ async function handleSmartSearch(req, res) {
                     return data.choices[0].message.content;
                 }
             }
-        }, override); // PASSES THE OVERRIDE HERE!
+        }, override); 
         
         return sendJson(res, 200, resultObj);
     } catch (e) {
@@ -520,7 +355,6 @@ async function handleCloudflareImage(req, res) {
         return sendJson(res, 200, { base64, image: `data:image/png;base64,${base64}`, provider: "CLOUDFLARE (IMAGE)" });
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
-
 // ==========================================
 // 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
 // ==========================================
