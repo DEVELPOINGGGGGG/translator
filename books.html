@@ -81,7 +81,14 @@
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
 
-        .appTitle { font-size: 20px; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow-x: auto; max-width: 50vw; display: inline-block; scrollbar-width: none; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s;}
+        /* 🛑 FIXED SCROLLABLE APP TITLE 🛑 */
+        .appTitle { 
+            font-size: 18px; font-weight: bold; color: var(--text-main); 
+            white-space: nowrap; overflow-x: auto; overflow-y: hidden; 
+            max-width: 50vw; display: inline-block; scrollbar-width: none; 
+            cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s;
+            -webkit-overflow-scrolling: touch; touch-action: pan-x;
+        }
         .appTitle::-webkit-scrollbar { display: none; }
         .appTitle:hover { background: rgba(255,255,255,0.1); }
         
@@ -94,9 +101,17 @@
         .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
         .msg-dropdown button:hover { background: rgba(239,68,68,0.2); }
         
-        /* Step 5 dynamic book cover */
-        .generated-cover { width: 120px; height: 160px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; color: white; text-align: center; position: relative; margin: 0 auto 20px auto; border: 2px solid rgba(255,255,255,0.2); }
-        .generated-cover::after { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 4px; background: rgba(0,0,0,0.2); } /* Book spine effect */
+        /* 🛑 REALISTIC 3D BOOK COVER STYLES 🛑 */
+        .generated-cover { 
+            width: 140px; height: 190px; 
+            background: linear-gradient(135deg, #1e293b, #3b82f6); 
+            border-radius: 4px 12px 12px 4px; 
+            box-shadow: inset 4px 0 10px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.3), 5px 10px 20px rgba(0,0,0,0.5); 
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
+            padding: 15px 10px; box-sizing: border-box; color: white; text-align: center; 
+            position: relative; margin: 0 auto 20px auto; border-left: 6px solid #0f172a; 
+        }
+        .generated-cover::after { content: ''; position: absolute; left: 0px; top: 0; bottom: 0; width: 3px; background: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
@@ -106,7 +121,7 @@
 <div class="topbar" id="appTopbar" style="position: absolute; width: 100%; z-index: 100; flex-wrap: wrap;">
     <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-        <div class="appTitle" id="sessionTitleDisplay" onclick="renameSession()" title="Click to rename">📚 Book Deep Study</div>
+        <div class="appTitle" id="sessionTitleDisplay" onclick="renameSession()" title="Swipe to scroll / Click to rename">📚 Book Deep Study</div>
         <div style="display:flex; gap:8px;">
             <button class="btn btn-primary" id="shareBtn" style="padding: 6px 10px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
             <button class="btn btn-secondary" id="clearBtn" style="padding: 6px 10px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
@@ -124,6 +139,7 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
+<!-- Loading Overlay -->
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
     <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
     <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Preparing Tutor...</h2>
@@ -136,6 +152,7 @@
         <div class="step-card active" id="step-1">
             <h2>Step 1: Board / Publisher</h2>
             <label>Select Publisher:</label>
+            <!-- Added Arvind Vigyan as an explicit example -->
             <select id="publisherSelect" class="standard" onchange="triggerChapterFetch()">
                 <option value="" selected disabled>-- Select Publisher --</option>
                 <option value="NCERT">NCERT</option>
@@ -216,6 +233,7 @@
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
                 <input type="text" id="manualChapter" class="standard" placeholder="e.g. Motion / गति" style="margin-bottom: 0;">
                 <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="startChapterVoice()">🎤</button>
+                <!-- 🛑 THE NEW BOOK RECOGNITION CAMERA BUTTON 🛑 -->
                 <button class="icon-btn" style="background:#10b981; color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="openBookRecognitionCamera()" title="Take photo of book page">📷</button>
             </div>
             <p style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:-10px; margin-bottom:15px;">*If your publisher is private (e.g., Arvind Vigyan), click 📷 to snap the chapter page so AI knows the exact questions!</p>
@@ -228,11 +246,12 @@
 
         <div class="step-card" id="step-5">
             <h2>Ready!</h2>
+            <!-- 🛑 THE DYNAMIC BOOK COVER 🛑 -->
             <div id="dynamicBookCover">
                 <div class="generated-cover">
-                    <span style="font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;" id="coverPub">Publisher</span>
-                    <span style="font-size:18px; font-weight:bold; margin:10px 0;" id="coverSub">Subject</span>
-                    <span style="font-size:12px; font-weight:bold; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:12px;" id="coverCls">Class</span>
+                    <span style="font-size:11px; text-transform:uppercase; letter-spacing:1px; opacity:0.9;" id="coverPub">Publisher</span>
+                    <span style="font-size:20px; font-weight:800; line-height:1.2; margin:10px 0;" id="coverSub">Loading...</span>
+                    <span style="font-size:12px; font-weight:bold; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:12px; border:1px solid rgba(255,255,255,0.2);" id="coverCls">Class</span>
                 </div>
             </div>
 
@@ -275,6 +294,7 @@
         </div>
     </div>
 
+    <!-- Voice Input Modal -->
     <div id="voiceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 350px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🎤 Speak to Type</h3>
@@ -287,6 +307,7 @@
         </div>
     </div>
 
+    <!-- Message Selection Bottom Bar -->
     <div id="shareActionArea" style="display:none; position:absolute; bottom:0; left:0; width:100%; padding:15px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:2px solid #25D366; z-index:100; flex-direction:column; gap:10px; box-sizing:border-box;">
         <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:10px;">
@@ -296,6 +317,7 @@
         </div>
     </div>
 
+    <!-- Secure WhatsApp Modal -->
     <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid #25D366; max-width: 400px; width: 90%; text-align: center; position:relative;">
             <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
@@ -308,6 +330,7 @@
         </div>
     </div>
 
+    <!-- Web Import Modal -->
     <div id="webImportModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:1px solid var(--primary); max-width: 400px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
@@ -320,6 +343,7 @@
         </div>
     </div>
 
+    <!-- Camera Modal -->
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
         <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
         <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
@@ -459,9 +483,8 @@
         } else if (cameraTarget === 'bookRecognition') {
             bookRecognitionImageBase64 = c.toDataURL("image/jpeg", 0.7);
             alert("✅ Book page snapped successfully! We will use this to find the exact questions.");
-            // Update the Step 5 Cover
             let coverDiv = document.getElementById('dynamicBookCover');
-            coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:120px; height:160px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+            coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
         }
         closeCamera(); 
     }
@@ -493,10 +516,9 @@
         rec.start(); 
     }
 
-    // 🛑 SILENT BACKGROUND SEARCH (NO POPUPS) 🛑
+    // 🛑 SILENT BACKGROUND SEARCH (NO CHIPS) 🛑
     async function fetchChapterContext() {
         try {
-            // We search the web using Gemini behind the scenes to find the EXACT questions
             const sysPrompt = `Search the internet for the exact textbook solutions for: Publisher: ${selectedData.publisher}, Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}. Extract the end-of-chapter questions and answers. Just store them internally. Do not output markdown.`;
             const userPrmpt = `Find textbook exercises for ${selectedData.publisher} Class ${selectedData.class} ${selectedData.subject} ${selectedData.chapter}`;
 
@@ -505,13 +527,41 @@
                 body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: userPrmpt })
             });
             const data = await r.json();
+            if(data.text) { documentMemory = data.text; }
+        } catch(e) { console.error("Silent fetch failed:", e); }
+    }
+
+    // 🛑 GOOGLE BOOKS API FOR REAL COVER FETCHING 🛑
+    async function fetchRealBookCover(pub, sub, cls) {
+        // If user took a photo, we respect that and don't overwrite it
+        if (bookRecognitionImageBase64) return;
+
+        let coverDiv = document.getElementById('dynamicBookCover');
+        let statusSub = document.getElementById('coverSub');
+        
+        try {
+            statusSub.innerText = "Searching Google for Real Cover...";
             
-            if(data.text) {
-                documentMemory = data.text;
-                // No annoying chip anymore. It just saves to memory silently.
+            // Query Google Books API based on Publisher, Subject, and Class
+            let query = encodeURIComponent(`${pub} Class ${cls} ${sub}`);
+            let res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
+            let data = await res.json();
+
+            // Check if we got a valid image thumbnail back
+            if (data.items && data.items.length > 0 && data.items[0].volumeInfo.imageLinks) {
+                let thumb = data.items[0].volumeInfo.imageLinks.thumbnail;
+                // Upgrade from http to https to avoid insecure image blocking
+                thumb = thumb.replace(/^http:\/\//i, 'https://');
+                
+                // Plop the real image onto the screen!
+                coverDiv.innerHTML = `<img src="${thumb}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+            } else {
+                // Google didn't find anything, fallback to text
+                statusSub.innerText = sub;
             }
         } catch(e) {
-            console.error("Silent fetch failed:", e);
+            console.log("Cover fetch failed, using fallback", e);
+            statusSub.innerText = sub;
         }
     }
 
@@ -666,15 +716,16 @@
 
             selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
             
-            // Generate Cover Text
             document.getElementById('coverPub').innerText = pub;
             document.getElementById('coverSub').innerText = sub;
             document.getElementById('coverCls').innerText = cls;
 
-            // If a book photo was taken, replace the gradient cover with the photo!
             if (bookRecognitionImageBase64) {
                 let coverDiv = document.getElementById('dynamicBookCover');
-                coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:120px; height:160px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+                coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+            } else {
+                // Call the new Google Books API Fetcher
+                fetchRealBookCover(pub, sub, cls);
             }
 
             document.getElementById('selectionSummary').innerHTML = 
@@ -858,7 +909,6 @@
         if(recentHistory) sysPrompt += `\n\n--- RECENT CONVERSATION HISTORY ---\n${recentHistory}\n--- END HISTORY ---\nRemember this context.`;
         if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY ---\nRead this carefully to answer questions accurately:\n${documentMemory.substring(0, 40000)}\n--- END CONTENT ---`;
         
-        // Feed the book recognition photo if available and no current chat image
         let payloadImg = img;
         if (!img && bookRecognitionImageBase64) {
             payloadImg = bookRecognitionImageBase64;
