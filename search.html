@@ -223,8 +223,8 @@
     </div>
 
     <script>
-        // --- 1. LOCALFORAGE STATE RESTORATION ---
-        localforage.config({ name: 'AI_Pro_Suite', storeName: 'search_history' });
+ // --- 1. LOCALFORAGE STATE RESTORATION ---
+        localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' }); // FIXED: Matches main.js
         
         let appHistory = [];
         let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
@@ -240,7 +240,25 @@
             });
         });
 
-        function saveHistorySafe() { localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); }
+        // FIXED: Added localStorage fallback to sync with the rest of the app
+        function saveHistorySafe() { 
+            if (typeof localforage !== 'undefined') { 
+                localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); 
+            }
+            try { 
+                let lightHistory = appHistory.slice(0, 30).map(item => { 
+                    let cloned = { ...item }; 
+                    cloned.images = null; cloned.image = null; 
+                    if (cloned.interactions) { 
+                        cloned.interactions = cloned.interactions.map(i => ({ ...i, images: null, image: null })); 
+                    } 
+                    return cloned; 
+                }); 
+                localStorage.setItem('aiHistory', JSON.stringify(lightHistory)); 
+            } catch(e) { 
+                try { localStorage.setItem('aiHistory', JSON.stringify(appHistory.slice(0, 5).map(i => ({...i, images: null, image: null})))); } catch(err) {} 
+            }
+        }
 
         function restoreSession(id) {
             const session = appHistory.find(s => s.id == id);
