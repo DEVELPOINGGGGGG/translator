@@ -223,11 +223,12 @@
     </div>
 
     <script>
- // --- 1. LOCALFORAGE STATE RESTORATION ---
-        localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' }); // FIXED: Matches main.js
+// --- 1. LOCALFORAGE STATE RESTORATION ---
+        localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' }); // FIXED: Matches main.js exactly
         
         let appHistory = [];
-        let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
+        // FIXED: Force the ID into a Number so the database can append to it properly
+        let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('appLang').value = "Hindi";
