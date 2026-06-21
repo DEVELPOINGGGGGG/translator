@@ -19,117 +19,47 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* Wizard Custom Layout over style.css base */
-        .wizard-container {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            padding: 20px; padding-top: 100px;
-            width: 100%; box-sizing: border-box;
-        }
-
-        .step-card {
-            width: 100%; max-width: 600px; display: none; text-align: center;
-            animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            background: var(--bg-surface); padding: 30px; border-radius: 20px;
-            box-shadow: var(--glass-shadow); border: 1px solid var(--border-light);
-            box-sizing: border-box;
-        }
-
+        .wizard-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; padding-top: 100px; width: 100%; box-sizing: border-box; }
+        .step-card { width: 100%; max-width: 600px; display: none; text-align: center; animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: var(--bg-surface); padding: 30px; border-radius: 20px; box-shadow: var(--glass-shadow); border: 1px solid var(--border-light); box-sizing: border-box; }
         .step-card.active { display: block; }
         .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; font-size: 24px; }
         .step-card label { display: block; text-align: left; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px;}
-
-        select.standard, input.standard, textarea.standard {
-            width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border-light);
-            background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 16px; margin-bottom: 20px;
-            box-sizing: border-box; outline: none; transition: 0.3s; font-family: inherit;
-        }
+        select.standard, input.standard, textarea.standard { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border-light); background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 16px; margin-bottom: 20px; box-sizing: border-box; outline: none; transition: 0.3s; font-family: inherit; }
         select.standard:focus, input.standard:focus, textarea.standard:focus { border-color: var(--primary); }
-
         .btn-row { display: flex; gap: 15px; justify-content: space-between; margin-top: 10px; }
         .btn-row .btn { flex: 1; padding: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: white; transition: 0.2s; }
         .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
         .btn-primary:hover { transform: translateY(-3px); }
         .btn-secondary { background: #475569; }
         
-        /* STRICT CHAT LAYOUT */
-        #chatPage { 
-            display: none; flex-direction: column; height: 100dvh; width: 100vw; 
-            position: absolute; inset: 0; background: var(--bg-base); z-index: 50; 
-            overflow: hidden;
-        }
-
-        .chat-scroll-area {
-            flex: 1; overflow-y: auto; padding: 25px; padding-top: 120px;
-            display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
-        }
-
+        #chatPage { display: none; flex-direction: column; height: 100dvh; width: 100vw; position: absolute; inset: 0; background: var(--bg-base); z-index: 50; overflow: hidden; }
+        .chat-scroll-area { flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         .msg { display: flex; width: 100%; flex-direction: column; animation: slideUpFade 0.3s ease; }
         .user { align-items: flex-end; }
         .ai { align-items: flex-start; }
 
-        /* 🛑 COLORS REVERTED TO ORIGINAL BEAUTIFUL THEME 🛑 */
-        .bubble {
-            max-width: 85%; padding: 16px 20px; border-radius: 20px;
-            line-height: 1.7; font-size: 15px; position: relative;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1); word-wrap: break-word;
-            padding-right: 60px !important; /* Space for Copy & Delete buttons */
-            overflow: visible !important;
-        }
-        .user .bubble { 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)) !important; 
-            color: white !important; 
-            border-bottom-right-radius: 4px; 
-        }
-        .ai .bubble { 
-            background: var(--bg-surface) !important; 
-            color: var(--text-main) !important; 
-            border: 1px solid var(--border-light) !important; 
-            border-bottom-left-radius: 4px; 
-        }
+        .bubble { max-width: 85%; padding: 16px 20px; border-radius: 20px; line-height: 1.7; font-size: 15px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.1); word-wrap: break-word; padding-right: 45px !important; overflow: visible !important; }
+        .user .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)) !important; color: white !important; border-bottom-right-radius: 4px; }
+        .ai .bubble { background: var(--bg-surface) !important; color: var(--text-main) !important; border: 1px solid var(--border-light) !important; border-bottom-left-radius: 4px; }
         .bubble img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
 
-        /* PRESET CHIPS & QUICK REPLIES */
         .preset-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        .preset-btn { 
-            background: rgba(255,255,255,0.05); border: 1px solid var(--primary); 
-            color: var(--text-main); padding: 10px 15px; border-radius: 20px; 
-            font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; 
-        }
+        .preset-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--primary); color: var(--text-main); padding: 10px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .preset-btn:hover { background: var(--primary); color: white; }
 
-        /* INPUT AREA & PLUS MENU */
-        .chat-input-area {
-            flex-shrink: 0; padding: 15px; background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px); border-top: 1px solid var(--border-light);
-            display: flex; flex-direction: column; width: 100%; box-sizing: border-box;
-            padding-bottom: env(safe-area-inset-bottom, 15px); position: relative;
-        }
-
-        .chat-input-wrapper {
-            display: flex; align-items: flex-end; gap: 10px; width: 100%; box-sizing: border-box;
-            background: rgba(0,0,0,0.5); border: 1px solid var(--border-light);
-            border-radius: 24px; padding: 8px 15px; position: relative;
-        }
+        .chat-input-area { flex-shrink: 0; padding: 15px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-light); display: flex; flex-direction: column; width: 100%; box-sizing: border-box; padding-bottom: env(safe-area-inset-bottom, 15px); position: relative; }
+        .chat-input-wrapper { display: flex; align-items: flex-end; gap: 10px; width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid var(--border-light); border-radius: 24px; padding: 8px 15px; position: relative; }
         .chat-input-wrapper:focus-within { border-color: var(--primary); }
-
-        textarea {
-            flex: 1; background: transparent; border: none; color: white;
-            font-family: inherit; font-size: 15px; resize: none;
-            padding: 10px 0; outline: none; max-height: 100px; min-height: 24px;
-        }
-
+        textarea { flex: 1; background: transparent; border: none; color: white; font-family: inherit; font-size: 15px; resize: none; padding: 10px 0; outline: none; max-height: 100px; min-height: 24px; }
         .icon-btn { background: transparent; border: none; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
         .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; }
 
-        /* PLUS MENU UI */
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #plusMenu { display: none; position: absolute; bottom: 75px; left: 15px; border-radius: 15px; flex-direction: column; z-index: 200; width: 220px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
         .menu-item { background: transparent; border: none; color: var(--text-main); padding: 15px; text-align: left; font-size: 14px; font-weight: bold; cursor: pointer; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px; transition: 0.2s; }
         .menu-item:hover { background: var(--primary); color: white; padding-left: 20px; }
 
-        /* STATUS CHIPS FOR ATTACHMENTS */
         .status-chip { display: none; align-items: center; gap: 8px; background: rgba(59, 130, 246, 0.2); color: var(--text-main); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; width: max-content; border: 1px solid var(--primary); margin-bottom: 10px; animation: slideIn 0.3s ease; }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center;}
@@ -146,46 +76,27 @@
         .dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typingPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
 
-        /* WhatsApp Selection Styles */
         .share-mode-active .bubble { cursor: pointer !important; transition: 0.2s; position: relative; }
         .share-mode-active .bubble::before { content: ''; position: absolute; inset: 0; background: rgba(37, 211, 102, 0.1); border-radius: inherit; opacity: 0; transition: 0.2s; pointer-events: none;}
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
 
-        /* SCROLLABLE APP TITLE (Editable) */
         .appTitle { font-size: 20px; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow-x: auto; max-width: 50vw; display: inline-block; scrollbar-width: none; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s;}
         .appTitle::-webkit-scrollbar { display: none; }
         .appTitle:hover { background: rgba(255,255,255,0.1); }
         
-        /* SPINNER FOR NEW FULL SCREEN LOADER */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 🛑 FIXED MESSAGE ACTION MENU STYLES (Copy & Delete) 🛑 */
         .msg-menu-wrap { position: absolute; top: 12px; right: 8px; z-index: 10; display: flex; gap: 5px;}
         .msg-action-btn { background: transparent; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 18px; padding: 0 5px; line-height: 1; transition:0.2s;}
         .msg-action-btn:hover { opacity: 1; transform: scale(1.1); }
         .msg-dropdown { display: none; position: absolute; right: 0; top: 25px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); overflow: hidden; min-width: 100px; z-index: 1000; }
         .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
         .msg-dropdown button:hover { background: rgba(239,68,68,0.2); }
-
-        /* Floating Action Buttons (Focus Mode Only) */
-        .fab-container { position: fixed; bottom: 100px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 90; transition: 0.3s; }
-        .fab-btn { background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.2s; opacity: 0.8; }
-        .fab-btn:hover { opacity: 1; transform: scale(1.1); background: var(--primary); color: white; border-color: var(--primary);}
-
-        /* Focus Mode Hide Classes */
-        .focus-mode-active .topbar, .focus-mode-active .chat-input-area { display: none !important; }
-        .focus-mode-active .chat-scroll-area { padding-top: 20px; padding-bottom: 20px; }
-        #focusBtn.active { background: #ef4444; color: white; border-color: #ef4444; opacity: 1;}
         
-        /* Print Styles */
-        @media print {
-            body { background: white; color: black; }
-            .topbar, .chat-input-area, .fab-container, .overlay, .sidebar { display: none !important; }
-            .bubble { box-shadow: none; border: 1px solid #ccc !important; color: black !important; background: transparent !important; }
-            .chat-scroll-area { padding: 0; overflow: visible; height: auto; }
-            .msg-menu-wrap { display: none !important; }
-        }
+        /* Step 5 dynamic book cover */
+        .generated-cover { width: 120px; height: 160px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; color: white; text-align: center; position: relative; margin: 0 auto 20px auto; border: 2px solid rgba(255,255,255,0.2); }
+        .generated-cover::after { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 4px; background: rgba(0,0,0,0.2); } /* Book spine effect */
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
@@ -215,8 +126,8 @@
 
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
     <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
-    <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Reading Book...</h2>
-    <p style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait while the AI memorizes the entire chapter and questions to ensure perfect answers.</p>
+    <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Preparing Tutor...</h2>
+    <p style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait while we search the database for this specific textbook.</p>
 </div>
 
 <div id="wizardPage">
@@ -230,12 +141,13 @@
                 <option value="NCERT">NCERT</option>
                 <option value="SCERT">SCERT</option>
                 <option value="Bihar Board">Bihar Board</option>
+                <option value="Arvind Vigyan">Arvind Vigyan</option>
                 <option value="CBSE Reference">CBSE Reference</option>
                 <option value="Arihant">Arihant</option>
                 <option value="Oswaal">Oswaal</option>
                 <option value="S Chand">S Chand</option>
                 <option value="Pradeep">Pradeep</option>
-                <option value="Other">Other</option>
+                <option value="Other">Other (Custom)</option>
             </select>
             <div class="btn-row">
                 <button class="btn btn-primary" onclick="nextStep(2)">Next ➔</button>
@@ -285,10 +197,6 @@
                 <option value="Hindi">Hindi</option>
                 <option value="Sanskrit">Sanskrit</option>
                 <option value="Computer Science">Computer Science</option>
-                <option value="Information Technology">Information Technology</option>
-                <option value="Accountancy">Accountancy</option>
-                <option value="Business Studies">Business Studies</option>
-                <option value="Physical Education">Physical Education</option>
                 <option value="Other">Other Subject</option>
             </select>
             <div class="btn-row">
@@ -298,17 +206,19 @@
         </div>
 
         <div class="step-card" id="step-4">
-            <h2>Step 4: Chapter</h2>
+            <h2>Step 4: Chapter & Book Photo</h2>
             <label id="chapterFetchStatus">Select Chapter (Generated by AI):</label>
             <select id="chapterSelect" class="standard">
                 <option value="" selected disabled>-- Select Subject First --</option>
             </select>
             
-            <label style="margin-top:10px;">Or Type Chapter Manually (Hinglish Supported):</label>
+            <label style="margin-top:10px;">Or Type Chapter Manually:</label>
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
                 <input type="text" id="manualChapter" class="standard" placeholder="e.g. Motion / गति" style="margin-bottom: 0;">
                 <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="startChapterVoice()">🎤</button>
+                <button class="icon-btn" style="background:#10b981; color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="openBookRecognitionCamera()" title="Take photo of book page">📷</button>
             </div>
+            <p style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:-10px; margin-bottom:15px;">*If your publisher is private (e.g., Arvind Vigyan), click 📷 to snap the chapter page so AI knows the exact questions!</p>
             
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="nextStep(3)">⬅ Back</button>
@@ -318,6 +228,14 @@
 
         <div class="step-card" id="step-5">
             <h2>Ready!</h2>
+            <div id="dynamicBookCover">
+                <div class="generated-cover">
+                    <span style="font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;" id="coverPub">Publisher</span>
+                    <span style="font-size:18px; font-weight:bold; margin:10px 0;" id="coverSub">Subject</span>
+                    <span style="font-size:12px; font-weight:bold; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:12px;" id="coverCls">Class</span>
+                </div>
+            </div>
+
             <div id="selectionSummary" style="text-align:left; background: rgba(0,0,0,0.3); border: 1px solid var(--border-light); padding:15px; border-radius:12px; margin-bottom:20px; font-weight:600; line-height:2;"></div>
             
             <button id="initFinalBtn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation()">Initialize AI Tutor 🚀</button>
@@ -331,10 +249,6 @@
 <div id="chatPage">
     <div class="chat-scroll-area" id="chatHistory"></div>
 
-    <div class="fab-container">
-        <button class="fab-btn" id="focusBtn" onclick="toggleFocusMode()" title="Focus Mode">👁️</button>
-    </div>
-
     <div class="chat-input-area">
         <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Document Attached</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
         
@@ -346,7 +260,7 @@
         </div>
 
         <div id="plusMenu" class="glass-panel">
-            <button class="menu-item" onclick="openCamera()">📷 Open Camera</button>
+            <button class="menu-item" onclick="openCameraChat()">📷 Open Camera</button>
             <button class="menu-item" onclick="document.getElementById('imageInput').click()">📎 Upload PDF/Image</button>
             <button class="menu-item" onclick="openWebImport()">🌐 Import from Web</button>
             <button class="menu-item" onclick="window.print()">🖨️ Print Chat</button> 
@@ -468,12 +382,6 @@
         if (document.getElementById("overlay").contains(e.target)) toggleSidebar();
     });
 
-    function toggleFocusMode() { 
-        document.body.classList.toggle('focus-mode-active'); 
-        let btn = document.getElementById('focusBtn');
-        btn.classList.toggle('active');
-    }
-
     function renameSession() {
         let newTitle = prompt("Enter new session name:", document.getElementById('sessionTitleDisplay').innerText);
         if(newTitle && newTitle.trim()) {
@@ -489,6 +397,74 @@
     let documentMemory = ""; 
     let webUrls = []; 
     let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
+
+    // 🛑 CAMERA LOGIC AND TARGETING 🛑
+    let cameraTarget = 'chat'; // can be 'chat' or 'bookRecognition'
+    let bookRecognitionImageBase64 = null;
+
+    let camStream = null; let camFacing = "environment"; let isFlash = false;
+    
+    function openCameraChat() { cameraTarget = 'chat'; openCamera(); }
+    function openBookRecognitionCamera() { cameraTarget = 'bookRecognition'; openCamera(); }
+
+    async function openCamera() { 
+        closePlusMenu();
+        document.getElementById('cameraModal').style.display = 'flex'; 
+        try { 
+            if(camStream) camStream.getTracks().forEach(t => t.stop()); 
+            camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
+            document.getElementById("cameraVideo").srcObject = camStream; 
+            setTimeout(async () => { 
+                const track = camStream.getVideoTracks()[0]; 
+                if (track && track.getCapabilities && track.getCapabilities().torch && camFacing === "environment") { 
+                    isFlash = true; 
+                    await track.applyConstraints({ advanced: [{ torch: true }] }); 
+                    document.getElementById('flashBtn').innerText = "💡"; 
+                } else {
+                    isFlash = false;
+                    document.getElementById('flashBtn').innerText = "🔦";
+                }
+            }, 500); 
+        } catch(e) { 
+            alert("Camera Error: Please grant camera permissions."); 
+            document.getElementById('cameraModal').style.display = 'none'; 
+        } 
+    }
+    
+    function closeCamera() { 
+        document.getElementById('cameraModal').style.display = 'none'; 
+        if(camStream) {
+            const track = camStream.getVideoTracks()[0];
+            try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){}
+            camStream.getTracks().forEach(t => t.stop()); 
+        }
+        isFlash = false; 
+    }
+    
+    async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
+    
+    async function toggleFlash() { 
+        if(!camStream) return; const track = camStream.getVideoTracks()[0]; 
+        try { if(track && track.getCapabilities && track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } } catch(err) {}
+    }
+    
+    function takePhoto() { 
+        const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas"); 
+        c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); 
+        
+        if (cameraTarget === 'chat') {
+            currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+            document.getElementById('imgChip').src = currentImageBase64;
+        } else if (cameraTarget === 'bookRecognition') {
+            bookRecognitionImageBase64 = c.toDataURL("image/jpeg", 0.7);
+            alert("✅ Book page snapped successfully! We will use this to find the exact questions.");
+            // Update the Step 5 Cover
+            let coverDiv = document.getElementById('dynamicBookCover');
+            coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:120px; height:160px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+        }
+        closeCamera(); 
+    }
 
     let manualVoiceTimeout;
     function startChapterVoice() {
@@ -517,21 +493,12 @@
         rec.start(); 
     }
 
-    // 🛑 REAL BOOK RETRIEVAL ENGINE 🛑
+    // 🛑 SILENT BACKGROUND SEARCH (NO POPUPS) 🛑
     async function fetchChapterContext() {
         try {
-            let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-            let targetLang = isEnglishSub ? 'English' : 'Hindi (Devanagari script)';
-            
-            const sysPrompt = `You are a strict textbook database retriever. 
-            Search your memory for the EXACT ${selectedData.publisher} textbook for Class ${selectedData.class} ${selectedData.subject}, Chapter: ${selectedData.chapter}.
-            OUTPUT EXACTLY:
-            1. A full summary of the chapter's content.
-            2. The EXACT End-of-Chapter Exercises/Questions printed in the real book, along with their solutions.
-            CRITICAL: DO NOT invent or generate your own questions. Retrieve the REAL questions from the book.
-            Output strictly in ${targetLang}. DO NOT USE HASHTAGS (#) FOR HEADINGS. Use **bolding** instead.`;
-            
-            const userPrmpt = `Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}, Publisher: ${selectedData.publisher}`;
+            // We search the web using Gemini behind the scenes to find the EXACT questions
+            const sysPrompt = `Search the internet for the exact textbook solutions for: Publisher: ${selectedData.publisher}, Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}. Extract the end-of-chapter questions and answers. Just store them internally. Do not output markdown.`;
+            const userPrmpt = `Find textbook exercises for ${selectedData.publisher} Class ${selectedData.class} ${selectedData.subject} ${selectedData.chapter}`;
 
             const r = await fetch("/api/gemini-text", {
                 method: "POST", headers: {"Content-Type":"application/json"},
@@ -541,11 +508,10 @@
             
             if(data.text) {
                 documentMemory = data.text;
-                document.getElementById("attachmentChip").style.display = "flex";
-                document.getElementById("attachName").innerText = `📚 Chapter Memorized`;
+                // No annoying chip anymore. It just saves to memory silently.
             }
         } catch(e) {
-            console.error("Failed to fetch chapter details in background:", e);
+            console.error("Silent fetch failed:", e);
         }
     }
 
@@ -608,7 +574,6 @@
         selectedNodes.forEach(n => {
             let clone = n.cloneNode(true);
             let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let actionWrap = clone.querySelector('.action-wrap'); if(actionWrap) actionWrap.remove();
             content += `<div style="margin-bottom:20px; padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9fafb;">${clone.innerHTML}</div>`;
         });
         let win = window.open('', '', 'width=800,height=600');
@@ -623,7 +588,6 @@
         document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
             let clone = node.cloneNode(true);
             let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let actionWrap = clone.querySelector('.action-wrap'); if(actionWrap) actionWrap.remove();
             let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
             clone.innerHTML = htmlStr;
             let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
@@ -701,6 +665,18 @@
             if(!finalChap) { nextStep(4); return alert("Select or type a chapter!"); }
 
             selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
+            
+            // Generate Cover Text
+            document.getElementById('coverPub').innerText = pub;
+            document.getElementById('coverSub').innerText = sub;
+            document.getElementById('coverCls').innerText = cls;
+
+            // If a book photo was taken, replace the gradient cover with the photo!
+            if (bookRecognitionImageBase64) {
+                let coverDiv = document.getElementById('dynamicBookCover');
+                coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:120px; height:160px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+            }
+
             document.getElementById('selectionSummary').innerHTML = 
                 `<span style="color:var(--primary)">Publisher:</span> ${pub}<br>
                  <span style="color:var(--secondary)">Class:</span> ${cls}<br>
@@ -719,7 +695,7 @@
         
         if(!sub || !cls) return;
 
-        statusLabel.innerText = "⏳ Fetching your chapter details...";
+        statusLabel.innerText = "⏳ Checking Database...";
         chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching... --</option>';
         document.getElementById('initBtnStep4').style.display = 'block'; 
         
@@ -729,7 +705,7 @@
         try {
             const sysPrompt = `You are a strict API. The user will provide a Class, Subject, and Publisher/Board. 
             CRITICAL RULES:
-            1. IF the requested Subject is NOT taught in the specified Class (for example, Physics in Class 2 DOES NOT EXIST), you MUST output an empty array: []
+            1. IF the requested Subject is NOT standardly taught in the specified Class (for example, Physics in Class 2 DOES NOT EXIST), you MUST output an empty array: []
             2. DO NOT hallucinate, invent, or guess chapters. If the book does not legitimately exist, return [].
             3. IF it is a real textbook, return a JSON array of strings containing the accurate standard textbook chapter names.
             4. IF the subject is English, output chapter names strictly in English. Otherwise, output strictly in ${targetLang}. 
@@ -752,9 +728,8 @@
 
             if(fetchedChapters.length === 0) {
                 chapSelect.innerHTML = '<option value="" selected disabled>-- ❌ Subject not taught in this class --</option>';
-                statusLabel.innerText = "Subject not found! Please check Class/Subject.";
+                statusLabel.innerText = "Subject not found in database! Type manually below.";
                 statusLabel.style.color = "#ef4444";
-                document.getElementById('initBtnStep4').style.display = 'none'; 
                 return;
             }
 
@@ -793,6 +768,7 @@
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
             
             document.getElementById('wizardPage').style.display = 'none'; document.getElementById('loadingPage').style.display = 'flex';
+            
             await fetchChapterContext();
             
             document.getElementById('loadingPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
@@ -828,7 +804,7 @@
     }
 
     function openSettings() {
-        document.getElementById('chatPage').style.display = 'none'; document.getElementById('settingsBtn').style.display = 'none'; document.getElementById('clearBtn').style.display = 'none'; document.getElementById('shareBtn').style.display = 'none';  document.getElementById('wizardPage').style.display = 'block';
+        document.getElementById('chatPage').style.display = 'none'; document.getElementById('settingsBtn').style.display = 'none'; document.getElementById('clearBtn').style.display = 'none'; document.getElementById('shareBtn').style.display = 'none'; document.getElementById('wizardPage').style.display = 'block';
         nextStep(1); 
     }
 
@@ -839,14 +815,13 @@
         const text = inputEl.value.trim();
         const img = currentImageBase64;
 
-        if(!text && !img && !documentMemory && webUrls.length === 0) return;
+        if(!text && !img && !documentMemory && webUrls.length === 0 && !bookRecognitionImageBase64) return;
 
         const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
         let imgHtml = img ? `<img src="${img}"><br>` : "";
         msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}${msgMenuHTML}</div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
         
-        // ONLY SCROLL WHEN USER SENDS A MESSAGE
         const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
 
         inputEl.value = ""; removeImage(); 
@@ -857,7 +832,6 @@
         document.getElementById('chatHistory').appendChild(loadDiv);
         c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); 
 
-        // 🛑 MEMORY ENGINE 🛑
         let recentHistory = "";
         let chatNodes = document.querySelectorAll('#chatHistory .msg');
         let startIdx = Math.max(0, chatNodes.length - 8); 
@@ -866,7 +840,6 @@
             let role = m.classList.contains('user') ? "User" : "AI";
             let clone = m.cloneNode(true);
             let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let actionWrap = clone.querySelector('.action-wrap'); if(actionWrap) actionWrap.remove();
             let msgText = clone.innerText.trim().replace(/\s+/g, ' ');
             if(msgText) recentHistory += `${role}: ${msgText}\n`;
         }
@@ -874,22 +847,28 @@
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
         let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
         
-        // 🛑 STRICT NO HASHTAG RULE AND TEXTBOOK ENFORCEMENT 🛑
+        // 🛑 STRICT TEXTBOOK QUERY ENGINE 🛑
         let sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
 1. DEFAULT LANGUAGE: You MUST respond entirely in ${targetLang}.
 2. SUBJECT CONTEXT: You are teaching ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}.
-3. EXACT TEXTBOOK RETRIEVAL: If asked to solve a specific exercise (like "Solve C"), DO NOT invent your own questions. Retrieve the EXACT text and questions from the real printed ${selectedData.publisher} textbook for this chapter. Solve it using the provided document memory.
+3. EXACT TEXTBOOK RETRIEVAL: If asked to solve an exercise, you MUST act as a search engine to query the EXACT text and questions from the real printed ${selectedData.publisher} textbook for this chapter. DO NOT INVENT QUESTIONS. If a book cover photo was provided, rely heavily on its text/OCR.
 4. DO NOT USE HASHTAGS (#) FOR HEADINGS. Use **bolding** instead.
 5. IF THE SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`;
 
         if(recentHistory) sysPrompt += `\n\n--- RECENT CONVERSATION HISTORY ---\n${recentHistory}\n--- END HISTORY ---\nRemember this context.`;
-        if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY / UPLOADED DOCUMENT ---\nRead this carefully to answer questions accurately:\n${documentMemory.substring(0, 40000)}\n--- END CONTENT ---`;
-        if (webUrls.length > 0) sysPrompt += `\n\n--- REFERENCE URLs ---\nReference these links:\n${webUrls.join('\n')}`;
+        if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY ---\nRead this carefully to answer questions accurately:\n${documentMemory.substring(0, 40000)}\n--- END CONTENT ---`;
+        
+        // Feed the book recognition photo if available and no current chat image
+        let payloadImg = img;
+        if (!img && bookRecognitionImageBase64) {
+            payloadImg = bookRecognitionImageBase64;
+            sysPrompt += `\n\nCRITICAL: The user provided a photo of the book page. Extract the text/questions strictly from the provided image.`;
+        }
 
-        const payload = img ? { imageBase64: img, userPrompt: text || "चित्र का विश्लेषण करें।", systemPrompt: sysPrompt } : { userPrompt: text || "Please analyze the loaded document/chapter.", systemPrompt: sysPrompt };
+        const payload = payloadImg ? { imageBase64: payloadImg, userPrompt: text || "Please solve the questions visible in the book page.", systemPrompt: sysPrompt } : { userPrompt: text || "Please provide the chapter exercises and solutions.", systemPrompt: sysPrompt };
         
         try {
-            const endpoint = img ? "/api/gemini-vision" : "/api/gemini-text";
+            const endpoint = payloadImg ? "/api/gemini-vision" : "/api/gemini-text";
             const r = await fetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
             const data = await r.json();
             if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
@@ -905,7 +884,6 @@
         }
     }
 
-    // 🛑 NO SCROLLING DURING TYPEWRITER 🛑
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
         const bubble = document.createElement("div"); bubble.className = "bubble";
@@ -931,15 +909,6 @@
         }
 
         bubble.insertAdjacentHTML('beforeend', msgMenuHTML);
-        
-        let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-        
-        let quickReplies = isEnglishSub ? 
-            `<button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('Explain this simpler.')">Explain simpler</button><button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('Give an example.')">Give example</button>` : 
-            `<button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('इसे और आसान भाषा में समझाएं।')">आसान भाषा</button><button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('एक उदाहरण दें।')">उदाहरण दें</button>`;
-
-        let actionWrap = `<div class="action-wrap" style="display:flex; gap:5px; margin-top:10px; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 8px;">${quickReplies}</div>`;
-        bubble.insertAdjacentHTML('beforeend', actionWrap);
 
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
         saveHistory();
