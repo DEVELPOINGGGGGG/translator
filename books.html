@@ -16,7 +16,7 @@
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <!-- 🛑 NEW: html2pdf Library for Perfect PDF Generation -->
+    <!-- html2pdf Library for Perfect PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -267,7 +267,7 @@
 
 <div id="chatPage">
     <div class="chat-scroll-area" id="chatHistory">
-        </div>
+    </div>
 
     <div class="chat-input-area">
         <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
@@ -310,16 +310,16 @@
     </div>
 
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
-    <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
-    <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
-    
-    <div style="position:absolute; bottom:40px; left:0; width:100%; display:flex; justify-content:center; align-items:center; gap:40px; z-index:100;">
-        <button id="flashBtn" onclick="toggleFlash()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px);">🔦</button>
-        <div onclick="takePhoto()" style="width:75px; height:75px; background:white; border:5px solid #cbd5e1; border-radius:50%; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.5); transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'"></div>
-        <button onclick="switchCamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px);">🔄</button>
+        <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+        <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
+        
+        <div style="position:absolute; bottom:40px; left:0; width:100%; display:flex; justify-content:center; align-items:center; gap:40px; z-index:100;">
+            <button id="flashBtn" onclick="toggleFlash()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px);">🔦</button>
+            <div onclick="takePhoto()" style="width:75px; height:75px; background:white; border:5px solid #cbd5e1; border-radius:50%; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.5); transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'"></div>
+            <button onclick="switchCamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px);">🔄</button>
+        </div>
+        <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>
-    <canvas id="captureCanvas" style="display:none;"></canvas>
-</div>
 </div>
 
 <script>
@@ -382,7 +382,7 @@
 
         // Build temporary DOM for PDF rendering directly inside the viewport but hidden behind everything
         let pdfContainer = document.createElement("div");
-        pdfContainer.style.width = "800px"; // Must be fixed width so html2canvas can calculate sizes correctly
+        pdfContainer.style.width = "800px"; 
         pdfContainer.style.padding = "20px";
         pdfContainer.style.fontFamily = "Arial, sans-serif";
         pdfContainer.style.backgroundColor = "#ffffff";
@@ -430,7 +430,6 @@
 
         document.body.appendChild(pdfContainer);
 
-        // PDF Config Options
         var opt = {
             margin:       [10, 10, 10, 10],
             filename:     `${selectedData.chapter || 'Study_Notes'}.pdf`,
@@ -446,12 +445,13 @@
         } catch(e) {
             alert("❌ Failed to generate PDF. Make sure your browser supports this feature.");
         } finally {
-            document.body.removeChild(pdfContainer); // Cleanup
+            document.body.removeChild(pdfContainer); 
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
     }
 
+    // 🛑 BULLETPROOF MATH & HTML CLEANUP FOR WHATSAPP 🛑
     async function submitWhatsAppSelection(event) {
         const number = document.getElementById('waNumberInput').value.trim();
         if (!number) return alert("Please enter a mobile number.");
@@ -459,24 +459,38 @@
         let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
         let fullChatText = "📚 *Book Deep Study - Selected Notes* 📚\n\n";
 
+        const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
+        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
+
         selectedNodes.forEach(node => {
             let clone = node.cloneNode(true);
             let htmlStr = clone.innerHTML;
-            // Clean up HTML tags
+            
+            // Clean up HTML tags safely
             htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
             clone.innerHTML = htmlStr;
             let msgText = clone.textContent || clone.innerText || "";
             msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
 
             if (msgText.length > 0) {
+                // Completely safe string split-join to prevent backslash parsing crashes
+                msgText = msgText.split('$$').join('').split('$').join('');
+                msgText = msgText.split('\\(').join('').split('\\)').join('');
+                msgText = msgText.replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2');
+                msgText = msgText.replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1));
+                msgText = msgText.replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1));
+                msgText = msgText.replace(/\\sqrt{([^}]+)}/g, '√$1');
+                msgText = msgText.split('\\times').join('×');
+                msgText = msgText.split('\\cdot').join('·');
+                msgText = msgText.split('\\pi').join('π');
+                msgText = msgText.split('\\theta').join('θ');
+                msgText = msgText.split('\\left').join('');
+                msgText = msgText.split('\\right').join('');
+                msgText = msgText.split('\\').join(''); // Safely removes any remaining backslashes
+                
                 fullChatText += `${msgText}\n\n------------------------\n\n`;
             }
         });
-
-        // Math/formatting cleanup
-        const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
-        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
-        fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
 
         const btn = event.target;
         const originalText = btn.innerHTML;
@@ -507,24 +521,29 @@
         btn.disabled = false;
     }
 
-    // 🛑 FLAWLESS RESTORE - OPENS DIRECTLY TO CONVERSATION 🛑
+    // 🛑 FLAWLESS RESTORE WITH TRY/CATCH MEMORY PROTECTION 🛑
     window.onload = function() {
-        let savedHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
-        let savedSettings = localStorage.getItem('bookSettings_VUltimateAI');
-        if (savedHistory && savedSettings) {
-            selectedData = JSON.parse(savedSettings);
-            document.getElementById('wizardPage').style.display = 'none';
-            document.getElementById('chatPage').style.display = 'flex';
-            document.getElementById('settingsBtn').style.display = 'block';
-            document.getElementById('clearBtn').style.display = 'block';
-            document.getElementById('shareBtn').style.display = 'block';
-            document.getElementById('chatHistory').innerHTML = savedHistory;
-            
-            // Wait slightly for DOM to render then scroll down
-            setTimeout(() => {
-                const c = document.getElementById('chatHistory');
-                c.scrollTop = c.scrollHeight;
-            }, 100);
+        try {
+            let savedHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
+            let savedSettings = localStorage.getItem('bookSettings_VUltimateAI');
+            if (savedHistory && savedSettings) {
+                selectedData = JSON.parse(savedSettings);
+                document.getElementById('wizardPage').style.display = 'none';
+                document.getElementById('chatPage').style.display = 'flex';
+                document.getElementById('settingsBtn').style.display = 'block';
+                document.getElementById('clearBtn').style.display = 'block';
+                document.getElementById('shareBtn').style.display = 'block';
+                document.getElementById('chatHistory').innerHTML = savedHistory;
+                
+                setTimeout(() => {
+                    const c = document.getElementById('chatHistory');
+                    if(c) c.scrollTop = c.scrollHeight;
+                }, 100);
+            }
+        } catch(e) {
+            console.error("Memory corrupted. Resetting data.", e);
+            localStorage.removeItem('bookChatHistory_VUltimateAI');
+            localStorage.removeItem('bookSettings_VUltimateAI');
         }
     };
 
@@ -563,14 +582,13 @@
         }
     }
 
-    // 🛑 100% DYNAMIC AI CHAPTER GENERATOR (NO HARDCODING) 🛑
+    // 🛑 100% DYNAMIC AI CHAPTER GENERATOR 🛑
     async function triggerChapterFetch() {
         let pub = document.getElementById('publisherSelect').value;
         let sub = document.getElementById('subjectSelect').value;
         let cls = document.getElementById('classSelect').value;
         let chapSelect = document.getElementById('chapterSelect');
         
-        // Wait until Class and Subject are selected
         if(!sub || !cls) return;
 
         chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching Chapters from AI... --</option>';
@@ -589,10 +607,8 @@
             });
             
             const data = await r.json();
-            
             if(data.error) throw new Error(data.error);
 
-            // Clean any potential markdown blocks from AI output
             let cleanJson = data.text.replace(/```json/gi, '').replace(/
 ```/g, '').trim();
             let fetchedChapters = JSON.parse(cleanJson);
@@ -626,7 +642,6 @@
         localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
 
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
-            // 🛑 SAVED PERMANENTLY IN HTML 🛑
             let initialMessageHTML = `
                 नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>
                 हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>
@@ -670,7 +685,7 @@
         document.getElementById('imageInput').value = '';
     }
 
-    // 🛑 NEW CAMERA GUI ENGINE 🛑
+    // 🛑 CAMERA GUI ENGINE 🛑
     let camStream = null; 
     let camFacing = "environment"; 
     let isFlash = false;
@@ -682,7 +697,6 @@
             camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
             document.getElementById("cameraVideo").srcObject = camStream; 
             
-            // Auto Flash On Logic (Delays slightly to allow camera to initialize)
             setTimeout(async () => { 
                 const track = camStream.getVideoTracks()[0]; 
                 if (track && track.getCapabilities && track.getCapabilities().torch && camFacing === "environment") { 
@@ -703,7 +717,6 @@
     function closeCamera() { 
         document.getElementById('cameraModal').style.display = 'none'; 
         if(camStream) {
-            // Turn off flashlight before closing track to save battery
             const track = camStream.getVideoTracks()[0];
             try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){}
             camStream.getTracks().forEach(t => t.stop()); 
@@ -738,10 +751,8 @@
         c.height = v.videoHeight; 
         c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); 
         
-        // Save the image
         currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
         
-        // Show Preview in Chat Input
         document.getElementById('imagePreviewContainer').style.display = 'block';
         document.getElementById('imgChip').src = currentImageBase64;
         
@@ -757,7 +768,6 @@
 
         if(!text && !img) return;
 
-        // User Message UI
         const msgDiv = document.createElement("div");
         msgDiv.className = "msg user";
         let imgHtml = img ? `<img src="${img}"><br>` : "";
@@ -767,7 +777,6 @@
         inputEl.value = "";
         removeImage(); 
 
-        // AI Typing Indicator
         const loadingId = "load_" + Date.now();
         const loadDiv = document.createElement("div");
         loadDiv.className = "msg ai";
@@ -775,7 +784,6 @@
         loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
 
-        // 🛑 AI RULES: DEFAULT HINDI, ENGLISH IF ASKED 🛑
         const sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
 1. DEFAULT LANGUAGE: You MUST respond entirely in HINDI (Devanagari script) by default.
 2. ENGLISH OVERRIDE: IF AND ONLY IF the user explicitly asks you to speak, talk, answer, or explain in English, you must switch and respond in ENGLISH. Otherwise, stick to Hindi.
