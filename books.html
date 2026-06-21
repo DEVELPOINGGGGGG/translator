@@ -10,11 +10,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
+    <!-- MathJax for Math Equations -->
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
+    <!-- 🛑 NEW: html2pdf Library for Perfect PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -284,6 +286,7 @@
         </div>
     </div>
 
+    <!-- 🛑 MOBILE SAFE MESSAGE SELECTION MENU WITH PDF BUTTON 🛑 -->
     <div id="shareActionArea" style="display:none; position:fixed; bottom:0; left:0; width:100%; padding:15px; padding-bottom: calc(15px + env(safe-area-inset-bottom, 20px)); background:rgba(15,23,42,0.98); backdrop-filter:blur(15px); border-top:2px solid #25D366; z-index:999999; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
         <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:8px; width: 100%;">
@@ -293,6 +296,7 @@
         </div>
     </div>
 
+    <!-- 🛑 Secure WhatsApp Modal -->
     <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid #25D366; max-width: 400px; width: 90%; text-align: center; position:relative;">
             <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
@@ -366,7 +370,7 @@
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
-    // 🛑 NEW: FLAWLESS PDF GENERATOR 🛑
+    // 🛑 FIXED: FLAWLESS PDF GENERATOR (NO WHITE SCREENS) 🛑
     async function downloadSelectedAsPDF(event) {
         let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
         if(selectedNodes.length === 0) return alert("Please tap at least one message to save as PDF!");
@@ -376,14 +380,17 @@
         btn.innerHTML = "⏳ Generating...";
         btn.disabled = true;
 
-        // Build temporary DOM for PDF rendering
+        // Build temporary DOM for PDF rendering directly inside the viewport but hidden behind everything
         let pdfContainer = document.createElement("div");
+        pdfContainer.style.width = "800px"; // Must be fixed width so html2canvas can calculate sizes correctly
         pdfContainer.style.padding = "20px";
         pdfContainer.style.fontFamily = "Arial, sans-serif";
-        pdfContainer.style.color = "#000";
-        pdfContainer.style.background = "#fff";
+        pdfContainer.style.backgroundColor = "#ffffff";
+        pdfContainer.style.color = "#000000";
         pdfContainer.style.position = "absolute";
-        pdfContainer.style.left = "-9999px"; // Hide it off-screen
+        pdfContainer.style.top = "0";
+        pdfContainer.style.left = "0";
+        pdfContainer.style.zIndex = "-9999"; 
 
         // PDF Header
         let header = document.createElement("h2");
@@ -396,25 +403,28 @@
 
         // Sub Header Details
         let details = document.createElement("p");
-        details.innerHTML = `<b>विषय (Subject):</b> ${selectedData.subject} <br> <b>अध्याय (Chapter):</b> ${selectedData.chapter}`;
+        details.innerHTML = `<b>विषय (Subject):</b> ${selectedData.subject || 'N/A'} <br> <b>अध्याय (Chapter):</b> ${selectedData.chapter || 'N/A'}`;
         details.style.textAlign = "center";
         details.style.color = "#64748b";
         details.style.marginBottom = "30px";
         pdfContainer.appendChild(details);
 
-        // Clone and format selected notes
+        // Clone and format selected notes strictly inline
         selectedNodes.forEach(node => {
             let clone = node.cloneNode(true);
-            clone.style.background = "#f8fafc";
+            clone.style.backgroundColor = "#f8fafc";
             clone.style.color = "#0f172a";
             clone.style.border = "1px solid #cbd5e1";
-            clone.style.padding = "20px";
-            clone.style.borderRadius = "12px";
-            clone.style.marginBottom = "20px";
-            clone.style.fontSize = "16px";
-            clone.style.lineHeight = "1.8";
+            clone.style.padding = "15px";
+            clone.style.borderRadius = "8px";
+            clone.style.marginBottom = "15px";
+            clone.style.fontSize = "14px";
+            clone.style.lineHeight = "1.6";
             clone.style.boxShadow = "none";
-            clone.style.outline = "none"; // Remove selection outline
+            clone.style.outline = "none";
+            clone.style.display = "block";
+            clone.style.wordWrap = "break-word";
+            clone.style.whiteSpace = "pre-wrap";
             pdfContainer.appendChild(clone);
         });
 
@@ -422,23 +432,24 @@
 
         // PDF Config Options
         var opt = {
-            margin:       10,
+            margin:       [10, 10, 10, 10],
             filename:     `${selectedData.chapter || 'Study_Notes'}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            image:        { type: 'jpeg', quality: 1 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         try {
+            await new Promise(r => setTimeout(r, 100)); // Crucial to let the DOM settle before capturing
             await html2pdf().set(opt).from(pdfContainer).save();
-            cancelShareMode(); // Auto close the selection screen after downloading
+            cancelShareMode(); 
         } catch(e) {
-            alert("❌ Failed to generate PDF.");
+            alert("❌ Failed to generate PDF. Make sure your browser supports this feature.");
+        } finally {
+            document.body.removeChild(pdfContainer); // Cleanup
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
-
-        document.body.removeChild(pdfContainer); // Cleanup
-        btn.innerHTML = originalText;
-        btn.disabled = false;
     }
 
     async function submitWhatsAppSelection(event) {
@@ -582,7 +593,8 @@
             if(data.error) throw new Error(data.error);
 
             // Clean any potential markdown blocks from AI output
-            let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            let cleanJson = data.text.replace(/```json/gi, '').replace(/
+```/g, '').trim();
             let fetchedChapters = JSON.parse(cleanJson);
             
             if(!Array.isArray(fetchedChapters) || fetchedChapters.length === 0) throw new Error("Invalid Array");
