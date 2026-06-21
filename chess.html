@@ -19,6 +19,7 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 .small-btn { padding: 9px 14px; font-size: 13px; }
 .danger { background: #ef4444; box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
 .green { background: #16a34a; box-shadow: 0 5px 15px rgba(22,163,74,0.4); }
+.gold { background: #eab308; color: #000; box-shadow: 0 5px 15px rgba(234,179,8,0.4); }
 
 /* 2. BOARD SIZING & ROTATION */
 .game { display: none; grid-template-columns: minmax(350px,580px) 1fr; gap: 25px; align-items: start; }
@@ -41,6 +42,7 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 .hint:after { content: ""; width: 28%; height: 28%; border-radius: 50%; background: rgba(34,197,94,.75); position: absolute; }
 .capture:after { content: ""; inset: 8%; border: 6px solid rgba(239,68,68,.85); border-radius: 50%; position: absolute; }
 .last-move { background: rgba(250, 204, 21, 0.5) !important; }
+.best-hint { outline: 5px solid #22c55e; outline-offset: -5px; z-index: 3; background: rgba(34,197,94,0.4) !important; }
 .in-check { background: radial-gradient(circle, rgba(239, 68, 68, 0.9) 0%, transparent 70%) !important; }
 .status { font-weight: 800; color: #facc15; margin-bottom: 10px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;}
 .piece-tray { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 15px;}
@@ -48,12 +50,16 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 .tray-piece.active { background: #2563eb; transform: scale(1.1); border-color:#60a5fa;}
 .hidden { display: none !important; }
 
-/* Move History Logger */
-.history-box { height: 130px; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; font-family: monospace; font-size: 13px; color: #94a3b8; display: grid; grid-template-columns: 30px 1fr 1fr; gap: 5px; align-content: start; }
+/* Move History & Dashboard */
+.history-box { height: 130px; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; font-family: monospace; font-size: 13px; color: #94a3b8; display: grid; grid-template-columns: 30px 1fr 1fr; gap: 5px; align-content: start; margin-bottom: 15px; }
 .history-row { display: contents; }
 .history-num { color: #475569; font-weight: bold; }
 .history-move { color: #cbd5e1; }
 .graveyard { min-height: 35px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px 10px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 22px; width: 100%; box-sizing: border-box; margin-bottom: 10px;}
+
+.dash-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; text-align: left; }
+.dash-table th, .dash-table td { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px; }
+.dash-table th { color: #94a3b8; font-weight: bold; }
 
 /* Modals */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
@@ -74,7 +80,7 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 <main class="chess-wrap">
     <section id="home" class="hero">
         <h1>♟️ Chess AI Pro</h1>
-        <p style="color:#cbd5e1; font-size: 15px;">10 New Features! Pick your side, choose AI level, or build a custom board.</p>
+        <p style="color:#cbd5e1; font-size: 15px;">Advanced AI Engine, Castling, Hints, and Match History!</p>
         <div class="menu-grid">
             <div class="panel">
                 <h2>Standard Match</h2>
@@ -84,14 +90,30 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
                         <option value="b">⬛ Play as Black</option>
                     </select>
                 </div>
-                <label>AI Level: <b id="lvlText" style="color:#facc15;">35</b> / 100</label>
-                <input id="level" type="range" min="1" max="100" value="35" oninput="lvlText.textContent=this.value" style="width:100%;accent-color:#a855f7; margin: 15px 0;">
-                <button class="big-btn" style="width:100%;" onclick="startGame(false)">▶ Start Standard Game</button>
+                <label style="display:flex; justify-content:space-between;">
+                    <span>AI Level: <b id="lvlValue" style="color:#facc15;">35</b></span>
+                    <span id="lvlTitle" style="color:#38bdf8; font-weight:bold;">PRO</span>
+                </label>
+                <input id="level" type="range" min="1" max="100" value="35" oninput="updateLevelUI(this.value)" style="width:100%;accent-color:#a855f7; margin: 15px 0;">
+                <button class="big-btn" style="width:100%;" onclick="startGame(false)">▶ Start Game</button>
             </div>
             <div class="panel">
                 <h2>Custom Organizer</h2>
-                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Place kings, queens, and pawns yourself to practice specific checkmates!</p>
-                <button class="big-btn green" style="width:100%;" onclick="openBuilder()">🛠️ Build Chess Board</button>
+                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Place pieces yourself to practice specific checkmates or defenses!</p>
+                <button class="big-btn green" style="width:100%;" onclick="openBuilder()">🛠️ Build Board</button>
+            </div>
+            
+            <div class="panel" style="grid-column: 1 / -1;">
+                <h2 style="color:#38bdf8; margin-bottom: 5px;">📜 Match History Dashboard</h2>
+                <p style="font-size: 12px; color: #94a3b8; margin-bottom: 15px;">Your recent games against the AI.</p>
+                <div style="overflow-x:auto;">
+                    <table class="dash-table">
+                        <thead><tr><th>Result</th><th>AI Level</th><th>Turns</th><th>Type</th><th>Action</th></tr></thead>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="5" style="text-align:center; color:#64748b;">No matches played yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </section>
@@ -131,8 +153,9 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <button class="small-btn" id="undoBtn" onclick="undoMove()">⏪ Undo Move</button>
-                <button class="small-btn danger" onclick="confirmReset()">🔄 Reset</button>
+                <button class="small-btn gold" id="hintBtn" onclick="showHint()">💡 Hint</button>
             </div>
+            <button class="small-btn danger" onclick="confirmReset()">🔄 Restart Match</button>
             <button class="small-btn" style="background:#475569;" onclick="confirmHome()">🏠 Home Screen</button>
         </aside>
     </section>
@@ -142,11 +165,11 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
     <div class="modal-box">
         <h2>Set AI Difficulty</h2>
         <p style="color:#cbd5e1; font-size:14px; margin-bottom:20px;">Choose how hard the AI should fight on your custom board.</p>
-        <input type="range" min="1" max="100" value="50" id="customLvl" oninput="cLvlTxt.textContent=this.value" style="width:100%;accent-color:#a855f7;">
+        <input type="range" min="1" max="100" value="50" id="customLvl" oninput="document.getElementById('cLvlTxt').textContent=this.value" style="width:100%;accent-color:#a855f7;">
         <p style="font-size: 18px; font-weight:bold;">Level: <span id="cLvlTxt" style="color:#facc15;">50</span> / 100</p>
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="big-btn" style="flex:1; background:#475569;" onclick="document.getElementById('botLevelModal').classList.add('hidden')">Cancel</button>
-            <button class="big-btn green" style="flex:1;" onclick="startCustomPlay()">▶ Start Match</button>
+            <button class="big-btn green" style="flex:1;" onclick="startCustomPlay()">▶ Start</button>
         </div>
     </div>
 </div>
@@ -156,9 +179,9 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
         <h2 id="goTitle" style="font-size: 35px;">You Win!</h2>
         <p id="goDesc" style="color:#cbd5e1; font-size:16px; margin-bottom:25px;">Checkmate delivered.</p>
         <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="big-btn green" onclick="confirmReset(); document.getElementById('gameOverModal').classList.add('hidden')">🔄 Play Again</button>
-            <button class="big-btn" onclick="confirmHome(); document.getElementById('gameOverModal').classList.add('hidden')">🏠 Home Screen</button>
-            <button class="small-btn danger" onclick="document.getElementById('gameOverModal').classList.add('hidden')">✖ View Final Board</button>
+            <button class="big-btn green" onclick="confirmReset(true); document.getElementById('gameOverModal').classList.add('hidden')">🔄 Play Again</button>
+            <button class="big-btn" onclick="confirmHome(true); document.getElementById('gameOverModal').classList.add('hidden')">🏠 Home Screen</button>
+            <button class="small-btn danger" onclick="document.getElementById('gameOverModal').classList.add('hidden')">✖ View Board</button>
         </div>
     </div>
 </div>
@@ -166,13 +189,9 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 <script>
 // --- AUDIO ENGINE ---
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let aCtx = null;
-let isMuted = false;
+let aCtx = null, isMuted = false;
 
-function toggleMute() {
-    isMuted = !isMuted;
-    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
-}
+function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; }
 
 function playTone(f1, f2, type, dur, vol=0.1) {
     if(isMuted) return;
@@ -188,25 +207,33 @@ function playSound(event) {
     if(event==='move') playTone(300, 400, 'sine', 0.15, 0.2);
     if(event==='capture') playTone(150, 50, 'square', 0.2, 0.3);
     if(event==='check') playTone(600, 400, 'sawtooth', 0.3, 0.2);
+    if(event==='castle') playTone(350, 450, 'triangle', 0.2, 0.2);
     if(event==='win') { playTone(400, 600, 'sine', 0.2, 0.2); setTimeout(()=>playTone(600, 800, 'sine', 0.4, 0.2), 200); }
     if(event==='lose') { playTone(300, 150, 'sawtooth', 0.3, 0.2); setTimeout(()=>playTone(150, 50, 'sawtooth', 0.5, 0.2), 300); }
 }
 
 const U={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
-let B=[], turn='w', sel=null, hints=[], aiLevel=35, builder=false, chosen='P', gameOver=false;
-let lastMove = null; 
-let historyStack = [];
-let moveLogArray = [];
-let pColor = 'w';
-let moveCounter = 0;
-
-// Graveyards
+let B=[], turn='w', sel=null, hints=[], bestHint=null, aiLevel=35, builder=false, chosen='P', gameOver=false;
+let lastMove = null, historyStack = [], moveLogArray = [], pColor = 'w', moveCounter = 0;
 let wCaptured = [], bCaptured = [];
+
+// Castling Rights
+let rights = {wK:true, wQ:true, bK:true, bQ:true};
+
+// Local Storage History
+let matchDash = JSON.parse(localStorage.getItem('chessDashHistory')) || [];
 
 function toggleSidebar() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); } 
 overlay.onclick=toggleSidebar;
 
-function init() { B='rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR'.split(''); }
+function updateLevelUI(val) {
+    document.getElementById('lvlValue').textContent = val;
+    let title = val < 34 ? "NOOB" : (val < 67 ? "PRO" : "GOD");
+    document.getElementById('lvlTitle').textContent = title;
+    document.getElementById('lvlTitle').style.color = val < 34 ? "#4ade80" : (val < 67 ? "#38bdf8" : "#f43f5e");
+}
+
+function init() { B='rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR'.split(''); rights={wK:true,wQ:true,bK:true,bQ:true}; }
 function xy(i) { return[i%8,Math.floor(i/8)]; }
 function idx(x,y) { return y*8+x; }
 function color(p) { return p=='.'?null:p===p.toUpperCase()?'w':'b'; }
@@ -216,19 +243,17 @@ function isAttacked(index, defenderColor, br=B) {
     let attackerColor = defenderColor === 'w' ? 'b' : 'w';
     for(let i=0; i<64; i++) {
         if(color(br[i]) === attackerColor) {
-            let m = moves(i, br); 
+            let m = rawMoves(i, br); 
             if(m.includes(index)) return true;
         }
     }
     return false;
 }
 
-function filterLegal(rawMoves, fromIdx, br) {
+function filterLegal(rawMovesList, fromIdx, br) {
     let myColor = color(br[fromIdx]);
-    return rawMoves.filter(toIdx => {
-        let tempB = [...br];
-        tempB[toIdx] = tempB[fromIdx]; 
-        tempB[fromIdx] = '.';
+    return rawMovesList.filter(toIdx => {
+        let tempB = simMake(br, fromIdx, toIdx);
         let kChar = myColor === 'w' ? 'K' : 'k';
         let kIdx = tempB.indexOf(kChar);
         if(kIdx === -1) return false; 
@@ -238,68 +263,50 @@ function filterLegal(rawMoves, fromIdx, br) {
 
 function updateHUD() {
     document.getElementById('turnCounter').textContent = moveCounter;
-    
-    // Update Graveyards
-    let aiGrave = pColor === 'w' ? wCaptured : bCaptured; // What AI lost
-    let plyGrave = pColor === 'w' ? bCaptured : wCaptured; // What Player lost
-    
+    let aiGrave = pColor === 'w' ? wCaptured : bCaptured;
+    let plyGrave = pColor === 'w' ? bCaptured : wCaptured;
     document.getElementById('aiGraveyard').innerHTML = aiGrave.map(p => `<span class="${p===p.toUpperCase()?'piece-w':'piece-b'}">${U[p]}</span>`).join('');
     document.getElementById('playerGraveyard').innerHTML = plyGrave.map(p => `<span class="${p===p.toUpperCase()?'piece-w':'piece-b'}">${U[p]}</span>`).join('');
     
-    // Update Move Log
     let logHtml = '';
     for(let i=0; i<moveLogArray.length; i+=2) {
-        let wMove = moveLogArray[i] || '';
-        let bMove = moveLogArray[i+1] || '';
-        logHtml += `<div class="history-row"><span class="history-num">${Math.floor(i/2)+1}.</span><span class="history-move">${wMove}</span><span class="history-move">${bMove}</span></div>`;
+        logHtml += `<div class="history-row"><span class="history-num">${Math.floor(i/2)+1}.</span><span class="history-move">${moveLogArray[i]||''}</span><span class="history-move">${moveLogArray[i+1]||''}</span></div>`;
     }
-    const ml = document.getElementById('moveLog');
-    ml.innerHTML = logHtml;
-    ml.scrollTop = ml.scrollHeight;
+    const ml = document.getElementById('moveLog'); ml.innerHTML = logHtml; ml.scrollTop = ml.scrollHeight;
 }
 
-function getNotation(from, to, p, captured) {
-    const files = "abcdefgh"; const ranks = "87654321";
-    let f1 = files[from%8], r1 = ranks[Math.floor(from/8)];
-    let f2 = files[to%8], r2 = ranks[Math.floor(to/8)];
-    let pieceStr = p.toUpperCase();
-    if(pieceStr === 'P') pieceStr = '';
-    let capMark = captured ? 'x' : '';
-    if(pieceStr === '' && captured) pieceStr = f1; 
-    return `${pieceStr}${capMark}${f2}${r2}`;
+function getNotation(from, to, p, captured, isCastle) {
+    if(isCastle === 'K') return "O-O"; if(isCastle === 'Q') return "O-O-O";
+    const f="abcdefgh", r="87654321";
+    let pStr = p.toUpperCase()==='P' ? (captured?f[from%8]:'') : p.toUpperCase();
+    return `${pStr}${captured?'x':''}${f[to%8]}${r[Math.floor(to/8)]}`;
 }
 
 function render() {
     board.innerHTML='';
-    let bKingIdx = B.indexOf('k'), wKingIdx = B.indexOf('K');
-    let bCheck = bKingIdx !== -1 && isAttacked(bKingIdx, 'b');
-    let wCheck = wKingIdx !== -1 && isAttacked(wKingIdx, 'w');
+    let bKIdx = B.indexOf('k'), wKIdx = B.indexOf('K');
+    let bCheck = bKIdx !== -1 && isAttacked(bKIdx, 'b');
+    let wCheck = wKIdx !== -1 && isAttacked(wKIdx, 'w');
 
     for(let i=0; i<64; i++) {
         let s = document.createElement('div');
-        let [x,y] = xy(i);
-        s.className = 'sq ' + ((x+y)%2 ? 'dark' : 'light');
-        
+        s.className = 'sq ' + ((xy(i)[0]+xy(i)[1])%2 ? 'dark' : 'light');
         if(lastMove && (i === lastMove.from || i === lastMove.to)) s.classList.add('last-move');
+        if(bestHint && (i === bestHint.from || i === bestHint.to)) s.classList.add('best-hint');
         if(sel === i) s.classList.add('selected');
         if(hints.includes(i)) s.classList.add(B[i]==='.' ? 'hint' : 'capture');
-        
-        if(bCheck && i === bKingIdx) s.classList.add('in-check');
-        if(wCheck && i === wKingIdx) s.classList.add('in-check');
+        if(bCheck && i === bKIdx) s.classList.add('in-check');
+        if(wCheck && i === wKIdx) s.classList.add('in-check');
 
-        let p = B[i];
-        if(p !== '.') {
-            let pcClass = p === p.toUpperCase() ? 'piece-w' : 'piece-b';
-            s.innerHTML = `<span class="${pcClass}">${U[p]}</span>`;
-        }
-        
+        if(B[i] !== '.') s.innerHTML = `<span class="${B[i]===B[i].toUpperCase()?'piece-w':'piece-b'}">${U[B[i]]}</span>`;
         s.onclick = () => clickSq(i);
         board.appendChild(s);
     }
     updateHUD();
 }
 
-function moves(i, br=B) {
+// Generates Pseudo-Legal Moves (No King safety checks yet)
+function rawMoves(i, br=B) {
     let p=br[i], c=color(p);
     if(!c) return [];
     let [x,y]=xy(i), m=[], add=(a,b)=>{if(a>=0&&a<8&&b>=0&&b<8){let t=idx(a,b);if(br[t]==='.'||enemy(br[t],c))m.push(t)}};
@@ -308,156 +315,206 @@ function moves(i, br=B) {
     if(low==='p'){let d=c==='w'?-1:1,st=c==='w'?6:1;if(br[idx(x,y+d)]==='.') {add(x,y+d); if(y===st&&br[idx(x,y+2*d)]==='.') add(x,y+2*d)};for(let dx of[-1,1])if(x+dx>=0&&x+dx<8&&enemy(br[idx(x+dx,y+d)],c))m.push(idx(x+dx,y+d))}
     if(low==='n')[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(d=>add(x+d[0],y+d[1]));
     if('brq'.includes(low)){let dirs=[];if('rq'.includes(low))dirs.push([1,0],[-1,0],[0,1],[0,-1]);if('bq'.includes(low))dirs.push([1,1],[-1,1],[1,-1],[-1,-1]);dirs.forEach(d=>{let a=x+d[0],b=y+d[1];while(a>=0&&a<8&&b>=0&&b<8){let t=idx(a,b);if(br[t]==='.')m.push(t);else{if(enemy(br[t],c))m.push(t);break;}a+=d[0];b+=d[1]}})}
-    if(low==='k')for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)if(a||b)add(x+a,y+b);
+    
+    if(low==='k') {
+        for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)if(a||b)add(x+a,y+b);
+        // Castling
+        if(c==='w' && i===60 && !builder) {
+            if(rights.wK && br[61]==='.' && br[62]==='.' && !isAttacked(60,'w',br) && !isAttacked(61,'w',br) && !isAttacked(62,'w',br)) m.push(62);
+            if(rights.wQ && br[59]==='.' && br[58]==='.' && br[57]==='.' && !isAttacked(60,'w',br) && !isAttacked(59,'w',br) && !isAttacked(58,'w',br)) m.push(58);
+        }
+        if(c==='b' && i===4 && !builder) {
+            if(rights.bK && br[5]==='.' && br[6]==='.' && !isAttacked(4,'b',br) && !isAttacked(5,'b',br) && !isAttacked(6,'b',br)) m.push(6);
+            if(rights.bQ && br[3]==='.' && br[2]==='.' && br[1]==='.' && !isAttacked(4,'b',br) && !isAttacked(3,'b',br) && !isAttacked(2,'b',br)) m.push(2);
+        }
+    }
     return m;
 }
 
 function allLegal(c, br=B) {
     let r=[];
-    br.forEach((p,i)=>{ 
-        if(color(p)===c) {
-            let legals = filterLegal(moves(i,br), i, br);
-            legals.forEach(to=>r.push([i,to]));
-        }
-    });
+    br.forEach((p,i)=>{ if(color(p)===c) filterLegal(rawMoves(i,br), i, br).forEach(to=>r.push([i,to])) });
     return r;
 }
 
-function make(a) {
-    let pMoved = B[a[0]];
-    let pCaptured = B[a[1]];
-    let captured = pCaptured !== '.';
-    
-    // Save to graveyard
-    if(captured) {
-        if(color(pCaptured)==='w') bCaptured.push(pCaptured);
-        else wCaptured.push(pCaptured);
-    }
-    
-    let notation = getNotation(a[0], a[1], pMoved, captured);
-    moveLogArray.push(notation);
+function simMake(br, f, t) {
+    let nb = [...br]; nb[t] = nb[f]; nb[f] = '.';
+    if(nb[t]==='P'&&t<8) nb[t]='Q'; if(nb[t]==='p'&&t>55) nb[t]='q';
+    if(nb[t]==='K'&&f===60&&t===62) { nb[61]='R'; nb[63]='.'; } // W-KS
+    if(nb[t]==='K'&&f===60&&t===58) { nb[59]='R'; nb[56]='.'; } // W-QS
+    if(nb[t]==='k'&&f===4&&t===6) { nb[5]='r'; nb[7]='.'; } // B-KS
+    if(nb[t]==='k'&&f===4&&t===2) { nb[3]='r'; nb[0]='.'; } // B-QS
+    return nb;
+}
 
-    B[a[1]] = B[a[0]];
-    B[a[0]] = '.';
+function make(a) {
+    bestHint = null; // Clear hints
+    let pMoved = B[a[0]], pCaptured = B[a[1]], captured = pCaptured !== '.';
+    let isCastle = false;
+
+    if(captured) { color(pCaptured)==='w' ? bCaptured.push(pCaptured) : wCaptured.push(pCaptured); }
+
+    // Execute Move
+    B = simMake(B, a[0], a[1]);
     
-    // Promotion
-    if(B[a[1]]==='P'&&a[1]<8) B[a[1]]='Q';
-    if(B[a[1]]==='p'&&a[1]>55) B[a[1]]='q';
-    
+    // Check if it was a castling move for Notation
+    if(pMoved.toLowerCase()==='k' && Math.abs(a[0]-a[1])===2) isCastle = a[1]>a[0] ? 'K' : 'Q';
+
+    // Update Rights
+    if(pMoved==='K') { rights.wK=false; rights.wQ=false; }
+    if(pMoved==='k') { rights.bK=false; rights.bQ=false; }
+    if(a[0]===63||a[1]===63) rights.wK=false; if(a[0]===56||a[1]===56) rights.wQ=false;
+    if(a[0]===7||a[1]===7) rights.bK=false; if(a[0]===0||a[1]===0) rights.bQ=false;
+
+    moveLogArray.push(getNotation(a[0], a[1], pMoved, captured, isCastle));
     lastMove = {from: a[0], to: a[1]};
     if(turn === 'w') moveCounter++;
     
-    if(captured) playSound('capture');
+    if(isCastle) playSound('castle');
+    else if(captured) playSound('capture');
     else playSound('move');
 }
 
 function clickSq(i) {
-    if(gameOver) return;
-    if(builder) { B[i] = chosen; render(); return; }
-    if(turn !== pColor) return;
-
-    if(sel === null) {
-        if(color(B[i]) === pColor) { 
-            sel = i; 
-            hints = filterLegal(moves(i), i, B); 
-            render(); 
-        }
-    } else if (hints.includes(i)) {
-        historyStack.push({ b: [...B], turn: pColor, last: lastMove ? {...lastMove} : null, log: [...moveLogArray], wCap: [...wCaptured], bCap: [...bCaptured], moves: moveCounter });
-        make([sel,i]);
-        sel = null; hints = []; turn = pColor === 'w' ? 'b' : 'w'; 
-        
-        let enemyKing = turn === 'w' ? 'K' : 'k';
-        if(isAttacked(B.indexOf(enemyKing), turn)) {
-            playSound('check');
-            moveLogArray[moveLogArray.length-1] += '+';
-        }
-
-        render();
-        
-        document.getElementById('aiThinkingStatus').style.display = 'block';
-        setTimeout(aiMove, 600);
-    } else {
-        sel = null; hints = []; render();
+    if(gameOver || builder || turn !== pColor) {
+        if(builder) { B[i] = chosen; render(); }
+        return;
     }
+    if(sel === null) {
+        if(color(B[i]) === pColor) { sel = i; hints = filterLegal(rawMoves(i), i, B); render(); }
+    } else if (hints.includes(i)) {
+        historyStack.push({ b: [...B], turn: pColor, last: lastMove ? {...lastMove} : null, log: [...moveLogArray], wCap: [...wCaptured], bCap: [...bCaptured], moves: moveCounter, r: {...rights} });
+        make([sel,i]); sel = null; hints = []; turn = pColor === 'w' ? 'b' : 'w'; 
+        
+        if(isAttacked(B.indexOf(turn==='w'?'K':'k'), turn)) { playSound('check'); moveLogArray[moveLogArray.length-1] += '+'; }
+        render();
+        document.getElementById('aiThinkingStatus').style.display = 'block'; setTimeout(aiMove, 50); // Timeout allows UI to render
+    } else { sel = null; hints = []; render(); }
 }
 
 function undoMove() {
     if(historyStack.length === 0 || builder || gameOver) return;
-    let state = historyStack.pop();
-    B = state.b; turn = state.turn; lastMove = state.last; 
-    moveLogArray = state.log; wCaptured = state.wCap; bCaptured = state.bCap; moveCounter = state.moves;
-    
-    gameOver = false;
-    document.getElementById('gameOverModal').classList.add('hidden');
+    let s = historyStack.pop();
+    B = s.b; turn = s.turn; lastMove = s.last; moveLogArray = s.log; wCaptured = s.wCap; bCaptured = s.bCap; moveCounter = s.moves; rights = s.r;
+    bestHint = null; gameOver = false; document.getElementById('gameOverModal').classList.add('hidden');
     status.textContent = 'Your move'; render();
+}
+
+// --- ADVANCED AI ENGINE ---
+function evaluateBoard(br, c) {
+    let v={P:10,N:30,B:30,R:50,Q:90,K:900,p:-10,n:-30,b:-30,r:-50,q:-90,k:-900};
+    let center = [27,28,35,36]; let s = 0;
+    for(let i=0; i<64; i++) {
+        if(br[i]==='.') continue;
+        let val = v[br[i]];
+        if(br[i].toLowerCase()!=='k' && br[i].toLowerCase()!=='r' && center.includes(i)) val += (val>0?1:-1); // Center bias
+        s += val;
+    }
+    return c==='w' ? s : -s;
+}
+
+function getBestMove(br, evalColor, lvl) {
+    let myMoves = allLegal(evalColor, br);
+    if(!myMoves.length) return null;
+    
+    // Level 1-33: Noob (Random)
+    if(lvl < 34) return myMoves[Math.floor(Math.random()*myMoves.length)];
+
+    let bestScore = -Infinity; let bestChoices = [];
+    
+    for(let m of myMoves) {
+        let sim1 = simMake(br, m[0], m[1]);
+        let score = evaluateBoard(sim1, evalColor);
+
+        // Level 67-100: God (Minimax Depth 2)
+        if(lvl > 66) {
+            let oppColor = evalColor==='w'?'b':'w';
+            let oppMoves = allLegal(oppColor, sim1);
+            let worstOppScore = Infinity;
+            if(oppMoves.length === 0) { score = 9999; } // Checkmate
+            else {
+                for(let om of oppMoves) {
+                    let sim2 = simMake(sim1, om[0], om[1]);
+                    let oppS = evaluateBoard(sim2, evalColor); // Keep perspective
+                    if(oppS < worstOppScore) worstOppScore = oppS;
+                }
+                score = worstOppScore;
+            }
+        }
+
+        if(score > bestScore) { bestScore = score; bestChoices = [m]; }
+        else if(score === bestScore) { bestChoices.push(m); }
+    }
+    return bestChoices[Math.floor(Math.random()*bestChoices.length)];
+}
+
+function showHint() {
+    if(gameOver || turn !== pColor || builder) return;
+    let m = getBestMove(B, pColor, 100); // Hints always use God mode
+    if(m) { bestHint = {from: m[0], to: m[1]}; render(); }
 }
 
 function aiMove() {
     document.getElementById('aiThinkingStatus').style.display = 'none';
     let aiColor = pColor === 'w' ? 'b' : 'w';
-    let ms = allLegal(aiColor); 
+    let m = getBestMove(B, aiColor, aiLevel);
     
-    if(!ms.length) {
+    if(!m) {
         if(isAttacked(B.indexOf(aiColor === 'w'?'K':'k'), aiColor)) return end('CHECKMATE! You Win!', true);
         else return end('Stalemate! Game is a Draw.', true); 
     }
     
-    let scored = ms.map(a=>({a, s:score(a)})).sort((x,y) => y.s - x.s);
-    let pick = Math.random()*100 < aiLevel ? scored[0].a : scored[Math.floor(Math.random()*scored.length)].a;
+    make(m); turn = pColor;
     
-    make(pick);
-    turn = pColor;
-    
-    let myKing = pColor === 'w' ? 'K' : 'k';
-    let isCheck = isAttacked(B.indexOf(myKing), pColor);
-    if(isCheck) {
-        playSound('check');
-        moveLogArray[moveLogArray.length-1] += '+';
-    }
-    
+    let isCheck = isAttacked(B.indexOf(pColor==='w'?'K':'k'), pColor);
+    if(isCheck) { playSound('check'); moveLogArray[moveLogArray.length-1] += '+'; }
     render();
     
-    let myMoves = allLegal(pColor);
-    if(!myMoves.length) {
+    if(!allLegal(pColor).length) {
         if(isCheck) return end('CHECKMATE! The AI Wins!', false);
         else return end('Stalemate! Game is a Draw.', true);
     }
-    
-    if(isCheck) status.textContent = '⚠️ CHECK! Defend your King!';
-    else status.textContent = 'Your move';
-}
-
-function score(a) {
-    let v={p:1,n:3,b:3,r:5,q:9,k:99};
-    return (v[(B[a[1]]||'.').toLowerCase()]||0)*10 + Math.random()*6;
+    status.textContent = isCheck ? '⚠️ CHECK! Defend your King!' : 'Your move';
 }
 
 function end(msg, isWin) {
-    gameOver = true;
-    status.textContent = msg;
-    playSound(isWin ? 'win' : 'lose');
-    document.getElementById('goTitle').textContent = isWin ? "Victory!" : "Defeat!";
-    document.getElementById('goTitle').style.color = isWin ? "#10b981" : "#ef4444";
+    gameOver = true; status.textContent = msg; playSound(isWin ? 'win' : 'lose');
+    document.getElementById('goTitle').textContent = isWin ? "Victory!" : (msg.includes('Draw') ? "Draw!" : "Defeat!");
+    document.getElementById('goTitle').style.color = isWin ? "#10b981" : (msg.includes('Draw') ? "#facc15" : "#ef4444");
     document.getElementById('goDesc').textContent = msg;
     document.getElementById('gameOverModal').classList.remove('hidden');
+    saveMatchToDashboard(isWin ? "Win" : (msg.includes('Draw') ? "Draw" : "Loss"));
 }
+
+function saveMatchToDashboard(res) {
+    if(moveCounter < 2 && !builder) return; // Don't save empty games
+    let type = builder ? "Custom" : "Standard";
+    matchDash.unshift({res, lvl: aiLevel, turns: moveCounter, type, date: new Date().toLocaleDateString()});
+    if(matchDash.length > 10) matchDash.pop();
+    localStorage.setItem('chessDashHistory', JSON.stringify(matchDash));
+    loadDashboard();
+}
+
+function loadDashboard() {
+    let html = '';
+    if(!matchDash.length) { html = `<tr><td colspan="5" style="text-align:center; color:#64748b;">No matches played yet.</td></tr>`; }
+    else {
+        matchDash.forEach((m, i) => {
+            let color = m.res==='Win' ? '#4ade80' : (m.res==='Loss' ? '#f43f5e' : '#facc15');
+            html += `<tr><td style="color:${color};font-weight:bold;">${m.res}</td><td>${m.lvl}</td><td>${m.turns}</td><td>${m.type}</td>
+            <td><button style="background:#ef4444;border:none;border-radius:5px;color:white;cursor:pointer;padding:4px 8px;" onclick="delDash(${i})">X</button></td></tr>`;
+        });
+    }
+    document.getElementById('historyTableBody').innerHTML = html;
+}
+function delDash(i) { matchDash.splice(i,1); localStorage.setItem('chessDashHistory', JSON.stringify(matchDash)); loadDashboard(); }
 
 function startGame(custom) {
     aiLevel = custom ? +document.getElementById('customLvl').value : +document.getElementById('level').value;
-    builder = false; gameOver = false; sel = null; hints = []; lastMove = null; historyStack = []; moveLogArray = []; moveCounter = 0;
-    wCaptured = []; bCaptured = [];
-    
-    if(!custom) {
-        init();
-        pColor = document.getElementById('playerColor').value;
-    } else {
-        pColor = 'w'; // Custom always starts as White to play first
-    }
-
+    builder = false; gameOver = false; sel = null; hints = []; bestHint = null; lastMove = null; historyStack = []; moveLogArray = []; moveCounter = 0; wCaptured = []; bCaptured = [];
+    if(!custom) { init(); pColor = document.getElementById('playerColor').value; } else { pColor = 'w'; }
     turn = 'w'; 
     
-    // Board Rotation feature
     const brd = document.getElementById('board');
     if(pColor === 'b') {
         brd.classList.add('flipped');
@@ -469,63 +526,37 @@ function startGame(custom) {
         document.getElementById('coordX').innerHTML = `<span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>`;
     }
 
-    document.getElementById('home').style.display = 'none';
-    document.getElementById('game').style.display = 'grid';
-    document.getElementById('builderTools').classList.add('hidden');
-    document.getElementById('undoBtn').classList.remove('hidden');
-    
+    document.getElementById('home').style.display = 'none'; document.getElementById('game').style.display = 'grid';
+    document.getElementById('builderTools').classList.add('hidden'); document.getElementById('undoBtn').classList.remove('hidden'); document.getElementById('hintBtn').classList.remove('hidden');
     render();
 
-    if(pColor === 'b' && !custom) {
-        status.textContent = 'AI is playing White...';
-        document.getElementById('aiThinkingStatus').style.display = 'block';
-        setTimeout(aiMove, 600);
-    } else {
-        status.textContent = 'Your move';
-    }
+    if(pColor === 'b' && !custom) { status.textContent = 'AI is playing White...'; document.getElementById('aiThinkingStatus').style.display = 'block'; setTimeout(aiMove, 600); } 
+    else { status.textContent = 'Your move'; }
 }
 
-// Confirm Dialogs
-function confirmHome() {
-    if(!gameOver && !builder && historyStack.length > 0) {
-        if(!confirm("Are you sure you want to exit? Your current game will be lost.")) return;
-    }
-    document.getElementById('game').style.display = 'none'; 
-    document.getElementById('home').style.display = 'block'; 
+function confirmHome(force=false) {
+    if(!force && !gameOver && !builder && historyStack.length > 0) { if(!confirm("Exit to Home? Current game will be lost.")) return; }
+    document.getElementById('game').style.display = 'none'; document.getElementById('home').style.display = 'block'; loadDashboard();
 }
-
-function confirmReset() {
-    if(!gameOver && !builder && historyStack.length > 0) {
-        if(!confirm("Are you sure you want to restart the match?")) return;
-    }
+function confirmReset(force=false) {
+    if(!force && !gameOver && !builder && historyStack.length > 0) { if(!confirm("Restart the match?")) return; }
     startGame(false);
 }
 
 function openBuilder() {
     builder = true; gameOver = false; B = '................................................................'.split('');
-    document.getElementById('home').style.display = 'none';
-    document.getElementById('game').style.display = 'grid';
-    document.getElementById('builderTools').classList.remove('hidden');
-    document.getElementById('undoBtn').classList.add('hidden');
-    status.textContent = 'Build custom board';
-    document.getElementById('board').classList.remove('flipped');
-    renderTray(); render();
+    document.getElementById('home').style.display = 'none'; document.getElementById('game').style.display = 'grid';
+    document.getElementById('builderTools').classList.remove('hidden'); document.getElementById('undoBtn').classList.add('hidden'); document.getElementById('hintBtn').classList.add('hidden');
+    status.textContent = 'Build custom board'; document.getElementById('board').classList.remove('flipped'); renderTray(); render();
 }
 
-// Bug Fix: Check Kings Before Custom Match
 function validateCustomBoard() {
-    let wK = B.filter(p=>p==='K').length;
-    let bK = B.filter(p=>p==='k').length;
-    if(wK !== 1 || bK !== 1) {
-        alert("⚠️ INVALID BOARD: You MUST place exactly ONE White King (♔) and ONE Black King (♚) to start the match!");
-        return;
-    }
+    if(B.filter(p=>p==='K').length !== 1 || B.filter(p=>p==='k').length !== 1) return alert("⚠️ You MUST place exactly ONE White King (♔) and ONE Black King (♚)!");
     document.getElementById('botLevelModal').classList.remove('hidden');
 }
 
 function startCustomPlay() { document.getElementById('botLevelModal').classList.add('hidden'); startGame(true); }
-
 function renderTray() { document.getElementById('tray').innerHTML = ['P','N','B','R','Q','K','p','n','b','r','q','k','.'].map(p=>`<button class="tray-piece ${chosen===p?'active':''}" onclick="chosen='${p}';renderTray()"><span class="${p==='.'?'':(p===p.toUpperCase()?'piece-w':'piece-b')}">${p==='.'?'🧽':U[p]}</span></button>`).join(''); }
 
-init();
+loadDashboard();
 </script></body></html>
