@@ -69,24 +69,35 @@
         .user { align-items: flex-end; }
         .ai { align-items: flex-start; }
 
+        /* 🛑 FIXED BUBBLE STYLING AND READABILITY 🛑 */
         .bubble {
             max-width: 85%; padding: 16px 20px; border-radius: 20px;
             line-height: 1.7; font-size: 15px; position: relative;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); word-wrap: break-word;
-            padding-right: 35px; /* Added space for the 3-dots menu */
+            padding-right: 45px !important; /* Fixed cut-off 3 dots */
+            overflow: visible !important;
         }
-        .user .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 4px; }
-        .ai .bubble { background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 4px; color: var(--text-main); }
+        .user .bubble { 
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important; 
+            color: #ffffff !important; 
+            border-bottom-right-radius: 4px; 
+        }
+        .ai .bubble { 
+            background: #1e293b !important; /* Hardcoded dark background */
+            color: #f8fafc !important; /* Hardcoded bright white text */
+            border: 1px solid #334155 !important; 
+            border-bottom-left-radius: 4px; 
+        }
         .bubble img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
 
         /* PRESET CHIPS */
         .preset-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
         .preset-btn { 
-            background: rgba(255,255,255,0.05); border: 1px solid var(--primary); 
-            color: var(--text-main); padding: 10px 15px; border-radius: 20px; 
+            background: rgba(255,255,255,0.05); border: 1px solid #3b82f6; 
+            color: #f8fafc; padding: 10px 15px; border-radius: 20px; 
             font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; 
         }
-        .preset-btn:hover { background: var(--primary); color: white; }
+        .preset-btn:hover { background: #3b82f6; color: white; }
 
         /* INPUT AREA & PLUS MENU */
         .chat-input-area {
@@ -159,13 +170,13 @@
         /* SPINNER FOR NEW FULL SCREEN LOADER */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* MESSAGE 3-DOT MENU STYLES */
-        .msg-menu-wrap { position: absolute; top: 12px; right: 10px; z-index: 10; }
-        .msg-menu-btn { background: transparent; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 18px; padding: 0 5px; }
-        .msg-menu-btn:hover { opacity: 1; }
-        .msg-dropdown { display: none; position: absolute; right: 0; top: 25px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); overflow: hidden; min-width: 100px; z-index: 1000; }
+        /* 🛑 FIXED MESSAGE 3-DOT MENU STYLES 🛑 */
+        .msg-menu-wrap { position: absolute; top: 12px; right: 8px; z-index: 10; }
+        .msg-menu-btn { background: transparent; border: none; color: inherit; opacity: 0.8; cursor: pointer; font-size: 22px; padding: 0 5px; line-height: 1; }
+        .msg-menu-btn:hover { opacity: 1; transform: scale(1.1); }
+        .msg-dropdown { display: none; position: absolute; right: 0; top: 30px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); overflow: hidden; min-width: 100px; z-index: 1000; }
         .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
-        .msg-dropdown button:hover { background: rgba(239,68,68,0.1); }
+        .msg-dropdown button:hover { background: rgba(239,68,68,0.2); }
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
@@ -191,11 +202,11 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<!-- 🛑 NEW FULL SCREEN LOADING OVERLAY 🛑 -->
+<!-- 🛑 FULL SCREEN LOADING OVERLAY 🛑 -->
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:var(--bg-base); z-index:99999; flex-direction:column; justify-content:center; align-items:center;">
     <div style="border: 6px solid rgba(255,255,255,0.1); border-top: 6px solid var(--primary); border-radius: 50%; width: 70px; height: 70px; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
     <h2 style="color: white; font-size: 24px; margin-bottom: 10px; font-weight: 800;">Reading Book...</h2>
-    <p style="color: var(--text-muted); font-size: 14px; text-align: center; max-width: 80%;">Please wait while the AI memorizes the entire chapter.</p>
+    <p style="color: var(--text-muted); font-size: 14px; text-align: center; max-width: 80%;">Please wait while the AI memorizes the entire chapter and questions.</p>
 </div>
 
 <div id="wizardPage">
@@ -515,12 +526,20 @@
         rec.start(); 
     }
 
+    // 🛑 REAL BOOK RETRIEVAL ENGINE 🛑
     async function fetchChapterContext() {
         try {
             let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-            let targetLang = isEnglishSub ? 'English' : 'Hindi (Devanagari)';
+            let targetLang = isEnglishSub ? 'English' : 'Hindi (Devanagari script)';
             
-            const sysPrompt = `You are a backend textbook database. For the given Subject, Class, and Chapter, output the EXACT NCERT/Standard Textbook questions, exercises (e.g., Exercise A, B, C), and their solutions, along with a detailed chapter summary. This is critical for the user to ask 'Solve C' and get the right answer. Output strictly in ${targetLang}.`;
+            const sysPrompt = `You are a strict textbook database retriever. 
+            Search your memory for the EXACT ${selectedData.publisher} textbook for Class ${selectedData.class} ${selectedData.subject}, Chapter: ${selectedData.chapter}.
+            OUTPUT EXACTLY:
+            1. A full summary of the chapter's content.
+            2. The EXACT End-of-Chapter Exercises/Questions printed in the real book, along with their solutions.
+            CRITICAL: DO NOT invent or generate your own questions. Retrieve the REAL questions from the book.
+            Output strictly in ${targetLang}.`;
+            
             const userPrmpt = `Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}, Publisher: ${selectedData.publisher}`;
 
             const r = await fetch("/api/gemini-text", {
@@ -531,8 +550,9 @@
             
             if(data.text) {
                 documentMemory = data.text;
+                // Success - we change the chip to show it's loaded safely
                 document.getElementById("attachmentChip").style.display = "flex";
-                document.getElementById("attachName").innerText = "📚 Inbuilt Chapter Details Fetched!";
+                document.getElementById("attachName").innerText = "📚 Chapter Memorized!";
             }
         } catch(e) {
             console.error("Failed to fetch chapter details in background:", e);
@@ -730,7 +750,7 @@
 
     window.onload = function() {
         let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
-        let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
+        let urlRestoreId = newSearchParams(window.location.search).get('restore');
         
         if(urlRestoreId) {
             let session = savedSessions.find(s => s.id == urlRestoreId);
@@ -797,6 +817,7 @@
         }
     }
 
+    // 🛑 100% DYNAMIC AI CHAPTER GENERATOR (LANGUAGE STRICT) 🛑
     async function triggerChapterFetch() {
         let pub = document.getElementById('publisherSelect').value;
         let sub = document.getElementById('subjectSelect').value;
@@ -810,12 +831,12 @@
         chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching... --</option>';
         
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(sub);
-        let targetLang = isEnglishSub ? 'English' : 'Hindi (Devanagari script)';
+        let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
 
         try {
             const sysPrompt = `You are a strict API. The user will provide a Class, Subject, and Publisher/Board. 
             You MUST return a JSON array of strings containing the accurate standard textbook chapter names for that specific syllabus. 
-            CRITICAL: The chapter names MUST BE IN ${targetLang}. 
+            CRITICAL RULE: IF THE SUBJECT IS ENGLISH, OUTPUT CHAPTER NAMES STRICTLY IN ENGLISH. IF ANY OTHER SUBJECT, OUTPUT STRICTLY IN ${targetLang}. 
             ONLY output the raw JSON array. No markdown, no backticks, no explanations.`;
             
             const userPrmpt = `Class: ${cls}, Subject: ${sub}, Publisher: ${pub || 'NCERT'}`;
@@ -1025,11 +1046,12 @@
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
         let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
         
+        // 🛑 STRICT TEXTBOOK RETRIEVER PROMPT 🛑
         let sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
 1. DEFAULT LANGUAGE: You MUST respond entirely in ${targetLang} by default.
 2. SUBJECT CONTEXT: You are teaching ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}. Use appropriate terminology.
 3. HINGLISH RULE: If the user types a query or chapter name in Hinglish, interpret it accurately as Hindi.
-4. TEXTBOOK QUESTIONS: If asked to solve a specific exercise (like "Solve C"), refer strictly to the standard textbook exercises for this chapter. If you don't have the exact text, solve it using the provided document memory.
+4. EXACT TEXTBOOK RETRIEVAL: If asked to solve a specific exercise (like "Solve C"), DO NOT invent your own questions. Retrieve the EXACT text and questions from the real printed ${selectedData.publisher} textbook for this chapter. If you don't have the exact text, solve it using the provided document memory.
 5. Use **bolding** for important terms and double spacing (\\n\\n) between paragraphs.
 6. IF THE SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`;
 
@@ -1062,9 +1084,10 @@
             await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
 
         } catch(err) {
+            // 🛑 IDIOT-PROOF ERROR MESSAGE 🛑
             let errorMsg = err.message;
             if(errorMsg.includes("Failed to fetch")) {
-                errorMsg = "Failed to connect to the server! Your backend Node.js server is turned off. Please start the server.";
+                errorMsg = "🔴 Backend Server is OFFLINE! You must start your server.js file to fix this 'Failed to fetch' error.";
             }
             document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
             saveHistory();
@@ -1116,7 +1139,6 @@
             bubble.innerHTML = formattedText.replace(/\n/g, '<br>');
         }
 
-        // Add 3 Dots Menu
         bubble.insertAdjacentHTML('beforeend', msgMenuHTML);
 
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
