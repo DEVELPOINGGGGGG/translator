@@ -10,14 +10,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
-    <!-- MathJax for Math Equations -->
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
+
     <script>
       MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-    <!-- html2pdf Library for Perfect PDF Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         /* Wizard Custom Layout over style.css base */
@@ -40,12 +39,12 @@
         .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; font-size: 24px; }
         .step-card label { display: block; text-align: left; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px;}
 
-        select.standard, input.standard {
+        select.standard, input.standard, textarea.standard {
             width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border-light);
             background: rgba(0,0,0,0.2); color: var(--text-main); font-size: 16px; margin-bottom: 20px;
-            box-sizing: border-box; outline: none; transition: 0.3s;
+            box-sizing: border-box; outline: none; transition: 0.3s; font-family: inherit;
         }
-        select.standard:focus, input.standard:focus { border-color: var(--primary); }
+        select.standard:focus, input.standard:focus, textarea.standard:focus { border-color: var(--primary); }
 
         .btn-row { display: flex; gap: 15px; justify-content: space-between; margin-top: 10px; }
         .btn-row .btn { flex: 1; padding: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: white; transition: 0.2s; }
@@ -53,7 +52,7 @@
         .btn-primary:hover { transform: translateY(-3px); }
         .btn-secondary { background: #475569; }
         
-        /* STRICT CHAT LAYOUT - Flexbox avoids all overlapping */
+        /* STRICT CHAT LAYOUT */
         #chatPage { 
             display: none; flex-direction: column; height: 100dvh; width: 100vw; 
             position: absolute; inset: 0; background: var(--bg-base); z-index: 50; 
@@ -87,12 +86,12 @@
         }
         .preset-btn:hover { background: var(--primary); color: white; }
 
-        /* INPUT AREA - Safe Flexbox Container */
+        /* INPUT AREA & PLUS MENU */
         .chat-input-area {
             flex-shrink: 0; padding: 15px; background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(10px); border-top: 1px solid var(--border-light);
             display: flex; flex-direction: column; width: 100%; box-sizing: border-box;
-            padding-bottom: env(safe-area-inset-bottom, 15px);
+            padding-bottom: env(safe-area-inset-bottom, 15px); position: relative;
         }
 
         .chat-input-wrapper {
@@ -109,13 +108,25 @@
         }
 
         .icon-btn {
-            background: transparent; border: none; color: var(--text-muted);
+            background: transparent; border: none; color: var(--primary);
             font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
         }
         .send-btn { 
             background: linear-gradient(135deg, var(--primary), var(--secondary)); 
             color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px;
         }
+
+        /* PLUS MENU UI */
+        .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #plusMenu { display: none; position: absolute; bottom: 75px; left: 15px; border-radius: 15px; flex-direction: column; z-index: 200; width: 220px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .menu-item { background: transparent; border: none; color: var(--text-main); padding: 15px; text-align: left; font-size: 14px; font-weight: bold; cursor: pointer; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+        .menu-item:hover { background: var(--primary); color: white; padding-left: 20px; }
+
+        /* STATUS CHIPS FOR ATTACHMENTS */
+        .status-chip { display: none; align-items: center; gap: 8px; background: rgba(59, 130, 246, 0.2); color: var(--text-main); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; width: max-content; border: 1px solid var(--primary); margin-bottom: 10px; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center;}
 
         #imagePreviewContainer { position: relative; margin-bottom: 10px; display: none; width: max-content; }
         .img-chip { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 2px solid var(--primary); }
@@ -129,14 +140,14 @@
         .dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typingPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
 
-        /* WhatsApp & PDF Selection Styles */
-        .share-mode-active .bubble { cursor: pointer !important; transition: 0.2s; position: relative; user-select: none; }
+        /* WhatsApp Selection Styles */
+        .share-mode-active .bubble { cursor: pointer !important; transition: 0.2s; position: relative; }
         .share-mode-active .bubble::before { content: ''; position: absolute; inset: 0; background: rgba(37, 211, 102, 0.1); border-radius: inherit; opacity: 0; transition: 0.2s; pointer-events: none;}
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
     </style>
 </head>
-<body>
+<body onclick="closePlusMenu(event)">
 
 <div class="overlay" id="overlay"></div>
 
@@ -144,7 +155,7 @@
     <div class="menuBtn" onclick="toggleSidebar()">☰</div>
     <div class="appTitle">📚 Book Deep Study</div>
     <div style="display:flex; gap:10px;">
-        <button class="btn btn-primary" id="shareBtn" style="padding: 8px 12px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share / PDF</button>
+        <button class="btn btn-primary" id="shareBtn" style="padding: 8px 12px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
         <button class="btn btn-secondary" id="clearBtn" style="padding: 8px 12px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
         <button class="btn btn-primary" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
     </div>
@@ -267,36 +278,53 @@
 
 <div id="chatPage">
     <div class="chat-scroll-area" id="chatHistory">
-    </div>
+        </div>
 
     <div class="chat-input-area">
-        <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+        <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Document Attached</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
+        
+        <input type="file" id="imageInput" accept="image/*,.pdf" style="display:none;" onchange="handleFileSelect(event)">
         
         <div id="imagePreviewContainer">
             <img id="imgChip" class="img-chip">
             <button class="remove-img-btn" onclick="removeImage()">✖</button>
         </div>
+
+        <div id="plusMenu" class="glass-panel">
+            <button class="menu-item" onclick="openCamera()">📷 Open Camera</button>
+            <button class="menu-item" onclick="document.getElementById('imageInput').click()">📎 Upload PDF or Image</button>
+            <button class="menu-item" onclick="openWebImport()">🌐 Import from Web</button>
+        </div>
         
-         <div class="chat-input-wrapper">
-            <button class="icon-btn" onclick="openCamera()">📷</button>
-            <button class="icon-btn" onclick="document.getElementById('imageInput').click()" style="font-size:18px;">📎</button>
+        <div class="chat-input-wrapper">
+            <button id="plusBtn" class="icon-btn" onclick="togglePlusMenu(event)">➕</button>
+            <button id="micBtn" class="icon-btn" onclick="openVoiceModal()" style="transition: 0.3s;">🎤</button>
             
             <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
             <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
         </div>
     </div>
 
-    <!-- 🛑 MOBILE SAFE MESSAGE SELECTION MENU WITH PDF BUTTON 🛑 -->
-    <div id="shareActionArea" style="display:none; position:fixed; bottom:0; left:0; width:100%; padding:15px; padding-bottom: calc(15px + env(safe-area-inset-bottom, 20px)); background:rgba(15,23,42,0.98); backdrop-filter:blur(15px); border-top:2px solid #25D366; z-index:999999; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
-        <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
-        <div style="display:flex; gap:8px; width: 100%;">
-            <button class="btn btn-secondary" style="flex:1; padding: 12px 5px; font-size:13px;" onclick="cancelShareMode()">✖ Cancel</button>
-            <button class="btn" style="flex:1.2; padding: 12px 5px; font-size:13px; background:#ef4444; color:white; border:none; font-weight:bold; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);" onclick="downloadSelectedAsPDF(event)">📥 Save PDF</button>
-            <button class="btn btn-primary" style="flex:1.2; background:#25D366; border:none; padding: 12px 5px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);" onclick="proceedToShare()">📤 WhatsApp</button>
+    <div id="voiceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
+        <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 350px; width: 90%; text-align: center;">
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🎤 Speak to Type</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Choose a language to start listening.</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn primary" style="padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer;" onclick="startVoice('hi-IN')">🇮🇳 Speak in Hindi</button>
+                <button class="btn secondary" style="padding: 15px; background: #10b981; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer;" onclick="startVoice('en-US')">🇺🇸 Speak in English</button>
+                <button class="btn red" style="padding: 12px; background: transparent; color: #ef4444; border: 2px solid #ef4444; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 5px;" onclick="document.getElementById('voiceModal').style.display='none'">Cancel</button>
+            </div>
         </div>
     </div>
 
-    <!-- 🛑 Secure WhatsApp Modal -->
+    <div id="shareActionArea" style="display:none; position:absolute; bottom:0; left:0; width:100%; padding:15px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:2px solid #25D366; z-index:100; flex-direction:column; gap:10px; box-sizing:border-box;">
+        <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" style="flex:1; padding: 12px;" onclick="cancelShareMode()">Cancel</button>
+            <button class="btn btn-primary" style="flex:1; background:#25D366; border:none; padding: 12px;" onclick="proceedToShare()">Proceed ➔</button>
+        </div>
+    </div>
+
     <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid #25D366; max-width: 400px; width: 90%; text-align: center; position:relative;">
             <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
@@ -305,6 +333,18 @@
             <div style="display: flex; gap: 10px;">
                 <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="submitWhatsAppSelection(event)">🚀 Send</button>
                 <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px; background: #ef4444; color: white; border: none; font-weight: bold; cursor: pointer;" onclick="document.getElementById('whatsappModal').style.display='none'">✖ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="webImportModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
+        <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:1px solid var(--primary); max-width: 400px; width: 90%; text-align: center;">
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Paste up to 10 website or PDF URLs here (one per line). The AI will read them.</p>
+            <textarea id="webUrlInput" class="standard" rows="5" placeholder="https://example.com/chapter.pdf&#10;https://wikipedia.org/wiki/Science"></textarea>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn green" style="flex: 1; padding: 12px;" onclick="saveWebUrls()">💾 Save URLs</button>
+                <button class="btn red" style="flex: 1; padding: 12px;" onclick="document.getElementById('webImportModal').style.display='none'">✖ Cancel</button>
             </div>
         </div>
     </div>
@@ -334,8 +374,164 @@
 
     let selectedData = {};
     let currentImageBase64 = null;
+    let documentMemory = ""; // Stores extracted PDF or Auto-Fetched Chapter text
+    let webUrls = []; // Stores imported URLs
 
-    // 🛑 WHATSAPP & PDF SELECTION ENGINE 🛑
+    // 🛑 VOICE ENGINE 🛑
+    function openVoiceModal() {
+        closePlusMenu();
+        document.getElementById('voiceModal').style.display = 'flex';
+    }
+
+    function startVoice(lang) {
+        document.getElementById('voiceModal').style.display = 'none';
+        if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice input not supported by this browser."); 
+        
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
+        const rec = new SpeechRec(); 
+        rec.lang = lang; 
+        const micBtn = document.getElementById("micBtn");
+        const chatInput = document.getElementById("chatInput");
+        
+        rec.onstart = () => { 
+            micBtn.style.color = "#ef4444"; 
+            micBtn.style.transform = "scale(1.2)";
+            chatInput.placeholder = "Listening..."; 
+        }; 
+        
+        rec.onresult = (e) => {
+            let transcript = e.results[0][0].transcript;
+            chatInput.value += (chatInput.value ? " " : "") + transcript; 
+        }; 
+        
+        rec.onend = () => {
+            micBtn.style.color = "var(--primary)";
+            micBtn.style.transform = "scale(1)";
+            chatInput.placeholder = "Ask your question here...";
+        };
+        
+        rec.start(); 
+    }
+
+    // 🛑 INBUILT CHAPTER MEMORY FETCHER 🛑
+    async function fetchChapterContext() {
+        document.getElementById("attachmentChip").style.display = "flex";
+        document.getElementById("attachName").innerText = "⏳ Downloading Full Chapter Details...";
+        
+        try {
+            const sysPrompt = "You are a backend database. You MUST output a complete, highly detailed summary of the requested chapter, including key concepts, definitions, formulas, and 10 important Questions & Answers. Provide this in Hindi. Do not use Markdown backticks. Just provide the raw text.";
+            const userPrmpt = `Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}, Publisher: ${selectedData.publisher}`;
+
+            const r = await fetch("/api/gemini-text", {
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: userPrmpt })
+            });
+            const data = await r.json();
+            
+            if(data.text) {
+                documentMemory = data.text;
+                document.getElementById("attachName").innerText = "📚 Inbuilt Chapter Memory Active!";
+            } else {
+                document.getElementById("attachmentChip").style.display = "none";
+            }
+        } catch(e) {
+            console.error("Failed to fetch chapter:", e);
+            document.getElementById("attachmentChip").style.display = "none";
+        }
+    }
+
+    // 🛑 PLUS MENU LOGIC 🛑
+    function togglePlusMenu(e) { 
+        e.stopPropagation(); 
+        const m = document.getElementById("plusMenu"); 
+        m.style.display = m.style.display === "flex" ? "none" : "flex"; 
+    }
+    function closePlusMenu() { 
+        document.getElementById("plusMenu").style.display = "none"; 
+    }
+    window.addEventListener('click', function(e) { 
+        if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); 
+    });
+
+    // 🛑 WEB IMPORT LOGIC 🛑
+    function openWebImport() {
+        closePlusMenu();
+        document.getElementById('webImportModal').style.display = 'flex';
+    }
+
+    function saveWebUrls() {
+        let text = document.getElementById('webUrlInput').value.trim();
+        let urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        if (urls.length > 10) {
+            alert("⚠️ Maximum 10 URLs allowed at a time! Truncating list.");
+            urls = urls.slice(0, 10);
+        }
+        
+        if (urls.length > 0) {
+            webUrls = urls;
+            document.getElementById("attachmentChip").style.display = "flex";
+            document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`;
+        }
+        
+        document.getElementById('webImportModal').style.display = 'none';
+        document.getElementById('webUrlInput').value = '';
+    }
+
+    // 🛑 FILE UPLOAD LOGIC (IMAGES & PDFS) 🛑
+    function handleFileSelect(event) {
+        closePlusMenu();
+        const file = event.target.files[0];
+        if(!file) return;
+
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageBase64 = e.target.result;
+                document.getElementById('imagePreviewContainer').style.display = 'block';
+                document.getElementById('imgChip').src = currentImageBase64;
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+            const reader = new FileReader();
+            document.getElementById("attachmentChip").style.display = "flex";
+            document.getElementById("attachName").innerText = "⏳ Reading PDF...";
+            
+            reader.onload = async function() {
+                try {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let text = "";
+                    for(let i=1; i<=pdf.numPages; i++){
+                        const p = await pdf.getPage(i);
+                        const c = await p.getTextContent();
+                        text += c.items.map(item=>item.str).join(' ');
+                    }
+                    documentMemory = text;
+                    document.getElementById("attachName").innerText = `📄 ${file.name}`;
+                } catch(err) {
+                    alert("❌ Failed to read PDF. It might be corrupted or secured.");
+                    clearAttachment();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            alert("Only Images and PDFs are supported right now.");
+        }
+        event.target.value = ''; 
+    }
+    
+    function removeImage() {
+        currentImageBase64 = null;
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+    }
+
+    function clearAttachment() {
+        documentMemory = "";
+        webUrls = [];
+        document.getElementById("attachmentChip").style.display = "none";
+    }
+
+    // 🛑 WHATSAPP SELECTION & SHARING ENGINE 🛑
     let isShareMode = false;
 
     function toggleShareMode() {
@@ -370,88 +566,6 @@
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
-    // 🛑 FIXED: FLAWLESS PDF GENERATOR (NO WHITE SCREENS) 🛑
-    async function downloadSelectedAsPDF(event) {
-        let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
-        if(selectedNodes.length === 0) return alert("Please tap at least one message to save as PDF!");
-
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ Generating...";
-        btn.disabled = true;
-
-        // Build temporary DOM for PDF rendering directly inside the viewport but hidden behind everything
-        let pdfContainer = document.createElement("div");
-        pdfContainer.style.width = "800px"; 
-        pdfContainer.style.padding = "20px";
-        pdfContainer.style.fontFamily = "Arial, sans-serif";
-        pdfContainer.style.backgroundColor = "#ffffff";
-        pdfContainer.style.color = "#000000";
-        pdfContainer.style.position = "absolute";
-        pdfContainer.style.top = "0";
-        pdfContainer.style.left = "0";
-        pdfContainer.style.zIndex = "-9999"; 
-
-        // PDF Header
-        let header = document.createElement("h2");
-        header.innerText = "📚 Book Deep Study - AI Notes";
-        header.style.textAlign = "center";
-        header.style.color = "#3b82f6";
-        header.style.borderBottom = "2px solid #e2e8f0";
-        header.style.paddingBottom = "10px";
-        pdfContainer.appendChild(header);
-
-        // Sub Header Details
-        let details = document.createElement("p");
-        details.innerHTML = `<b>विषय (Subject):</b> ${selectedData.subject || 'N/A'} <br> <b>अध्याय (Chapter):</b> ${selectedData.chapter || 'N/A'}`;
-        details.style.textAlign = "center";
-        details.style.color = "#64748b";
-        details.style.marginBottom = "30px";
-        pdfContainer.appendChild(details);
-
-        // Clone and format selected notes strictly inline
-        selectedNodes.forEach(node => {
-            let clone = node.cloneNode(true);
-            clone.style.backgroundColor = "#f8fafc";
-            clone.style.color = "#0f172a";
-            clone.style.border = "1px solid #cbd5e1";
-            clone.style.padding = "15px";
-            clone.style.borderRadius = "8px";
-            clone.style.marginBottom = "15px";
-            clone.style.fontSize = "14px";
-            clone.style.lineHeight = "1.6";
-            clone.style.boxShadow = "none";
-            clone.style.outline = "none";
-            clone.style.display = "block";
-            clone.style.wordWrap = "break-word";
-            clone.style.whiteSpace = "pre-wrap";
-            pdfContainer.appendChild(clone);
-        });
-
-        document.body.appendChild(pdfContainer);
-
-        var opt = {
-            margin:       [10, 10, 10, 10],
-            filename:     `${selectedData.chapter || 'Study_Notes'}.pdf`,
-            image:        { type: 'jpeg', quality: 1 },
-            html2canvas:  { scale: 2, useCORS: true, logging: false },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        try {
-            await new Promise(r => setTimeout(r, 100)); // Crucial to let the DOM settle before capturing
-            await html2pdf().set(opt).from(pdfContainer).save();
-            cancelShareMode(); 
-        } catch(e) {
-            alert("❌ Failed to generate PDF. Make sure your browser supports this feature.");
-        } finally {
-            document.body.removeChild(pdfContainer); 
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-
-    // 🛑 BULLETPROOF MATH & HTML CLEANUP FOR WHATSAPP 🛑
     async function submitWhatsAppSelection(event) {
         const number = document.getElementById('waNumberInput').value.trim();
         if (!number) return alert("Please enter a mobile number.");
@@ -459,38 +573,22 @@
         let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
         let fullChatText = "📚 *Book Deep Study - Selected Notes* 📚\n\n";
 
-        const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
-        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
-
         selectedNodes.forEach(node => {
             let clone = node.cloneNode(true);
             let htmlStr = clone.innerHTML;
-            
-            // Clean up HTML tags safely
             htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
             clone.innerHTML = htmlStr;
             let msgText = clone.textContent || clone.innerText || "";
             msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
 
             if (msgText.length > 0) {
-                // Completely safe string split-join to prevent backslash parsing crashes
-                msgText = msgText.split('$$').join('').split('$').join('');
-                msgText = msgText.split('\\(').join('').split('\\)').join('');
-                msgText = msgText.replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2');
-                msgText = msgText.replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1));
-                msgText = msgText.replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1));
-                msgText = msgText.replace(/\\sqrt{([^}]+)}/g, '√$1');
-                msgText = msgText.split('\\times').join('×');
-                msgText = msgText.split('\\cdot').join('·');
-                msgText = msgText.split('\\pi').join('π');
-                msgText = msgText.split('\\theta').join('θ');
-                msgText = msgText.split('\\left').join('');
-                msgText = msgText.split('\\right').join('');
-                msgText = msgText.split('\\').join(''); // Safely removes any remaining backslashes
-                
                 fullChatText += `${msgText}\n\n------------------------\n\n`;
             }
         });
+
+        const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
+        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
+        fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
 
         const btn = event.target;
         const originalText = btn.innerHTML;
@@ -521,29 +619,23 @@
         btn.disabled = false;
     }
 
-    // 🛑 FLAWLESS RESTORE WITH TRY/CATCH MEMORY PROTECTION 🛑
+    // 🛑 FLAWLESS RESTORE - OPENS DIRECTLY TO CONVERSATION 🛑
     window.onload = function() {
-        try {
-            let savedHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
-            let savedSettings = localStorage.getItem('bookSettings_VUltimateAI');
-            if (savedHistory && savedSettings) {
-                selectedData = JSON.parse(savedSettings);
-                document.getElementById('wizardPage').style.display = 'none';
-                document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block';
-                document.getElementById('clearBtn').style.display = 'block';
-                document.getElementById('shareBtn').style.display = 'block';
-                document.getElementById('chatHistory').innerHTML = savedHistory;
-                
-                setTimeout(() => {
-                    const c = document.getElementById('chatHistory');
-                    if(c) c.scrollTop = c.scrollHeight;
-                }, 100);
-            }
-        } catch(e) {
-            console.error("Memory corrupted. Resetting data.", e);
-            localStorage.removeItem('bookChatHistory_VUltimateAI');
-            localStorage.removeItem('bookSettings_VUltimateAI');
+        let savedHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
+        let savedSettings = localStorage.getItem('bookSettings_VUltimateAI');
+        if (savedHistory && savedSettings) {
+            selectedData = JSON.parse(savedSettings);
+            document.getElementById('wizardPage').style.display = 'none';
+            document.getElementById('chatPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block';
+            document.getElementById('clearBtn').style.display = 'block';
+            document.getElementById('shareBtn').style.display = 'block';
+            document.getElementById('chatHistory').innerHTML = savedHistory;
+            
+            setTimeout(() => {
+                const c = document.getElementById('chatHistory');
+                c.scrollTop = c.scrollHeight;
+            }, 100);
         }
     };
 
@@ -551,6 +643,7 @@
         if(confirm("Are you sure you want to clear the chat history?")) {
             localStorage.removeItem('bookChatHistory_VUltimateAI');
             document.getElementById('chatHistory').innerHTML = "";
+            clearAttachment(); 
             startConversation(); 
         }
     }
@@ -609,8 +702,7 @@
             const data = await r.json();
             if(data.error) throw new Error(data.error);
 
-            let cleanJson = data.text.replace(/```json/gi, '').replace(/
-```/g, '').trim();
+            let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim();
             let fetchedChapters = JSON.parse(cleanJson);
             
             if(!Array.isArray(fetchedChapters) || fetchedChapters.length === 0) throw new Error("Invalid Array");
@@ -626,7 +718,6 @@
         }
     }
 
-    // PRESET COMMAND FUNCTION
     function runPreset(cmd) {
         document.getElementById('chatInput').value = cmd;
         sendMessage();
@@ -653,8 +744,10 @@
                     <button class="preset-btn" onclick="runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण (Analyze Chapter)</button>
                 </div>
             `;
-            
             addAiMessage(initialMessageHTML, false);
+            
+            // 🛑 TRIGGER INBUILT CHAPTER MEMORY DOWNLOAD 🛑
+            fetchChapterContext();
         }
     }
 
@@ -667,36 +760,15 @@
         nextStep(1); 
     }
 
-    function handleImageSelect(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentImageBase64 = e.target.result;
-            document.getElementById('imagePreviewContainer').style.display = 'block';
-            document.getElementById('imgChip').src = currentImageBase64;
-        };
-        reader.readAsDataURL(file);
-    }
-    
-    function removeImage() {
-        currentImageBase64 = null;
-        document.getElementById('imagePreviewContainer').style.display = 'none';
-        document.getElementById('imageInput').value = '';
-    }
-
-    // 🛑 CAMERA GUI ENGINE 🛑
-    let camStream = null; 
-    let camFacing = "environment"; 
-    let isFlash = false;
-
+    // 🛑 NEW CAMERA GUI ENGINE 🛑
+    let camStream = null; let camFacing = "environment"; let isFlash = false;
     async function openCamera() { 
+        closePlusMenu();
         document.getElementById('cameraModal').style.display = 'flex'; 
         try { 
             if(camStream) camStream.getTracks().forEach(t => t.stop()); 
             camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
             document.getElementById("cameraVideo").srcObject = camStream; 
-            
             setTimeout(async () => { 
                 const track = camStream.getVideoTracks()[0]; 
                 if (track && track.getCapabilities && track.getCapabilities().torch && camFacing === "environment") { 
@@ -713,7 +785,6 @@
             document.getElementById('cameraModal').style.display = 'none'; 
         } 
     }
-
     function closeCamera() { 
         document.getElementById('cameraModal').style.display = 'none'; 
         if(camStream) {
@@ -723,39 +794,17 @@
         }
         isFlash = false; 
     }
-
-    async function switchCamera() { 
-        camFacing = camFacing === "environment" ? "user" : "environment"; 
-        await openCamera(); 
-    }
-
+    async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
     async function toggleFlash() { 
-        if(!camStream) return; 
-        const track = camStream.getVideoTracks()[0]; 
-        try {
-            if(track && track.getCapabilities && track.getCapabilities().torch) { 
-                isFlash = !isFlash; 
-                await track.applyConstraints({ advanced: [{ torch: isFlash }] }); 
-                document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; 
-            } 
-        } catch(err) {
-            console.log("Flash not supported on this device.");
-        }
+        if(!camStream) return; const track = camStream.getVideoTracks()[0]; 
+        try { if(track && track.getCapabilities && track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } } catch(err) {}
     }
-    
     function takePhoto() { 
-        const v = document.getElementById("cameraVideo");
-        const c = document.getElementById("captureCanvas"); 
-        
-        c.width = v.videoWidth; 
-        c.height = v.videoHeight; 
-        c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); 
-        
+        const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas"); 
+        c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); 
         currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
-        
         document.getElementById('imagePreviewContainer').style.display = 'block';
         document.getElementById('imgChip').src = currentImageBase64;
-        
         closeCamera(); 
     }
 
@@ -766,7 +815,7 @@
         const text = inputEl.value.trim();
         const img = currentImageBase64;
 
-        if(!text && !img) return;
+        if(!text && !img && !documentMemory && webUrls.length === 0) return;
 
         const msgDiv = document.createElement("div");
         msgDiv.className = "msg user";
@@ -774,6 +823,9 @@
         msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
         
+        const c = document.getElementById('chatHistory');
+        c.scrollTop = c.scrollHeight;
+
         inputEl.value = "";
         removeImage(); 
 
@@ -783,8 +835,10 @@
         loadDiv.id = loadingId;
         loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
+        c.scrollTop = c.scrollHeight; 
 
-        const sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
+        // 🛑 AI KNOWLEDGE INJECTION 🛑
+        let sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
 1. DEFAULT LANGUAGE: You MUST respond entirely in HINDI (Devanagari script) by default.
 2. ENGLISH OVERRIDE: IF AND ONLY IF the user explicitly asks you to speak, talk, answer, or explain in English, you must switch and respond in ENGLISH. Otherwise, stick to Hindi.
 3. Use **bolding** for important terms.
@@ -793,9 +847,17 @@
 6. IF THE CHAPTER IS NOT MATH OR SCIENCE THEN DONT GIVE ANY MATH FORMULA OR MATH UNTIL USER SAYS.
 Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}.`;
 
+        if (documentMemory) {
+            sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY / UPLOADED DOCUMENT ---\nRead this carefully to answer the user's questions:\n${documentMemory.substring(0, 40000)}\n--- END CONTENT ---`;
+        }
+        
+        if (webUrls.length > 0) {
+            sysPrompt += `\n\n--- REFERENCE URLs ---\nThe user attached these links. Use your internal knowledge or web parsing capabilities to reference them if needed:\n${webUrls.join('\n')}`;
+        }
+
         const payload = img ? 
             { imageBase64: img, userPrompt: text || "चित्र का विश्लेषण करें।", systemPrompt: sysPrompt } : 
-            { userPrompt: text, systemPrompt: sysPrompt };
+            { userPrompt: text || "Please analyze the loaded document/chapter.", systemPrompt: sysPrompt };
         
         try {
             const endpoint = img ? "/api/gemini-vision" : "/api/gemini-text";
@@ -827,8 +889,8 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 
         if(typewrite) {
-            const frameTime = 30; // 30ms per frame
-            const totalFrames = 5000 / frameTime; // 5000ms = 5 seconds
+            const frameTime = 30; 
+            const totalFrames = 5000 / frameTime; 
             const charsPerFrame = Math.max(1, Math.ceil(formattedText.length / totalFrames));
             
             let currentHTML = "";
