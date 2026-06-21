@@ -212,7 +212,7 @@
     </div>
 
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
-        <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+        <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover"></video>
         <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100;" onclick="closeCamera()">✕</button>
         <div style="position:absolute; bottom:40px; left:0; width:100%; display:flex; justify-content:center; align-items:center; gap:40px; z-index:100;">
             <button id="flashBtn" onclick="toggleFlash()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer;">💡</button>
@@ -223,11 +223,10 @@
     </div>
 
     <script>
-// --- 1. LOCALFORAGE STATE RESTORATION ---
-        localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' }); // FIXED: Matches main.js exactly
+        // --- 1. LOCALFORAGE STATE RESTORATION ---
+        localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
         
         let appHistory = [];
-        // FIXED: Force the ID into a Number so the database can append to it properly
         let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -236,37 +235,23 @@
                 if(data) {
                     appHistory = data;
                     const restoreId = new URLSearchParams(window.location.search).get('restore');
-                    if(restoreId) restoreSession(restoreId);
+                    if(restoreId) {
+                        restoreSession(Number(restoreId));
+                    }
                 }
             });
         });
 
-        // FIXED: Added localStorage fallback to sync with the rest of the app
-        function saveHistorySafe() { 
-            if (typeof localforage !== 'undefined') { 
-                localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); 
-            }
-            try { 
-                let lightHistory = appHistory.slice(0, 30).map(item => { 
-                    let cloned = { ...item }; 
-                    cloned.images = null; cloned.image = null; 
-                    if (cloned.interactions) { 
-                        cloned.interactions = cloned.interactions.map(i => ({ ...i, images: null, image: null })); 
-                    } 
-                    return cloned; 
-                }); 
-                localStorage.setItem('aiHistory', JSON.stringify(lightHistory)); 
-            } catch(e) { 
-                try { localStorage.setItem('aiHistory', JSON.stringify(appHistory.slice(0, 5).map(i => ({...i, images: null, image: null})))); } catch(err) {} 
-            }
-        }
+        function saveHistorySafe() { localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); }
 
         function restoreSession(id) {
-            const session = appHistory.find(s => s.id == id);
+            let numericId = Number(id); 
+            const session = appHistory.find(s => s.id === numericId || s.id == id);
             if(!session) return;
-            currentSessionId = id;
+            currentSessionId = numericId || id;
+            
             const chatBox = document.getElementById("searchChatHistory");
-            chatBox.innerHTML = '';
+            chatBox.innerHTML = ''; // This safely removes the Welcome Message
             
             session.interactions.forEach(inter => {
                 let userImgs = (inter.images || []).map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
@@ -352,7 +337,17 @@
         }
 
         function clearSearchChat() { 
-            document.getElementById("searchChatHistory").innerHTML = document.getElementById("welcomeMessage").outerHTML; 
+            document.getElementById("searchChatHistory").innerHTML = `
+            <div class="chat-msg chat-ai" id="welcomeMessage">
+                <div class="bubble" style="border: 2px solid var(--primary);">
+                    <div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div>
+                    <b>Welcome to AI PRO SUITE!</b><br><br>
+                    • <b>Chat & Code:</b> Ask anything. I write code in runable Black Boxes.<br>
+                    • <b>Universal Uploads:</b> Click <b>+</b> for PDF, PPT, Word, Excel, Python, or up to 20 images.<br>
+                    • <b>Create Notes:</b> Generate structured book/chapter notes via the + menu.<br>
+                    • <b>Photo Gen Mode:</b> Generate images directly via Gemini (Max 5/day).
+                </div>
+            </div>`; 
             documentMemory = ""; uploadedImagesList = []; updateImageUI(); clearAttachment(); 
             document.getElementById('settingsModal').style.display = 'none'; 
             currentSessionId = Date.now(); 
@@ -424,7 +419,6 @@
         }
 
         // --- 9. AI EXECUTION & LIMITS ---
-// --- 9. AI EXECUTION & LIMITS ---
         function checkDailyImageLimit() {
             const today = new Date().toDateString();
             let usage = JSON.parse(localStorage.getItem('geminiImgUsage') || '{"count": 0, "date": ""}');
@@ -446,16 +440,14 @@
 
             if (isPhotoMode && !checkDailyImageLimit()) return;
 
-isProcessing = true; document.getElementById("sendSearchBtn").innerHTML = "⏳";
+            isProcessing = true; document.getElementById("sendSearchBtn").innerHTML = "⏳";
             const chatBox = document.getElementById("searchChatHistory"); 
             
-            // 🛑 BUG FIX: Safely check if the welcome message exists before hiding it to prevent crashes
-            const welcomeMsg = document.getElementById("welcomeMessage");
-            if (welcomeMsg) welcomeMsg.style.display = "none";
-            
-            // 🛑 BUG FIX: Safely check if the welcome message exists before hiding it to prevent crashes
-            const welcomeMsg = document.getElementById("welcomeMessage");
-            if (welcomeMsg) welcomeMsg.style.display = "none";
+            // 🛑 BUG FIX: Safely checks for Welcome Message without declaring any new variables
+            if (document.getElementById("welcomeMessage")) {
+                document.getElementById("welcomeMessage").style.display = "none";
+            }
+
             let currentImagesToSave = [...uploadedImagesList];
             let userImgs = uploadedImagesList.map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
             let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
@@ -494,7 +486,7 @@ isProcessing = true; document.getElementById("sendSearchBtn").innerHTML = "⏳";
         // ==========================================
         // 🚀 ENHANCED IMAGE GENERATION UI/UX FLOW
         // ==========================================
-async function handlePhotoGeneration(promptText, loadId, savedImages) {
+        async function handlePhotoGeneration(promptText, loadId, savedImages) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">OPTIMIZING PROMPTS...</div><div class="data-bar"></div></div>`;
 
             try {
