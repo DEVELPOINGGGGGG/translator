@@ -73,6 +73,7 @@
             max-width: 85%; padding: 16px 20px; border-radius: 20px;
             line-height: 1.7; font-size: 15px; position: relative;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); word-wrap: break-word;
+            padding-right: 35px; /* Added space for the 3-dots menu */
         }
         .user .bubble { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-bottom-right-radius: 4px; }
         .ai .bubble { background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 4px; color: var(--text-main); }
@@ -154,6 +155,17 @@
             scrollbar-width: none; /* Firefox */
         }
         .appTitle::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        
+        /* SPINNER FOR NEW FULL SCREEN LOADER */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MESSAGE 3-DOT MENU STYLES */
+        .msg-menu-wrap { position: absolute; top: 12px; right: 10px; z-index: 10; }
+        .msg-menu-btn { background: transparent; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 18px; padding: 0 5px; }
+        .msg-menu-btn:hover { opacity: 1; }
+        .msg-dropdown { display: none; position: absolute; right: 0; top: 25px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); overflow: hidden; min-width: 100px; z-index: 1000; }
+        .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
+        .msg-dropdown button:hover { background: rgba(239,68,68,0.1); }
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
@@ -162,7 +174,6 @@
 
 <div class="topbar" id="appTopbar" style="position: absolute; width: 100%; z-index: 100;">
     <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-    <!-- 🛑 SCROLLABLE TITLE -->
     <div class="appTitle">📚 Book Deep Study</div>
     <div style="display:flex; gap:10px;">
         <button class="btn btn-primary" id="shareBtn" style="padding: 8px 12px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
@@ -178,6 +189,13 @@
   <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
   <button onclick="window.location.href='search.html'">🔎 Deep Search</button>
   <button onclick="window.location.href='history.html'">🕒 History</button>
+</div>
+
+<!-- 🛑 NEW FULL SCREEN LOADING OVERLAY 🛑 -->
+<div id="loadingPage" style="display:none; position:fixed; inset:0; background:var(--bg-base); z-index:99999; flex-direction:column; justify-content:center; align-items:center;">
+    <div style="border: 6px solid rgba(255,255,255,0.1); border-top: 6px solid var(--primary); border-radius: 50%; width: 70px; height: 70px; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
+    <h2 style="color: white; font-size: 24px; margin-bottom: 10px; font-weight: 800;">Reading Book...</h2>
+    <p style="color: var(--text-muted); font-size: 14px; text-align: center; max-width: 80%;">Please wait while the AI memorizes the entire chapter.</p>
 </div>
 
 <div id="wizardPage">
@@ -266,7 +284,6 @@
             </select>
             
             <label style="margin-top:10px;">Or Type Chapter Manually (Hinglish Supported):</label>
-            <!-- 🛑 MIC INPUT FOR MANUAL CHAPTER -->
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
                 <input type="text" id="manualChapter" class="standard" placeholder="e.g. Motion / गति" style="margin-bottom: 0;">
                 <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="startChapterVoice()">🎤</button>
@@ -314,7 +331,6 @@
         
         <div class="chat-input-wrapper">
             <button id="plusBtn" class="icon-btn" onclick="togglePlusMenu(event)">➕</button>
-            <!-- 🛑 MAIN MIC BUTTON -->
             <button id="micBtn" class="icon-btn" onclick="openVoiceModal()" style="transition: 0.3s;">🎤</button>
             
             <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
@@ -322,7 +338,7 @@
         </div>
     </div>
 
-    <!-- 🛑 Voice Input Modal -->
+    <!-- Voice Input Modal -->
     <div id="voiceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 350px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🎤 Speak to Type</h3>
@@ -335,7 +351,7 @@
         </div>
     </div>
 
-    <!-- 🛑 Message Selection Bottom Bar (WITH PDF DOWNLOAD) -->
+    <!-- Message Selection Bottom Bar (WITH PDF DOWNLOAD) -->
     <div id="shareActionArea" style="display:none; position:absolute; bottom:0; left:0; width:100%; padding:15px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:2px solid #25D366; z-index:100; flex-direction:column; gap:10px; box-sizing:border-box;">
         <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:10px;">
@@ -345,7 +361,7 @@
         </div>
     </div>
 
-    <!-- 🛑 Secure WhatsApp Modal -->
+    <!-- Secure WhatsApp Modal -->
     <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid #25D366; max-width: 400px; width: 90%; text-align: center; position:relative;">
             <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
@@ -358,7 +374,7 @@
         </div>
     </div>
 
-    <!-- 🛑 Web Import Modal -->
+    <!-- Web Import Modal -->
     <div id="webImportModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:1px solid var(--primary); max-width: 400px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
@@ -391,24 +407,50 @@
         const a = !s.classList.contains("active");
         s.classList.toggle("active", a); o.classList.toggle("active", a);
     }
-    if (document.getElementById("overlay")) {
-        document.getElementById("overlay").onclick = toggleSidebar;
+
+    // 🛑 3-DOTS DELETE MENU LOGIC 🛑
+    function toggleMsgMenu(btn, e) {
+        e.stopPropagation();
+        let dropdown = btn.nextElementSibling;
+        let isVis = dropdown.style.display === 'block';
+        document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
+        dropdown.style.display = isVis ? 'none' : 'block';
     }
+
+    function deleteMsg(btn, e) {
+        e.stopPropagation();
+        if(confirm("Are you sure you want to delete this message?")) {
+            let msg = btn.closest('.msg');
+            if(msg) {
+                msg.remove();
+                saveHistory();
+            }
+        }
+    }
+
+    const msgMenuHTML = `<div class="msg-menu-wrap"><button class="msg-menu-btn" onclick="toggleMsgMenu(this, event)">⋮</button><div class="msg-dropdown"><button onclick="deleteMsg(this, event)">🗑️ Delete</button></div></div>`;
+
+    window.addEventListener('click', function(e) { 
+        if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); 
+        if (!e.target.closest('.msg-menu-wrap')) {
+            document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
+        }
+        if (document.getElementById("overlay").contains(e.target)) toggleSidebar();
+    });
 
     let selectedData = {};
     let currentImageBase64 = null;
-    let documentMemory = ""; // Stores extracted PDF or Auto-Fetched Chapter text
-    let webUrls = []; // Stores imported URLs
+    let documentMemory = ""; 
+    let webUrls = []; 
     let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
 
-    // 🛑 MANUAL CHAPTER VOICE ENGINE (2 SEC TIMEOUT) 🛑
     let manualVoiceTimeout;
     function startChapterVoice() {
         if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice input not supported by this browser."); 
         
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
         const rec = new SpeechRec(); 
-        rec.lang = 'hi-IN'; // Default to Hindi to capture Hinglish well
+        rec.lang = 'hi-IN'; 
         
         const micBtn = document.getElementById("manualChapterMicBtn");
         const input = document.getElementById("manualChapter");
@@ -425,8 +467,6 @@
             clearTimeout(manualVoiceTimeout);
             let transcript = e.results[0][0].transcript;
             input.value = transcript; 
-            
-            // Auto stop after 2 seconds of silence
             manualVoiceTimeout = setTimeout(() => { rec.stop(); }, 2000);
         }; 
         
@@ -440,7 +480,6 @@
         rec.start(); 
     }
 
-    // 🛑 CHAT VOICE ENGINE 🛑
     function openVoiceModal() {
         closePlusMenu();
         document.getElementById('voiceModal').style.display = 'flex';
@@ -476,16 +515,11 @@
         rec.start(); 
     }
 
-    // 🛑 INBUILT CHAPTER MEMORY FETCHER 🛑
     async function fetchChapterContext() {
-        document.getElementById("attachmentChip").style.display = "flex";
-        document.getElementById("attachName").innerText = "⏳ Fetching your chapter details...";
-        
-        // Subject specific language logic
-        let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-        let targetLang = isEnglishSub ? 'English' : 'Hindi (Devanagari)';
-
         try {
+            let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
+            let targetLang = isEnglishSub ? 'English' : 'Hindi (Devanagari)';
+            
             const sysPrompt = `You are a backend textbook database. For the given Subject, Class, and Chapter, output the EXACT NCERT/Standard Textbook questions, exercises (e.g., Exercise A, B, C), and their solutions, along with a detailed chapter summary. This is critical for the user to ask 'Solve C' and get the right answer. Output strictly in ${targetLang}.`;
             const userPrmpt = `Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}, Publisher: ${selectedData.publisher}`;
 
@@ -497,17 +531,14 @@
             
             if(data.text) {
                 documentMemory = data.text;
+                document.getElementById("attachmentChip").style.display = "flex";
                 document.getElementById("attachName").innerText = "📚 Inbuilt Chapter Details Fetched!";
-            } else {
-                document.getElementById("attachmentChip").style.display = "none";
             }
         } catch(e) {
-            console.error("Failed to fetch chapter:", e);
-            document.getElementById("attachmentChip").style.display = "none";
+            console.error("Failed to fetch chapter details in background:", e);
         }
     }
 
-    // 🛑 PLUS MENU LOGIC 🛑
     function togglePlusMenu(e) { 
         e.stopPropagation(); 
         const m = document.getElementById("plusMenu"); 
@@ -516,11 +547,7 @@
     function closePlusMenu() { 
         document.getElementById("plusMenu").style.display = "none"; 
     }
-    window.addEventListener('click', function(e) { 
-        if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); 
-    });
 
-    // 🛑 WEB IMPORT LOGIC 🛑
     function openWebImport() {
         closePlusMenu();
         document.getElementById('webImportModal').style.display = 'flex';
@@ -533,18 +560,15 @@
             alert("⚠️ Maximum 10 URLs allowed at a time! Truncating list.");
             urls = urls.slice(0, 10);
         }
-        
         if (urls.length > 0) {
             webUrls = urls;
             document.getElementById("attachmentChip").style.display = "flex";
             document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`;
         }
-        
         document.getElementById('webImportModal').style.display = 'none';
         document.getElementById('webUrlInput').value = '';
     }
 
-    // 🛑 FILE UPLOAD LOGIC (IMAGES & PDFS) 🛑
     function handleFileSelect(event) {
         closePlusMenu();
         const file = event.target.files[0];
@@ -598,9 +622,6 @@
         document.getElementById("attachmentChip").style.display = "none";
     }
 
-    // 🛑 WHATSAPP SELECTION & PDF SHARING ENGINE 🛑
-    let isShareMode = false;
-
     function toggleShareMode() {
         isShareMode = true;
         document.querySelector('.chat-input-area').style.display = 'none';
@@ -633,7 +654,6 @@
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
-    // 🛑 NEW: Convert Selected to PDF 🛑
     function downloadSelectedAsPDF() {
         let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
         if(selectedNodes.length === 0) return alert("Please tap at least one message to save!");
@@ -641,6 +661,8 @@
         let content = "<h2 style='text-align:center; color:#3b82f6;'>📚 Book Deep Study - Notes</h2><hr>";
         selectedNodes.forEach(n => {
             let clone = n.cloneNode(true);
+            let menuWrap = clone.querySelector('.msg-menu-wrap');
+            if(menuWrap) menuWrap.remove();
             content += `<div style="margin-bottom:20px; padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9fafb;">${clone.innerHTML}</div>`;
         });
 
@@ -660,6 +682,8 @@
 
         selectedNodes.forEach(node => {
             let clone = node.cloneNode(true);
+            let menuWrap = clone.querySelector('.msg-menu-wrap');
+            if(menuWrap) menuWrap.remove();
             let htmlStr = clone.innerHTML;
             htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
             clone.innerHTML = htmlStr;
@@ -704,13 +728,11 @@
         btn.disabled = false;
     }
 
-    // 🛑 FLAWLESS RESTORE & HISTORY MANAGEMENT 🛑
     window.onload = function() {
         let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
         let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
         
         if(urlRestoreId) {
-            // Restore from History page
             let session = savedSessions.find(s => s.id == urlRestoreId);
             if(session) {
                 selectedData = session.data;
@@ -724,7 +746,6 @@
                 setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTop = c.scrollHeight; }, 100);
             }
         } else {
-            // Normal load: Check active session
             let activeSession = localStorage.getItem('bookChatHistory_VUltimateAI');
             let activeSettings = localStorage.getItem('bookSettings_VUltimateAI');
             if(activeSession && activeSettings) {
@@ -745,7 +766,7 @@
             localStorage.removeItem('bookChatHistory_VUltimateAI');
             document.getElementById('chatHistory').innerHTML = "";
             clearAttachment(); 
-            startConversation(true); // true = force new session
+            startConversation(true); 
         }
     }
 
@@ -776,7 +797,6 @@
         }
     }
 
-    // 🛑 100% DYNAMIC AI CHAPTER GENERATOR (LANGUAGE AWARE) 🛑
     async function triggerChapterFetch() {
         let pub = document.getElementById('publisherSelect').value;
         let sub = document.getElementById('subjectSelect').value;
@@ -831,11 +851,10 @@
         sendMessage();
     }
 
-    function startConversation(forceNew = false) {
+    async function startConversation(forceNew = false) {
         let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
         let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
         
-        // Save old conversation to history array if subject/chapter changed
         if(!forceNew && oldSettingsStr && oldHistory) {
             let oldSettings = JSON.parse(oldSettingsStr);
             if(oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) {
@@ -849,21 +868,26 @@
                 if(savedArray.length > 20) savedArray.pop();
                 localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedArray));
                 
-                // Clear the active board for the new chapter
                 document.getElementById('chatHistory').innerHTML = "";
                 currentSessionId = Date.now(); 
             }
         }
 
-        document.getElementById('wizardPage').style.display = 'none';
-        document.getElementById('chatPage').style.display = 'flex';
-        document.getElementById('settingsBtn').style.display = 'block';
-        document.getElementById('clearBtn').style.display = 'block';
-        document.getElementById('shareBtn').style.display = 'block';
-        
-        localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
-
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
+            
+            document.getElementById('wizardPage').style.display = 'none';
+            document.getElementById('loadingPage').style.display = 'flex';
+            
+            await fetchChapterContext();
+            
+            document.getElementById('loadingPage').style.display = 'none';
+            document.getElementById('chatPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block';
+            document.getElementById('clearBtn').style.display = 'block';
+            document.getElementById('shareBtn').style.display = 'block';
+
+            localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
+
             let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
             
             let initialMessageHTML = isEnglishSub ? 
@@ -889,8 +913,12 @@
             
             addAiMessage(initialMessageHTML, false);
             
-            // 🛑 TRIGGER INBUILT CHAPTER MEMORY DOWNLOAD 🛑
-            fetchChapterContext();
+        } else {
+            document.getElementById('wizardPage').style.display = 'none';
+            document.getElementById('chatPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block';
+            document.getElementById('clearBtn').style.display = 'block';
+            document.getElementById('shareBtn').style.display = 'block';
         }
     }
 
@@ -903,7 +931,6 @@
         nextStep(1); 
     }
 
-    // 🛑 NEW CAMERA GUI ENGINE 🛑
     let camStream = null; let camFacing = "environment"; let isFlash = false;
     async function openCamera() { 
         closePlusMenu();
@@ -963,7 +990,7 @@
         const msgDiv = document.createElement("div");
         msgDiv.className = "msg user";
         let imgHtml = img ? `<img src="${img}"><br>` : "";
-        msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>`;
+        msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}${msgMenuHTML}</div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
         
         const c = document.getElementById('chatHistory');
@@ -980,7 +1007,21 @@
         document.getElementById('chatHistory').appendChild(loadDiv);
         c.scrollTop = c.scrollHeight; 
 
-        // 🛑 AI KNOWLEDGE INJECTION & LANGUAGE LOGIC 🛑
+        // 🛑 EXTRACT CONVERSATION HISTORY FOR MEMORY 🛑
+        let recentHistory = "";
+        let chatNodes = document.querySelectorAll('#chatHistory .msg');
+        let startIdx = Math.max(0, chatNodes.length - 8); 
+        for(let i = startIdx; i < chatNodes.length; i++) {
+            let m = chatNodes[i];
+            if(m.id === loadingId) continue;
+            let role = m.classList.contains('user') ? "User" : "AI";
+            let clone = m.cloneNode(true);
+            let menuWrap = clone.querySelector('.msg-menu-wrap');
+            if(menuWrap) menuWrap.remove();
+            let msgText = clone.innerText.trim().replace(/\s+/g, ' ');
+            if(msgText) recentHistory += `${role}: ${msgText}\n`;
+        }
+
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
         let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
         
@@ -991,6 +1032,10 @@
 4. TEXTBOOK QUESTIONS: If asked to solve a specific exercise (like "Solve C"), refer strictly to the standard textbook exercises for this chapter. If you don't have the exact text, solve it using the provided document memory.
 5. Use **bolding** for important terms and double spacing (\\n\\n) between paragraphs.
 6. IF THE SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`;
+
+        if(recentHistory) {
+            sysPrompt += `\n\n--- RECENT CONVERSATION HISTORY ---\n${recentHistory}\n--- END HISTORY ---\nRemember this context for follow-up questions.`;
+        }
 
         if (documentMemory) {
             sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY / UPLOADED DOCUMENT ---\nRead this carefully to answer the user's questions accurately:\n${documentMemory.substring(0, 40000)}\n--- END CONTENT ---`;
@@ -1017,12 +1062,15 @@
             await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
 
         } catch(err) {
-            document.getElementById(loadingId).querySelector('.bubble').innerHTML = "❌ <b style='color:#ef4444;'>Error:</b> " + err.message;
+            let errorMsg = err.message;
+            if(errorMsg.includes("Failed to fetch")) {
+                errorMsg = "Failed to connect to the server! Your backend Node.js server is turned off. Please start the server.";
+            }
+            document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
             saveHistory();
         }
     }
 
-    // 🛑 EXACT 5-SECOND TYPEWRITER (LAG-FREE BATCHING, NO SCROLLING) 🛑
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div");
         msgDiv.className = "msg ai";
@@ -1067,6 +1115,9 @@
         } else {
             bubble.innerHTML = formattedText.replace(/\n/g, '<br>');
         }
+
+        // Add 3 Dots Menu
+        bubble.insertAdjacentHTML('beforeend', msgMenuHTML);
 
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
         saveHistory();
