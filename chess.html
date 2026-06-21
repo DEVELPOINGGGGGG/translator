@@ -9,7 +9,7 @@
 <style>
 /* 1. SCROLLING AND LAYOUT FIXES */
 body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0f172a 45%,#020617 100%); color: #f8fafc; font-family: Poppins,sans-serif; overflow-y: auto !important; overflow-x: hidden; margin: 0; padding-bottom: 50px; }
-.chess-wrap { max-width: 1000px; margin: 85px auto 30px; padding: 20px; box-sizing: border-box; }
+.chess-wrap { max-width: 1100px; margin: 85px auto 30px; padding: 20px; box-sizing: border-box; }
 .hero { background: rgba(15,23,42,.78); border: 1px solid rgba(255,255,255,.12); border-radius: 28px; padding: 30px; box-shadow: 0 25px 80px rgba(0,0,0,.4); text-align: center; }
 .hero h1 { font-size: clamp(30px,6vw,58px); margin: 0; background: linear-gradient(90deg,#60a5fa,#c084fc,#facc15); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); gap: 18px; margin-top: 24px; }
@@ -20,56 +20,77 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 .danger { background: #ef4444; box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
 .green { background: #16a34a; box-shadow: 0 5px 15px rgba(22,163,74,0.4); }
 
-/* 2. BOARD SIZING & STRETCHING FIXES */
-.game { display: none; grid-template-columns: minmax(350px,550px) 1fr; gap: 20px; align-items: start; }
-.board-container { width: 100%; display: flex; justify-content: center; }
-.board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; max-width: 550px; aspect-ratio: 1; border: 10px solid #3b2f21; border-radius: 12px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.6); background: #3b2f21; }
+/* 2. BOARD SIZING & ROTATION */
+.game { display: none; grid-template-columns: minmax(350px,580px) 1fr; gap: 25px; align-items: start; }
+.board-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.board-wrapper { position: relative; padding: 15px; background: #2a2015; border-radius: 12px; box-shadow: 0 30px 70px rgba(0,0,0,.6); width: 100%; max-width: 580px; box-sizing: border-box;}
+.board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1; border: 4px solid #1a140d; border-radius: 4px; overflow: hidden; transition: transform 0.6s ease; }
+.flipped { transform: rotate(180deg); }
+.flipped .sq span { transform: rotate(180deg); display: inline-block; }
+
 .sq { display: flex; align-items: center; justify-content: center; font-size: clamp(28px, 6vw, 45px); cursor: pointer; user-select: none; position: relative; line-height: 1; }
 .light { background: #f0d9b5; }
 .dark { background: #b58863; }
 
 /* 3. HIGH-CONTRAST PIECE COLORS */
-.piece-w { color: #ffffff !important; text-shadow: 0 3px 5px rgba(0,0,0,0.8), 0 -1px 2px #000, 1px 0 2px #000, -1px 0 2px #000 !important; }
-.piece-b { color: #000000 !important; text-shadow: 0 2px 5px rgba(255,255,255,0.8), 0 -1px 2px #fff, 1px 0 2px #fff, -1px 0 2px #fff !important; }
+.piece-w { color: #ffffff !important; text-shadow: 0 4px 6px rgba(0,0,0,0.9), 0 -1px 2px #000, 1px 0 2px #000, -1px 0 2px #000 !important; }
+.piece-b { color: #000000 !important; text-shadow: 0 3px 6px rgba(255,255,255,0.7), 0 -1px 2px #fff, 1px 0 2px #fff, -1px 0 2px #fff !important; }
 
-/* HIGHLIGHTS */
-.selected { outline: 4px solid #38bdf8; outline-offset: -4px; z-index: 2;}
-.hint:after { content: ""; width: 28%; height: 28%; border-radius: 50%; background: rgba(34,197,94,.65); position: absolute; }
-.capture:after { content: ""; inset: 8%; border: 5px solid rgba(239,68,68,.75); border-radius: 50%; position: absolute; }
+/* HIGHLIGHTS & HUD */
+.selected { outline: 5px solid #38bdf8; outline-offset: -5px; z-index: 2;}
+.hint:after { content: ""; width: 28%; height: 28%; border-radius: 50%; background: rgba(34,197,94,.75); position: absolute; }
+.capture:after { content: ""; inset: 8%; border: 6px solid rgba(239,68,68,.85); border-radius: 50%; position: absolute; }
 .last-move { background: rgba(250, 204, 21, 0.5) !important; }
 .in-check { background: radial-gradient(circle, rgba(239, 68, 68, 0.9) 0%, transparent 70%) !important; }
-.status { font-weight: 800; color: #facc15; margin-bottom: 15px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;}
+.status { font-weight: 800; color: #facc15; margin-bottom: 10px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;}
 .piece-tray { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 15px;}
 .tray-piece { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; font-size: 30px; padding: 8px; cursor: pointer; transition: 0.2s; text-align:center; }
 .tray-piece.active { background: #2563eb; transform: scale(1.1); border-color:#60a5fa;}
 .hidden { display: none !important; }
+
+/* Move History Logger */
+.history-box { height: 130px; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; font-family: monospace; font-size: 13px; color: #94a3b8; display: grid; grid-template-columns: 30px 1fr 1fr; gap: 5px; align-content: start; }
+.history-row { display: contents; }
+.history-num { color: #475569; font-weight: bold; }
+.history-move { color: #cbd5e1; }
+.graveyard { min-height: 35px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px 10px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 22px; width: 100%; box-sizing: border-box; margin-bottom: 10px;}
 
 /* Modals */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
 .modal-box { background: #0f172a; border: 2px solid #3b82f6; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
 .modal-box h2 { margin-top: 0; font-size: 28px; background: linear-gradient(90deg,#60a5fa,#c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
+/* Coordinates */
+.coords-x { display: flex; width: 100%; justify-content: space-around; font-size: 12px; color: #a3a3a3; font-weight: bold; margin-top: 5px;}
+.coords-y { position: absolute; left: 2px; top: 15px; height: calc(100% - 30px); display: flex; flex-direction: column; justify-content: space-around; font-size: 12px; color: #a3a3a3; font-weight: bold; }
+
 @media(max-width:800px) { .game { grid-template-columns: 1fr; } .chess-wrap { padding: 10px; margin-top: 70px;} }
 </style>
 </head>
 <body>
-<div class="overlay" id="overlay"></div><div class="topbar"><div class="menuBtn" onclick="toggleSidebar()">☰</div><div class="appTitle">Chess AI</div></div>
-<div class="sidebar" id="sidebar"><button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button><button onclick="location.href='index.html'">🏠 Dashboard</button><button onclick="location.href='search.html'">🔎 Deep Search</button><button onclick="location.href='quiz.html'">📝 Take a Quiz!</button><button onclick="location.href='chess.html'">♟️ Chess AI</button><button onclick="location.href='translator.html'">🎙️ Text Translator</button><button onclick="location.href='history.html'">🕒 History</button></div>
+<div class="overlay" id="overlay"></div><div class="topbar"><div class="menuBtn" onclick="toggleSidebar()">☰</div><div class="appTitle">Chess AI Pro</div></div>
+<div class="sidebar" id="sidebar"><button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button><button onclick="location.href='index.html'">🏠 Dashboard</button><button onclick="location.href='search.html'">🔎 Deep Search</button><button onclick="location.href='quiz.html'">📝 Take a Quiz!</button><button onclick="location.href='chess.html'" style="border-left:4px solid #3b82f6;">♟️ Chess AI Pro</button><button onclick="location.href='translator.html'">🎙️ Text Translator</button><button onclick="location.href='history.html'">🕒 History</button></div>
 
 <main class="chess-wrap">
     <section id="home" class="hero">
-        <h1>♟️ Play Chess With AI</h1>
-        <p style="color:#cbd5e1; font-size: 15px;">Choose AI level 1-100, start normal chess, or build a custom position with the organizer.</p>
+        <h1>♟️ Chess AI Pro</h1>
+        <p style="color:#cbd5e1; font-size: 15px;">10 New Features! Pick your side, choose AI level, or build a custom board.</p>
         <div class="menu-grid">
             <div class="panel">
-                <h2>Play with AI</h2>
+                <h2>Standard Match</h2>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <select id="playerColor" style="width:100%; padding:10px; border-radius:8px; background:rgba(0,0,0,0.4); color:white; border:1px solid #3b82f6; font-weight:bold; font-size:14px;">
+                        <option value="w">⬜ Play as White</option>
+                        <option value="b">⬛ Play as Black</option>
+                    </select>
+                </div>
                 <label>AI Level: <b id="lvlText" style="color:#facc15;">35</b> / 100</label>
                 <input id="level" type="range" min="1" max="100" value="35" oninput="lvlText.textContent=this.value" style="width:100%;accent-color:#a855f7; margin: 15px 0;">
-                <button class="big-btn" style="width:100%;" onclick="startGame(false)">▶ Start Game</button>
+                <button class="big-btn" style="width:100%;" onclick="startGame(false)">▶ Start Standard Game</button>
             </div>
             <div class="panel">
                 <h2>Custom Organizer</h2>
-                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Place kings, queens, pawns and all pieces yourself, then start versus AI.</p>
+                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Place kings, queens, and pawns yourself to practice specific checkmates!</p>
                 <button class="big-btn green" style="width:100%;" onclick="openBuilder()">🛠️ Build Chess Board</button>
             </div>
         </div>
@@ -77,23 +98,42 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 
     <section id="game" class="game">
         <div class="board-container">
-            <div id="board" class="board"></div>
+            <div id="aiGraveyard" class="graveyard" title="Pieces AI has lost"></div>
+            
+            <div class="board-wrapper">
+                <div class="coords-y" id="coordY"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+                <div id="board" class="board"></div>
+                <div class="coords-x" id="coordX"><span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span></div>
+            </div>
+            
+            <div id="playerGraveyard" class="graveyard" title="Pieces You have lost" style="margin-top:10px; margin-bottom:0;"></div>
         </div>
+
         <aside class="panel" style="display:flex; flex-direction:column; gap:12px;">
-            <div id="status" class="status">Your move</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div id="status" class="status">Your move</div>
+                <button id="muteBtn" onclick="toggleMute()" style="background:transparent; border:none; font-size:20px; cursor:pointer;">🔊</button>
+            </div>
+            
+            <div style="font-size:12px; color:#cbd5e1; display:flex; justify-content:space-between;">
+                <span>Turns: <b id="turnCounter" style="color:white;">0</b></span>
+                <span id="aiThinkingStatus" style="color:#f97316; font-weight:bold; display:none;">🤖 AI is thinking...</span>
+            </div>
+
+            <div id="moveLog" class="history-box"></div>
             
             <div id="builderTools" class="hidden" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:15px;">
                 <h3 style="margin-top:0; color:#38bdf8;">Custom Organizer</h3>
-                <p style="font-size:12px;color:#cbd5e1; margin-bottom:10px;">Uppercase = White (You), Lowercase = Black (AI).<br>Click a piece, then click squares to place it.</p>
+                <p style="font-size:12px;color:#cbd5e1; margin-bottom:10px;">Click a piece, then click squares to place it.<br><b style="color:#ef4444;">You MUST place 1 White King & 1 Black King.</b></p>
                 <div class="piece-tray" id="tray"></div>
-                <button class="small-btn green" style="width:100%; margin-top: 10px;" onclick="openBotLevelModal()">▶ Start Match With AI</button>
+                <button class="small-btn green" style="width:100%; margin-top: 10px;" onclick="validateCustomBoard()">▶ Start Match With AI</button>
             </div>
 
-            <button class="small-btn" id="undoBtn" onclick="undoMove()">⏪ Undo Last Move</button>
-            <button class="small-btn danger" onclick="resetBoard()">🔄 Reset Board</button>
-            <button class="small-btn" style="background:#475569;" onclick="goHome()">🏠 Back to Homescreen</button>
-            
-            <p style="color:#94a3b8;font-size:12px; line-height: 1.6;">Click a piece to highlight legal moves. You play White; AI replies based on the selected level.</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button class="small-btn" id="undoBtn" onclick="undoMove()">⏪ Undo Move</button>
+                <button class="small-btn danger" onclick="confirmReset()">🔄 Reset</button>
+            </div>
+            <button class="small-btn" style="background:#475569;" onclick="confirmHome()">🏠 Home Screen</button>
         </aside>
     </section>
 </main>
@@ -116,17 +156,26 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
         <h2 id="goTitle" style="font-size: 35px;">You Win!</h2>
         <p id="goDesc" style="color:#cbd5e1; font-size:16px; margin-bottom:25px;">Checkmate delivered.</p>
         <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="big-btn green" onclick="resetBoard(); document.getElementById('gameOverModal').classList.add('hidden')">🔄 Play Again</button>
-            <button class="big-btn" onclick="goHome(); document.getElementById('gameOverModal').classList.add('hidden')">🏠 Home Screen</button>
+            <button class="big-btn green" onclick="confirmReset(); document.getElementById('gameOverModal').classList.add('hidden')">🔄 Play Again</button>
+            <button class="big-btn" onclick="confirmHome(); document.getElementById('gameOverModal').classList.add('hidden')">🏠 Home Screen</button>
             <button class="small-btn danger" onclick="document.getElementById('gameOverModal').classList.add('hidden')">✖ View Final Board</button>
         </div>
     </div>
 </div>
 
 <script>
+// --- AUDIO ENGINE ---
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let aCtx = null;
+let isMuted = false;
+
+function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+}
+
 function playTone(f1, f2, type, dur, vol=0.1) {
+    if(isMuted) return;
     if(!aCtx) aCtx = new AudioCtx();
     if(aCtx.state === 'suspended') aCtx.resume();
     let osc = aCtx.createOscillator(), gain = aCtx.createGain();
@@ -147,6 +196,12 @@ const U={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',p:'♟',n:'♞',b:'♝'
 let B=[], turn='w', sel=null, hints=[], aiLevel=35, builder=false, chosen='P', gameOver=false;
 let lastMove = null; 
 let historyStack = [];
+let moveLogArray = [];
+let pColor = 'w';
+let moveCounter = 0;
+
+// Graveyards
+let wCaptured = [], bCaptured = [];
 
 function toggleSidebar() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); } 
 overlay.onclick=toggleSidebar;
@@ -157,7 +212,6 @@ function idx(x,y) { return y*8+x; }
 function color(p) { return p=='.'?null:p===p.toUpperCase()?'w':'b'; }
 function enemy(p,c) { return p!=='.'&&color(p)!==c; }
 
-// ATTACK DETECTION FOR CHECKMATE
 function isAttacked(index, defenderColor, br=B) {
     let attackerColor = defenderColor === 'w' ? 'b' : 'w';
     for(let i=0; i<64; i++) {
@@ -169,18 +223,50 @@ function isAttacked(index, defenderColor, br=B) {
     return false;
 }
 
-// 4. REAL CHECKMATE LEGALITY FILTER
 function filterLegal(rawMoves, fromIdx, br) {
     let myColor = color(br[fromIdx]);
     return rawMoves.filter(toIdx => {
         let tempB = [...br];
-        tempB[toIdx] = tempB[fromIdx]; // Make move
+        tempB[toIdx] = tempB[fromIdx]; 
         tempB[fromIdx] = '.';
         let kChar = myColor === 'w' ? 'K' : 'k';
         let kIdx = tempB.indexOf(kChar);
-        if(kIdx === -1) return false; // King shouldn't disappear
-        return !isAttacked(kIdx, myColor, tempB); // Valid if King is NOT attacked after move
+        if(kIdx === -1) return false; 
+        return !isAttacked(kIdx, myColor, tempB); 
     });
+}
+
+function updateHUD() {
+    document.getElementById('turnCounter').textContent = moveCounter;
+    
+    // Update Graveyards
+    let aiGrave = pColor === 'w' ? wCaptured : bCaptured; // What AI lost
+    let plyGrave = pColor === 'w' ? bCaptured : wCaptured; // What Player lost
+    
+    document.getElementById('aiGraveyard').innerHTML = aiGrave.map(p => `<span class="${p===p.toUpperCase()?'piece-w':'piece-b'}">${U[p]}</span>`).join('');
+    document.getElementById('playerGraveyard').innerHTML = plyGrave.map(p => `<span class="${p===p.toUpperCase()?'piece-w':'piece-b'}">${U[p]}</span>`).join('');
+    
+    // Update Move Log
+    let logHtml = '';
+    for(let i=0; i<moveLogArray.length; i+=2) {
+        let wMove = moveLogArray[i] || '';
+        let bMove = moveLogArray[i+1] || '';
+        logHtml += `<div class="history-row"><span class="history-num">${Math.floor(i/2)+1}.</span><span class="history-move">${wMove}</span><span class="history-move">${bMove}</span></div>`;
+    }
+    const ml = document.getElementById('moveLog');
+    ml.innerHTML = logHtml;
+    ml.scrollTop = ml.scrollHeight;
+}
+
+function getNotation(from, to, p, captured) {
+    const files = "abcdefgh"; const ranks = "87654321";
+    let f1 = files[from%8], r1 = ranks[Math.floor(from/8)];
+    let f2 = files[to%8], r2 = ranks[Math.floor(to/8)];
+    let pieceStr = p.toUpperCase();
+    if(pieceStr === 'P') pieceStr = '';
+    let capMark = captured ? 'x' : '';
+    if(pieceStr === '' && captured) pieceStr = f1; 
+    return `${pieceStr}${capMark}${f2}${r2}`;
 }
 
 function render() {
@@ -210,6 +296,7 @@ function render() {
         s.onclick = () => clickSq(i);
         board.appendChild(s);
     }
+    updateHUD();
 }
 
 function moves(i, br=B) {
@@ -237,12 +324,28 @@ function allLegal(c, br=B) {
 }
 
 function make(a) {
-    let captured = B[a[1]] !== '.';
+    let pMoved = B[a[0]];
+    let pCaptured = B[a[1]];
+    let captured = pCaptured !== '.';
+    
+    // Save to graveyard
+    if(captured) {
+        if(color(pCaptured)==='w') bCaptured.push(pCaptured);
+        else wCaptured.push(pCaptured);
+    }
+    
+    let notation = getNotation(a[0], a[1], pMoved, captured);
+    moveLogArray.push(notation);
+
     B[a[1]] = B[a[0]];
     B[a[0]] = '.';
+    
+    // Promotion
     if(B[a[1]]==='P'&&a[1]<8) B[a[1]]='Q';
     if(B[a[1]]==='p'&&a[1]>55) B[a[1]]='q';
+    
     lastMove = {from: a[0], to: a[1]};
+    if(turn === 'w') moveCounter++;
     
     if(captured) playSound('capture');
     else playSound('move');
@@ -251,39 +354,52 @@ function make(a) {
 function clickSq(i) {
     if(gameOver) return;
     if(builder) { B[i] = chosen; render(); return; }
-    if(turn !== 'w') return;
+    if(turn !== pColor) return;
 
     if(sel === null) {
-        if(color(B[i]) === 'w') { 
+        if(color(B[i]) === pColor) { 
             sel = i; 
-            hints = filterLegal(moves(i), i, B); // ONLY ALLOW LEGAL MOVES
+            hints = filterLegal(moves(i), i, B); 
             render(); 
         }
     } else if (hints.includes(i)) {
-        historyStack.push({ b: [...B], turn: 'w', last: lastMove ? {...lastMove} : null });
+        historyStack.push({ b: [...B], turn: pColor, last: lastMove ? {...lastMove} : null, log: [...moveLogArray], wCap: [...wCaptured], bCap: [...bCaptured], moves: moveCounter });
         make([sel,i]);
-        sel = null; hints = []; turn = 'b'; render();
+        sel = null; hints = []; turn = pColor === 'w' ? 'b' : 'w'; 
         
-        if(isAttacked(B.indexOf('k'), 'b')) playSound('check');
-        setTimeout(aiMove, 350);
+        let enemyKing = turn === 'w' ? 'K' : 'k';
+        if(isAttacked(B.indexOf(enemyKing), turn)) {
+            playSound('check');
+            moveLogArray[moveLogArray.length-1] += '+';
+        }
+
+        render();
+        
+        document.getElementById('aiThinkingStatus').style.display = 'block';
+        setTimeout(aiMove, 600);
     } else {
         sel = null; hints = []; render();
     }
 }
 
 function undoMove() {
-    if(historyStack.length === 0 || builder) return;
+    if(historyStack.length === 0 || builder || gameOver) return;
     let state = historyStack.pop();
-    B = state.b; turn = state.turn; lastMove = state.last; gameOver = false;
+    B = state.b; turn = state.turn; lastMove = state.last; 
+    moveLogArray = state.log; wCaptured = state.wCap; bCaptured = state.bCap; moveCounter = state.moves;
+    
+    gameOver = false;
     document.getElementById('gameOverModal').classList.add('hidden');
     status.textContent = 'Your move'; render();
 }
 
 function aiMove() {
-    let ms = allLegal('b'); // AI CAN ONLY MAKE LEGAL MOVES NOW
+    document.getElementById('aiThinkingStatus').style.display = 'none';
+    let aiColor = pColor === 'w' ? 'b' : 'w';
+    let ms = allLegal(aiColor); 
     
     if(!ms.length) {
-        if(isAttacked(B.indexOf('k'), 'b')) return end('CHECKMATE! You killed the AI King!', true);
+        if(isAttacked(B.indexOf(aiColor === 'w'?'K':'k'), aiColor)) return end('CHECKMATE! You Win!', true);
         else return end('Stalemate! Game is a Draw.', true); 
     }
     
@@ -291,21 +407,25 @@ function aiMove() {
     let pick = Math.random()*100 < aiLevel ? scored[0].a : scored[Math.floor(Math.random()*scored.length)].a;
     
     make(pick);
-    turn = 'w';
+    turn = pColor;
+    
+    let myKing = pColor === 'w' ? 'K' : 'k';
+    let isCheck = isAttacked(B.indexOf(myKing), pColor);
+    if(isCheck) {
+        playSound('check');
+        moveLogArray[moveLogArray.length-1] += '+';
+    }
+    
     render();
     
-    let whiteMoves = allLegal('w');
-    if(!whiteMoves.length) {
-        if(isAttacked(B.indexOf('K'), 'w')) return end('CHECKMATE! The AI killed your King!', false);
+    let myMoves = allLegal(pColor);
+    if(!myMoves.length) {
+        if(isCheck) return end('CHECKMATE! The AI Wins!', false);
         else return end('Stalemate! Game is a Draw.', true);
     }
     
-    if(isAttacked(B.indexOf('K'), 'w')) {
-        playSound('check');
-        status.textContent = '⚠️ CHECK! Defend your King!';
-    } else {
-        status.textContent = 'Your move';
-    }
+    if(isCheck) status.textContent = '⚠️ CHECK! Defend your King!';
+    else status.textContent = 'Your move';
 }
 
 function score(a) {
@@ -325,18 +445,61 @@ function end(msg, isWin) {
 
 function startGame(custom) {
     aiLevel = custom ? +document.getElementById('customLvl').value : +document.getElementById('level').value;
-    builder = false; gameOver = false; turn = 'w'; sel = null; hints = []; lastMove = null; historyStack = [];
-    if(!custom) init();
+    builder = false; gameOver = false; sel = null; hints = []; lastMove = null; historyStack = []; moveLogArray = []; moveCounter = 0;
+    wCaptured = []; bCaptured = [];
+    
+    if(!custom) {
+        init();
+        pColor = document.getElementById('playerColor').value;
+    } else {
+        pColor = 'w'; // Custom always starts as White to play first
+    }
+
+    turn = 'w'; 
+    
+    // Board Rotation feature
+    const brd = document.getElementById('board');
+    if(pColor === 'b') {
+        brd.classList.add('flipped');
+        document.getElementById('coordY').innerHTML = `<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>`;
+        document.getElementById('coordX').innerHTML = `<span>h</span><span>g</span><span>f</span><span>e</span><span>d</span><span>c</span><span>b</span><span>a</span>`;
+    } else {
+        brd.classList.remove('flipped');
+        document.getElementById('coordY').innerHTML = `<span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>`;
+        document.getElementById('coordX').innerHTML = `<span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>`;
+    }
+
     document.getElementById('home').style.display = 'none';
     document.getElementById('game').style.display = 'grid';
     document.getElementById('builderTools').classList.add('hidden');
     document.getElementById('undoBtn').classList.remove('hidden');
-    status.textContent = 'Your move';
+    
     render();
+
+    if(pColor === 'b' && !custom) {
+        status.textContent = 'AI is playing White...';
+        document.getElementById('aiThinkingStatus').style.display = 'block';
+        setTimeout(aiMove, 600);
+    } else {
+        status.textContent = 'Your move';
+    }
 }
 
-function goHome() { document.getElementById('game').style.display = 'none'; document.getElementById('home').style.display = 'block'; }
-function resetBoard() { init(); gameOver = false; turn = 'w'; lastMove = null; historyStack = []; render(); status.textContent = 'Your move'; }
+// Confirm Dialogs
+function confirmHome() {
+    if(!gameOver && !builder && historyStack.length > 0) {
+        if(!confirm("Are you sure you want to exit? Your current game will be lost.")) return;
+    }
+    document.getElementById('game').style.display = 'none'; 
+    document.getElementById('home').style.display = 'block'; 
+}
+
+function confirmReset() {
+    if(!gameOver && !builder && historyStack.length > 0) {
+        if(!confirm("Are you sure you want to restart the match?")) return;
+    }
+    startGame(false);
+}
 
 function openBuilder() {
     builder = true; gameOver = false; B = '................................................................'.split('');
@@ -345,11 +508,23 @@ function openBuilder() {
     document.getElementById('builderTools').classList.remove('hidden');
     document.getElementById('undoBtn').classList.add('hidden');
     status.textContent = 'Build custom board';
+    document.getElementById('board').classList.remove('flipped');
     renderTray(); render();
 }
 
-function openBotLevelModal() { document.getElementById('botLevelModal').classList.remove('hidden'); }
+// Bug Fix: Check Kings Before Custom Match
+function validateCustomBoard() {
+    let wK = B.filter(p=>p==='K').length;
+    let bK = B.filter(p=>p==='k').length;
+    if(wK !== 1 || bK !== 1) {
+        alert("⚠️ INVALID BOARD: You MUST place exactly ONE White King (♔) and ONE Black King (♚) to start the match!");
+        return;
+    }
+    document.getElementById('botLevelModal').classList.remove('hidden');
+}
+
 function startCustomPlay() { document.getElementById('botLevelModal').classList.add('hidden'); startGame(true); }
+
 function renderTray() { document.getElementById('tray').innerHTML = ['P','N','B','R','Q','K','p','n','b','r','q','k','.'].map(p=>`<button class="tray-piece ${chosen===p?'active':''}" onclick="chosen='${p}';renderTray()"><span class="${p==='.'?'':(p===p.toUpperCase()?'piece-w':'piece-b')}">${p==='.'?'🧽':U[p]}</span></button>`).join(''); }
 
 init();
