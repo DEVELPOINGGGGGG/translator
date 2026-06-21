@@ -19,8 +19,11 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        .wizard-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; padding-top: 100px; width: 100%; box-sizing: border-box; }
-        .step-card { width: 100%; max-width: 600px; display: none; text-align: center; animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: var(--bg-surface); padding: 30px; border-radius: 20px; box-shadow: var(--glass-shadow); border: 1px solid var(--border-light); box-sizing: border-box; }
+        /* Mobile Viewport Fix */
+        html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; }
+        
+        .wizard-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; padding-top: 100px; width: 100%; box-sizing: border-box; overflow-y: auto; height: 100%; }
+        .step-card { width: 100%; max-width: 600px; display: none; text-align: center; animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: var(--bg-surface); padding: 30px; border-radius: 20px; box-shadow: var(--glass-shadow); border: 1px solid var(--border-light); box-sizing: border-box; margin-bottom: 30px; }
         .step-card.active { display: block; }
         .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; font-size: 24px; }
         .step-card label { display: block; text-align: left; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px;}
@@ -32,7 +35,8 @@
         .btn-primary:hover { transform: translateY(-3px); }
         .btn-secondary { background: #475569; }
         
-        #chatPage { display: none; flex-direction: column; height: 100dvh; width: 100vw; position: absolute; inset: 0; background: var(--bg-base); z-index: 50; overflow: hidden; }
+        /* 🛑 FIXED MOBILE CHAT LAYOUT 🛑 */
+        #chatPage { display: none; flex-direction: column; position: fixed; inset: 0; background: var(--bg-base); z-index: 50; overflow: hidden; }
         .chat-scroll-area { flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         .msg { display: flex; width: 100%; flex-direction: column; animation: slideUpFade 0.3s ease; }
         .user { align-items: flex-end; }
@@ -47,12 +51,14 @@
         .preset-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--primary); color: var(--text-main); padding: 10px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .preset-btn:hover { background: var(--primary); color: white; }
 
-        .chat-input-area { flex-shrink: 0; padding: 15px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-light); display: flex; flex-direction: column; width: 100%; box-sizing: border-box; padding-bottom: env(safe-area-inset-bottom, 15px); position: relative; }
+        /* 🛑 FIXED MOBILE BOTTOM MENUS (Input & Share) 🛑 */
+        .bottom-action-container { flex-shrink: 0; width: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-light); display: flex; flex-direction: column; box-sizing: border-box; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); position: relative; z-index: 100; }
+        
         .chat-input-wrapper { display: flex; align-items: flex-end; gap: 10px; width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid var(--border-light); border-radius: 24px; padding: 8px 15px; position: relative; }
         .chat-input-wrapper:focus-within { border-color: var(--primary); }
         textarea { flex: 1; background: transparent; border: none; color: white; font-family: inherit; font-size: 15px; resize: none; padding: 10px 0; outline: none; max-height: 100px; min-height: 24px; }
         .icon-btn { background: transparent; border: none; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
-        .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; }
+        .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; flex-shrink: 0; }
 
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #plusMenu { display: none; position: absolute; bottom: 75px; left: 15px; border-radius: 15px; flex-direction: column; z-index: 200; width: 220px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -81,14 +87,7 @@
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
 
-        /* 🛑 FIXED SCROLLABLE APP TITLE 🛑 */
-        .appTitle { 
-            font-size: 18px; font-weight: bold; color: var(--text-main); 
-            white-space: nowrap; overflow-x: auto; overflow-y: hidden; 
-            max-width: 50vw; display: inline-block; scrollbar-width: none; 
-            cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s;
-            -webkit-overflow-scrolling: touch; touch-action: pan-x;
-        }
+        .appTitle { font-size: 18px; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow-x: auto; overflow-y: hidden; max-width: 50vw; display: inline-block; scrollbar-width: none; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s; -webkit-overflow-scrolling: touch; touch-action: pan-x; }
         .appTitle::-webkit-scrollbar { display: none; }
         .appTitle:hover { background: rgba(255,255,255,0.1); }
         
@@ -101,16 +100,7 @@
         .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
         .msg-dropdown button:hover { background: rgba(239,68,68,0.2); }
         
-        /* 🛑 REALISTIC 3D BOOK COVER STYLES 🛑 */
-        .generated-cover { 
-            width: 140px; height: 190px; 
-            background: linear-gradient(135deg, #1e293b, #3b82f6); 
-            border-radius: 4px 12px 12px 4px; 
-            box-shadow: inset 4px 0 10px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.3), 5px 10px 20px rgba(0,0,0,0.5); 
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
-            padding: 15px 10px; box-sizing: border-box; color: white; text-align: center; 
-            position: relative; margin: 0 auto 20px auto; border-left: 6px solid #0f172a; 
-        }
+        .generated-cover { width: 140px; height: 190px; background: linear-gradient(135deg, #1e293b, #3b82f6); border-radius: 4px 12px 12px 4px; box-shadow: inset 4px 0 10px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.3), 5px 10px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 10px; box-sizing: border-box; color: white; text-align: center; position: relative; margin: 0 auto 20px auto; border-left: 6px solid #0f172a; }
         .generated-cover::after { content: ''; position: absolute; left: 0px; top: 0; bottom: 0; width: 3px; background: rgba(255,255,255,0.2); }
     </style>
 </head>
@@ -139,7 +129,6 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<!-- Loading Overlay -->
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
     <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
     <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Preparing Tutor...</h2>
@@ -152,7 +141,6 @@
         <div class="step-card active" id="step-1">
             <h2>Step 1: Board / Publisher</h2>
             <label>Select Publisher:</label>
-            <!-- Added Arvind Vigyan as an explicit example -->
             <select id="publisherSelect" class="standard" onchange="triggerChapterFetch()">
                 <option value="" selected disabled>-- Select Publisher --</option>
                 <option value="NCERT">NCERT</option>
@@ -233,7 +221,6 @@
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
                 <input type="text" id="manualChapter" class="standard" placeholder="e.g. Motion / गति" style="margin-bottom: 0;">
                 <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="startChapterVoice()">🎤</button>
-                <!-- 🛑 THE NEW BOOK RECOGNITION CAMERA BUTTON 🛑 -->
                 <button class="icon-btn" style="background:#10b981; color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="openBookRecognitionCamera()" title="Take photo of book page">📷</button>
             </div>
             <p style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:-10px; margin-bottom:15px;">*If your publisher is private (e.g., Arvind Vigyan), click 📷 to snap the chapter page so AI knows the exact questions!</p>
@@ -246,7 +233,6 @@
 
         <div class="step-card" id="step-5">
             <h2>Ready!</h2>
-            <!-- 🛑 THE DYNAMIC BOOK COVER 🛑 -->
             <div id="dynamicBookCover">
                 <div class="generated-cover">
                     <span style="font-size:11px; text-transform:uppercase; letter-spacing:1px; opacity:0.9;" id="coverPub">Publisher</span>
@@ -268,9 +254,17 @@
 <div id="chatPage">
     <div class="chat-scroll-area" id="chatHistory"></div>
 
-    <div class="chat-input-area">
+    <div id="shareActionArea" class="bottom-action-container" style="display:none; border-top: 2px solid #25D366;">
+        <div style="color:white; text-align:center; font-weight:bold; font-size:14px; margin-bottom: 10px;">👆 Tap messages above to select them</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" style="flex:1; padding: 12px;" onclick="cancelShareMode()">Cancel</button>
+            <button class="btn" style="flex:1; background:#3b82f6; border:none; padding: 12px; color:white; font-weight:bold; border-radius:12px; cursor:pointer;" onclick="downloadSelectedAsPDF()">📄 Save PDF</button>
+            <button class="btn btn-primary" style="flex:1; background:#25D366; border:none; padding: 12px;" onclick="proceedToShare()">📤 WhatsApp</button>
+        </div>
+    </div>
+
+    <div class="bottom-action-container" id="mainInputArea">
         <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Document Attached</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
-        
         <input type="file" id="imageInput" accept="image/*,.pdf" style="display:none;" onchange="handleFileSelect(event)">
         
         <div id="imagePreviewContainer">
@@ -294,7 +288,6 @@
         </div>
     </div>
 
-    <!-- Voice Input Modal -->
     <div id="voiceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 350px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🎤 Speak to Type</h3>
@@ -307,17 +300,6 @@
         </div>
     </div>
 
-    <!-- Message Selection Bottom Bar -->
-    <div id="shareActionArea" style="display:none; position:absolute; bottom:0; left:0; width:100%; padding:15px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:2px solid #25D366; z-index:100; flex-direction:column; gap:10px; box-sizing:border-box;">
-        <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn btn-secondary" style="flex:1; padding: 12px;" onclick="cancelShareMode()">Cancel</button>
-            <button class="btn" style="flex:1; background:#3b82f6; border:none; padding: 12px; color:white; font-weight:bold; border-radius:12px; cursor:pointer;" onclick="downloadSelectedAsPDF()">📄 Save PDF</button>
-            <button class="btn btn-primary" style="flex:1; background:#25D366; border:none; padding: 12px;" onclick="proceedToShare()">📤 WhatsApp</button>
-        </div>
-    </div>
-
-    <!-- Secure WhatsApp Modal -->
     <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid #25D366; max-width: 400px; width: 90%; text-align: center; position:relative;">
             <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
@@ -330,7 +312,6 @@
         </div>
     </div>
 
-    <!-- Web Import Modal -->
     <div id="webImportModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:1px solid var(--primary); max-width: 400px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
@@ -343,7 +324,6 @@
         </div>
     </div>
 
-    <!-- Camera Modal -->
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
         <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
         <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
@@ -364,7 +344,6 @@
         s.classList.toggle("active", a); o.classList.toggle("active", a);
     }
 
-    // 🛑 3-DOTS MENU & COPY/DELETE 🛑
     function toggleMsgMenu(btn, e) {
         e.stopPropagation();
         let dropdown = btn.nextElementSibling;
@@ -422,8 +401,7 @@
     let webUrls = []; 
     let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
 
-    // 🛑 CAMERA LOGIC AND TARGETING 🛑
-    let cameraTarget = 'chat'; // can be 'chat' or 'bookRecognition'
+    let cameraTarget = 'chat';
     let bookRecognitionImageBase64 = null;
 
     let camStream = null; let camFacing = "environment"; let isFlash = false;
@@ -516,7 +494,6 @@
         rec.start(); 
     }
 
-    // 🛑 SILENT BACKGROUND SEARCH (NO CHIPS) 🛑
     async function fetchChapterContext() {
         try {
             const sysPrompt = `Search the internet for the exact textbook solutions for: Publisher: ${selectedData.publisher}, Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}. Extract the end-of-chapter questions and answers. Just store them internally. Do not output markdown.`;
@@ -531,36 +508,48 @@
         } catch(e) { console.error("Silent fetch failed:", e); }
     }
 
-    // 🛑 GOOGLE BOOKS API FOR REAL COVER FETCHING 🛑
+    // 🛑 IMPROVED GOOGLE BOOKS + OPEN LIBRARY COVER FETCHER 🛑
     async function fetchRealBookCover(pub, sub, cls) {
-        // If user took a photo, we respect that and don't overwrite it
         if (bookRecognitionImageBase64) return;
 
         let coverDiv = document.getElementById('dynamicBookCover');
         let statusSub = document.getElementById('coverSub');
         
         try {
-            statusSub.innerText = "Searching Google for Real Cover...";
+            statusSub.innerText = "Searching for Book Cover...";
             
-            // Query Google Books API based on Publisher, Subject, and Class
-            let query = encodeURIComponent(`${pub} Class ${cls} ${sub}`);
-            let res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
+            // Search 1: Highly specific
+            let query = encodeURIComponent(`intitle:${sub} ${pub} class ${cls.replace('Class ','')}`);
+            let res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=3`);
             let data = await res.json();
+            
+            let thumb = null;
+            if (data.items) {
+                for(let item of data.items) {
+                    if(item.volumeInfo && item.volumeInfo.imageLinks && item.volumeInfo.imageLinks.thumbnail) {
+                        thumb = item.volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//i, 'https://');
+                        break;
+                    }
+                }
+            }
 
-            // Check if we got a valid image thumbnail back
-            if (data.items && data.items.length > 0 && data.items[0].volumeInfo.imageLinks) {
-                let thumb = data.items[0].volumeInfo.imageLinks.thumbnail;
-                // Upgrade from http to https to avoid insecure image blocking
-                thumb = thumb.replace(/^http:\/\//i, 'https://');
-                
-                // Plop the real image onto the screen!
+            // Search 2: Broader fallback if Google fails
+            if (!thumb) {
+                let query2 = encodeURIComponent(`${pub} ${sub}`);
+                let res2 = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query2}&maxResults=1`);
+                let data2 = await res2.json();
+                if (data2.items && data2.items.length > 0 && data2.items[0].volumeInfo.imageLinks) {
+                    thumb = data2.items[0].volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//i, 'https://');
+                }
+            }
+
+            if (thumb) {
                 coverDiv.innerHTML = `<img src="${thumb}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
             } else {
-                // Google didn't find anything, fallback to text
                 statusSub.innerText = sub;
             }
         } catch(e) {
-            console.log("Cover fetch failed, using fallback", e);
+            console.log("Cover fetch failed", e);
             statusSub.innerText = sub;
         }
     }
@@ -605,11 +594,17 @@
     function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; }
 
     function toggleShareMode() {
-        isShareMode = true; document.querySelector('.chat-input-area').style.display = 'none'; document.getElementById('shareActionArea').style.display = 'flex'; document.getElementById('chatHistory').classList.add('share-mode-active');
+        document.getElementById('mainInputArea').style.display = 'none'; 
+        document.getElementById('shareActionArea').style.display = 'flex'; 
+        isShareMode = true; 
+        document.getElementById('chatHistory').classList.add('share-mode-active');
         document.querySelectorAll('.bubble').forEach(b => { b.onclick = function(e) { if(!isShareMode) return; this.classList.toggle('selected-for-share'); } });
     }
     function cancelShareMode() {
-        isShareMode = false; document.querySelector('.chat-input-area').style.display = 'flex'; document.getElementById('shareActionArea').style.display = 'none'; document.getElementById('chatHistory').classList.remove('share-mode-active');
+        document.getElementById('shareActionArea').style.display = 'none'; 
+        document.getElementById('mainInputArea').style.display = 'flex'; 
+        isShareMode = false; 
+        document.getElementById('chatHistory').classList.remove('share-mode-active');
         document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
     }
     function proceedToShare() {
@@ -724,7 +719,6 @@
                 let coverDiv = document.getElementById('dynamicBookCover');
                 coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
             } else {
-                // Call the new Google Books API Fetcher
                 fetchRealBookCover(pub, sub, cls);
             }
 
@@ -736,7 +730,6 @@
         }
     }
 
-    // 🛑 STRICT HALLUCINATION BLOCKER 🛑
     async function triggerChapterFetch() {
         let pub = document.getElementById('publisherSelect').value;
         let sub = document.getElementById('subjectSelect').value;
@@ -898,7 +891,6 @@
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
         let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
         
-        // 🛑 STRICT TEXTBOOK QUERY ENGINE 🛑
         let sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
 1. DEFAULT LANGUAGE: You MUST respond entirely in ${targetLang}.
 2. SUBJECT CONTEXT: You are teaching ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}.
