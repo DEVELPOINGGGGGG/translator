@@ -15,6 +15,8 @@
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <style>
         /* Wizard Custom Layout over style.css base */
         .wizard-container {
@@ -125,8 +127,8 @@
         .dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typingPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
 
-        /* WhatsApp Selection Styles */
-        .share-mode-active .bubble { cursor: pointer !important; transition: 0.2s; position: relative; }
+        /* WhatsApp & PDF Selection Styles */
+        .share-mode-active .bubble { cursor: pointer !important; transition: 0.2s; position: relative; user-select: none; }
         .share-mode-active .bubble::before { content: ''; position: absolute; inset: 0; background: rgba(37, 211, 102, 0.1); border-radius: inherit; opacity: 0; transition: 0.2s; pointer-events: none;}
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
@@ -140,7 +142,7 @@
     <div class="menuBtn" onclick="toggleSidebar()">☰</div>
     <div class="appTitle">📚 Book Deep Study</div>
     <div style="display:flex; gap:10px;">
-        <button class="btn btn-primary" id="shareBtn" style="padding: 8px 12px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
+        <button class="btn btn-primary" id="shareBtn" style="padding: 8px 12px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share / PDF</button>
         <button class="btn btn-secondary" id="clearBtn" style="padding: 8px 12px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
         <button class="btn btn-primary" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
     </div>
@@ -282,11 +284,12 @@
         </div>
     </div>
 
-    <div id="shareActionArea" style="display:none; position:absolute; bottom:0; left:0; width:100%; padding:15px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:2px solid #25D366; z-index:100; flex-direction:column; gap:10px; box-sizing:border-box;">
+    <div id="shareActionArea" style="display:none; position:fixed; bottom:0; left:0; width:100%; padding:15px; padding-bottom: calc(15px + env(safe-area-inset-bottom, 20px)); background:rgba(15,23,42,0.98); backdrop-filter:blur(15px); border-top:2px solid #25D366; z-index:999999; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
         <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn btn-secondary" style="flex:1; padding: 12px;" onclick="cancelShareMode()">Cancel</button>
-            <button class="btn btn-primary" style="flex:1; background:#25D366; border:none; padding: 12px;" onclick="proceedToShare()">Proceed ➔</button>
+        <div style="display:flex; gap:8px; width: 100%;">
+            <button class="btn btn-secondary" style="flex:1; padding: 12px 5px; font-size:13px;" onclick="cancelShareMode()">✖ Cancel</button>
+            <button class="btn" style="flex:1.2; padding: 12px 5px; font-size:13px; background:#ef4444; color:white; border:none; font-weight:bold; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);" onclick="downloadSelectedAsPDF(event)">📥 Save PDF</button>
+            <button class="btn btn-primary" style="flex:1.2; background:#25D366; border:none; padding: 12px 5px; font-size:13px; font-weight:bold; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);" onclick="proceedToShare()">📤 WhatsApp</button>
         </div>
     </div>
 
@@ -328,7 +331,7 @@
     let selectedData = {};
     let currentImageBase64 = null;
 
-    // 🛑 WHATSAPP SELECTION & SHARING ENGINE 🛑
+    // 🛑 WHATSAPP & PDF SELECTION ENGINE 🛑
     let isShareMode = false;
 
     function toggleShareMode() {
@@ -363,6 +366,81 @@
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
+    // 🛑 NEW: FLAWLESS PDF GENERATOR 🛑
+    async function downloadSelectedAsPDF(event) {
+        let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
+        if(selectedNodes.length === 0) return alert("Please tap at least one message to save as PDF!");
+
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ Generating...";
+        btn.disabled = true;
+
+        // Build temporary DOM for PDF rendering
+        let pdfContainer = document.createElement("div");
+        pdfContainer.style.padding = "20px";
+        pdfContainer.style.fontFamily = "Arial, sans-serif";
+        pdfContainer.style.color = "#000";
+        pdfContainer.style.background = "#fff";
+        pdfContainer.style.position = "absolute";
+        pdfContainer.style.left = "-9999px"; // Hide it off-screen
+
+        // PDF Header
+        let header = document.createElement("h2");
+        header.innerText = "📚 Book Deep Study - AI Notes";
+        header.style.textAlign = "center";
+        header.style.color = "#3b82f6";
+        header.style.borderBottom = "2px solid #e2e8f0";
+        header.style.paddingBottom = "10px";
+        pdfContainer.appendChild(header);
+
+        // Sub Header Details
+        let details = document.createElement("p");
+        details.innerHTML = `<b>विषय (Subject):</b> ${selectedData.subject} <br> <b>अध्याय (Chapter):</b> ${selectedData.chapter}`;
+        details.style.textAlign = "center";
+        details.style.color = "#64748b";
+        details.style.marginBottom = "30px";
+        pdfContainer.appendChild(details);
+
+        // Clone and format selected notes
+        selectedNodes.forEach(node => {
+            let clone = node.cloneNode(true);
+            clone.style.background = "#f8fafc";
+            clone.style.color = "#0f172a";
+            clone.style.border = "1px solid #cbd5e1";
+            clone.style.padding = "20px";
+            clone.style.borderRadius = "12px";
+            clone.style.marginBottom = "20px";
+            clone.style.fontSize = "16px";
+            clone.style.lineHeight = "1.8";
+            clone.style.boxShadow = "none";
+            clone.style.outline = "none"; // Remove selection outline
+            pdfContainer.appendChild(clone);
+        });
+
+        document.body.appendChild(pdfContainer);
+
+        // PDF Config Options
+        var opt = {
+            margin:       10,
+            filename:     `${selectedData.chapter || 'Study_Notes'}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(pdfContainer).save();
+            cancelShareMode(); // Auto close the selection screen after downloading
+        } catch(e) {
+            alert("❌ Failed to generate PDF.");
+        }
+
+        document.body.removeChild(pdfContainer); // Cleanup
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+
     async function submitWhatsAppSelection(event) {
         const number = document.getElementById('waNumberInput').value.trim();
         if (!number) return alert("Please enter a mobile number.");
@@ -395,7 +473,6 @@
         btn.disabled = true;
 
         try {
-            // HITTING YOUR EXISTING SECURE BACKEND
             const response = await fetch("/api/secure-whatsapp", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -675,10 +752,6 @@
         msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
         
-        // Scroll once for user message
-        const c = document.getElementById('chatHistory');
-        c.scrollTop = c.scrollHeight;
-
         inputEl.value = "";
         removeImage(); 
 
@@ -689,7 +762,6 @@
         loadDiv.id = loadingId;
         loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
-        c.scrollTop = c.scrollHeight; 
 
         // 🛑 AI RULES: DEFAULT HINDI, ENGLISH IF ASKED 🛑
         const sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
@@ -723,7 +795,7 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         }
     }
 
-// 🛑 EXACT 5-SECOND TYPEWRITER (LAG-FREE BATCHING, NO SCROLLING) 🛑
+    // 🛑 EXACT 5-SECOND TYPEWRITER (LAG-FREE BATCHING, NO SCROLLING) 🛑
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div");
         msgDiv.className = "msg ai";
@@ -735,8 +807,6 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 
         if(typewrite) {
-            // 🛑 BUG FIX: Updating the screen 1 character at a time causes severe browser lag.
-            // We now process characters in "chunks" to guarantee exactly 5 seconds.
             const frameTime = 30; // 30ms per frame
             const totalFrames = 5000 / frameTime; // 5000ms = 5 seconds
             const charsPerFrame = Math.max(1, Math.ceil(formattedText.length / totalFrames));
@@ -747,17 +817,15 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
             while(i < formattedText.length) {
                 let charsProcessed = 0;
                 
-                // Process a batch of characters instantly
                 while(i < formattedText.length && charsProcessed < charsPerFrame) {
                     let char = formattedText[i];
                     
-                    // Fast-forward through HTML tags so they don't break
                     if(char === '<') {
                         let end = formattedText.indexOf('>', i);
                         if(end !== -1) {
                             currentHTML += formattedText.substring(i, end + 1);
                             i = end + 1;
-                            continue; // HTML tags don't count towards the character limit
+                            continue; 
                         }
                     }
                     
@@ -767,18 +835,13 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
                 }
                 
                 bubble.innerHTML = currentHTML;
-                
-                // Sleep only once per chunk, not per character!
                 await new Promise(r => setTimeout(r, frameTime));
             }
         } else {
             bubble.innerHTML = formattedText.replace(/\n/g, '<br>');
         }
 
-        // Render Math equations
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
-        
-        // Save to memory
         saveHistory();
     }
 
