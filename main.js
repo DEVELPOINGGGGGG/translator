@@ -750,18 +750,19 @@ async function executeQaFlow() {
 }
 
 // 🛑 HISTORY SAVING & RESTORATION ENGINE 🛑
-function saveHistorySafe() { 
+window.saveHistorySafe = function() { 
     if (typeof localforage !== 'undefined') { localforage.setItem('aiHistory', appHistory).catch(e => console.error("Vault save failed:", e)); }
     try { let lightHistory = appHistory.slice(0, 30).map(item => { let cloned = { ...item }; cloned.image = null; if (cloned.interactions) { cloned.interactions = cloned.interactions.map(i => ({ ...i, image: null })); } return cloned; }); localStorage.setItem('aiHistory', JSON.stringify(lightHistory)); } 
     catch(e) { try { localStorage.setItem('aiHistory', JSON.stringify(appHistory.slice(0, 5).map(i => ({...i, image: null})))); } catch(err) {} }
 }
 
-function saveToHistory(type, q, a, img = null, provider = "AI") { 
+// FIXED: Attached to Window so inline scripts in QA and Translator can access it
+window.saveToHistory = function(type, q, a, img = null, provider = "AI") { 
     try { fetch(GOOGLE_SHEETS_WEBHOOK, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "log", type: type, question: q || "Action", answer: String(a || "").replace(/<[^>]*>?/gm, ''), provider: provider || "Gemini 1" }) }).catch(e => console.log("Google Sheets sync failed.")); } catch(e) {}
     let sessionId = sessionCache[type]; let histItem = appHistory.find(i => i.id === sessionId);
     if (!histItem) { sessionId = Date.now(); sessionCache[type] = sessionId; histItem = { id: sessionId, type: type, title: String(q || "").substring(0,35) + '...', interactions: [{ question: q, answer: a, image: img, provider: provider }], provider: provider, question: q, answer: a }; appHistory.unshift(histItem); } 
     else { histItem.interactions.push({ question: q, answer: a, image: img, provider: provider }); histItem.question = q; histItem.answer = a; }
-    saveHistorySafe(); generateTitleWithGroq(sessionId); 
+    window.saveHistorySafe(); generateTitleWithGroq(sessionId); 
 }
 
 async function generateTitleWithGroq(sessionId) {
