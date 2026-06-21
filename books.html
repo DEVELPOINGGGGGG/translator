@@ -723,7 +723,7 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         }
     }
 
-    // 🛑 EXACT 5-SECOND TYPEWRITER (NO AUTO-SCROLL LOOP) 🛑
+// 🛑 EXACT 5-SECOND TYPEWRITER (LAG-FREE BATCHING, NO SCROLLING) 🛑
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div");
         msgDiv.className = "msg ai";
@@ -735,42 +735,51 @@ Context: You are teaching ${selectedData.class}, ${selectedData.subject}, Chapte
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 
         if(typewrite) {
-            const duration = 5000;
-            const tickRate = Math.max(1, duration / (formattedText.length || 1));
+            // 🛑 BUG FIX: Updating the screen 1 character at a time causes severe browser lag.
+            // We now process characters in "chunks" to guarantee exactly 5 seconds.
+            const frameTime = 30; // 30ms per frame
+            const totalFrames = 5000 / frameTime; // 5000ms = 5 seconds
+            const charsPerFrame = Math.max(1, Math.ceil(formattedText.length / totalFrames));
             
             let currentHTML = "";
             let i = 0;
             
             while(i < formattedText.length) {
-                let char = formattedText[i];
-                if(char === '<') {
-                    let end = formattedText.indexOf('>', i);
-                    if(end !== -1) {
-                        currentHTML += formattedText.substring(i, end + 1);
-                        i = end + 1;
-                    } else { currentHTML += char; i++; }
-                } else if (char === '\n') {
-                    currentHTML += '<br>'; i++;
-                } else {
-                    currentHTML += char; i++;
+                let charsProcessed = 0;
+                
+                // Process a batch of characters instantly
+                while(i < formattedText.length && charsProcessed < charsPerFrame) {
+                    let char = formattedText[i];
+                    
+                    // Fast-forward through HTML tags so they don't break
+                    if(char === '<') {
+                        let end = formattedText.indexOf('>', i);
+                        if(end !== -1) {
+                            currentHTML += formattedText.substring(i, end + 1);
+                            i = end + 1;
+                            continue; // HTML tags don't count towards the character limit
+                        }
+                    }
+                    
+                    currentHTML += (char === '\n') ? '<br>' : char;
+                    i++;
+                    charsProcessed++;
                 }
                 
                 bubble.innerHTML = currentHTML;
                 
-                // NO SCROLLTOBOTTOM() INSIDE THIS LOOP
-                await new Promise(r => setTimeout(r, tickRate));
+                // Sleep only once per chunk, not per character!
+                await new Promise(r => setTimeout(r, frameTime));
             }
         } else {
             bubble.innerHTML = formattedText.replace(/\n/g, '<br>');
         }
 
+        // Render Math equations
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
         
+        // Save to memory
         saveHistory();
-        
-        // Scroll once at the very end just to align the final message cleanly
-        const c = document.getElementById('chatHistory');
-        c.scrollTop = c.scrollHeight;
     }
 
     function saveHistory() {
