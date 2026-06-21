@@ -7,22 +7,350 @@
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-body{min-height:100vh;background:radial-gradient(circle at top,#1e3a8a 0,#0f172a 45%,#020617 100%);color:#f8fafc;font-family:Poppins,sans-serif}.chess-wrap{max-width:980px;margin:85px auto 30px;padding:18px}.hero{background:rgba(15,23,42,.78);border:1px solid rgba(255,255,255,.12);border-radius:28px;padding:30px;box-shadow:0 25px 80px rgba(0,0,0,.4);text-align:center}.hero h1{font-size:clamp(30px,6vw,58px);margin:0;background:linear-gradient(90deg,#60a5fa,#c084fc,#facc15);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:24px}.panel{background:rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:20px}.big-btn,.small-btn{border:0;border-radius:999px;padding:14px 22px;font-weight:800;cursor:pointer;color:white;background:linear-gradient(135deg,#2563eb,#9333ea);box-shadow:0 10px 28px rgba(37,99,235,.35)}.small-btn{padding:9px 14px;font-size:13px}.danger{background:#ef4444}.green{background:#16a34a}.game{display:none;grid-template-columns:minmax(300px,560px) 1fr;gap:20px;align-items:start}.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border:10px solid #3b2f21;border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.5)}.sq{display:flex;align-items:center;justify-content:center;font-size:clamp(28px,7vw,52px);cursor:pointer;user-select:none;position:relative}.light{background:#f0d9b5}.dark{background:#b58863}.selected{outline:4px solid #38bdf8;outline-offset:-4px}.hint:after{content:"";width:28%;height:28%;border-radius:50%;background:rgba(34,197,94,.65);position:absolute}.capture:after{content:"";inset:8%;border:5px solid rgba(239,68,68,.75);border-radius:50%;position:absolute}.status{font-weight:800;color:#facc15;margin-bottom:12px}.piece-tray{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.tray-piece{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;font-size:30px;padding:8px;cursor:pointer}.tray-piece.active{background:#2563eb}.hidden{display:none!important}@media(max-width:800px){.game{grid-template-columns:1fr}.chess-wrap{padding:10px}.board{border-width:6px}}
+body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0f172a 45%,#020617 100%); color: #f8fafc; font-family: Poppins,sans-serif; overflow-y: auto; overflow-x: hidden; margin: 0;}
+.chess-wrap { max-width: 1000px; margin: 85px auto 30px; padding: 20px; box-sizing: border-box; }
+.hero { background: rgba(15,23,42,.78); border: 1px solid rgba(255,255,255,.12); border-radius: 28px; padding: 30px; box-shadow: 0 25px 80px rgba(0,0,0,.4); text-align: center; }
+.hero h1 { font-size: clamp(30px,6vw,58px); margin: 0; background: linear-gradient(90deg,#60a5fa,#c084fc,#facc15); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); gap: 18px; margin-top: 24px; }
+.panel { background: rgba(2,6,23,.55); border: 1px solid rgba(255,255,255,.12); border-radius: 22px; padding: 20px; }
+.big-btn, .small-btn { border: 0; border-radius: 999px; padding: 14px 22px; font-weight: 800; cursor: pointer; color: white; background: linear-gradient(135deg,#2563eb,#9333ea); box-shadow: 0 10px 28px rgba(37,99,235,.35); transition: 0.2s; }
+.big-btn:hover, .small-btn:hover { transform: scale(1.05); }
+.small-btn { padding: 9px 14px; font-size: 13px; }
+.danger { background: #ef4444; box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
+.green { background: #16a34a; box-shadow: 0 5px 15px rgba(22,163,74,0.4); }
+.game { display: none; grid-template-columns: minmax(350px,600px) 1fr; gap: 20px; align-items: start; }
+.board-container { width: 100%; overflow-x: auto; padding-bottom: 15px; }
+.board { display: grid; grid-template-columns: repeat(8,1fr); aspect-ratio: 1; border: 10px solid #3b2f21; border-radius: 12px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.6); min-width: 450px; }
+.sq { display: flex; align-items: center; justify-content: center; font-size: clamp(30px, 8vw, 55px); cursor: pointer; user-select: none; position: relative; }
+.light { background: #f0d9b5; }
+.dark { background: #b58863; }
+.selected { outline: 4px solid #38bdf8; outline-offset: -4px; z-index: 2;}
+.hint:after { content: ""; width: 28%; height: 28%; border-radius: 50%; background: rgba(34,197,94,.65); position: absolute; }
+.capture:after { content: ""; inset: 8%; border: 5px solid rgba(239,68,68,.75); border-radius: 50%; position: absolute; }
+.last-move { background: rgba(250, 204, 21, 0.5) !important; }
+.in-check { background: radial-gradient(circle, rgba(239, 68, 68, 0.9) 0%, transparent 70%) !important; }
+.status { font-weight: 800; color: #facc15; margin-bottom: 15px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;}
+.piece-tray { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 15px;}
+.tray-piece { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; font-size: 30px; padding: 8px; cursor: pointer; transition: 0.2s;}
+.tray-piece.active { background: #2563eb; transform: scale(1.1); border-color:#60a5fa;}
+.hidden { display: none !important; }
+
+/* Custom Modals */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+.modal-box { background: #0f172a; border: 2px solid #3b82f6; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+.modal-box h2 { margin-top: 0; font-size: 28px; background: linear-gradient(90deg,#60a5fa,#c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+@media(max-width:800px) { .game { grid-template-columns: 1fr; } .chess-wrap { padding: 10px; margin-top: 70px;} .board { border-width: 6px; min-width: 350px; } }
 </style>
 </head>
 <body>
 <div class="overlay" id="overlay"></div><div class="topbar"><div class="menuBtn" onclick="toggleSidebar()">☰</div><div class="appTitle">Chess AI</div></div>
 <div class="sidebar" id="sidebar"><button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button><button onclick="location.href='index.html'">🏠 Dashboard</button><button onclick="location.href='search.html'">🔎 Deep Search</button><button onclick="location.href='quiz.html'">📝 Take a Quiz!</button><button onclick="location.href='chess.html'">♟️ Chess AI</button><button onclick="location.href='translator.html'">🎙️ Text Translator</button><button onclick="location.href='history.html'">🕒 History</button></div>
-<main class="chess-wrap"><section id="home" class="hero"><h1>♟️ Play Chess With AI</h1><p style="color:#cbd5e1">Choose AI level 1-100, start normal chess, or build a custom position with the organizer.</p><div class="menu-grid"><div class="panel"><h2>Play with AI</h2><label>AI Level: <b id="lvlText">35</b>/100</label><input id="level" type="range" min="1" max="100" value="35" oninput="lvlText.textContent=this.value" style="width:100%;accent-color:#a855f7"><button class="big-btn" onclick="startGame(false)">Start Game</button></div><div class="panel"><h2>Custom Organizer</h2><p>Place kings, queens, pawns and all pieces yourself, then start versus AI.</p><button class="big-btn green" onclick="openBuilder()">Build Chess</button></div></div></section>
-<section id="game" class="game"><div><div id="board" class="board"></div></div><aside class="panel"><div id="status" class="status">Your move</div><div id="builderTools" class="hidden"><h3>Organizer</h3><div class="piece-tray" id="tray"></div><p style="font-size:12px;color:#cbd5e1">Select a piece, click squares to place. Eraser removes pieces.</p><button class="small-btn green" onclick="startCustomPlay()">▶ Start Custom Game</button></div><button class="small-btn" onclick="goHome()">🏠 Back to Homescreen</button><button class="small-btn danger" onclick="resetBoard()">Reset Board</button><p style="color:#cbd5e1;font-size:13px">Click a piece to highlight legal moves. You play White first; AI replies based on selected level.</p></aside></section></main>
+
+<main class="chess-wrap">
+    <section id="home" class="hero">
+        <h1>♟️ Play Chess With AI</h1>
+        <p style="color:#cbd5e1; font-size: 15px;">Choose AI level 1-100, start normal chess, or build a custom position with the organizer.</p>
+        <div class="menu-grid">
+            <div class="panel">
+                <h2>Play with AI</h2>
+                <label>AI Level: <b id="lvlText" style="color:#facc15;">35</b> / 100</label>
+                <input id="level" type="range" min="1" max="100" value="35" oninput="lvlText.textContent=this.value" style="width:100%;accent-color:#a855f7; margin: 15px 0;">
+                <button class="big-btn" style="width:100%;" onclick="startGame(false)">▶ Start Game</button>
+            </div>
+            <div class="panel">
+                <h2>Custom Organizer</h2>
+                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Place kings, queens, pawns and all pieces yourself, then start versus AI.</p>
+                <button class="big-btn green" style="width:100%;" onclick="openBuilder()">🛠️ Build Chess Board</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="game" class="game">
+        <div class="board-container">
+            <div id="board" class="board"></div>
+        </div>
+        <aside class="panel" style="display:flex; flex-direction:column; gap:12px;">
+            <div id="status" class="status">Your move</div>
+            
+            <div id="builderTools" class="hidden" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:15px;">
+                <h3 style="margin-top:0; color:#38bdf8;">Custom Organizer</h3>
+                <p style="font-size:12px;color:#cbd5e1; margin-bottom:10px;">Uppercase = White (You), Lowercase = Black (AI).<br>Click a piece, then click squares to place it.</p>
+                <div class="piece-tray" id="tray"></div>
+                <button class="small-btn green" style="width:100%; margin-top: 10px;" onclick="openBotLevelModal()">▶ Start Match With AI</button>
+            </div>
+
+            <button class="small-btn" id="undoBtn" onclick="undoMove()">⏪ Undo Last Move</button>
+            <button class="small-btn danger" onclick="resetBoard()">🔄 Reset Board</button>
+            <button class="small-btn" style="background:#475569;" onclick="goHome()">🏠 Back to Homescreen</button>
+            
+            <p style="color:#94a3b8;font-size:12px; line-height: 1.6;">Click a piece to highlight legal moves. You play White; AI replies based on the selected level.</p>
+        </aside>
+    </section>
+</main>
+
+<div id="botLevelModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h2>Set AI Difficulty</h2>
+        <p style="color:#cbd5e1; font-size:14px; margin-bottom:20px;">Choose how hard the AI should fight on your custom board.</p>
+        <input type="range" min="1" max="100" value="50" id="customLvl" oninput="cLvlTxt.textContent=this.value" style="width:100%;accent-color:#a855f7;">
+        <p style="font-size: 18px; font-weight:bold;">Level: <span id="cLvlTxt" style="color:#facc15;">50</span> / 100</p>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="big-btn" style="flex:1; background:#475569;" onclick="document.getElementById('botLevelModal').classList.add('hidden')">Cancel</button>
+            <button class="big-btn green" style="flex:1;" onclick="startCustomPlay()">▶ Start Match</button>
+        </div>
+    </div>
+</div>
+
+<div id="gameOverModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h2 id="goTitle" style="font-size: 35px;">You Win!</h2>
+        <p id="goDesc" style="color:#cbd5e1; font-size:16px; margin-bottom:25px;">Checkmate delivered.</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="big-btn green" onclick="resetBoard(); document.getElementById('gameOverModal').classList.add('hidden')">🔄 Play Again</button>
+            <button class="big-btn" onclick="goHome(); document.getElementById('gameOverModal').classList.add('hidden')">🏠 Home Screen</button>
+            <button class="small-btn danger" onclick="document.getElementById('gameOverModal').classList.add('hidden')">✖ View Final Board</button>
+        </div>
+    </div>
+</div>
+
 <script>
-const U={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};let B=[],turn='w',sel=null,hints=[],aiLevel=35,builder=false,chosen='P',gameOver=false;
-function toggleSidebar(){sidebar.classList.toggle('active');overlay.classList.toggle('active')} overlay.onclick=toggleSidebar;
-function init(){B='rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR'.split('')}function xy(i){return[i%8,Math.floor(i/8)]}function idx(x,y){return y*8+x}function color(p){return p=='.'?null:p===p.toUpperCase()?'w':'b'}function enemy(p,c){return p!=='.'&&color(p)!==c}
-function render(){board.innerHTML='';for(let i=0;i<64;i++){let s=document.createElement('div');let [x,y]=xy(i);s.className='sq '+((x+y)%2?'dark':'light');if(sel===i)s.classList.add('selected');if(hints.includes(i))s.classList.add(B[i]==='.'?'hint':'capture');s.textContent=U[B[i]]||'';s.onclick=()=>clickSq(i);board.appendChild(s)}}
-function moves(i,br=B){let p=br[i],c=color(p);if(!c)return[];let [x,y]=xy(i),m=[],add=(a,b)=>{if(a>=0&&a<8&&b>=0&&b<8){let t=idx(a,b);if(br[t]==='.'||enemy(br[t],c))m.push(t)}};let low=p.toLowerCase();if(low==='p'){let d=c==='w'?-1:1,st=c==='w'?6:1;if(br[idx(x,y+d)]==='.') {add(x,y+d); if(y===st&&br[idx(x,y+2*d)]==='.') add(x,y+2*d)};for(let dx of[-1,1])if(x+dx>=0&&x+dx<8&&enemy(br[idx(x+dx,y+d)],c))m.push(idx(x+dx,y+d))}if(low==='n')[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(d=>add(x+d[0],y+d[1]));if('brq'.includes(low)){let dirs=[];if('rq'.includes(low))dirs.push([1,0],[-1,0],[0,1],[0,-1]);if('bq'.includes(low))dirs.push([1,1],[-1,1],[1,-1],[-1,-1]);dirs.forEach(d=>{let a=x+d[0],b=y+d[1];while(a>=0&&a<8&&b>=0&&b<8){let t=idx(a,b);if(br[t]==='.')m.push(t);else{if(enemy(br[t],c))m.push(t);break}a+=d[0];b+=d[1]}})}if(low==='k')for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)if(a||b)add(x+a,y+b);return m}
-function all(c,br=B){let r=[];br.forEach((p,i)=>{if(color(p)===c)moves(i,br).forEach(to=>r.push([i,to]))});return r}function make(a){B[a[1]]=B[a[0]];B[a[0]]='.';if(B[a[1]]==='P'&&a[1]<8)B[a[1]]='Q';if(B[a[1]]==='p'&&a[1]>55)B[a[1]]='q'}
-function clickSq(i){if(gameOver)return;if(builder){B[i]=chosen;render();return}if(turn!=='w')return;if(sel===null){if(color(B[i])==='w'){sel=i;hints=moves(i);render()}}else if(hints.includes(i)){make([sel,i]);sel=null;hints=[];turn='b';render();setTimeout(aiMove,350)}else{sel=null;hints=[];render()}}
-function aiMove(){let ms=all('b');if(!ms.length)return end('Checkmate! You win.');let scored=ms.map(a=>({a,s:score(a)})).sort((x,y)=>y.s-x.s);let pick=Math.random()*100<aiLevel?scored[0].a:scored[Math.floor(Math.random()*scored.length)].a;make(pick);turn='w';render();if(!B.includes('K'))return end('Checkmate! AI wins.');if(!all('w').length)return end('Checkmate! AI wins.');status.textContent='Your move'}function score(a){let v={p:1,n:3,b:3,r:5,q:9,k:99};return (v[(B[a[1]]||'.').toLowerCase()]||0)*10+Math.random()*6}
-function end(t){gameOver=true;status.textContent=t;alert(t)}function startGame(custom){aiLevel=+level.value;builder=false;gameOver=false;turn='w';sel=null;hints=[];if(!custom)init();home.style.display='none';game.style.display='grid';builderTools.classList.add('hidden');status.textContent='Your move';render()}function goHome(){game.style.display='none';home.style.display='block'}function resetBoard(){init();gameOver=false;turn='w';render()}function openBuilder(){builder=true;gameOver=false;B='................................................................'.split('');home.style.display='none';game.style.display='grid';builderTools.classList.remove('hidden');status.textContent='Build your custom board';renderTray();render()}function startCustomPlay(){builder=false;turn='w';status.textContent='Your move';builderTools.classList.add('hidden');render()}function renderTray(){tray.innerHTML=['P','N','B','R','Q','K','p','n','b','r','q','k','.'].map(p=>`<button class="tray-piece ${chosen===p?'active':''}" onclick="chosen='${p}';renderTray()">${p==='.'?'🧽':U[p]}</button>`).join('')}init();
+// --- AUDIO ENGINE ---
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let aCtx = null;
+
+function playTone(freq1, freq2, type, duration, vol=0.1) {
+    if(!aCtx) aCtx = new AudioCtx();
+    if(aCtx.state === 'suspended') aCtx.resume();
+    let osc = aCtx.createOscillator();
+    let gain = aCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq1, aCtx.currentTime);
+    if(freq2) osc.frequency.exponentialRampToValueAtTime(freq2, aCtx.currentTime + duration);
+    gain.gain.setValueAtTime(vol, aCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, aCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(aCtx.destination);
+    osc.start(); osc.stop(aCtx.currentTime + duration);
+}
+
+function playSound(event) {
+    if(event==='move') playTone(300, 400, 'sine', 0.15, 0.2);
+    if(event==='capture') playTone(150, 50, 'square', 0.2, 0.3);
+    if(event==='check') playTone(600, 400, 'sawtooth', 0.3, 0.2);
+    if(event==='win') { playTone(400, 600, 'sine', 0.2, 0.2); setTimeout(()=>playTone(600, 800, 'sine', 0.4, 0.2), 200); }
+    if(event==='lose') { playTone(300, 150, 'sawtooth', 0.3, 0.2); setTimeout(()=>playTone(150, 50, 'sawtooth', 0.5, 0.2), 300); }
+}
+
+// --- GAME ENGINE ---
+const U={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
+let B=[], turn='w', sel=null, hints=[], aiLevel=35, builder=false, chosen='P', gameOver=false;
+let lastMove = null; // {from: index, to: index}
+let historyStack = [];
+
+function toggleSidebar() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); } 
+overlay.onclick=toggleSidebar;
+
+function init() { B='rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR'.split(''); }
+function xy(i) { return[i%8,Math.floor(i/8)]; }
+function idx(x,y) { return y*8+x; }
+function color(p) { return p=='.'?null:p===p.toUpperCase()?'w':'b'; }
+function enemy(p,c) { return p!=='.'&&color(p)!==c; }
+
+// Check Detection
+function isAttacked(index, defenderColor, br=B) {
+    let attackerColor = defenderColor === 'w' ? 'b' : 'w';
+    for(let i=0; i<64; i++) {
+        if(color(br[i]) === attackerColor) {
+            let m = moves(i, br, true); // true avoids recursion limits if needed
+            if(m.includes(index)) return true;
+        }
+    }
+    return false;
+}
+
+function render() {
+    board.innerHTML='';
+    let bKingIdx = B.indexOf('k'), wKingIdx = B.indexOf('K');
+    let bCheck = bKingIdx !== -1 && isAttacked(bKingIdx, 'b');
+    let wCheck = wKingIdx !== -1 && isAttacked(wKingIdx, 'w');
+
+    for(let i=0; i<64; i++) {
+        let s = document.createElement('div');
+        let [x,y] = xy(i);
+        s.className = 'sq ' + ((x+y)%2 ? 'dark' : 'light');
+        
+        // Highlights
+        if(lastMove && (i === lastMove.from || i === lastMove.to)) s.classList.add('last-move');
+        if(sel === i) s.classList.add('selected');
+        if(hints.includes(i)) s.classList.add(B[i]==='.' ? 'hint' : 'capture');
+        
+        // Check Backgrounds
+        if(bCheck && i === bKingIdx) s.classList.add('in-check');
+        if(wCheck && i === wKingIdx) s.classList.add('in-check');
+
+        s.textContent = U[B[i]]||'';
+        s.onclick = () => clickSq(i);
+        board.appendChild(s);
+    }
+}
+
+function moves(i, br=B, ignoreCheck=false) {
+    let p=br[i], c=color(p);
+    if(!c) return [];
+    let [x,y]=xy(i), m=[], add=(a,b)=>{if(a>=0&&a<8&&b>=0&&b<8){let t=idx(a,b);if(br[t]==='.'||enemy(br[t],c))m.push(t)}};
+    let low=p.toLowerCase();
+    
+    if(low==='p'){let d=c==='w'?-1:1,st=c==='w'?6:1;if(br[idx(x,y+d)]==='.') {add(x,y+d); if(y===st&&br[idx(x,y+2*d)]==='.') add(x,y+2*d)};for(let dx of[-1,1])if(x+dx>=0&&x+dx<8&&enemy(br[idx(x+dx,y+d)],c))m.push(idx(x+dx,y+d))}
+    if(low==='n')[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(d=>add(x+d[0],y+d[1]));
+    if('brq'.includes(low)){let dirs=[];if('rq'.includes(low))dirs.push([1,0],[-1,0],[0,1],[0,-1]);if('bq'.includes(low))dirs.push([1,1],[-1,1],[1,-1],[-1,-1]);dirs.forEach(d=>{let a=x+d[0],b=y+d[1];while(a>=0&&a<8&&b>=0&&b<8){let t=idx(a,b);if(br[t]==='.')m.push(t);else{if(enemy(br[t],c))m.push(t);break;}a+=d[0];b+=d[1]}})}
+    if(low==='k')for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)if(a||b)add(x+a,y+b);
+    return m;
+}
+
+function all(c, br=B) {
+    let r=[];
+    br.forEach((p,i)=>{ if(color(p)===c) moves(i,br).forEach(to=>r.push([i,to])) });
+    return r;
+}
+
+function make(a) {
+    let captured = B[a[1]] !== '.';
+    B[a[1]] = B[a[0]];
+    B[a[0]] = '.';
+    if(B[a[1]]==='P'&&a[1]<8) B[a[1]]='Q';
+    if(B[a[1]]==='p'&&a[1]>55) B[a[1]]='q';
+    lastMove = {from: a[0], to: a[1]};
+    
+    if(captured) playSound('capture');
+    else playSound('move');
+}
+
+function clickSq(i) {
+    if(gameOver) return;
+    if(builder) { B[i] = chosen; render(); return; }
+    if(turn !== 'w') return;
+
+    if(sel === null) {
+        if(color(B[i]) === 'w') { sel = i; hints = moves(i); render(); }
+    } else if (hints.includes(i)) {
+        // Save history before moving
+        historyStack.push({ b: [...B], turn: 'w', last: lastMove ? {...lastMove} : null });
+        
+        make([sel,i]);
+        sel = null; hints = []; turn = 'b'; render();
+        
+        // Check if black is in check to play sound
+        if(isAttacked(B.indexOf('k'), 'b')) playSound('check');
+
+        setTimeout(aiMove, 350);
+    } else {
+        sel = null; hints = []; render();
+    }
+}
+
+function undoMove() {
+    if(historyStack.length === 0 || builder) return;
+    let state = historyStack.pop();
+    B = state.b;
+    turn = state.turn;
+    lastMove = state.last;
+    gameOver = false;
+    document.getElementById('gameOverModal').classList.add('hidden');
+    status.textContent = 'Your move';
+    render();
+}
+
+function aiMove() {
+    let ms = all('b');
+    if(!B.includes('K')) return end('AI Captured Your King!', false);
+    if(!ms.length) {
+        if(isAttacked(B.indexOf('k'), 'b')) return end('Checkmate! You Win!', true);
+        else return end('Stalemate! Draw.', true); // Treat draw as win sound for now
+    }
+    
+    let scored = ms.map(a=>({a, s:score(a)})).sort((x,y) => y.s - x.s);
+    let pick = Math.random()*100 < aiLevel ? scored[0].a : scored[Math.floor(Math.random()*scored.length)].a;
+    
+    make(pick);
+    turn = 'w';
+    render();
+
+    // Check if white is in check or dead
+    if(!B.includes('K')) return end('Checkmate! AI Wins.', false);
+    
+    let whiteMoves = all('w');
+    if(!whiteMoves.length) {
+        if(isAttacked(B.indexOf('K'), 'w')) return end('Checkmate! AI Wins.', false);
+        else return end('Stalemate! Draw.', true);
+    }
+    
+    if(isAttacked(B.indexOf('K'), 'w')) {
+        playSound('check');
+        status.textContent = '⚠️ You are in Check!';
+    } else {
+        status.textContent = 'Your move';
+    }
+}
+
+function score(a) {
+    let v={p:1,n:3,b:3,r:5,q:9,k:99};
+    return (v[(B[a[1]]||'.').toLowerCase()]||0)*10 + Math.random()*6;
+}
+
+function end(msg, isWin) {
+    gameOver = true;
+    status.textContent = msg;
+    playSound(isWin ? 'win' : 'lose');
+    document.getElementById('goTitle').textContent = isWin ? "Victory!" : "Defeat!";
+    document.getElementById('goTitle').style.color = isWin ? "#10b981" : "#ef4444";
+    document.getElementById('goDesc').textContent = msg;
+    document.getElementById('gameOverModal').classList.remove('hidden');
+}
+
+function startGame(custom) {
+    aiLevel = custom ? +document.getElementById('customLvl').value : +document.getElementById('level').value;
+    builder = false; gameOver = false; turn = 'w'; sel = null; hints = []; lastMove = null; historyStack = [];
+    if(!custom) init();
+    document.getElementById('home').style.display = 'none';
+    document.getElementById('game').style.display = 'grid';
+    document.getElementById('builderTools').classList.add('hidden');
+    document.getElementById('undoBtn').classList.remove('hidden');
+    status.textContent = 'Your move';
+    render();
+}
+
+function goHome() {
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('home').style.display = 'block';
+}
+
+function resetBoard() {
+    init(); gameOver = false; turn = 'w'; lastMove = null; historyStack = [];
+    render(); status.textContent = 'Your move';
+}
+
+function openBuilder() {
+    builder = true; gameOver = false; B = '................................................................'.split('');
+    document.getElementById('home').style.display = 'none';
+    document.getElementById('game').style.display = 'grid';
+    document.getElementById('builderTools').classList.remove('hidden');
+    document.getElementById('undoBtn').classList.add('hidden');
+    status.textContent = 'Build custom board';
+    renderTray(); render();
+}
+
+function openBotLevelModal() {
+    document.getElementById('botLevelModal').classList.remove('hidden');
+}
+
+function startCustomPlay() {
+    document.getElementById('botLevelModal').classList.add('hidden');
+    startGame(true);
+}
+
+function renderTray() {
+    document.getElementById('tray').innerHTML = ['P','N','B','R','Q','K','p','n','b','r','q','k','.'].map(p=>`<button class="tray-piece ${chosen===p?'active':''}" onclick="chosen='${p}';renderTray()">${p==='.'?'🧽':U[p]}</button>`).join('');
+}
+
+init();
 </script></body></html>
