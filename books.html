@@ -61,7 +61,7 @@
         }
 
         .chat-scroll-area {
-            flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px;
+            flex: 1; overflow-y: auto; padding: 25px; padding-top: 120px;
             display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
         }
 
@@ -69,35 +69,38 @@
         .user { align-items: flex-end; }
         .ai { align-items: flex-start; }
 
-        /* 🛑 FIXED BUBBLE STYLING AND READABILITY 🛑 */
+        /* 🛑 COLORS REVERTED TO ORIGINAL BEAUTIFUL THEME 🛑 */
         .bubble {
             max-width: 85%; padding: 16px 20px; border-radius: 20px;
             line-height: 1.7; font-size: 15px; position: relative;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); word-wrap: break-word;
-            padding-right: 45px !important; /* Fixed cut-off 3 dots */
+            padding-right: 60px !important; /* Space for Copy & Delete buttons */
             overflow: visible !important;
         }
         .user .bubble { 
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important; 
-            color: #ffffff !important; 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)) !important; 
+            color: white !important; 
             border-bottom-right-radius: 4px; 
         }
         .ai .bubble { 
-            background: #1e293b !important; /* Hardcoded dark background */
-            color: #f8fafc !important; /* Hardcoded bright white text */
-            border: 1px solid #334155 !important; 
+            background: var(--bg-surface) !important; 
+            color: var(--text-main) !important; 
+            border: 1px solid var(--border-light) !important; 
             border-bottom-left-radius: 4px; 
         }
         .bubble img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
 
-        /* PRESET CHIPS */
+        /* AI Metadata (Read Time, Word Count) */
+        .msg-meta { font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; gap: 10px; font-weight: bold; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 8px;}
+
+        /* PRESET CHIPS & QUICK REPLIES */
         .preset-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
         .preset-btn { 
-            background: rgba(255,255,255,0.05); border: 1px solid #3b82f6; 
-            color: #f8fafc; padding: 10px 15px; border-radius: 20px; 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--primary); 
+            color: var(--text-main); padding: 10px 15px; border-radius: 20px; 
             font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; 
         }
-        .preset-btn:hover { background: #3b82f6; color: white; }
+        .preset-btn:hover { background: var(--primary); color: white; }
 
         /* INPUT AREA & PLUS MENU */
         .chat-input-area {
@@ -110,7 +113,7 @@
         .chat-input-wrapper {
             display: flex; align-items: flex-end; gap: 10px; width: 100%; box-sizing: border-box;
             background: rgba(0,0,0,0.5); border: 1px solid var(--border-light);
-            border-radius: 24px; padding: 8px 15px;
+            border-radius: 24px; padding: 8px 15px; position: relative;
         }
         .chat-input-wrapper:focus-within { border-color: var(--primary); }
 
@@ -119,15 +122,10 @@
             font-family: inherit; font-size: 15px; resize: none;
             padding: 10px 0; outline: none; max-height: 100px; min-height: 24px;
         }
+        .char-counter { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 5px; padding-right: 15px; }
 
-        .icon-btn {
-            background: transparent; border: none; color: var(--primary);
-            font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-        }
-        .send-btn { 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-            color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px;
-        }
+        .icon-btn { background: transparent; border: none; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
+        .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; }
 
         /* PLUS MENU UI */
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -159,37 +157,67 @@
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
 
-        /* SCROLLABLE APP TITLE */
-        .appTitle {
-            font-size: 20px; font-weight: bold; color: var(--text-main);
-            white-space: nowrap; overflow-x: auto; max-width: 55vw; display: inline-block;
-            scrollbar-width: none; /* Firefox */
-        }
-        .appTitle::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+        /* SCROLLABLE APP TITLE (Feature 13 - Editable) */
+        .appTitle { font-size: 20px; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow-x: auto; max-width: 50vw; display: inline-block; scrollbar-width: none; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s;}
+        .appTitle::-webkit-scrollbar { display: none; }
+        .appTitle:hover { background: rgba(255,255,255,0.1); }
         
         /* SPINNER FOR NEW FULL SCREEN LOADER */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 🛑 FIXED MESSAGE 3-DOT MENU STYLES 🛑 */
-        .msg-menu-wrap { position: absolute; top: 12px; right: 8px; z-index: 10; }
-        .msg-menu-btn { background: transparent; border: none; color: inherit; opacity: 0.8; cursor: pointer; font-size: 22px; padding: 0 5px; line-height: 1; }
-        .msg-menu-btn:hover { opacity: 1; transform: scale(1.1); }
-        .msg-dropdown { display: none; position: absolute; right: 0; top: 30px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); overflow: hidden; min-width: 100px; z-index: 1000; }
+        /* 🛑 MESSAGE ACTION MENU STYLES (Copy & Delete) 🛑 */
+        .msg-menu-wrap { position: absolute; top: 12px; right: 8px; z-index: 10; display: flex; gap: 5px;}
+        .msg-action-btn { background: transparent; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 18px; padding: 0 5px; line-height: 1; transition:0.2s;}
+        .msg-action-btn:hover { opacity: 1; transform: scale(1.1); }
+        .msg-dropdown { display: none; position: absolute; right: 0; top: 25px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.8); overflow: hidden; min-width: 100px; z-index: 1000; }
         .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
         .msg-dropdown button:hover { background: rgba(239,68,68,0.2); }
+
+        /* Floating Action Buttons (Scroll & Focus) */
+        .fab-container { position: fixed; bottom: 100px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 90; transition: 0.3s; }
+        .fab-btn { background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.2s; opacity: 0.8; }
+        .fab-btn:hover { opacity: 1; transform: scale(1.1); background: var(--primary); color: white; border-color: var(--primary);}
+
+        /* Focus Mode Hide Classes */
+        .focus-mode-active .topbar, .focus-mode-active .chat-input-area, .focus-mode-active .fab-btn:not(#focusBtn) { display: none !important; }
+        .focus-mode-active .chat-scroll-area { padding-top: 20px; padding-bottom: 20px; }
+        #focusBtn.active { background: #ef4444; color: white; border-color: #ef4444; opacity: 1;}
+
+        /* Search Bar Styles */
+        .chat-search-bar { display: none; position: absolute; top: 65px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--bg-surface); border: 1px solid var(--primary); border-radius: 20px; padding: 10px 15px; z-index: 99; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .chat-search-bar input { width: 100%; background: transparent; border: none; color: white; outline: none; font-family: inherit; font-size: 14px; }
+        
+        /* Print Styles */
+        @media print {
+            body { background: white; color: black; }
+            .topbar, .chat-input-area, .fab-container, .overlay, .sidebar { display: none !important; }
+            .bubble { box-shadow: none; border: 1px solid #ccc !important; color: black !important; background: transparent !important; }
+            .chat-scroll-area { padding: 0; overflow: visible; height: auto; }
+            .msg-menu-wrap { display: none !important; }
+        }
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
 
 <div class="overlay" id="overlay"></div>
 
-<div class="topbar" id="appTopbar" style="position: absolute; width: 100%; z-index: 100;">
-    <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-    <div class="appTitle">📚 Book Deep Study</div>
-    <div style="display:flex; gap:10px;">
-        <button class="btn btn-primary" id="shareBtn" style="padding: 8px 12px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
-        <button class="btn btn-secondary" id="clearBtn" style="padding: 8px 12px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
-        <button class="btn btn-primary" id="settingsBtn" style="padding: 8px 15px; display: none; font-size: 13px;" onclick="openSettings()">⚙️ Settings</button>
+<div class="topbar" id="appTopbar" style="position: absolute; width: 100%; z-index: 100; flex-wrap: wrap;">
+    <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+        <div class="menuBtn" onclick="toggleSidebar()">☰</div>
+        <!-- Feature 13: Rename Session -->
+        <div class="appTitle" id="sessionTitleDisplay" onclick="renameSession()" title="Click to rename">📚 Book Deep Study</div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary" onclick="toggleChatSearch()" style="padding: 6px; font-size:16px; background:transparent; border:none; color:var(--text-main);">🔍</button>
+            <button class="btn btn-primary" id="shareBtn" style="padding: 6px 10px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
+            <!-- Feature 4: Export TXT -->
+            <button class="btn btn-secondary" id="exportBtn" style="padding: 6px 10px; display: none; font-size: 13px;" onclick="exportChatTXT()">💾 TXT</button>
+            <button class="btn btn-secondary" id="clearBtn" style="padding: 6px 10px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
+            <button class="btn btn-primary" id="settingsBtn" style="padding: 6px 10px; display: none; font-size: 13px;" onclick="openSettings()">⚙️</button>
+        </div>
+    </div>
+    <!-- Feature 11: Search Chat -->
+    <div class="chat-search-bar" id="chatSearchBar">
+        <input type="text" id="searchInput" placeholder="Search in chat..." onkeyup="searchChat(this.value)">
     </div>
 </div>
 
@@ -202,11 +230,11 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<!-- 🛑 FULL SCREEN LOADING OVERLAY 🛑 -->
-<div id="loadingPage" style="display:none; position:fixed; inset:0; background:var(--bg-base); z-index:99999; flex-direction:column; justify-content:center; align-items:center;">
-    <div style="border: 6px solid rgba(255,255,255,0.1); border-top: 6px solid var(--primary); border-radius: 50%; width: 70px; height: 70px; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
-    <h2 style="color: white; font-size: 24px; margin-bottom: 10px; font-weight: 800;">Reading Book...</h2>
-    <p style="color: var(--text-muted); font-size: 14px; text-align: center; max-width: 80%;">Please wait while the AI memorizes the entire chapter and questions.</p>
+<!-- 🛑 NEW, BEAUTIFUL LOADING OVERLAY 🛑 -->
+<div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
+    <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
+    <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Reading Book...</h2>
+    <p style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait while the AI memorizes the entire chapter and questions to ensure perfect answers.</p>
 </div>
 
 <div id="wizardPage">
@@ -302,7 +330,7 @@
             
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="nextStep(3)">⬅ Back</button>
-                <button class="btn btn-primary" onclick="nextStep(5)">Next ➔</button>
+                <button class="btn btn-primary" id="initBtnStep4" onclick="nextStep(5)">Next ➔</button>
             </div>
         </div>
 
@@ -310,7 +338,7 @@
             <h2>Ready!</h2>
             <div id="selectionSummary" style="text-align:left; background: rgba(0,0,0,0.3); border: 1px solid var(--border-light); padding:15px; border-radius:12px; margin-bottom:20px; font-weight:600; line-height:2;"></div>
             
-            <button class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation()">Initialize AI Tutor 🚀</button>
+            <button id="initFinalBtn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation()">Initialize AI Tutor 🚀</button>
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="nextStep(4)">⬅ Edit Details</button>
             </div>
@@ -319,8 +347,14 @@
 </div>
 
 <div id="chatPage">
-    <div class="chat-scroll-area" id="chatHistory">
-        </div>
+    <div class="chat-scroll-area" id="chatHistory"></div>
+
+    <!-- Floating Action Buttons (Features 5, 6, 7) -->
+    <div class="fab-container">
+        <button class="fab-btn" id="focusBtn" onclick="toggleFocusMode()" title="Focus Mode">👁️</button>
+        <button class="fab-btn" onclick="scrollToTop()" title="Scroll Top">⬆️</button>
+        <button class="fab-btn" onclick="scrollToBottom()" title="Scroll Bottom">⬇️</button>
+    </div>
 
     <div class="chat-input-area">
         <!-- Status Chips for Uploads -->
@@ -336,17 +370,24 @@
         <!-- ➕ PLUS MENU -->
         <div id="plusMenu" class="glass-panel">
             <button class="menu-item" onclick="openCamera()">📷 Open Camera</button>
-            <button class="menu-item" onclick="document.getElementById('imageInput').click()">📎 Upload PDF or Image</button>
+            <button class="menu-item" onclick="document.getElementById('imageInput').click()">📎 Upload PDF/Image</button>
             <button class="menu-item" onclick="openWebImport()">🌐 Import from Web</button>
+            <button class="menu-item" onclick="window.print()">🖨️ Print Chat</button> <!-- Feature 14 -->
         </div>
         
         <div class="chat-input-wrapper">
             <button id="plusBtn" class="icon-btn" onclick="togglePlusMenu(event)">➕</button>
             <button id="micBtn" class="icon-btn" onclick="openVoiceModal()" style="transition: 0.3s;">🎤</button>
             
-            <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
+            <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)" oninput="updateCharCount()"></textarea>
+            
+            <!-- Feature 9: Clear Input -->
+            <button class="icon-btn" style="color:var(--text-muted); font-size:16px; margin-right:5px;" onclick="clearInput()" title="Clear text">✖</button>
+            
             <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
         </div>
+        <!-- Feature 8: Character Counter -->
+        <div class="char-counter" id="charCount">0 characters</div>
     </div>
 
     <!-- Voice Input Modal -->
@@ -419,7 +460,7 @@
         s.classList.toggle("active", a); o.classList.toggle("active", a);
     }
 
-    // 🛑 3-DOTS DELETE MENU LOGIC 🛑
+    // 🛑 3-DOTS MENU & COPY/DELETE (Feature 3) 🛑
     function toggleMsgMenu(btn, e) {
         e.stopPropagation();
         let dropdown = btn.nextElementSibling;
@@ -432,14 +473,27 @@
         e.stopPropagation();
         if(confirm("Are you sure you want to delete this message?")) {
             let msg = btn.closest('.msg');
-            if(msg) {
-                msg.remove();
-                saveHistory();
-            }
+            if(msg) { msg.remove(); saveHistory(); }
         }
     }
 
-    const msgMenuHTML = `<div class="msg-menu-wrap"><button class="msg-menu-btn" onclick="toggleMsgMenu(this, event)">⋮</button><div class="msg-dropdown"><button onclick="deleteMsg(this, event)">🗑️ Delete</button></div></div>`;
+    function copyMsg(btn, e) {
+        e.stopPropagation();
+        let bubble = btn.closest('.bubble');
+        let text = bubble.innerText.replace('⋮','').replace('📋','').replace('🗑️ Delete','').trim();
+        navigator.clipboard.writeText(text);
+        let orig = btn.innerHTML;
+        btn.innerHTML = '✅';
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
+    }
+
+    // Fixed Menu HTML with Copy Button included inside bubble
+    const msgMenuHTML = `
+        <div class="msg-menu-wrap">
+            <button class="msg-action-btn" onclick="copyMsg(this, event)" title="Copy">📋</button>
+            <button class="msg-action-btn" onclick="toggleMsgMenu(this, event)">⋮</button>
+            <div class="msg-dropdown"><button onclick="deleteMsg(this, event)">🗑️ Delete</button></div>
+        </div>`;
 
     window.addEventListener('click', function(e) { 
         if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); 
@@ -448,6 +502,76 @@
         }
         if (document.getElementById("overlay").contains(e.target)) toggleSidebar();
     });
+
+    // 🛑 NEW FEATURES LOGIC 🛑
+    
+    // Feature 5, 6, 7: Scroll & Focus
+    function scrollToTop() { document.getElementById('chatHistory').scrollTo({top: 0, behavior: 'smooth'}); }
+    function scrollToBottom() { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); }
+    function toggleFocusMode() { 
+        document.body.classList.toggle('focus-mode-active'); 
+        let btn = document.getElementById('focusBtn');
+        btn.classList.toggle('active');
+    }
+
+    // Feature 4: Export TXT
+    function exportChatTXT() {
+        let content = "Book Deep Study - Conversation Export\n\n";
+        document.querySelectorAll('#chatHistory .msg').forEach(m => {
+            let role = m.classList.contains('user') ? "YOU" : "AI";
+            let text = m.querySelector('.bubble').innerText.replace('⋮','').replace('📋','').replace('🗑️ Delete','').trim();
+            content += `[${role}]:\n${text}\n\n-----------------\n\n`;
+        });
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `Study_Notes_${Date.now()}.txt`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    // Feature 8 & 9 & 10: Input Enhancements
+    function updateCharCount() {
+        const input = document.getElementById('chatInput');
+        document.getElementById('charCount').innerText = `${input.value.length} characters`;
+        localStorage.setItem('bookChatDraft', input.value); // Auto-save draft
+    }
+    function clearInput() {
+        const input = document.getElementById('chatInput');
+        input.value = ""; updateCharCount();
+    }
+    // Load Draft
+    if(localStorage.getItem('bookChatDraft')) {
+        document.getElementById('chatInput').value = localStorage.getItem('bookChatDraft');
+        updateCharCount();
+    }
+
+    // Feature 11: Search Chat
+    function toggleChatSearch() {
+        const sb = document.getElementById('chatSearchBar');
+        sb.style.display = sb.style.display === 'block' ? 'none' : 'block';
+        if(sb.style.display === 'block') document.getElementById('searchInput').focus();
+    }
+    function searchChat(query) {
+        query = query.toLowerCase();
+        document.querySelectorAll('#chatHistory .msg').forEach(m => {
+            if(!query) { m.style.display = 'flex'; return; }
+            let text = m.innerText.toLowerCase();
+            m.style.display = text.includes(query) ? 'flex' : 'none';
+        });
+    }
+
+    // Feature 13: Rename Session
+    function renameSession() {
+        let newTitle = prompt("Enter new session name:", document.getElementById('sessionTitleDisplay').innerText);
+        if(newTitle && newTitle.trim()) {
+            document.getElementById('sessionTitleDisplay').innerText = newTitle.trim();
+            // Also update in saved array
+            let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
+            let session = savedSessions.find(s => s.id == currentSessionId);
+            if(session) { session.title = newTitle.trim(); localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedSessions)); }
+        }
+    }
+
 
     let selectedData = {};
     let currentImageBase64 = null;
@@ -458,71 +582,27 @@
     let manualVoiceTimeout;
     function startChapterVoice() {
         if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice input not supported by this browser."); 
-        
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
         const rec = new SpeechRec(); 
         rec.lang = 'hi-IN'; 
-        
         const micBtn = document.getElementById("manualChapterMicBtn");
         const input = document.getElementById("manualChapter");
-        
-        rec.onstart = () => { 
-            micBtn.style.backgroundColor = "#ef4444"; 
-            micBtn.style.transform = "scale(1.1)";
-            input.placeholder = "Listening... Speak now."; 
-        }; 
-        
+        rec.onstart = () => { micBtn.style.backgroundColor = "#ef4444"; micBtn.style.transform = "scale(1.1)"; input.placeholder = "Listening... Speak now."; }; 
         rec.onspeechstart = () => { clearTimeout(manualVoiceTimeout); };
-
-        rec.onresult = (e) => {
-            clearTimeout(manualVoiceTimeout);
-            let transcript = e.results[0][0].transcript;
-            input.value = transcript; 
-            manualVoiceTimeout = setTimeout(() => { rec.stop(); }, 2000);
-        }; 
-        
-        rec.onend = () => {
-            clearTimeout(manualVoiceTimeout);
-            micBtn.style.backgroundColor = "var(--primary)";
-            micBtn.style.transform = "scale(1)";
-            input.placeholder = "e.g. Motion / गति";
-        };
-        
+        rec.onresult = (e) => { clearTimeout(manualVoiceTimeout); input.value = e.results[0][0].transcript; manualVoiceTimeout = setTimeout(() => { rec.stop(); }, 2000); }; 
+        rec.onend = () => { clearTimeout(manualVoiceTimeout); micBtn.style.backgroundColor = "var(--primary)"; micBtn.style.transform = "scale(1)"; input.placeholder = "e.g. Motion / गति"; };
         rec.start(); 
     }
 
-    function openVoiceModal() {
-        closePlusMenu();
-        document.getElementById('voiceModal').style.display = 'flex';
-    }
-
+    function openVoiceModal() { closePlusMenu(); document.getElementById('voiceModal').style.display = 'flex'; }
     function startVoice(lang) {
         document.getElementById('voiceModal').style.display = 'none';
-        if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice input not supported by this browser."); 
-        
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
-        const rec = new SpeechRec(); 
-        rec.lang = lang; 
-        const micBtn = document.getElementById("micBtn");
-        const chatInput = document.getElementById("chatInput");
-        
-        rec.onstart = () => { 
-            micBtn.style.color = "#ef4444"; 
-            micBtn.style.transform = "scale(1.2)";
-            chatInput.placeholder = "Listening..."; 
-        }; 
-        
-        rec.onresult = (e) => {
-            let transcript = e.results[0][0].transcript;
-            chatInput.value += (chatInput.value ? " " : "") + transcript; 
-        }; 
-        
-        rec.onend = () => {
-            micBtn.style.color = "var(--primary)";
-            micBtn.style.transform = "scale(1)";
-            chatInput.placeholder = "Ask your question here...";
-        };
-        
+        if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice input not supported."); 
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; const rec = new SpeechRec(); rec.lang = lang; 
+        const micBtn = document.getElementById("micBtn"); const chatInput = document.getElementById("chatInput");
+        rec.onstart = () => { micBtn.style.color = "#ef4444"; micBtn.style.transform = "scale(1.2)"; chatInput.placeholder = "Listening..."; }; 
+        rec.onresult = (e) => { chatInput.value += (chatInput.value ? " " : "") + e.results[0][0].transcript; updateCharCount();}; 
+        rec.onend = () => { micBtn.style.color = "var(--primary)"; micBtn.style.transform = "scale(1)"; chatInput.placeholder = "Ask your question here..."; };
         rec.start(); 
     }
 
@@ -538,7 +618,7 @@
             1. A full summary of the chapter's content.
             2. The EXACT End-of-Chapter Exercises/Questions printed in the real book, along with their solutions.
             CRITICAL: DO NOT invent or generate your own questions. Retrieve the REAL questions from the book.
-            Output strictly in ${targetLang}.`;
+            Output strictly in ${targetLang}. DO NOT USE HASHTAGS (#) FOR HEADINGS. Use **bolding** instead.`;
             
             const userPrmpt = `Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}, Publisher: ${selectedData.publisher}`;
 
@@ -550,43 +630,26 @@
             
             if(data.text) {
                 documentMemory = data.text;
-                // Success - we change the chip to show it's loaded safely
+                // Add Word Count to Chip (Feature 15)
+                let wCount = documentMemory.split(' ').length;
                 document.getElementById("attachmentChip").style.display = "flex";
-                document.getElementById("attachName").innerText = "📚 Chapter Memorized!";
+                document.getElementById("attachName").innerText = `📚 Chapter Memorized (${wCount} words)`;
             }
         } catch(e) {
             console.error("Failed to fetch chapter details in background:", e);
         }
     }
 
-    function togglePlusMenu(e) { 
-        e.stopPropagation(); 
-        const m = document.getElementById("plusMenu"); 
-        m.style.display = m.style.display === "flex" ? "none" : "flex"; 
-    }
-    function closePlusMenu() { 
-        document.getElementById("plusMenu").style.display = "none"; 
-    }
+    function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
+    function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
 
-    function openWebImport() {
-        closePlusMenu();
-        document.getElementById('webImportModal').style.display = 'flex';
-    }
-
+    function openWebImport() { closePlusMenu(); document.getElementById('webImportModal').style.display = 'flex'; }
     function saveWebUrls() {
         let text = document.getElementById('webUrlInput').value.trim();
         let urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-        if (urls.length > 10) {
-            alert("⚠️ Maximum 10 URLs allowed at a time! Truncating list.");
-            urls = urls.slice(0, 10);
-        }
-        if (urls.length > 0) {
-            webUrls = urls;
-            document.getElementById("attachmentChip").style.display = "flex";
-            document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`;
-        }
-        document.getElementById('webImportModal').style.display = 'none';
-        document.getElementById('webUrlInput').value = '';
+        if (urls.length > 10) { alert("⚠️ Maximum 10 URLs allowed!"); urls = urls.slice(0, 10); }
+        if (urls.length > 0) { webUrls = urls; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`; }
+        document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = '';
     }
 
     function handleFileSelect(event) {
@@ -596,187 +659,109 @@
 
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                currentImageBase64 = e.target.result;
-                document.getElementById('imagePreviewContainer').style.display = 'block';
-                document.getElementById('imgChip').src = currentImageBase64;
-            };
+            reader.onload = function(e) { currentImageBase64 = e.target.result; document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64; };
             reader.readAsDataURL(file);
         } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
             const reader = new FileReader();
-            document.getElementById("attachmentChip").style.display = "flex";
-            document.getElementById("attachName").innerText = "⏳ Reading PDF...";
-            
+            document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = "⏳ Reading PDF...";
             reader.onload = async function() {
                 try {
-                    const typedarray = new Uint8Array(this.result);
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    let text = "";
-                    for(let i=1; i<=pdf.numPages; i++){
-                        const p = await pdf.getPage(i);
-                        const c = await p.getTextContent();
-                        text += c.items.map(item=>item.str).join(' ');
-                    }
-                    documentMemory = text;
-                    document.getElementById("attachName").innerText = `📄 ${file.name}`;
-                } catch(err) {
-                    alert("❌ Failed to read PDF. It might be corrupted or secured.");
-                    clearAttachment();
-                }
+                    const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = "";
+                    for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(item=>item.str).join(' '); }
+                    documentMemory = text; document.getElementById("attachName").innerText = `📄 ${file.name}`;
+                } catch(err) { alert("❌ Failed to read PDF. It might be corrupted or secured."); clearAttachment(); }
             };
             reader.readAsArrayBuffer(file);
-        } else {
-            alert("Only Images and PDFs are supported right now.");
-        }
+        } else { alert("Only Images and PDFs are supported right now."); }
         event.target.value = ''; 
     }
     
-    function removeImage() {
-        currentImageBase64 = null;
-        document.getElementById('imagePreviewContainer').style.display = 'none';
-    }
-
-    function clearAttachment() {
-        documentMemory = "";
-        webUrls = [];
-        document.getElementById("attachmentChip").style.display = "none";
-    }
+    function removeImage() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; }
+    function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; }
 
     function toggleShareMode() {
-        isShareMode = true;
-        document.querySelector('.chat-input-area').style.display = 'none';
-        document.getElementById('shareActionArea').style.display = 'flex';
-        document.getElementById('chatHistory').classList.add('share-mode-active');
-        
-        document.querySelectorAll('.bubble').forEach(b => {
-            b.onclick = function(e) {
-                if(!isShareMode) return;
-                this.classList.toggle('selected-for-share');
-            }
-        });
+        isShareMode = true; document.querySelector('.chat-input-area').style.display = 'none'; document.getElementById('shareActionArea').style.display = 'flex'; document.getElementById('chatHistory').classList.add('share-mode-active');
+        document.querySelectorAll('.bubble').forEach(b => { b.onclick = function(e) { if(!isShareMode) return; this.classList.toggle('selected-for-share'); } });
     }
-
     function cancelShareMode() {
-        isShareMode = false;
-        document.querySelector('.chat-input-area').style.display = 'flex';
-        document.getElementById('shareActionArea').style.display = 'none';
-        document.getElementById('chatHistory').classList.remove('share-mode-active');
-        
-        document.querySelectorAll('.bubble').forEach(b => {
-            b.classList.remove('selected-for-share');
-            b.onclick = null;
-        });
+        isShareMode = false; document.querySelector('.chat-input-area').style.display = 'flex'; document.getElementById('shareActionArea').style.display = 'none'; document.getElementById('chatHistory').classList.remove('share-mode-active');
+        document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
     }
-
     function proceedToShare() {
-        let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
-        if(selectedNodes.length === 0) return alert("Please tap at least one message to share!");
+        if(document.querySelectorAll('.bubble.selected-for-share').length === 0) return alert("Please tap at least one message to share!");
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
     function downloadSelectedAsPDF() {
         let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
         if(selectedNodes.length === 0) return alert("Please tap at least one message to save!");
-        
         let content = "<h2 style='text-align:center; color:#3b82f6;'>📚 Book Deep Study - Notes</h2><hr>";
         selectedNodes.forEach(n => {
             let clone = n.cloneNode(true);
-            let menuWrap = clone.querySelector('.msg-menu-wrap');
-            if(menuWrap) menuWrap.remove();
+            let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
+            let metaWrap = clone.querySelector('.msg-meta'); if(metaWrap) metaWrap.remove();
             content += `<div style="margin-bottom:20px; padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9fafb;">${clone.innerHTML}</div>`;
         });
-
         let win = window.open('', '', 'width=800,height=600');
         win.document.write(`<html><head><title>Saved Notes</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;}</style></head><body>${content}</body></html>`);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { win.print(); cancelShareMode(); }, 500);
+        win.document.close(); win.focus(); setTimeout(() => { win.print(); cancelShareMode(); }, 500);
     }
 
     async function submitWhatsAppSelection(event) {
         const number = document.getElementById('waNumberInput').value.trim();
         if (!number) return alert("Please enter a mobile number.");
-
-        let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
         let fullChatText = "📚 *Book Deep Study - Selected Notes* 📚\n\n";
-
-        selectedNodes.forEach(node => {
+        document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
             let clone = node.cloneNode(true);
-            let menuWrap = clone.querySelector('.msg-menu-wrap');
-            if(menuWrap) menuWrap.remove();
-            let htmlStr = clone.innerHTML;
-            htmlStr = htmlStr.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
+            let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
+            let metaWrap = clone.querySelector('.msg-meta'); if(metaWrap) metaWrap.remove();
+            let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
             clone.innerHTML = htmlStr;
-            let msgText = clone.textContent || clone.innerText || "";
-            msgText = msgText.replace(/\n\s*\n/g, '\n\n').trim();
-
-            if (msgText.length > 0) {
-                fullChatText += `${msgText}\n\n------------------------\n\n`;
-            }
+            let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
+            if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
         });
-
         const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
         const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
         fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
 
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ Sending...";
-        btn.disabled = true;
-
+        const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
         try {
-            const response = await fetch("/api/secure-whatsapp", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ number: number, message: fullChatText.trim() })
-            });
-
-            if (response.status === 403) {
-                alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
-            } else if (response.ok) {
-                alert("✅ Selected notes sent successfully to authorized device!");
-                document.getElementById('whatsappModal').style.display = 'none';
-                cancelShareMode();
-            } else {
-                alert("❌ Failed to send. Server responded with an error.");
-            }
-        } catch (e) {
-            alert("❌ Connection error. Is your server running?");
-        }
-
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+            const response = await fetch("/api/secure-whatsapp", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: number, message: fullChatText.trim() }) });
+            if (response.status === 403) alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
+            else if (response.ok) { alert("✅ Selected notes sent successfully!"); document.getElementById('whatsappModal').style.display = 'none'; cancelShareMode(); } 
+            else alert("❌ Failed to send. Server responded with an error.");
+        } catch (e) { alert("❌ Connection error. Is your server running?"); }
+        btn.innerHTML = originalText; btn.disabled = false;
     }
 
     window.onload = function() {
         let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
-        let urlRestoreId = newSearchParams(window.location.search).get('restore');
+        let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
         
         if(urlRestoreId) {
             let session = savedSessions.find(s => s.id == urlRestoreId);
             if(session) {
-                selectedData = session.data;
-                currentSessionId = session.id;
-                document.getElementById('wizardPage').style.display = 'none';
-                document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block';
-                document.getElementById('clearBtn').style.display = 'block';
-                document.getElementById('shareBtn').style.display = 'block';
+                selectedData = session.data; currentSessionId = session.id;
+                document.getElementById('sessionTitleDisplay').innerText = session.title || "📚 Book Deep Study";
+                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+                document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
                 document.getElementById('chatHistory').innerHTML = session.html;
-                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTop = c.scrollHeight; }, 100);
+                // ONLY SCROLL ONCE ON LOAD
+                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
             }
         } else {
             let activeSession = localStorage.getItem('bookChatHistory_VUltimateAI');
             let activeSettings = localStorage.getItem('bookSettings_VUltimateAI');
             if(activeSession && activeSettings) {
                 selectedData = JSON.parse(activeSettings);
-                document.getElementById('wizardPage').style.display = 'none';
-                document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block';
-                document.getElementById('clearBtn').style.display = 'block';
-                document.getElementById('shareBtn').style.display = 'block';
+                document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`.substring(0,25) + "...";
+                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+                document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
                 document.getElementById('chatHistory').innerHTML = activeSession;
-                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTop = c.scrollHeight; }, 100);
+                // ONLY SCROLL ONCE ON LOAD
+                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
             }
         }
     };
@@ -817,7 +802,7 @@
         }
     }
 
-    // 🛑 100% DYNAMIC AI CHAPTER GENERATOR (LANGUAGE STRICT) 🛑
+    // 🛑 STRICT HALLUCINATION BLOCKER 🛑
     async function triggerChapterFetch() {
         let pub = document.getElementById('publisherSelect').value;
         let sub = document.getElementById('subjectSelect').value;
@@ -829,15 +814,19 @@
 
         statusLabel.innerText = "⏳ Fetching your chapter details...";
         chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching... --</option>';
+        document.getElementById('initBtnStep4').style.display = 'block'; // Reset button state
         
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(sub);
         let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
 
         try {
             const sysPrompt = `You are a strict API. The user will provide a Class, Subject, and Publisher/Board. 
-            You MUST return a JSON array of strings containing the accurate standard textbook chapter names for that specific syllabus. 
-            CRITICAL RULE: IF THE SUBJECT IS ENGLISH, OUTPUT CHAPTER NAMES STRICTLY IN ENGLISH. IF ANY OTHER SUBJECT, OUTPUT STRICTLY IN ${targetLang}. 
-            ONLY output the raw JSON array. No markdown, no backticks, no explanations.`;
+            CRITICAL RULES:
+            1. IF the requested Subject is NOT taught in the specified Class (for example, Physics in Class 2 DOES NOT EXIST), you MUST output an empty array: []
+            2. DO NOT hallucinate, invent, or guess chapters. If the book does not legitimately exist, return [].
+            3. IF it is a real textbook, return a JSON array of strings containing the accurate standard textbook chapter names.
+            4. IF the subject is English, output chapter names strictly in English. Otherwise, output strictly in ${targetLang}. 
+            ONLY output the raw JSON array. No markdown, no backticks.`;
             
             const userPrmpt = `Class: ${cls}, Subject: ${sub}, Publisher: ${pub || 'NCERT'}`;
 
@@ -849,15 +838,24 @@
             const data = await r.json();
             if(data.error) throw new Error(data.error);
 
-            let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            let cleanJson = data.text.replace(/```json/gi, '').replace(/
+```/g, '').trim();
             let fetchedChapters = JSON.parse(cleanJson);
             
-            if(!Array.isArray(fetchedChapters) || fetchedChapters.length === 0) throw new Error("Invalid Array");
+            if(!Array.isArray(fetchedChapters)) throw new Error("Invalid Array");
 
+            if(fetchedChapters.length === 0) {
+                // FEATURE 15: SMART SUBJECT BLOCKER
+                chapSelect.innerHTML = '<option value="" selected disabled>-- ❌ Subject not taught in this class --</option>';
+                statusLabel.innerText = "Subject not found! Please check Class/Subject.";
+                statusLabel.style.color = "#ef4444";
+                document.getElementById('initBtnStep4').style.display = 'none'; // Hide next button
+                return;
+            }
+
+            statusLabel.style.color = "var(--text-muted)";
             chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
-            fetchedChapters.forEach((chap, i) => { 
-                chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; 
-            });
+            fetchedChapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; });
             statusLabel.innerText = "Select Chapter (Generated by AI):";
 
         } catch(e) {
@@ -867,10 +865,7 @@
         }
     }
 
-    function runPreset(cmd) {
-        document.getElementById('chatInput').value = cmd;
-        sendMessage();
-    }
+    function runPreset(cmd) { document.getElementById('chatInput').value = cmd; sendMessage(); }
 
     async function startConversation(forceNew = false) {
         let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
@@ -881,122 +876,55 @@
             if(oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) {
                 let savedArray = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
                 savedArray.unshift({
-                    id: currentSessionId,
-                    title: `${oldSettings.subject} - ${oldSettings.chapter}`.substring(0,40),
-                    data: oldSettings,
-                    html: oldHistory
+                    id: currentSessionId, title: `${oldSettings.subject} - ${oldSettings.chapter}`.substring(0,40), data: oldSettings, html: oldHistory
                 });
                 if(savedArray.length > 20) savedArray.pop();
                 localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedArray));
                 
-                document.getElementById('chatHistory').innerHTML = "";
-                currentSessionId = Date.now(); 
+                document.getElementById('chatHistory').innerHTML = ""; currentSessionId = Date.now(); 
             }
         }
 
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
             
-            document.getElementById('wizardPage').style.display = 'none';
-            document.getElementById('loadingPage').style.display = 'flex';
-            
+            document.getElementById('wizardPage').style.display = 'none'; document.getElementById('loadingPage').style.display = 'flex';
             await fetchChapterContext();
             
-            document.getElementById('loadingPage').style.display = 'none';
-            document.getElementById('chatPage').style.display = 'flex';
-            document.getElementById('settingsBtn').style.display = 'block';
-            document.getElementById('clearBtn').style.display = 'block';
-            document.getElementById('shareBtn').style.display = 'block';
-
+            document.getElementById('loadingPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+            document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
+            
+            document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`.substring(0,25) + "...";
             localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
 
             let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
             
             let initialMessageHTML = isEnglishSub ? 
-                `Hello! I am your AI Tutor. <br><br>
-                We are ready to discuss Chapter **"${selectedData.chapter}"** of **${selectedData.subject}** (${selectedData.class}). <br><br>
-                **I will respond in English by default.** If you want me to speak in Hindi, just ask!<br>
-                *Note: If you ask for a specific exercise (like 'Solve C') and I make a mistake, please upload a photo of the textbook page!*<br><br>
+                `Hello! I am your AI Tutor. <br><br>We are ready to discuss Chapter **"${selectedData.chapter}"** of **${selectedData.subject}** (${selectedData.class}). <br><br>**I will respond in English by default.**<br>*Note: If you ask to solve a specific exercise, I will check the real textbook data first!*<br><br>
                 <div class="preset-chips" style="margin-top: 15px;">
                     <button class="preset-btn" onclick="runPreset('Generate detailed study notes for this chapter.')">📝 Generate Notes</button>
                     <button class="preset-btn" onclick="runPreset('Create 10 important MCQs from this chapter with answers.')">✅ Objectives</button>
                     <button class="preset-btn" onclick="runPreset('Analyze this chapter in simple terms.')">📊 Analyze Chapter</button>
                 </div>`
                 : 
-                `नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>
-                हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>
-                **मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।** यदि आप चाहते हैं कि मैं अंग्रेजी में बात करूँ, तो बस मुझे अंग्रेजी में बोलने के लिए कहें।<br>
-                *नोट: यदि आप किसी विशिष्ट अभ्यास (जैसे 'Solve C') के लिए पूछते हैं और मैं गलती करता हूँ, तो कृपया किताब के पेज का फोटो अपलोड करें!*<br><br>
+                `नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।**<br>*नोट: यदि आप किसी विशिष्ट अभ्यास (जैसे 'Solve C') को हल करने के लिए कहते हैं, तो मैं असली किताब के डेटा की जांच करूंगा!*<br><br>
                 <div class="preset-chips" style="margin-top: 15px;">
-                    <button class="preset-btn" onclick="runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स (Generate Notes)</button>
-                    <button class="preset-btn" onclick="runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न (Objectives)</button>
-                    <button class="preset-btn" onclick="runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण (Analyze Chapter)</button>
+                    <button class="preset-btn" onclick="runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स</button>
+                    <button class="preset-btn" onclick="runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न</button>
+                    <button class="preset-btn" onclick="runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
                 </div>`;
             
             addAiMessage(initialMessageHTML, false);
-            
         } else {
-            document.getElementById('wizardPage').style.display = 'none';
-            document.getElementById('chatPage').style.display = 'flex';
-            document.getElementById('settingsBtn').style.display = 'block';
-            document.getElementById('clearBtn').style.display = 'block';
-            document.getElementById('shareBtn').style.display = 'block';
+            document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+            document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
         }
     }
 
     function openSettings() {
-        document.getElementById('chatPage').style.display = 'none';
-        document.getElementById('settingsBtn').style.display = 'none';
-        document.getElementById('clearBtn').style.display = 'none';
-        document.getElementById('shareBtn').style.display = 'none';
-        document.getElementById('wizardPage').style.display = 'block';
+        document.getElementById('chatPage').style.display = 'none'; document.getElementById('settingsBtn').style.display = 'none'; document.getElementById('clearBtn').style.display = 'none'; document.getElementById('shareBtn').style.display = 'none'; document.getElementById('exportBtn').style.display = 'none'; document.getElementById('wizardPage').style.display = 'block';
         nextStep(1); 
-    }
-
-    let camStream = null; let camFacing = "environment"; let isFlash = false;
-    async function openCamera() { 
-        closePlusMenu();
-        document.getElementById('cameraModal').style.display = 'flex'; 
-        try { 
-            if(camStream) camStream.getTracks().forEach(t => t.stop()); 
-            camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
-            document.getElementById("cameraVideo").srcObject = camStream; 
-            setTimeout(async () => { 
-                const track = camStream.getVideoTracks()[0]; 
-                if (track && track.getCapabilities && track.getCapabilities().torch && camFacing === "environment") { 
-                    isFlash = true; 
-                    await track.applyConstraints({ advanced: [{ torch: true }] }); 
-                    document.getElementById('flashBtn').innerText = "💡"; 
-                } else {
-                    isFlash = false;
-                    document.getElementById('flashBtn').innerText = "🔦";
-                }
-            }, 500); 
-        } catch(e) { 
-            alert("Camera Error: Please grant camera permissions."); 
-            document.getElementById('cameraModal').style.display = 'none'; 
-        } 
-    }
-    function closeCamera() { 
-        document.getElementById('cameraModal').style.display = 'none'; 
-        if(camStream) {
-            const track = camStream.getVideoTracks()[0];
-            try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){}
-            camStream.getTracks().forEach(t => t.stop()); 
-        }
-        isFlash = false; 
-    }
-    async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
-    async function toggleFlash() { 
-        if(!camStream) return; const track = camStream.getVideoTracks()[0]; 
-        try { if(track && track.getCapabilities && track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } } catch(err) {}
-    }
-    function takePhoto() { 
-        const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas"); 
-        c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); 
-        currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
-        document.getElementById('imagePreviewContainer').style.display = 'block';
-        document.getElementById('imgChip').src = currentImageBase64;
-        closeCamera(); 
     }
 
     function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
@@ -1008,37 +936,32 @@
 
         if(!text && !img && !documentMemory && webUrls.length === 0) return;
 
-        const msgDiv = document.createElement("div");
-        msgDiv.className = "msg user";
+        const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
         let imgHtml = img ? `<img src="${img}"><br>` : "";
         msgDiv.innerHTML = `<div class="bubble">${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}${msgMenuHTML}</div>`;
         document.getElementById('chatHistory').appendChild(msgDiv);
         
-        const c = document.getElementById('chatHistory');
-        c.scrollTop = c.scrollHeight;
+        // ONLY SCROLL WHEN USER SENDS A MESSAGE
+        const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
 
-        inputEl.value = "";
-        removeImage(); 
+        inputEl.value = ""; localStorage.removeItem('bookChatDraft'); document.getElementById('charCount').innerText = "0 characters"; removeImage(); 
 
         const loadingId = "load_" + Date.now();
-        const loadDiv = document.createElement("div");
-        loadDiv.className = "msg ai";
-        loadDiv.id = loadingId;
+        const loadDiv = document.createElement("div"); loadDiv.className = "msg ai"; loadDiv.id = loadingId;
         loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
-        c.scrollTop = c.scrollHeight; 
+        c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); // Scroll for loading bubble
 
-        // 🛑 EXTRACT CONVERSATION HISTORY FOR MEMORY 🛑
+        // 🛑 MEMORY ENGINE 🛑
         let recentHistory = "";
         let chatNodes = document.querySelectorAll('#chatHistory .msg');
         let startIdx = Math.max(0, chatNodes.length - 8); 
         for(let i = startIdx; i < chatNodes.length; i++) {
-            let m = chatNodes[i];
-            if(m.id === loadingId) continue;
+            let m = chatNodes[i]; if(m.id === loadingId) continue;
             let role = m.classList.contains('user') ? "User" : "AI";
             let clone = m.cloneNode(true);
-            let menuWrap = clone.querySelector('.msg-menu-wrap');
-            if(menuWrap) menuWrap.remove();
+            let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
+            let metaWrap = clone.querySelector('.msg-meta'); if(metaWrap) metaWrap.remove();
             let msgText = clone.innerText.trim().replace(/\s+/g, ' ');
             if(msgText) recentHistory += `${role}: ${msgText}\n`;
         }
@@ -1046,37 +969,23 @@
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
         let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
         
-        // 🛑 STRICT TEXTBOOK RETRIEVER PROMPT 🛑
+        // 🛑 STRICT NO HASHTAG RULE AND TEXTBOOK ENFORCEMENT 🛑
         let sysPrompt = `You are a premium AI expert educational tutor. STRICT RULES:
-1. DEFAULT LANGUAGE: You MUST respond entirely in ${targetLang} by default.
-2. SUBJECT CONTEXT: You are teaching ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}. Use appropriate terminology.
-3. HINGLISH RULE: If the user types a query or chapter name in Hinglish, interpret it accurately as Hindi.
-4. EXACT TEXTBOOK RETRIEVAL: If asked to solve a specific exercise (like "Solve C"), DO NOT invent your own questions. Retrieve the EXACT text and questions from the real printed ${selectedData.publisher} textbook for this chapter. If you don't have the exact text, solve it using the provided document memory.
-5. Use **bolding** for important terms and double spacing (\\n\\n) between paragraphs.
-6. IF THE SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`;
+1. DEFAULT LANGUAGE: You MUST respond entirely in ${targetLang}.
+2. SUBJECT CONTEXT: You are teaching ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}.
+3. EXACT TEXTBOOK RETRIEVAL: If asked to solve a specific exercise (like "Solve C"), DO NOT invent your own questions. Retrieve the EXACT text and questions from the real printed ${selectedData.publisher} textbook for this chapter. Solve it using the provided document memory.
+4. DO NOT USE HASHTAGS (#) FOR HEADINGS. Use **bolding** instead.
+5. IF THE SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`;
 
-        if(recentHistory) {
-            sysPrompt += `\n\n--- RECENT CONVERSATION HISTORY ---\n${recentHistory}\n--- END HISTORY ---\nRemember this context for follow-up questions.`;
-        }
+        if(recentHistory) sysPrompt += `\n\n--- RECENT CONVERSATION HISTORY ---\n${recentHistory}\n--- END HISTORY ---\nRemember this context.`;
+        if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY / UPLOADED DOCUMENT ---\nRead this carefully to answer questions accurately:\n${documentMemory.substring(0, 40000)}\n--- END CONTENT ---`;
+        if (webUrls.length > 0) sysPrompt += `\n\n--- REFERENCE URLs ---\nReference these links:\n${webUrls.join('\n')}`;
 
-        if (documentMemory) {
-            sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY / UPLOADED DOCUMENT ---\nRead this carefully to answer the user's questions accurately:\n${documentMemory.substring(0, 40000)}\n--- END CONTENT ---`;
-        }
-        
-        if (webUrls.length > 0) {
-            sysPrompt += `\n\n--- REFERENCE URLs ---\nThe user attached these links. Use your internal knowledge or web parsing capabilities to reference them if needed:\n${webUrls.join('\n')}`;
-        }
-
-        const payload = img ? 
-            { imageBase64: img, userPrompt: text || "चित्र का विश्लेषण करें।", systemPrompt: sysPrompt } : 
-            { userPrompt: text || "Please analyze the loaded document/chapter.", systemPrompt: sysPrompt };
+        const payload = img ? { imageBase64: img, userPrompt: text || "चित्र का विश्लेषण करें।", systemPrompt: sysPrompt } : { userPrompt: text || "Please analyze the loaded document/chapter.", systemPrompt: sysPrompt };
         
         try {
             const endpoint = img ? "/api/gemini-vision" : "/api/gemini-text";
-            const r = await fetch(endpoint, {
-                method: "POST", headers: {"Content-Type":"application/json"},
-                body: JSON.stringify(payload)
-            });
+            const r = await fetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
             const data = await r.json();
             if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
 
@@ -1084,54 +993,31 @@
             await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
 
         } catch(err) {
-            // 🛑 IDIOT-PROOF ERROR MESSAGE 🛑
             let errorMsg = err.message;
-            if(errorMsg.includes("Failed to fetch")) {
-                errorMsg = "🔴 Backend Server is OFFLINE! You must start your server.js file to fix this 'Failed to fetch' error.";
-            }
+            if(errorMsg.includes("Failed to fetch")) errorMsg = "🔴 Backend Server is OFFLINE! You must start your server.js file to fix this error.";
             document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
             saveHistory();
         }
     }
 
+    // 🛑 NO SCROLLING DURING TYPEWRITER 🛑
     async function addAiMessage(text, typewrite = false) {
-        const msgDiv = document.createElement("div");
-        msgDiv.className = "msg ai";
-        const bubble = document.createElement("div");
-        bubble.className = "bubble";
-        msgDiv.appendChild(bubble);
-        document.getElementById('chatHistory').appendChild(msgDiv);
+        const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
+        const bubble = document.createElement("div"); bubble.className = "bubble";
+        msgDiv.appendChild(bubble); document.getElementById('chatHistory').appendChild(msgDiv);
 
         let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 
         if(typewrite) {
-            const frameTime = 30; 
-            const totalFrames = 5000 / frameTime; 
-            const charsPerFrame = Math.max(1, Math.ceil(formattedText.length / totalFrames));
-            
-            let currentHTML = "";
-            let i = 0;
-            
+            const frameTime = 30; const totalFrames = 5000 / frameTime; const charsPerFrame = Math.max(1, Math.ceil(formattedText.length / totalFrames));
+            let currentHTML = ""; let i = 0;
             while(i < formattedText.length) {
                 let charsProcessed = 0;
-                
                 while(i < formattedText.length && charsProcessed < charsPerFrame) {
                     let char = formattedText[i];
-                    
-                    if(char === '<') {
-                        let end = formattedText.indexOf('>', i);
-                        if(end !== -1) {
-                            currentHTML += formattedText.substring(i, end + 1);
-                            i = end + 1;
-                            continue; 
-                        }
-                    }
-                    
-                    currentHTML += (char === '\n') ? '<br>' : char;
-                    i++;
-                    charsProcessed++;
+                    if(char === '<') { let end = formattedText.indexOf('>', i); if(end !== -1) { currentHTML += formattedText.substring(i, end + 1); i = end + 1; continue; } }
+                    currentHTML += (char === '\n') ? '<br>' : char; i++; charsProcessed++;
                 }
-                
                 bubble.innerHTML = currentHTML;
                 await new Promise(r => setTimeout(r, frameTime));
             }
@@ -1140,6 +1026,18 @@
         }
 
         bubble.insertAdjacentHTML('beforeend', msgMenuHTML);
+        
+        // Feature 1, 2, 14: Read Time, Word Count & Quick Replies
+        let wordCount = formattedText.split(' ').length;
+        let readTime = Math.max(1, Math.ceil(wordCount / 200));
+        let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
+        
+        let quickReplies = isEnglishSub ? 
+            `<button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('Explain this simpler.')">Explain simpler</button><button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('Give an example.')">Give example</button>` : 
+            `<button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('इसे और आसान भाषा में समझाएं।')">आसान भाषा</button><button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('एक उदाहरण दें।')">उदाहरण दें</button>`;
+
+        let metaHTML = `<div class="msg-meta"><span>⏳ ${readTime} min read</span><span>📝 ${wordCount} words</span><div style="display:flex; gap:5px; margin-left:auto;">${quickReplies}</div></div>`;
+        bubble.insertAdjacentHTML('beforeend', metaHTML);
 
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
         saveHistory();
