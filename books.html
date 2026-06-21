@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
-    <!-- PDF Extraction Engine -->
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
 
@@ -90,9 +89,6 @@
         }
         .bubble img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
 
-        /* AI Metadata (Read Time, Word Count) */
-        .msg-meta { font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; gap: 10px; font-weight: bold; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 8px;}
-
         /* PRESET CHIPS & QUICK REPLIES */
         .preset-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
         .preset-btn { 
@@ -122,7 +118,6 @@
             font-family: inherit; font-size: 15px; resize: none;
             padding: 10px 0; outline: none; max-height: 100px; min-height: 24px;
         }
-        .char-counter { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 5px; padding-right: 15px; }
 
         .icon-btn { background: transparent; border: none; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
         .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; }
@@ -157,7 +152,7 @@
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
 
-        /* SCROLLABLE APP TITLE (Feature 13 - Editable) */
+        /* SCROLLABLE APP TITLE (Editable) */
         .appTitle { font-size: 20px; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow-x: auto; max-width: 50vw; display: inline-block; scrollbar-width: none; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s;}
         .appTitle::-webkit-scrollbar { display: none; }
         .appTitle:hover { background: rgba(255,255,255,0.1); }
@@ -165,7 +160,7 @@
         /* SPINNER FOR NEW FULL SCREEN LOADER */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 🛑 MESSAGE ACTION MENU STYLES (Copy & Delete) 🛑 */
+        /* 🛑 FIXED MESSAGE ACTION MENU STYLES (Copy & Delete) 🛑 */
         .msg-menu-wrap { position: absolute; top: 12px; right: 8px; z-index: 10; display: flex; gap: 5px;}
         .msg-action-btn { background: transparent; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 18px; padding: 0 5px; line-height: 1; transition:0.2s;}
         .msg-action-btn:hover { opacity: 1; transform: scale(1.1); }
@@ -173,19 +168,15 @@
         .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
         .msg-dropdown button:hover { background: rgba(239,68,68,0.2); }
 
-        /* Floating Action Buttons (Scroll & Focus) */
+        /* Floating Action Buttons (Focus Mode Only) */
         .fab-container { position: fixed; bottom: 100px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 90; transition: 0.3s; }
         .fab-btn { background: var(--bg-surface); border: 1px solid var(--border-light); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.2s; opacity: 0.8; }
         .fab-btn:hover { opacity: 1; transform: scale(1.1); background: var(--primary); color: white; border-color: var(--primary);}
 
         /* Focus Mode Hide Classes */
-        .focus-mode-active .topbar, .focus-mode-active .chat-input-area, .focus-mode-active .fab-btn:not(#focusBtn) { display: none !important; }
+        .focus-mode-active .topbar, .focus-mode-active .chat-input-area { display: none !important; }
         .focus-mode-active .chat-scroll-area { padding-top: 20px; padding-bottom: 20px; }
         #focusBtn.active { background: #ef4444; color: white; border-color: #ef4444; opacity: 1;}
-
-        /* Search Bar Styles */
-        .chat-search-bar { display: none; position: absolute; top: 65px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--bg-surface); border: 1px solid var(--primary); border-radius: 20px; padding: 10px 15px; z-index: 99; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .chat-search-bar input { width: 100%; background: transparent; border: none; color: white; outline: none; font-family: inherit; font-size: 14px; }
         
         /* Print Styles */
         @media print {
@@ -204,20 +195,12 @@
 <div class="topbar" id="appTopbar" style="position: absolute; width: 100%; z-index: 100; flex-wrap: wrap;">
     <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
         <div class="menuBtn" onclick="toggleSidebar()">☰</div>
-        <!-- Feature 13: Rename Session -->
         <div class="appTitle" id="sessionTitleDisplay" onclick="renameSession()" title="Click to rename">📚 Book Deep Study</div>
         <div style="display:flex; gap:8px;">
-            <button class="btn btn-secondary" onclick="toggleChatSearch()" style="padding: 6px; font-size:16px; background:transparent; border:none; color:var(--text-main);">🔍</button>
             <button class="btn btn-primary" id="shareBtn" style="padding: 6px 10px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
-            <!-- Feature 4: Export TXT -->
-            <button class="btn btn-secondary" id="exportBtn" style="padding: 6px 10px; display: none; font-size: 13px;" onclick="exportChatTXT()">💾 TXT</button>
             <button class="btn btn-secondary" id="clearBtn" style="padding: 6px 10px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
             <button class="btn btn-primary" id="settingsBtn" style="padding: 6px 10px; display: none; font-size: 13px;" onclick="openSettings()">⚙️</button>
         </div>
-    </div>
-    <!-- Feature 11: Search Chat -->
-    <div class="chat-search-bar" id="chatSearchBar">
-        <input type="text" id="searchInput" placeholder="Search in chat..." onkeyup="searchChat(this.value)">
     </div>
 </div>
 
@@ -230,7 +213,6 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<!-- 🛑 NEW, BEAUTIFUL LOADING OVERLAY 🛑 -->
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
     <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
     <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Reading Book...</h2>
@@ -349,15 +331,11 @@
 <div id="chatPage">
     <div class="chat-scroll-area" id="chatHistory"></div>
 
-    <!-- Floating Action Buttons (Features 5, 6, 7) -->
     <div class="fab-container">
         <button class="fab-btn" id="focusBtn" onclick="toggleFocusMode()" title="Focus Mode">👁️</button>
-        <button class="fab-btn" onclick="scrollToTop()" title="Scroll Top">⬆️</button>
-        <button class="fab-btn" onclick="scrollToBottom()" title="Scroll Bottom">⬇️</button>
     </div>
 
     <div class="chat-input-area">
-        <!-- Status Chips for Uploads -->
         <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Document Attached</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
         
         <input type="file" id="imageInput" accept="image/*,.pdf" style="display:none;" onchange="handleFileSelect(event)">
@@ -367,30 +345,22 @@
             <button class="remove-img-btn" onclick="removeImage()">✖</button>
         </div>
 
-        <!-- ➕ PLUS MENU -->
         <div id="plusMenu" class="glass-panel">
             <button class="menu-item" onclick="openCamera()">📷 Open Camera</button>
             <button class="menu-item" onclick="document.getElementById('imageInput').click()">📎 Upload PDF/Image</button>
             <button class="menu-item" onclick="openWebImport()">🌐 Import from Web</button>
-            <button class="menu-item" onclick="window.print()">🖨️ Print Chat</button> <!-- Feature 14 -->
+            <button class="menu-item" onclick="window.print()">🖨️ Print Chat</button> 
         </div>
         
         <div class="chat-input-wrapper">
             <button id="plusBtn" class="icon-btn" onclick="togglePlusMenu(event)">➕</button>
             <button id="micBtn" class="icon-btn" onclick="openVoiceModal()" style="transition: 0.3s;">🎤</button>
             
-            <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)" oninput="updateCharCount()"></textarea>
-            
-            <!-- Feature 9: Clear Input -->
-            <button class="icon-btn" style="color:var(--text-muted); font-size:16px; margin-right:5px;" onclick="clearInput()" title="Clear text">✖</button>
-            
+            <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
             <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
         </div>
-        <!-- Feature 8: Character Counter -->
-        <div class="char-counter" id="charCount">0 characters</div>
     </div>
 
-    <!-- Voice Input Modal -->
     <div id="voiceModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid var(--primary); max-width: 350px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🎤 Speak to Type</h3>
@@ -403,7 +373,6 @@
         </div>
     </div>
 
-    <!-- Message Selection Bottom Bar (WITH PDF DOWNLOAD) -->
     <div id="shareActionArea" style="display:none; position:absolute; bottom:0; left:0; width:100%; padding:15px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:2px solid #25D366; z-index:100; flex-direction:column; gap:10px; box-sizing:border-box;">
         <div style="color:white; text-align:center; font-weight:bold; font-size:14px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:10px;">
@@ -413,7 +382,6 @@
         </div>
     </div>
 
-    <!-- Secure WhatsApp Modal -->
     <div id="whatsappModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:2px solid #25D366; max-width: 400px; width: 90%; text-align: center; position:relative;">
             <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
@@ -426,7 +394,6 @@
         </div>
     </div>
 
-    <!-- Web Import Modal -->
     <div id="webImportModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center;">
         <div class="card" style="background:var(--bg-surface); padding:25px; border-radius:24px; border:1px solid var(--primary); max-width: 400px; width: 90%; text-align: center;">
             <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
@@ -439,7 +406,6 @@
         </div>
     </div>
 
-    <!-- Camera Modal -->
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
         <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
         <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
@@ -460,7 +426,7 @@
         s.classList.toggle("active", a); o.classList.toggle("active", a);
     }
 
-    // 🛑 3-DOTS MENU & COPY/DELETE (Feature 3) 🛑
+    // 🛑 3-DOTS MENU & COPY/DELETE 🛑
     function toggleMsgMenu(btn, e) {
         e.stopPropagation();
         let dropdown = btn.nextElementSibling;
@@ -487,7 +453,6 @@
         setTimeout(() => { btn.innerHTML = orig; }, 1500);
     }
 
-    // Fixed Menu HTML with Copy Button included inside bubble
     const msgMenuHTML = `
         <div class="msg-menu-wrap">
             <button class="msg-action-btn" onclick="copyMsg(this, event)" title="Copy">📋</button>
@@ -503,75 +468,21 @@
         if (document.getElementById("overlay").contains(e.target)) toggleSidebar();
     });
 
-    // 🛑 NEW FEATURES LOGIC 🛑
-    
-    // Feature 5, 6, 7: Scroll & Focus
-    function scrollToTop() { document.getElementById('chatHistory').scrollTo({top: 0, behavior: 'smooth'}); }
-    function scrollToBottom() { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); }
     function toggleFocusMode() { 
         document.body.classList.toggle('focus-mode-active'); 
         let btn = document.getElementById('focusBtn');
         btn.classList.toggle('active');
     }
 
-    // Feature 4: Export TXT
-    function exportChatTXT() {
-        let content = "Book Deep Study - Conversation Export\n\n";
-        document.querySelectorAll('#chatHistory .msg').forEach(m => {
-            let role = m.classList.contains('user') ? "YOU" : "AI";
-            let text = m.querySelector('.bubble').innerText.replace('⋮','').replace('📋','').replace('🗑️ Delete','').trim();
-            content += `[${role}]:\n${text}\n\n-----------------\n\n`;
-        });
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `Study_Notes_${Date.now()}.txt`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    }
-
-    // Feature 8 & 9 & 10: Input Enhancements
-    function updateCharCount() {
-        const input = document.getElementById('chatInput');
-        document.getElementById('charCount').innerText = `${input.value.length} characters`;
-        localStorage.setItem('bookChatDraft', input.value); // Auto-save draft
-    }
-    function clearInput() {
-        const input = document.getElementById('chatInput');
-        input.value = ""; updateCharCount();
-    }
-    // Load Draft
-    if(localStorage.getItem('bookChatDraft')) {
-        document.getElementById('chatInput').value = localStorage.getItem('bookChatDraft');
-        updateCharCount();
-    }
-
-    // Feature 11: Search Chat
-    function toggleChatSearch() {
-        const sb = document.getElementById('chatSearchBar');
-        sb.style.display = sb.style.display === 'block' ? 'none' : 'block';
-        if(sb.style.display === 'block') document.getElementById('searchInput').focus();
-    }
-    function searchChat(query) {
-        query = query.toLowerCase();
-        document.querySelectorAll('#chatHistory .msg').forEach(m => {
-            if(!query) { m.style.display = 'flex'; return; }
-            let text = m.innerText.toLowerCase();
-            m.style.display = text.includes(query) ? 'flex' : 'none';
-        });
-    }
-
-    // Feature 13: Rename Session
     function renameSession() {
         let newTitle = prompt("Enter new session name:", document.getElementById('sessionTitleDisplay').innerText);
         if(newTitle && newTitle.trim()) {
             document.getElementById('sessionTitleDisplay').innerText = newTitle.trim();
-            // Also update in saved array
             let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
             let session = savedSessions.find(s => s.id == currentSessionId);
             if(session) { session.title = newTitle.trim(); localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedSessions)); }
         }
     }
-
 
     let selectedData = {};
     let currentImageBase64 = null;
@@ -601,7 +512,7 @@
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; const rec = new SpeechRec(); rec.lang = lang; 
         const micBtn = document.getElementById("micBtn"); const chatInput = document.getElementById("chatInput");
         rec.onstart = () => { micBtn.style.color = "#ef4444"; micBtn.style.transform = "scale(1.2)"; chatInput.placeholder = "Listening..."; }; 
-        rec.onresult = (e) => { chatInput.value += (chatInput.value ? " " : "") + e.results[0][0].transcript; updateCharCount();}; 
+        rec.onresult = (e) => { chatInput.value += (chatInput.value ? " " : "") + e.results[0][0].transcript; }; 
         rec.onend = () => { micBtn.style.color = "var(--primary)"; micBtn.style.transform = "scale(1)"; chatInput.placeholder = "Ask your question here..."; };
         rec.start(); 
     }
@@ -630,10 +541,8 @@
             
             if(data.text) {
                 documentMemory = data.text;
-                // Add Word Count to Chip (Feature 15)
-                let wCount = documentMemory.split(' ').length;
                 document.getElementById("attachmentChip").style.display = "flex";
-                document.getElementById("attachName").innerText = `📚 Chapter Memorized (${wCount} words)`;
+                document.getElementById("attachName").innerText = `📚 Chapter Memorized`;
             }
         } catch(e) {
             console.error("Failed to fetch chapter details in background:", e);
@@ -699,7 +608,7 @@
         selectedNodes.forEach(n => {
             let clone = n.cloneNode(true);
             let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let metaWrap = clone.querySelector('.msg-meta'); if(metaWrap) metaWrap.remove();
+            let actionWrap = clone.querySelector('.action-wrap'); if(actionWrap) actionWrap.remove();
             content += `<div style="margin-bottom:20px; padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9fafb;">${clone.innerHTML}</div>`;
         });
         let win = window.open('', '', 'width=800,height=600');
@@ -714,7 +623,7 @@
         document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
             let clone = node.cloneNode(true);
             let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let metaWrap = clone.querySelector('.msg-meta'); if(metaWrap) metaWrap.remove();
+            let actionWrap = clone.querySelector('.action-wrap'); if(actionWrap) actionWrap.remove();
             let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
             clone.innerHTML = htmlStr;
             let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
@@ -745,9 +654,8 @@
                 document.getElementById('sessionTitleDisplay').innerText = session.title || "📚 Book Deep Study";
                 document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
                 document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-                document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
+                document.getElementById('shareBtn').style.display = 'block'; 
                 document.getElementById('chatHistory').innerHTML = session.html;
-                // ONLY SCROLL ONCE ON LOAD
                 setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
             }
         } else {
@@ -758,9 +666,8 @@
                 document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`.substring(0,25) + "...";
                 document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
                 document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-                document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
+                document.getElementById('shareBtn').style.display = 'block'; 
                 document.getElementById('chatHistory').innerHTML = activeSession;
-                // ONLY SCROLL ONCE ON LOAD
                 setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
             }
         }
@@ -814,7 +721,7 @@
 
         statusLabel.innerText = "⏳ Fetching your chapter details...";
         chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching... --</option>';
-        document.getElementById('initBtnStep4').style.display = 'block'; // Reset button state
+        document.getElementById('initBtnStep4').style.display = 'block'; 
         
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(sub);
         let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
@@ -838,18 +745,16 @@
             const data = await r.json();
             if(data.error) throw new Error(data.error);
 
-            let cleanJson = data.text.replace(/```json/gi, '').replace(/
-```/g, '').trim();
+            let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim();
             let fetchedChapters = JSON.parse(cleanJson);
             
             if(!Array.isArray(fetchedChapters)) throw new Error("Invalid Array");
 
             if(fetchedChapters.length === 0) {
-                // FEATURE 15: SMART SUBJECT BLOCKER
                 chapSelect.innerHTML = '<option value="" selected disabled>-- ❌ Subject not taught in this class --</option>';
                 statusLabel.innerText = "Subject not found! Please check Class/Subject.";
                 statusLabel.style.color = "#ef4444";
-                document.getElementById('initBtnStep4').style.display = 'none'; // Hide next button
+                document.getElementById('initBtnStep4').style.display = 'none'; 
                 return;
             }
 
@@ -892,7 +797,7 @@
             
             document.getElementById('loadingPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
             document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-            document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
+            document.getElementById('shareBtn').style.display = 'block'; 
             
             document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`.substring(0,25) + "...";
             localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
@@ -918,12 +823,12 @@
         } else {
             document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
             document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-            document.getElementById('shareBtn').style.display = 'block'; document.getElementById('exportBtn').style.display = 'block';
+            document.getElementById('shareBtn').style.display = 'block'; 
         }
     }
 
     function openSettings() {
-        document.getElementById('chatPage').style.display = 'none'; document.getElementById('settingsBtn').style.display = 'none'; document.getElementById('clearBtn').style.display = 'none'; document.getElementById('shareBtn').style.display = 'none'; document.getElementById('exportBtn').style.display = 'none'; document.getElementById('wizardPage').style.display = 'block';
+        document.getElementById('chatPage').style.display = 'none'; document.getElementById('settingsBtn').style.display = 'none'; document.getElementById('clearBtn').style.display = 'none'; document.getElementById('shareBtn').style.display = 'none';  document.getElementById('wizardPage').style.display = 'block';
         nextStep(1); 
     }
 
@@ -944,13 +849,13 @@
         // ONLY SCROLL WHEN USER SENDS A MESSAGE
         const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
 
-        inputEl.value = ""; localStorage.removeItem('bookChatDraft'); document.getElementById('charCount').innerText = "0 characters"; removeImage(); 
+        inputEl.value = ""; removeImage(); 
 
         const loadingId = "load_" + Date.now();
         const loadDiv = document.createElement("div"); loadDiv.className = "msg ai"; loadDiv.id = loadingId;
         loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
         document.getElementById('chatHistory').appendChild(loadDiv);
-        c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); // Scroll for loading bubble
+        c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); 
 
         // 🛑 MEMORY ENGINE 🛑
         let recentHistory = "";
@@ -961,7 +866,7 @@
             let role = m.classList.contains('user') ? "User" : "AI";
             let clone = m.cloneNode(true);
             let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let metaWrap = clone.querySelector('.msg-meta'); if(metaWrap) metaWrap.remove();
+            let actionWrap = clone.querySelector('.action-wrap'); if(actionWrap) actionWrap.remove();
             let msgText = clone.innerText.trim().replace(/\s+/g, ' ');
             if(msgText) recentHistory += `${role}: ${msgText}\n`;
         }
@@ -1027,17 +932,14 @@
 
         bubble.insertAdjacentHTML('beforeend', msgMenuHTML);
         
-        // Feature 1, 2, 14: Read Time, Word Count & Quick Replies
-        let wordCount = formattedText.split(' ').length;
-        let readTime = Math.max(1, Math.ceil(wordCount / 200));
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
         
         let quickReplies = isEnglishSub ? 
             `<button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('Explain this simpler.')">Explain simpler</button><button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('Give an example.')">Give example</button>` : 
             `<button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('इसे और आसान भाषा में समझाएं।')">आसान भाषा</button><button class="preset-btn" style="padding:4px 8px; font-size:11px;" onclick="runPreset('एक उदाहरण दें।')">उदाहरण दें</button>`;
 
-        let metaHTML = `<div class="msg-meta"><span>⏳ ${readTime} min read</span><span>📝 ${wordCount} words</span><div style="display:flex; gap:5px; margin-left:auto;">${quickReplies}</div></div>`;
-        bubble.insertAdjacentHTML('beforeend', metaHTML);
+        let actionWrap = `<div class="action-wrap" style="display:flex; gap:5px; margin-top:10px; border-top: 1px solid rgba(128,128,128,0.2); padding-top: 8px;">${quickReplies}</div>`;
+        bubble.insertAdjacentHTML('beforeend', actionWrap);
 
         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
         saveHistory();
