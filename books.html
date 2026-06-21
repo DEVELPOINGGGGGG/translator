@@ -266,12 +266,25 @@
             <button class="remove-img-btn" onclick="removeImage()">✖</button>
         </div>
         
-        <div class="chat-input-wrapper">
-            <button class="icon-btn" onclick="document.getElementById('imageInput').click()">📷</button>
+         <div class="chat-input-wrapper">
+            <button class="icon-btn" onclick="openCamera()">📷</button>
+            <button class="icon-btn" onclick="document.getElementById('imageInput').click()" style="font-size:18px;">📎</button>
+            
             <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)"></textarea>
             <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
         </div>
     </div>
+    <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
+    <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+    <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
+    
+    <div style="position:absolute; bottom:40px; left:0; width:100%; display:flex; justify-content:center; align-items:center; gap:40px; z-index:100;">
+        <button id="flashBtn" onclick="toggleFlash()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px);">🔦</button>
+        <div onclick="takePhoto()" style="width:75px; height:75px; background:white; border:5px solid #cbd5e1; border-radius:50%; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.5); transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'"></div>
+        <button onclick="switchCamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px);">🔄</button>
+    </div>
+    <canvas id="captureCanvas" style="display:none;"></canvas>
+</div>
 </div>
 
 <script>
@@ -444,6 +457,84 @@
         currentImageBase64 = null;
         document.getElementById('imagePreviewContainer').style.display = 'none';
         document.getElementById('imageInput').value = '';
+    }
+
+    // 🛑 NEW CAMERA GUI ENGINE 🛑
+    let camStream = null; 
+    let camFacing = "environment"; 
+    let isFlash = false;
+
+    async function openCamera() { 
+        document.getElementById('cameraModal').style.display = 'flex'; 
+        try { 
+            if(camStream) camStream.getTracks().forEach(t => t.stop()); 
+            camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
+            document.getElementById("cameraVideo").srcObject = camStream; 
+            
+            // Auto Flash On Logic (Delays slightly to allow camera to initialize)
+            setTimeout(async () => { 
+                const track = camStream.getVideoTracks()[0]; 
+                if (track && track.getCapabilities && track.getCapabilities().torch && camFacing === "environment") { 
+                    isFlash = true; 
+                    await track.applyConstraints({ advanced: [{ torch: true }] }); 
+                    document.getElementById('flashBtn').innerText = "💡"; 
+                } else {
+                    isFlash = false;
+                    document.getElementById('flashBtn').innerText = "🔦";
+                }
+            }, 500); 
+        } catch(e) { 
+            alert("Camera Error: Please grant camera permissions."); 
+            document.getElementById('cameraModal').style.display = 'none'; 
+        } 
+    }
+
+    function closeCamera() { 
+        document.getElementById('cameraModal').style.display = 'none'; 
+        if(camStream) {
+            // Turn off flashlight before closing track to save battery
+            const track = camStream.getVideoTracks()[0];
+            try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){}
+            camStream.getTracks().forEach(t => t.stop()); 
+        }
+        isFlash = false; 
+    }
+
+    async function switchCamera() { 
+        camFacing = camFacing === "environment" ? "user" : "environment"; 
+        await openCamera(); 
+    }
+
+    async function toggleFlash() { 
+        if(!camStream) return; 
+        const track = camStream.getVideoTracks()[0]; 
+        try {
+            if(track && track.getCapabilities && track.getCapabilities().torch) { 
+                isFlash = !isFlash; 
+                await track.applyConstraints({ advanced: [{ torch: isFlash }] }); 
+                document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; 
+            } 
+        } catch(err) {
+            console.log("Flash not supported on this device.");
+        }
+    }
+    
+    function takePhoto() { 
+        const v = document.getElementById("cameraVideo");
+        const c = document.getElementById("captureCanvas"); 
+        
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight; 
+        c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); 
+        
+        // Save the image
+        currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
+        
+        // Show Preview in Chat Input
+        document.getElementById('imagePreviewContainer').style.display = 'block';
+        document.getElementById('imgChip').src = currentImageBase64;
+        
+        closeCamera(); 
     }
 
     function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
