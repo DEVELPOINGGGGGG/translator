@@ -130,7 +130,16 @@ window.getSessionContext = function(type) {
         let session = appHistory.find(i => i.type === type);
         if(session && session.interactions) {
             let lastFew = session.interactions.slice(-3);
-            lastFew.forEach(i => { context += `User: ${i.question}\nAI: ${i.answer}\n`; });
+            lastFew.forEach(i => { 
+                // CRITICAL FIX: Strip massive Base64 image tags out of the AI's memory
+                // so it doesn't crash the prompt limit on the next question!
+                let cleanAnswer = String(i.answer || "")
+                    .replace(/<img[^>]*src="data:image[^>]*>/gi, '[DIAGRAM REMOVED]')
+                    .replace(/<[^>]*>?/gm, ' ')
+                    .trim();
+                
+                context += `User: ${i.question}\nAI: ${cleanAnswer}\n`; 
+            });
         }
     }
     return context ? `Previous Context:\n${context}\n` : "";
