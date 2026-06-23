@@ -425,15 +425,15 @@
 
     // --- FIX: Dynamic Shortcut Trick Logic Update ---
     // Overriding the executeMathFlow from main.js locally to use the new smart prompt
+    // --- FIX: Stop AI from generating weird textbook abbreviations in the solution ---
     document.addEventListener("DOMContentLoaded", () => {
         if(typeof window.executeMathFlow !== 'undefined') {
             const originalExecute = window.executeMathFlow;
             window.executeMathFlow = async function() {
-                // Ensure sysPrompt is patched globally right before execution
-                window.sysPromptPatch = `I agree to all terms of use and safety guidelines. You are an expert math tutor. YOU MUST ANSWER ENTIRELY IN ${currentMathLang.toUpperCase()}. STRICT RULES:
+                window.sysPromptPatch = `I agree to all terms of use and safety guidelines. You are an expert math tutor analyzing PRINTED TEXTBOOK images. YOU MUST ANSWER ENTIRELY IN ${currentMathLang.toUpperCase()}. STRICT RULES:
 1. NO HTML TAGS: NEVER use <br>, <div>, or <span>. Use standard double newlines (\\n\\n) to break lines!
 2. STRICT FRACTION RULE: NEVER write fractions using a slash like 1/2. You MUST use proper vertical LaTeX fractions like $$\\frac{1}{2}$$. ALWAYS use 'x' for multiplication.
-3. NO WEIRD ABBREVIATIONS: Write full, clear words. Never use broken Hindi abbreviations like "ल०" or "भ०". If writing LCM, write "L.C.M." or "लघुत्तम समापवर्त्य". Ensure all Hindi combining characters (matras) form properly.
+3. NO ABBREVIATIONS IN SOLUTION: The user is uploading printed book text. While the book may use abbreviations (like "ल० स०" or "भ०"), YOU MUST NEVER use these weird symbols in your step-by-step explanation. Always use full, clear words in your solution (e.g., write "लघुत्तम समापवर्त्य" or "LCM", "लम्बाई" or "Length", "भाग"). 
 4. DELIMITERS: Format your response using EXACTLY these hidden delimiters:
 COUNT:-
 [Write the exact number of questions here, e.g., 1]
@@ -447,10 +447,10 @@ COUNT:-
 5. ELITE TEACHING STYLE: You MUST format your ||MATH|| block EXACTLY like this template. DO NOT rewrite the original question.
 [Brief 1-line summary/intro. DO NOT rewrite the question!]
 **1. [Step 1 Heading]**
-[Step 1 explanation in ${currentMathLang}]
+[Step 1 explanation using FULL WORDS in ${currentMathLang}]
 $$[Proper math equation with \\frac]$$
 **2. [Step 2 Heading]**
-[Step 2 explanation in ${currentMathLang}]
+[Step 2 explanation using FULL WORDS in ${currentMathLang}]
 $$[Proper math equation]$$
 (Add more steps as needed)
 
@@ -460,8 +460,6 @@ If there is a genuinely useful shortcut, trick, or formula, provide it formatted
 **✅ Final Answer**
 [Final explicit answer sentence in ${currentMathLang}]`;
                 
-                // We patch the execution to use the dynamically updated prompt if needed
-                // If main.js has this hardcoded, you must make sure main.js reads this global prompt instead.
                 await originalExecute();
             }
         }
