@@ -493,12 +493,8 @@ function typeWriteResponse(containerEl, rawText, provider, contentId, buttonsHtm
     containerEl.innerHTML = `<div style="position:absolute; top:12px; right:16px; font-size:9px; color:var(--muted); font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; z-index:2;">✨ BY ${provider}</div><div id="${contentId}" style="margin-top:35px;"></div>`;
     const txtEl = document.getElementById(contentId);
     
-    const chars = rawText.length || 1;
-    let tickRate = Math.floor(10000 / chars);
+    let tickRate = 20; 
     let charsPerTick = 1;
-    
-    if (tickRate > 35) { tickRate = 35; } 
-    else if (tickRate < 20) { tickRate = 20; charsPerTick = Math.ceil(chars / (10000 / 20)); }
     
     let i = 0; let currentHtml = ""; let needsMathRender = false;
 
