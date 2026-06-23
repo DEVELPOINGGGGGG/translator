@@ -203,7 +203,7 @@
         }
     });
 
-    // --- 2. IMAGE COMPRESSION (FIXES THE "LENGTH" ERROR) ---
+// --- 2. AGGRESSIVE IMAGE COMPRESSION ---
     function compressAndSetImage(file) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -211,21 +211,28 @@
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                const MAX_SIZE = 1000; // Shrinks it safely for the API
+                
+                // Shrink to max 800px (Perfect for AI OCR, drastically reduces file size)
+                const MAX_SIZE = 800; 
                 if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
                 else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
                 
                 canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                 
-                window.setMathImage(canvas.toDataURL("image/jpeg", 0.6));
-                if(typeof showToast === 'function') showToast("✅ Image attached!");
+                // Fill with white background in case of transparent PNGs
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                // Compress to 50% JPEG Quality
+                window.setMathImage(canvas.toDataURL("image/jpeg", 0.5));
+                if(typeof showToast === 'function') showToast("✅ Image attached safely!");
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
-
     window.handleMathGallery = function(event) {
         if (!event.target.files[0]) return;
         compressAndSetImage(event.target.files[0]);
