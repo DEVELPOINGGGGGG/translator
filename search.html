@@ -584,7 +584,7 @@
             const lang = document.getElementById("appLang").value; const customRules = document.getElementById("aiInstructions").value.trim();
             
             // STRICT INSTRUCTIONS FOR HINDI AND MATH (NO URDU, REQUIRES $$ FOR MATH)
-            let sysPrompt = `You are the ultimate AI. IMPORTANT: If language is Hindi, YOU MUST ONLY USE DEVANAGARI SCRIPT. NEVER use Urdu, Arabic, or strange symbols. Language: ${lang}. Use **bold**. Use $$ $$ for math equations and fractions (e.g., $$\\frac{1}{2}$$). Render code blocks correctly in markdown.`;
+            let sysPrompt = `You are the ultimate AI. IMPORTANT: If language is Hindi, YOU MUST ONLY USE DEVANAGARI SCRIPT. NEVER use Urdu, Arabic, or strange symbols. Language: ${lang}. Use **bold**. If the question of user IS NOT RELATED TO MATHS it will not give any MATHS FORMULA until USER ASKS. Use $$ $$ for math equations and fractions (e.g., $$\\frac{1}{2}$$). Render code blocks correctly in markdown.`;
             
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if(documentMemory) sysPrompt += `\n\nLOCAL KNOWLEDGE BASE (USE THIS FIRST):\n${documentMemory}`;
