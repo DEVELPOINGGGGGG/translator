@@ -119,9 +119,15 @@
     </div>
     
     <div class="chat-input-wrapper">
+        <div style="position: relative;">
+            <button class="chat-action-btn" id="attachBtn" onclick="toggleAttachMenu(event)" title="Attach" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; font-size: 24px; padding-bottom: 4px;">➕</button>
+            <div id="attachMenu" style="display: none; position: absolute; bottom: 120%; left: 0; background: var(--bg-surface); border: 2px solid var(--border-light); border-radius: 16px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 1000; flex-direction: column; gap: 10px; min-width: 190px;">
+                <button onclick="document.getElementById('mathGalleryInput').click(); closeAttachMenu();" style="background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); font-size: 14px; cursor: pointer; text-align: left; padding: 10px 15px; border-radius: 12px; font-weight: 600;">📁 Upload via folder</button>
+                <button onclick="openCamera('math'); closeAttachMenu();" style="background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); font-size: 14px; cursor: pointer; text-align: left; padding: 10px 15px; border-radius: 12px; font-weight: 600;">📷 Open Camera</button>
+            </div>
+        </div>
+
         <input type="file" id="mathGalleryInput" accept="image/*" style="display:none;" onchange="handleMathGallery(event)">
-        <button class="chat-action-btn" id="galleryBtn" onclick="document.getElementById('mathGalleryInput').click()" title="Upload Image" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;">📁</button>
-        <button class="chat-action-btn" id="openMathCameraBtn" onclick="openCamera('math')" title="Take Photo">📷</button>
         <textarea id="mathInstructionInput" placeholder="Ask math question, paste or attach image... (Press Enter)"></textarea>
         <button class="chat-action-btn send" id="sendMathBtn" onclick="executeMathFlow()">↑</button>
     </div>
@@ -177,33 +183,75 @@
         if(chip) { chip.style.backgroundImage = `url(${base64})`; chip.style.display = "block"; }
     };
 
-    window.handleMathGallery = function(event) {
-        const file = event.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            window.setMathImage(e.target.result);
-            if(typeof showToast === 'function') showToast("✅ Image attached!");
-        };
-        reader.readAsDataURL(file);
-        event.target.value = "";
+    // --- 1. PLUS MENU LOGIC ---
+    window.toggleAttachMenu = function(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('attachMenu');
+        menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
     };
 
-    document.getElementById("mathInstructionInput").addEventListener("paste", function(e) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let index in items) {
-            const item = items[index];
-            if (item.kind === 'file' && item.type.startsWith('image/')) {
-                const blob = item.getAsFile();
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    window.setMathImage(event.target.result);
-                    if(typeof showToast === 'function') showToast("✅ Image pasted!");
-                };
-                reader.readAsDataURL(blob);
-                e.preventDefault();
-            }
+    window.closeAttachMenu = function() {
+        const menu = document.getElementById('attachMenu');
+        if (menu) menu.style.display = 'none';
+    };
+
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('attachMenu');
+        const attachBtn = document.getElementById('attachBtn');
+        if (menu && menu.style.display === 'flex' && !menu.contains(e.target) && (!attachBtn || !attachBtn.contains(e.target))) {
+            menu.style.display = 'none';
         }
     });
+
+    // --- 2. IMAGE COMPRESSION (FIXES THE "LENGTH" ERROR) ---
+    function compressAndSetImage(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                const MAX_SIZE = 1000; // Shrinks it safely for the API
+                if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } 
+                else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+                
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                
+                window.setMathImage(canvas.toDataURL("image/jpeg", 0.6));
+                if(typeof showToast === 'function') showToast("✅ Image attached!");
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    window.handleMathGallery = function(event) {
+        if (!event.target.files[0]) return;
+        compressAndSetImage(event.target.files[0]);
+        event.target.value = ""; 
+    };
+
+    const mathInput = document.getElementById("mathInstructionInput");
+    if(mathInput) {
+        // Remove old listeners and add the compressed paste logic
+        const newMathInput = mathInput.cloneNode(true);
+        mathInput.parentNode.replaceChild(newMathInput, mathInput);
+        
+        newMathInput.addEventListener("paste", function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                if (items[index].kind === 'file' && items[index].type.startsWith('image/')) {
+                    compressAndSetImage(items[index].getAsFile());
+                    e.preventDefault();
+                }
+            }
+        });
+        
+        newMathInput.addEventListener("keypress", (e) => { 
+            if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); executeMathFlow(); } 
+        });
+    }
 
     window.openWhatsAppModal = function() {
         const historyDiv = document.getElementById("mathChatHistory");
@@ -313,39 +361,43 @@
                 alert("❌ Failed to send. Server responded with an error.");
             }
         } catch (e) {
-            alert("❌ Connection error. Is your Render server running?");
+            alert("❌ Connection error. Is your server running?");
         }
 
         btn.innerHTML = originalText;
         btn.style.opacity = "1";
         btn.disabled = false;
     };
+    
     function capturePhoto() { 
-    const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
-    let w = v.videoWidth, h = v.videoHeight; 
-    if(w > 1500) { h *= 1500/w; w = 1500; } 
-    c.width = w; c.height = h; 
-    c.getContext("2d").drawImage(v, 0, 0, w, h); 
-    capturedImage = c.toDataURL("image/jpeg", 0.7); 
-    
-    if (currentMode === 'math' || currentMode === 'search') { 
-        if (typeof window.setMathImage === 'function') {
-            window.setMathImage(capturedImage);
-        } else { 
-            const chip = document.getElementById("mathPreviewChip"); 
-            if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
+        const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas");
+        let w = v.videoWidth, h = v.videoHeight; 
+        
+        // Lower max resolution slightly on capture to assist compression further
+        if(w > 1200) { h *= 1200/w; w = 1200; } 
+        
+        c.width = w; c.height = h; 
+        c.getContext("2d").drawImage(v, 0, 0, w, h); 
+        capturedImage = c.toDataURL("image/jpeg", 0.6); // Added compression here too
+        
+        if (currentMode === 'math' || currentMode === 'search') { 
+            if (typeof window.setMathImage === 'function') {
+                window.setMathImage(capturedImage);
+            } else { 
+                const chip = document.getElementById("mathPreviewChip"); 
+                if(chip) { chip.style.display = "block"; chip.style.backgroundImage = `url(${capturedImage})`; } 
+            }
         }
+        else if (currentMode === 'image_trans') {
+            if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } else { transImages.push(capturedImage); renderTransImagePreviews(); }
+        }
+        else if (currentMode === 'qa_source') {
+            if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
+        }
+        else if (currentMode === 'qa_question') { qaQuestionImage = capturedImage; renderQaQuestionPreview(); }
+        
+        closeCamera(); 
     }
-    else if (currentMode === 'image_trans') {
-        if(transImages.length >= 3) { showToast("Maximum 3 images allowed!"); } else { transImages.push(capturedImage); renderTransImagePreviews(); }
-    }
-    else if (currentMode === 'qa_source') {
-        if(qaSourceImages.length >= 10) { showToast("Maximum 10 source images allowed!"); } else { qaSourceImages.push(capturedImage); renderQaSourcePreviews(); }
-    }
-    else if (currentMode === 'qa_question') { qaQuestionImage = capturedImage; renderQaQuestionPreview(); }
-    
-    closeCamera(); 
-}
 </script>
 
 <script src="ui-controls.js" defer></script>
