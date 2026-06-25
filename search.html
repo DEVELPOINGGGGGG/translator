@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI PRO SUITE</title>
+    <title>SEARCH</title>
     
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -23,7 +23,16 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        body { overflow: hidden; position: relative; }
+        :root {
+            --app-bg: var(--bg-base, #f8fafc);
+            --chat-user-bg: var(--primary, #3b82f6);
+            --chat-user-text: #ffffff;
+            --chat-ai-bg: var(--bg-surface, #ffffff);
+            --chat-ai-border: var(--border-light, #e2e8f0);
+            --btn-hover: var(--primary-glow, rgba(59, 130, 246, 0.2));
+        }
+
+        body { overflow: hidden; position: relative; background: var(--app-bg); font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
         
         /* Modals & Menus */
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -35,7 +44,7 @@
         /* Status Chips */
         .status-chip { display: none; align-items: center; gap: 8px; background: var(--input-bg); color: var(--text-main); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; width: max-content; border: 1px solid var(--primary); margin-bottom: 10px; animation: slideIn 0.3s ease; }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; }
+        .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; display: flex; justify-content: center; align-items: center; }
 
         /* Black Box Code Renderer */
         .code-box { background: #0d1117; color: #c9d1d9; border-radius: 12px; margin: 15px 0; border: 1px solid #30363d; overflow: hidden; font-family: monospace; box-shadow: 0 5px 20px rgba(0,0,0,0.4); }
@@ -45,17 +54,52 @@
         .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
         .play-btn { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
 
-        /* 🎨 MATH SVG RENDERER (MERGED FROM MATHS.HTML) */
-        .math-svg-wrap {
-            background: #ffffff !important; /* Always white so lines are visible */
-            border-radius: 12px;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: center;
-            overflow-x: auto;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-            border: 2px solid var(--primary);
+        /* User Upload Badge inside Chat Bubble */
+        .user-attachment-badge {
+            background: rgba(0,0,0,0.2);
+            color: inherit;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-weight: 600;
         }
+
+        /* Quick Reply Suggestions (AI Generated) */
+        .quick-suggestions-wrap {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-light);
+            animation: fadeIn 0.5s ease;
+        }
+        .quick-reply-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-block;
+        }
+        .quick-reply-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 🎨 MATH SVG RENDERER */
+        .math-svg-wrap { background: #ffffff !important; border-radius: 12px; padding: 15px; margin: 15px 0; text-align: center; overflow-x: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid var(--primary); }
         .math-svg-wrap svg { max-width: 100%; height: auto; }
 
         /* THINKING ANIMATION */
@@ -65,18 +109,29 @@
         @keyframes scan { 0% { left: -50%; } 100% { left: 100%; } }
         .thinking-text { font-size: 12px; font-weight: bold; color: var(--primary); letter-spacing: 1px; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Chat Layout */
         .search-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface); padding: 15px; border-top: 1px solid var(--border-light); z-index: 100; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: transform 0.3s; }
         .search-input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 25px; padding: 8px 12px; }
         
-        .chat-scroll-area { height: 100vh; overflow-y: auto; padding-top: 80px; padding-bottom: 140px; }
+        .chat-scroll-area { height: 100vh; overflow-y: auto; padding-top: 80px; padding-bottom: 140px; scroll-behavior: smooth; }
         .chat-msg { display: flex; width: 100%; padding: 0 15px; margin-bottom: 20px; }
         .chat-user { justify-content: flex-end; }
         .chat-ai { justify-content: flex-start; }
-        .bubble { max-width: 85%; padding: 15px 20px; border-radius: 20px; font-size: 15px; line-height: 1.6; word-wrap: break-word; }
-        .chat-user .bubble { background: var(--primary); color: white; border-bottom-right-radius: 5px; }
-        .chat-ai .bubble { background: var(--bg-surface); border: 1px solid var(--border-light); border-bottom-left-radius: 5px; }
+        .bubble { max-width: 85%; padding: 15px 20px; border-radius: 20px; font-size: 15px; line-height: 1.6; word-wrap: break-word; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .chat-user .bubble { background: var(--chat-user-bg); color: var(--chat-user-text); border-bottom-right-radius: 5px; }
+        .chat-ai .bubble { background: var(--chat-ai-bg); border: 1px solid var(--chat-ai-border); border-bottom-left-radius: 5px; color: var(--text-main); }
+
+        /* Markdown Enhancements inside Chat */
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 0; color: var(--primary); font-weight: 700; }
+        .markdown-body p { margin-bottom: 10px; }
+        .markdown-body ul, .markdown-body ol { padding-left: 20px; margin-bottom: 15px; }
+        .markdown-body li { margin-bottom: 5px; }
+        .markdown-body blockquote { border-left: 4px solid var(--primary); padding-left: 15px; color: var(--text-muted); margin: 0 0 15px 0; background: var(--input-bg); padding: 10px 15px; border-radius: 0 8px 8px 0; }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .markdown-body th, .markdown-body td { border: 1px solid var(--border-light); padding: 8px; text-align: left; }
+        .markdown-body th { background: var(--input-bg); font-weight: bold; }
 
         /* FIXED MATH EQUATION LINE BREAKS */
         mjx-container[jax="CHTML"][display="true"] { margin: 1em 0 !important; overflow-x: auto; overflow-y: hidden; }
@@ -96,9 +151,18 @@
         .audio-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .audio-btn:hover { transform: scale(1.1); }
 
+        /* New Full Screen Image Viewer GUI */
+        #fullImageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .img-gui-topbar { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 20px 30px; box-sizing: border-box; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); z-index: 10000000; }
+        .img-gui-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px); }
+        .img-gui-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        .img-gui-btn.close-btn { background: rgba(239, 68, 68, 0.5); border-color: #ef4444; }
+        .img-gui-btn.close-btn:hover { background: #ef4444; }
+        #fullImageSrc { max-width: 95%; max-height: 80vh; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); object-fit: contain; animation: popUp 0.3s ease; }
+
         /* Modals */
-        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; }
-        .modal-box { background:var(--bg-surface); width:90%; max-width:400px; padding:25px; border-radius:20px; position:relative; border: 1px solid var(--border-light); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
+        .modal-box { background:var(--bg-surface); width:90%; max-width:400px; padding:25px; border-radius:20px; position:relative; border: 1px solid var(--border-light); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.3s ease; }
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
@@ -106,11 +170,11 @@
     <button id="exitFocusBtn" onclick="toggleFocus()">✕</button>
 
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+    
     <div class="sidebar" id="sidebar">
       <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
       <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
-      <button onclick="window.location.href='maths.html'">🧮 Math Solver</button>
-      <button onclick="window.location.href='search.html'" class="active" style="border-left: 4px solid #3b82f6; font-weight: bold;">🔎 AI PRO SUITE</button>
+      <button onclick="window.location.href='search.html'" class="active" style="border-left: 4px solid #3b82f6; font-weight: bold;">🔎 SEARCH</button>
       <button onclick="window.location.href='create.html'">🎨 Image Creator</button>
       <button onclick="window.location.href='translator.html'">🌍 Translator</button>
       <button onclick="window.location.href='qa.html'">📄 Document Q&A</button>
@@ -122,7 +186,7 @@
     <div class="topbar" id="appTopbar" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.3s; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light);">
         <div style="display:flex; align-items:center; gap:15px;">
             <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer;">☰</button>
-            <div class="app-title" style="font-size:20px; font-weight:bold; color: var(--text-main);">AI PRO SUITE</div>
+            <div class="app-title" style="font-size:20px; font-weight:bold; color: var(--text-main); letter-spacing: 1px;">SEARCH</div>
         </div>
         <div style="display:flex; gap:12px; align-items:center;">
             <button onclick="toggleShareMode()" style="background:rgba(37, 211, 102, 0.1); border:1px solid #25D366; color:#25D366; border-radius:8px; padding:6px 12px; font-size:13px; font-weight:bold; cursor:pointer;">📤 Share</button>
@@ -142,10 +206,10 @@
             <div class="chat-msg chat-ai" id="welcomeMessage">
                 <div class="bubble" style="border: 2px solid var(--primary);">
                     <div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div>
-                    <b>Welcome to AI PRO SUITE!</b><br><br>
+                    <b>Welcome to SEARCH AI!</b><br><br>
                     • <b>Chat, Code & Math Diagram:</b> Generates code boxes AND Math Visuals!<br>
                     • <b>Universal Uploads:</b> Click <b>+</b> for PDF, Website URLs, or up to 20 images.<br>
-                    • <b>Create Notes:</b> Generate structured book/chapter notes via the + menu.<br>
+                    • <b>Smart Suggestions:</b> AI suggests quick questions below its answers.<br>
                     • <b>Photo Gen Mode:</b> Generate images directly via Gemini (Max 15/day).
                 </div>
             </div>
@@ -179,7 +243,7 @@
             
             <button id="plusBtn" onclick="togglePlusMenu(event)" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:var(--primary); padding:5px;">➕</button>
             
-            <textarea id="searchInput" placeholder="Message AI Pro Suite..." rows="1" style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:15px; outline:none; resize:none; min-height: 20px; max-height:120px; padding:10px 5px;" oninput="this.style.height=''; this.style.height=Math.min(this.scrollHeight, 120)+'px';"></textarea>
+            <textarea id="searchInput" placeholder="Message AI..." rows="1" style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:15px; outline:none; resize:none; min-height: 20px; max-height:120px; padding:10px 5px;" oninput="resizeInputBox()"></textarea>
             
             <button onclick="document.getElementById('voiceModal').style.display='flex'" style="background:transparent; border:none; font-size:20px; cursor:pointer; color:var(--primary); padding:5px;">🎤</button>
             
@@ -236,14 +300,6 @@
         </div>
     </div>
 
-    <div id="htmlPreviewModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#161b22; color:white; font-weight:bold; border-bottom:1px solid #30363d;">
-            <span>🌐 Live Browser Preview</span>
-            <button style="background:#ef4444; border:none; color:white; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;" onclick="document.getElementById('htmlPreviewModal').style.display='none'">✕ Close</button>
-        </div>
-        <iframe id="htmlPreviewFrame" style="flex:1; width:100%; background:white; border:none;" sandbox="allow-scripts allow-same-origin"></iframe>
-    </div>
-
     <div id="sourcesModal" class="modal-overlay">
         <div class="modal-box">
             <button onclick="document.getElementById('sourcesModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
@@ -262,10 +318,12 @@
         </div>
     </div>
 
-    <div id="fullImageViewer" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999999; flex-direction:column; align-items:center; justify-content:center;">
-        <button onclick="document.getElementById('fullImageViewer').style.display='none'" style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; font-weight:bold; cursor:pointer; box-shadow:0 5px 15px rgba(0,0,0,0.5); z-index: 10000000;">✕</button>
-        <img id="fullImageSrc" style="max-width:95%; max-height:80vh; border-radius:15px; box-shadow:0 15px 50px rgba(0,0,0,0.8); object-fit:contain;">
-        <button onclick="downloadFullImage()" style="margin-top:25px; background:linear-gradient(135deg, #10b981, #059669); padding:15px 30px; color:white; border:none; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 5px 15px rgba(0,0,0,0.5);">📥 Download Image</button>
+    <div id="fullImageViewer">
+        <div class="img-gui-topbar">
+            <button class="img-gui-btn" onclick="downloadFullImage()">📥 Download</button>
+            <button class="img-gui-btn close-btn" onclick="document.getElementById('fullImageViewer').style.display='none'">✖ Close</button>
+        </div>
+        <img id="fullImageSrc">
     </div>
 
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
@@ -280,6 +338,7 @@
     </div>
 
     <script>
+        // --- 1. LOCALFORAGE STATE RESTORATION ---
         localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
         
         let appHistory = [];
@@ -311,7 +370,14 @@
             
             session.interactions.forEach(inter => {
                 let userImgs = (inter.images || []).map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
-                chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
+                
+                // Show File Attachments in Restored History
+                let attachHtml = "";
+                if (inter.fileName) {
+                    attachHtml = `<div class="user-attachment-badge">📄 Attached: ${inter.fileName}</div><br>`;
+                }
+
+                chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble">${attachHtml}${userImgs}${userImgs?'<br>':''}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
                 
                 const lId = "restored_" + Date.now() + Math.floor(Math.random() * 1000);
                 const textId = "txt_" + lId;
@@ -340,7 +406,14 @@
             setTimeout(() => document.getElementById("searchScrollArea").scrollTo(0, document.getElementById("searchScrollArea").scrollHeight), 100);
         }
 
-        // --- SHARE MODE FIX ---
+        // --- 2. INPUT BOX AUTO-RESIZE FIX ---
+        function resizeInputBox() {
+            const inp = document.getElementById('searchInput');
+            inp.style.height = '20px'; // Reset explicitly to minimum
+            inp.style.height = Math.min(inp.scrollHeight, 120) + 'px'; // Recalculate
+        }
+
+        // --- 3. SHARE MODE FIXES ---
         let isShareMode = false;
         function toggleShareMode() {
             document.getElementById('appInputArea').style.display = 'none'; document.getElementById('shareActionArea').style.display = 'flex'; 
@@ -351,8 +424,10 @@
         function cancelShareMode() {
             document.getElementById('shareActionArea').style.display = 'none'; document.getElementById('appInputArea').style.display = 'flex'; 
             isShareMode = false; document.getElementById('searchScrollArea').classList.remove('share-mode-active');
-            // 🛑 BUG FIX: RESIZE THE INPUT BOX BACK TO NORMAL 🛑
-            document.getElementById('searchInput').style.height = 'auto'; 
+            
+            // 🛑 INPUT BOX SHRINK BUG FIX 🛑
+            resizeInputBox(); 
+            
             document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
         }
         
@@ -369,16 +444,13 @@
             document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
                 let clone = node.cloneNode(true);
                 
-                // 🛑 BUG FIX: STRIP BUTTONS AND UI GARBAGE BEFORE CONVERTING TO TEXT 🛑
-                let actions = clone.querySelector('.msg-actions'); if(actions) actions.remove(); 
-                let headers = clone.querySelector('.code-header'); if(headers) headers.remove(); 
-                clone.querySelectorAll('button, .msg-menu-wrap, .code-header').forEach(el => el.remove());
+                // Strip interactive buttons and metadata before saving
+                clone.querySelectorAll('button, .msg-actions, .code-header, .quick-suggestions-wrap').forEach(el => el.remove());
                 
                 let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
                 clone.innerHTML = htmlStr;
                 
                 let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
-                msgText = msgText.replace(/Listen/gi, '').replace(/Copy/gi, '').replace(/Delete/gi, '').trim();
                 msgText = msgText.replace(/✨.*?VIA.*?\n/i, ''); 
 
                 if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
@@ -407,19 +479,29 @@
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
             let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
-            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html');
-            let playBtnStr = isHtml ? `<button class="action-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
+            let playBtnStr = (language === 'html' || safeCode.includes('&lt;html')) ? `<button class="action-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
             return `<div class="code-box"><div class="code-header">${playBtnStr}<button class="action-btn" onclick="copyCodeEngine(this)">📋 Copy</button></div><div class="code-body">${safeCode}</div></div>`;
         };
         marked.setOptions({ renderer: renderer });
         function copyCodeEngine(btn) { navigator.clipboard.writeText(btn.parentElement.nextElementSibling.innerText); btn.innerText = "✅ Copied"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerText = "📋 Copy"; btn.style.background = "var(--input-bg)"; }, 2000); showToast("Code Copied!"); }
-        window.playHtmlCode = function(btn) { document.getElementById('htmlPreviewFrame').srcdoc = btn.parentElement.nextElementSibling.innerText; document.getElementById('htmlPreviewModal').style.display = 'flex'; showToast("Opening Live Preview..."); }
 
+        // --- FULL GUI IMAGE VIEWER ---
         let currentFullscreenImage = "";
-        function openFullImage(src) { currentFullscreenImage = src; document.getElementById('fullImageSrc').src = src; document.getElementById('fullImageViewer').style.display = 'flex'; }
-        function downloadFullImage() { const a = document.createElement("a"); a.href = currentFullscreenImage; a.download = `AI_Image_${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("📥 Download Started!"); }
+        function openFullImage(src) { 
+            currentFullscreenImage = src; 
+            document.getElementById('fullImageSrc').src = src; 
+            document.getElementById('fullImageViewer').style.display = 'flex'; 
+        }
+        function downloadFullImage() { 
+            const a = document.createElement("a"); 
+            a.href = currentFullscreenImage; 
+            a.download = `SEARCH_AI_Image_${Date.now()}.png`; 
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); 
+            showToast("📥 Download Started!"); 
+        }
 
         let isPhotoMode = false; let documentMemory = ""; let webUrls = []; let uploadedImagesList = []; let camStream = null; let camFacing = "environment"; let isFlash = true; let isProcessing = false;
+        let windowUploadedFileName = ""; // Global tracker for file name
 
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
@@ -449,10 +531,10 @@
             <div class="chat-msg chat-ai" id="welcomeMessage">
                 <div class="bubble" style="border: 2px solid var(--primary);">
                     <div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div>
-                    <b>Welcome to AI PRO SUITE!</b><br><br>
+                    <b>Welcome to SEARCH AI!</b><br><br>
                     • <b>Chat, Code & Math Diagram:</b> Generates code boxes AND Math Visuals!<br>
                     • <b>Universal Uploads:</b> Click <b>+</b> for PDF, Website URLs, or up to 20 images.<br>
-                    • <b>Create Notes:</b> Generate structured book/chapter notes via the + menu.<br>
+                    • <b>Smart Suggestions:</b> AI suggests quick questions below its answers.<br>
                     • <b>Photo Gen Mode:</b> Generate images directly via Gemini (Max 15/day).
                 </div>
             </div>`; 
@@ -478,12 +560,14 @@
         function openWebImport() { closePlusMenu(); document.getElementById('webImportModal').style.display = 'flex'; }
         function saveWebUrls() {
             let text = document.getElementById('webUrlInput').value.trim();
-            if (text) { webUrls = [text]; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `🌐 Web URL Attached`; }
+            if (text) { webUrls = [text]; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `🌐 URL Linked`; windowUploadedFileName = "🌐 Web Link"; }
             document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = '';
         }
 
         function handleFileUpload(e) {
             const file = e.target.files[0]; if(!file) return; closePlusMenu();
+            windowUploadedFileName = file.name;
+
             if (file.type.startsWith('image/')) {
                 if(uploadedImagesList.length >= 20) return showToast("❌ Max 20 images allowed!");
                 const r = new FileReader(); r.onload = (ev) => { uploadedImagesList.push(ev.target.result); documentMemory = ""; updateImageUI(); showToast("Image Uploaded!"); }; r.readAsDataURL(file);
@@ -501,7 +585,7 @@
 
         function updateImageUI() { const container = document.getElementById("multiImagePreview"); if(uploadedImagesList.length === 0) { container.style.display = "none"; return; } container.style.display = "flex"; container.innerHTML = uploadedImagesList.map((img, i) => `<div style="position:relative; flex-shrink:0;"><button onclick="removeImage(${i})" style="position:absolute; top:-5px; right:-5px; background:#ef4444; color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer;">✕</button><img src="${img}" onclick="openFullImage('${img}')" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); cursor:pointer;"></div>`).join(''); }
         function removeImage(index) { uploadedImagesList.splice(index, 1); updateImageUI(); }
-        function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; showToast("Attachment Cleared"); }
+        function clearAttachment() { documentMemory = ""; webUrls = []; windowUploadedFileName = ""; document.getElementById("attachmentChip").style.display = "none"; showToast("Attachment Cleared"); }
 
         document.getElementById("searchInput").addEventListener("keypress", function(e) { if(e.key === "Enter" && !e.shiftKey) { e.preventDefault(); runMainSearch(); } });
 
@@ -515,7 +599,7 @@
             runMainSearch();
         }
 
-        // --- TYPEWRITER ENGINE ---
+        // --- STRICT 14 WORDS/SEC TYPEWRITER (70 CHARS/SEC) ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div'); 
             tempDiv.innerHTML = fullHtml; 
@@ -527,15 +611,24 @@
                 
                 if (currentNode.nodeType === Node.TEXT_NODE) {
                     let text = currentNode.textContent; let span = document.createElement('span'); targetElement.appendChild(span); let charIndex = 0;
+                    
+                    // Exactly 14ms interval -> ~71 chars per sec -> ~14 words per sec
                     let interval = setInterval(() => { 
                         if (charIndex >= text.length) { clearInterval(interval); nodeIndex++; typeNextNode(); } 
-                        else { span.textContent += text.substring(charIndex, charIndex + 5); charIndex += 5; } 
-                    }, 15);
+                        else { span.textContent += text.substring(charIndex, charIndex + 1); charIndex += 1; } 
+                    }, 14);
                 } else { 
                     targetElement.appendChild(currentNode); nodeIndex++; typeNextNode(); 
                 }
             } 
             typeNextNode();
+        }
+
+        // Quick Reply Auto-Sender
+        window.sendQuickReply = function(btn) {
+            document.getElementById("searchInput").value = btn.innerText;
+            btn.parentElement.remove(); // Clear suggestions
+            runMainSearch();
         }
 
         function checkDailyImageLimit() {
@@ -555,9 +648,18 @@
             if (document.getElementById("welcomeMessage")) document.getElementById("welcomeMessage").style.display = "none";
 
             let currentImagesToSave = [...uploadedImagesList];
-            let userImgs = uploadedImagesList.map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
-            let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
-            chatBox.insertAdjacentHTML('beforeend', userHtml); inp.value = ""; inp.style.height = ''; 
+            let userImgs = uploadedImagesList.map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer; border: 2px solid white;">`).join('');
+            
+            // 🛑 VISUAL FILE ATTACHMENT BADGE LOGIC
+            let attachHtml = "";
+            let currentFileNameForHistory = null;
+            if (windowUploadedFileName) {
+                attachHtml = `<div class="user-attachment-badge">📄 Attached: ${windowUploadedFileName}</div><br>`;
+                currentFileNameForHistory = windowUploadedFileName;
+            }
+
+            let userHtml = `<div class="chat-msg chat-user"><div class="bubble">${attachHtml}${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
+            chatBox.insertAdjacentHTML('beforeend', userHtml); inp.value = ""; resizeInputBox(); 
             
             const scrollArea = document.getElementById("searchScrollArea"); scrollArea.scrollTo(0, scrollArea.scrollHeight);
             const loadId = "load_" + Date.now();
@@ -570,7 +672,7 @@
 
             try {
                 if (isPhotoMode) { await handlePhotoGeneration(q, loadId, currentImagesToSave); if(isPhotoMode) togglePhotoMode(); }
-                else { await handleTextSearch(q, loadId, currentImagesToSave); }
+                else { await handleTextSearch(q, loadId, currentImagesToSave, currentFileNameForHistory); }
             } catch(e) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Error: ${e.message}</div>`; }
             
             isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImagesList = []; updateImageUI(); clearAttachment();
@@ -579,7 +681,7 @@
         async function handlePhotoGeneration(promptText, loadId, savedImages) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">OPTIMIZING PROMPTS...</div><div class="data-bar"></div></div>`;
             try {
-                const enhancePrompt = `You are an elite AI image prompt engineer optimizing for the Flux model. The user wants an image based on: "${promptText}". If the user asks for a map or diagram, explicitly instruct the image generator to write bold ENGLISH text on the image. Create 3 distinct, highly detailed, 4k resolution text-to-image prompts. STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."].`;
+                const enhancePrompt = `You are an elite AI image prompt engineer optimizing for the Flux model. The user wants an image based on: "${promptText}". Create 3 distinct, highly detailed, 4k resolution text-to-image prompts. STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."].`;
 
                 const res = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userPrompt: enhancePrompt, systemPrompt: "Return strictly a JSON array." }) });
                 const data = await res.json();
@@ -624,19 +726,20 @@
         };
 
         // ==========================================
-        // 🚀 MASTER TEXT ENGINE (MERGED WITH MATHS.HTML)
+        // 🚀 MASTER TEXT ENGINE
         // ==========================================
-        async function handleTextSearch(prompt, loadId, savedImages) {
+        async function handleTextSearch(prompt, loadId, savedImages, attachedFileName) {
             const lang = document.getElementById("appLang").value; 
             const customRules = document.getElementById("aiInstructions").value.trim();
             
-            // 🛑 BUG FIX: STRICT LANGUAGE RULES + NEW MATH VISUALS (SVG) PROTOCOL 🛑
+            // 🛑 STRICT MATH & SUGGESTIONS PROTOCOL
             let sysPrompt = `You are the ultimate educational AI Tutor.
-            1. LANGUAGE RULE: You MUST answer entirely in ${lang}. DO NOT mix English and Hindi freely. 
-            2. TRANSLITERATION RULE: For difficult technical terms, you MUST format it as "Hindi-Word (English-Term)". Example: "गुरुत्वाकर्षण (Gravitation)".
-            3. CODE RULE: NEVER translate programming code, syntax, or variables. Code MUST remain in Pure ENGLISH.
-            4. MATH FORMULAS: Keep inline math short with \\( \\). Use $$ $$ for multiline math. NEVER output math formulas for non-math subjects.
-            5. 🎨 MATH VISUALIZATION (SVG): If the user asks a Geometry, Physics, or Mathematics question involving visual concepts (e.g. shapes, circles, triangles, graphs, circuits), you MUST generate a clean, responsive <svg> diagram to visualize the problem. Wrap the SVG inside exactly this HTML block directly in your output: <div class="math-svg-wrap"><svg ...> ... </svg></div>. Do NOT generate diagrams for greetings, casual chat, or non-visual questions.`;
+            1. LANGUAGE RULE: Answer entirely in ${lang}. DO NOT mix English and Hindi freely.
+            2. TRANSLITERATION RULE: For difficult technical terms, format exactly as "Hindi-Word (English-Term)". Example: "गुरुत्वाकर्षण (Gravitation)".
+            3. STRICT MATH RULE: YOU MUST NEVER output raw LaTeX without delimiters. Wrap ALL inline math exactly in \\( and \\) (e.g. \\( r = \\frac{15}{2} \\)). Wrap block math in $$ $$. NO weird symbols like #$%^%. Use **bold** for emphasis. Do NOT use regular parentheses ( ) for fractions.
+            4. 🎨 MATH VISUALIZATION (SVG): If the user asks a Geometry, Physics, or Mathematics question involving visual concepts, generate a clean <svg> diagram wrapped inside <div class="math-svg-wrap"><svg ...> ... </svg></div>.
+            5. 💡 QUICK SUGGESTIONS: At the very end of your response, ALWAYS provide exactly 3 short, relevant continuation questions the user could ask next. Format them EXACTLY like this on a new line:
+            ||SUGGESTIONS: ["Suggestion 1", "Suggestion 2", "Suggestion 3"]||`;
             
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if (webUrls.length > 0) sysPrompt += `\n\nUSER ATTACHED WEB URL: ${webUrls[0]}`;
@@ -651,7 +754,7 @@
                     memoryContext += `User: ${i.question}\nAI: ${cleanAnswer}\n\n`;
                 });
             }
-            if (memoryContext) sysPrompt += `\n\n--- CHAT MEMORY (Last 10 Messages) ---\n${memoryContext}\nUse this context to remember previous parts of the conversation.`;
+            if (memoryContext) sysPrompt += `\n\n--- CHAT MEMORY (Last 10 Messages) ---\n${memoryContext}\nUse this context.`;
 
             let isCode = /math|solve|code|python|java|html|notes/i.test(prompt);
             let targetProvider = isCode ? "api_5" : "api_1"; 
@@ -662,16 +765,35 @@
             const data = await res.json();
             if(!res.ok) throw new Error(data.error || "Neural network timeout.");
 
+            // 🛑 PARSE QUICK SUGGESTIONS FROM AI TEXT
+            let rawText = data.text;
+            let parsedSuggestions = [];
+            let sugRegex = /\|\|SUGGESTIONS:\s*(\[.*?\])\|\|/s;
+            let match = rawText.match(sugRegex);
+            if (match) {
+                try { parsedSuggestions = JSON.parse(match[1]); } catch(e){}
+                rawText = rawText.replace(sugRegex, '').trim(); // Remove it from the text so it doesn't show raw
+            }
+
             let textId = "txt_" + loadId;
-            let htmlContent = marked.parse(data.text);
+            let htmlContent = marked.parse(rawText);
             
-            let sourceBtnHtml = ""; let urlRegex = /(https?:\/\/[^\s]+)/g; let urls = data.text.match(urlRegex);
+            // Build Quick Suggestions Buttons HTML
+            let suggestionsHtml = "";
+            if (parsedSuggestions.length > 0) {
+                suggestionsHtml = `<div class="quick-suggestions-wrap">` + 
+                    parsedSuggestions.map(s => `<button class="quick-reply-btn" onclick="sendQuickReply(this)">💬 ${s}</button>`).join('') + 
+                `</div>`;
+            }
+
+            let sourceBtnHtml = ""; let urlRegex = /(https?:\/\/[^\s]+)/g; let urls = rawText.match(urlRegex);
             if(urls) { window['sources_' + loadId] = urls; sourceBtnHtml = `<button class="action-btn" onclick="openSources('${loadId}')">🔗 Sources</button>`; }
 
             document.getElementById(loadId).innerHTML = `
                 <div class="bubble">
                     <div style="font-size:10px; color:var(--primary); font-weight:900; margin-bottom:10px; text-transform:uppercase;">✨ VIA ${data.provider || 'AI ROUTER'}</div>
                     <div id="${textId}" class="markdown-body"></div>
+                    <div id="sug_${textId}"></div>
                     <div class="msg-actions" style="margin-top:15px; border-top:1px solid var(--border-light); padding-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
                         <button class="action-btn" data-target="${textId}" onclick="playAudio(this)">🔊 Listen</button>
                         <button class="action-btn" data-target="${textId}" onclick="copyText(this)">📋 Copy</button>
@@ -681,16 +803,24 @@
             
             runInsaneTypewriter(document.getElementById(textId), htmlContent, () => {
                 if(window.MathJax) { MathJax.typesetClear([document.getElementById(loadId)]); MathJax.typesetPromise([document.getElementById(loadId)]); }
-                saveInteractionToLocalForage(prompt, htmlContent, savedImages, data.provider, urls);
+                
+                // Append suggestions after typing is done
+                if(suggestionsHtml) {
+                    document.getElementById("sug_" + textId).innerHTML = suggestionsHtml;
+                    document.getElementById("searchScrollArea").scrollTo(0, document.getElementById("searchScrollArea").scrollHeight);
+                }
+
+                saveInteractionToLocalForage(prompt, htmlContent, savedImages, data.provider, urls, attachedFileName);
             });
         }
 
-        function saveInteractionToLocalForage(question, answer, images, provider, sources = []) {
+        // Expanded Save Function to keep track of User's File Uploads
+        function saveInteractionToLocalForage(question, answer, images, provider, sources = [], fileName = null) {
             let existingSession = appHistory.find(s => Number(s.id) === Number(currentSessionId));
             if (existingSession) {
-                existingSession.interactions.push({ question: question, answer: answer, images: images, provider: provider, sources: sources });
+                existingSession.interactions.push({ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName });
             } else {
-                appHistory.unshift({ id: currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources }] });
+                appHistory.unshift({ id: currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }] });
             }
             saveHistorySafe();
         }
