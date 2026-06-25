@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI PRO SUITE- DEEP SEARCH</title>
+    <title>DEEP SEARCH</title>
     
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -345,23 +345,32 @@
             document.getElementById('whatsappModal').style.display = 'flex';
         }
 
-        async function submitWhatsAppSelection(event) {
-            const number = document.getElementById('waNumberInput').value.trim();
-            if (!number) return showToast("Please enter a mobile number.");
-            let fullChatText = "🔎 *AI PRO SUITE - Selected Answers* 🔎\n\n";
-            
-            document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
-                let clone = node.cloneNode(true);
-                let actions = clone.querySelector('.msg-actions'); if(actions) actions.remove(); 
-                let headers = clone.querySelector('.code-header'); if(headers) headers.remove(); 
-                
-                let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
-                clone.innerHTML = htmlStr;
-                let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
-                msgText = msgText.replace(/✨.*?VIA.*?\n/i, ''); 
-                if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
-            });
+async function submitWhatsAppSelection(event) {
+    const number = document.getElementById('waNumberInput').value.trim();
+    if (!number) return showToast("Please enter a mobile number.");
+    let fullChatText = "🔎 *AI PRO SUITE - Selected Answers* 🔎\n\n";
+    
+    document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
+        let clone = node.cloneNode(true);
+        
+        // 🛑 NEW: Remove UI elements that cause the clutter 🛑
+        let actions = clone.querySelector('.msg-actions'); if(actions) actions.remove(); 
+        let headers = clone.querySelector('.code-header'); if(headers) headers.remove(); 
+        // Also remove any buttons or menu wrappers
+        clone.querySelectorAll('button, .msg-menu-wrap, .code-header').forEach(el => el.remove());
+        
+        let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
+        clone.innerHTML = htmlStr;
+        
+        // Get text and strip the specific "Listen" and "Copy" labels
+        let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
+        
+        // Remove the leftover button text if the DOM removal wasn't enough
+        msgText = msgText.replace(/Listen/gi, '').replace(/Copy/gi, '').replace(/Delete/gi, '').trim();
+        msgText = msgText.replace(/✨.*?VIA.*?\n/i, ''); 
 
+        if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
+    });
             const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
             const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
             fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
