@@ -109,10 +109,11 @@
     </div>
 
    <!-- 🛑 DYNAMIC TOP BAR (FOLLOWS SYSTEM THEME) 🛑 -->
-    <div class="topbar" id="appTopbar">
-        <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer;">☰</button>
-        <div class="app-title" style="font-size:20px; font-weight:bold; background: linear-gradient(90deg, var(--primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI PRO SUITE</div>
-    </div>
+    <div class="topbar" id="appTopbar" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.3s; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light);">
+        <div style="display:flex; align-items:center; gap:15px;">
+              <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer;">☰</button>
+       <div class="app-title" style="font-size:20px; font-weight:bold; background: linear-gradient(90deg, var(--primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI PRO SUITE</div>
+        </div>
         <div style="display:flex; gap:12px; align-items:center;">
             <button onclick="toggleShareMode()" style="background:rgba(37, 211, 102, 0.1); border:1px solid #25D366; color:#25D366; border-radius:8px; padding:6px 12px; font-size:13px; font-weight:bold; cursor:pointer;">📤 Share</button>
             <button onclick="document.getElementById('settingsModal').style.display='flex'" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main);">⚙️</button>
