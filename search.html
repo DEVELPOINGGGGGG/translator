@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI PRO SUITE</title>
+    <title>AI PRO SUITE- DEEP SEARCH</title>
     
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -109,11 +109,10 @@
     </div>
 
    <!-- 🛑 DYNAMIC TOP BAR (FOLLOWS SYSTEM THEME) 🛑 -->
-    <div class="topbar" id="appTopbar" style="position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.3s; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light);">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer;">☰</button>
-            <div class="app-title" style="font-size:20px; font-weight:bold; color: var(--text-main);">AI PRO SUITE</div>
-        </div>
+    <div class="topbar" id="appTopbar">
+        <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer;">☰</button>
+        <div class="app-title" style="font-size:20px; font-weight:bold; background: linear-gradient(90deg, var(--primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI PRO SUITE</div>
+    </div>
         <div style="display:flex; gap:12px; align-items:center;">
             <button onclick="toggleShareMode()" style="background:rgba(37, 211, 102, 0.1); border:1px solid #25D366; color:#25D366; border-radius:8px; padding:6px 12px; font-size:13px; font-weight:bold; cursor:pointer;">📤 Share</button>
             <button onclick="document.getElementById('settingsModal').style.display='flex'" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-main);">⚙️</button>
@@ -169,7 +168,7 @@
             
             <button id="plusBtn" onclick="togglePlusMenu(event)" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:var(--primary); padding:5px;">➕</button>
             
-            <textarea id="searchInput" placeholder="Message AI Pro Suite..." rows="1" style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:15px; outline:none; resize:none; max-height:120px; padding:10px 5px;" oninput="this.style.height=''; this.style.height=Math.min(this.scrollHeight, 120)+'px';"></textarea>
+            <textarea id="searchInput" placeholder="Message AI Pro Suite..." rows="1" style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:15px; outline:none; resize:none; min-height: 20px; max-height:120px; padding:10px 5px;" oninput="this.style.height=''; this.style.height=Math.min(this.scrollHeight, 120)+'px';"></textarea>
             
             <button onclick="document.getElementById('voiceModal').style.display='flex'" style="background:transparent; border:none; font-size:20px; cursor:pointer; color:var(--primary); padding:5px;">🎤</button>
             
@@ -337,6 +336,7 @@
         function cancelShareMode() {
             document.getElementById('shareActionArea').style.display = 'none'; document.getElementById('appInputArea').style.display = 'flex'; 
             isShareMode = false; document.getElementById('searchScrollArea').classList.remove('share-mode-active');
+            document.getElementById('searchInput').style.height = 'auto';
             document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
         }
         function proceedToShare() {
