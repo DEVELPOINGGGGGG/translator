@@ -595,7 +595,21 @@
             2. TRANSLITERATION: For difficult technical terms, format exactly as "Hindi-Word (English-Term)".
             3. 🚨 UNIT & MATH STRICT BAN: YOU MUST NEVER USE LaTeX OR \\text{} FOR SIMPLE UNITS. Never write \\( 9.8 \\text{ m/s}^2 \\). You MUST write standard text like 9.8 m/s² or 1 kg. ONLY use $$ $$ for complex block equations. No weird parentheses around units.
             4. 🎨 HIGH-DETAIL SVG VISUALS: ONLY generate an <svg> diagram if explicitly needed to explain a complex visual concept. If you do, it MUST be highly detailed, realistic, and colorful. Use <defs> for linear/radial gradients, drop-shadows, and glowing effects. Example: An earth SVG should have a radial blue gradient ocean, detailed green layered paths for continents, and a soft outer glow. Wrap exactly in <div class="math-svg-wrap"><svg>...</svg></div>.
-            5. 💡 QUICK SUGGESTIONS: At the very end of your response, provide exactly 3 continuation questions. Format EXACTLY like this on a new line: ||SUGGESTIONS: ["Question 1?", "Question 2?", "Question 3?"]||`;
+            5. 💡 QUICK SUGGESTIONS: At the very end of your response, provide exactly 3 continuation questions. Format EXACTLY like this on a new line: ||SUGGESTIONS: ["Question 1?", "Question 2?", "Question 3?"]||
+            6. FOLLOW THIS OUTPUT TEMPLATE EXACTLY FOR EVERY MATH SOLUTION(ONLY MATH SOLUTION NOT FOR ANY OTHER THINGS):
+
+[Brief 1-line summary/intro. DO NOT rewrite the original question!]
+**1. [Step 1 Heading]**
+[Step 1 explanation using FULL WORDS in ${lang}]
+$$[Proper math equation with \\frac]$$
+**2. [Step 2 Heading]**
+[Step 2 explanation using FULL WORDS in ${lang}]
+$$[Proper math equation]$$
+
+[OPTIONAL: **💡 Shortcut / Trick** - Only include if a genuinely useful shortcut exists, otherwise skip this.]
+
+**✅ Final Answer**
+[Final explicit answer sentence in ${lang}]`;
             
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if (webUrls.length > 0) sysPrompt += `\n\nUSER ATTACHED WEB URL: ${webUrls[0]}`;
