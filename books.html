@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
-    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
@@ -40,16 +39,16 @@
 
         html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; background: var(--app-bg); color: var(--text-main); }
         
-        /* TOP BAR */
-        .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.4s ease; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-light); box-sizing: border-box; }
+        /* DYNAMIC TOP BAR - SCROLLABLE & THEME AWARE */
+        .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.4s ease; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
         .topbar.hidden { transform: translateY(-100%); }
-        .appTitle { font-size: 18px; font-weight: bold; color: white; white-space: nowrap; overflow-x: auto; overflow-y: hidden; max-width: 50vw; display: inline-block; scrollbar-width: none; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s; }
+        .appTitle { font-size: 18px; font-weight: bold; color: var(--text-main); white-space: nowrap; overflow-x: auto; overflow-y: hidden; max-width: 55vw; display: inline-block; scrollbar-width: none; cursor: pointer; padding: 5px; border-radius: 8px; transition: 0.2s; }
         .appTitle::-webkit-scrollbar { display: none; }
-        .appTitle:hover { background: rgba(255,255,255,0.1); }
+        .appTitle:hover { background: rgba(139, 92, 246, 0.1); }
 
         /* WIZARD UI */
-        .wizard-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; padding-top: 100px; padding-bottom: 80px; width: 100%; box-sizing: border-box; overflow-y: auto; height: 100vh; }
-        .step-card { width: 100%; max-width: 600px; display: none; text-align: center; animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: var(--bg-surface); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border-light); box-sizing: border-box; margin-bottom: 30px; }
+        .wizard-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; padding-top: 100px; padding-bottom: 80px; width: 100%; box-sizing: border-box; overflow-y: auto; height: 100vh; position: relative;}
+        .step-card { width: 100%; max-width: 600px; display: none; text-align: center; animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: var(--bg-surface); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border-light); box-sizing: border-box; margin-bottom: 30px; position: relative;}
         .step-card.active { display: block; }
         .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; font-size: 24px; }
         .step-card label { display: block; text-align: left; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px;}
@@ -61,6 +60,9 @@
         .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px var(--primary-glow); }
         .btn-secondary { background: #475569; }
         .btn-secondary:hover { transform: translateY(-3px); background: #334155; }
+
+        #closeSettingsWizardBtn { display: none; position: absolute; top: 15px; right: 15px; background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #closeSettingsWizardBtn:hover { background: #ef4444; color: white; border-color: #ef4444; }
 
         /* CHAT LAYOUT */
         #chatPage { display: none; flex-direction: column; position: fixed; inset: 0; background: var(--bg-base); z-index: 50; overflow: hidden; }
@@ -90,9 +92,13 @@
         .chat-input-wrapper { display: flex; align-items: flex-end; gap: 10px; width: 100%; box-sizing: border-box; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 24px; padding: 8px 15px; position: relative; transition: 0.3s; }
         .chat-input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 4px 15px var(--primary-glow); }
         textarea { flex: 1; background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 15px; resize: none; padding: 10px 0; outline: none; min-height: 24px; max-height: 120px; }
+        
         .icon-btn { background: transparent; border: none; color: var(--primary); font-size: 24px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
-        .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; flex-shrink: 0; box-shadow: 0 4px 10px var(--primary-glow); }
-        .send-btn:hover { transform: scale(1.1); }
+        
+        /* GREY OUT SEND BUTTON SMART LOGIC */
+        .send-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; flex-shrink: 0; box-shadow: 0 4px 10px var(--primary-glow); transition: 0.2s; pointer-events: none; opacity: 0.4; }
+        .send-btn.active-btn { pointer-events: auto; opacity: 1; }
+        .send-btn.active-btn:hover { transform: scale(1.1); }
 
         /* Plus Menu */
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -115,19 +121,16 @@
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Typing Indicator */
         .typing-indicator { display: flex; gap: 5px; padding: 5px; align-items: center; }
         .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: typingPulse 1.4s infinite ease-in-out both; }
         .dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typingPulse { 0%, 80%, 100% { transform: scale(0); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
 
-        /* Share Mode */
         .share-mode-active .bubble { cursor: pointer !important; transition: 0.2s; position: relative; }
         .share-mode-active .bubble::before { content: ''; position: absolute; inset: 0; background: rgba(37, 211, 102, 0.1); border-radius: inherit; opacity: 0; transition: 0.2s; pointer-events: none;}
         .share-mode-active .bubble:hover::before { opacity: 1; }
         .bubble.selected-for-share { outline: 3px solid #25D366 !important; outline-offset: 2px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
 
-        /* Message Dropdown Menu */
         .msg-menu-wrap { position: absolute; top: 12px; right: 8px; z-index: 10; display: flex; gap: 5px;}
         .msg-action-btn { background: transparent; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 18px; padding: 0 5px; line-height: 1; transition:0.2s;}
         .msg-action-btn:hover { opacity: 1; transform: scale(1.1); }
@@ -135,24 +138,8 @@
         .msg-dropdown button { width: 100%; background: transparent; border: none; color: #ef4444; padding: 10px 15px; text-align: left; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;}
         .msg-dropdown button:hover { background: rgba(239,68,68,0.2); }
         
-        /* Book Cover Generated View */
         .generated-cover { width: 140px; height: 190px; background: linear-gradient(135deg, #1e293b, #3b82f6); border-radius: 4px 12px 12px 4px; box-shadow: inset 4px 0 10px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.3), 5px 10px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 10px; box-sizing: border-box; color: white; text-align: center; position: relative; margin: 0 auto 20px auto; border-left: 6px solid #0f172a; }
         .generated-cover::after { content: ''; position: absolute; left: 0px; top: 0; bottom: 0; width: 3px; background: rgba(255,255,255,0.2); }
-
-        /* Advanced Audio Player GUI (25% Screen) */
-        #premiumAudioPlayer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 25vh; min-height: 200px; background: var(--bg-surface); border-top: 2px solid var(--primary); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 -15px 40px rgba(0,0,0,0.3); animation: slideInUp 0.4s ease; padding: 20px; box-sizing: border-box; }
-        @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .audio-top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .audio-title { font-weight: 800; font-size: 16px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-        .audio-close-btn { background: #ef4444; border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .audio-progress-wrap { width: 100%; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .audio-time { font-size: 12px; font-weight: bold; color: var(--text-muted); font-family: monospace; width: 45px; text-align: center; }
-        .audio-progress-bar { flex: 1; height: 8px; background: var(--input-bg); border-radius: 4px; border: 1px solid var(--border-light); position: relative; cursor: pointer; overflow: hidden; }
-        .audio-progress-fill { width: 0%; height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.1s linear; }
-        .audio-controls { display: flex; align-items: center; gap: 20px; }
-        .audio-main-btn { background: linear-gradient(135deg, var(--secondary), var(--primary)); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px 15px var(--primary-glow); transition: 0.2s; }
-        .audio-main-btn:hover { transform: scale(1.1); }
-        .audio-speed-select { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-light); padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 12px; outline: none; cursor: pointer; }
 
         /* Modals & Overlays */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
@@ -163,7 +150,6 @@
         #cameraVideo { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
         .camera-controls-container { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; align-items: center; gap: 40px; z-index: 1000; }
         
-        /* Book Preview Root Modal */
         #bookPreviewModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999999 !important; flex-direction: column; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
     </style>
 </head>
@@ -171,11 +157,10 @@
 
 <div class="overlay" id="overlay"></div>
 
-<!-- TOPBAR -->
 <div class="topbar" id="appTopbar">
-    <div style="display:flex; align-items:center; gap:15px;">
-        <div class="menuBtn" onclick="toggleSidebar()" style="font-size:24px; cursor:pointer;">☰</div>
-        <div class="appTitle" id="sessionTitleDisplay" onclick="renameSession()" title="Click to rename">📚 Book Deep Study</div>
+    <div style="display:flex; align-items:center; gap:15px; flex: 1;">
+        <div class="menuBtn" onclick="toggleSidebar()" style="font-size:24px; cursor:pointer; color:var(--text-main);">☰</div>
+        <div class="appTitle" id="sessionTitleDisplay" onclick="renameSession()" title="Swipe to scroll / Click to rename">📚 Book Deep Study</div>
     </div>
     <div style="display:flex; gap:8px;">
         <button class="btn btn-primary" id="shareBtn" style="padding: 6px 10px; display: none; font-size: 13px; background: #25D366; border: none; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="toggleShareMode()">📤 Share</button>
@@ -184,7 +169,6 @@
     </div>
 </div>
 
-<!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button>
   <button onclick="window.location.href='index.html'">🏠 Dashboard</button>
@@ -194,15 +178,15 @@
   <button onclick="window.location.href='history.html'">🕒 History</button>
 </div>
 
-<!-- LOADING OVERLAY -->
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
     <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
     <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Preparing Tutor...</h2>
-    <p style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait while we search the database for this specific textbook.</p>
+    <p style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait while we set up your study session.</p>
 </div>
 
-<!-- WIZARD PAGE -->
 <div id="wizardPage">
+    <button id="closeSettingsWizardBtn" onclick="closeSettingsWizard()">✖</button>
+    
     <div class="wizard-container" id="wizardContainer">
         
         <div class="step-card active" id="step-1">
@@ -293,8 +277,6 @@
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
                 <input type="text" id="manualChapter" class="standard" placeholder="e.g. Motion / गति" style="margin-bottom: 0;">
                 <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="startChapterVoice()">🎤</button>
-                
-                <!-- THE CORRECT BOOK RECOGNITION CAMERA BUTTON -->
                 <button class="icon-btn" style="background:#10b981; color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="openBookRecognitionCamera()" title="Take photo of book page">📷</button>
             </div>
             <p style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:-10px; margin-bottom:15px;">*Click 📷 to snap the chapter page so AI knows the exact questions!</p>
@@ -317,7 +299,6 @@
 
             <div id="selectionSummary" style="text-align:left; background: var(--input-bg); border: 1px solid var(--border-light); padding:15px; border-radius:12px; margin-bottom:20px; font-weight:600; line-height:2;"></div>
             
-            <!-- THE CORRECT INITIALIZE BUTTON -->
             <button id="initFinalBtn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation(true)">Initialize AI Tutor 🚀</button>
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="nextStep(4)">⬅ Edit Details</button>
@@ -326,11 +307,9 @@
     </div>
 </div>
 
-<!-- CHAT PAGE -->
 <div id="chatPage">
     <div class="chat-scroll-area" id="chatHistory"></div>
 
-    <!-- SHARE MODE ACTION BAR -->
     <div id="shareActionArea" class="bottom-action-container" style="display:none; border-top: 2px solid #25D366;">
         <div style="color:var(--text-main); text-align:center; font-weight:bold; font-size:14px; margin-bottom: 10px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:10px;">
@@ -340,7 +319,6 @@
         </div>
     </div>
 
-    <!-- MAIN CHAT INPUT AREA -->
     <div class="bottom-action-container" id="mainInputArea">
         <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Document Attached</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
         <input type="file" id="imageInput" accept="image/*,.pdf" style="display:none;" onchange="handleFileSelect(event)">
@@ -361,51 +339,17 @@
             <button id="plusBtn" class="icon-btn" onclick="togglePlusMenu(event)">➕</button>
             <button id="micBtn" class="icon-btn" onclick="openVoiceModal()" style="transition: 0.3s;">🎤</button>
             
-            <!-- FIXED TEXTAREA RESIZE -->
             <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)" oninput="resizeInputBox()"></textarea>
-            <button class="icon-btn send-btn" onclick="sendMessage()">➤</button>
+            <button id="sendBtn" class="icon-btn send-btn" onclick="sendMessage()">➤</button>
         </div>
     </div>
 </div>
 
-<!-- ========================================================
-     MODALS GUARANTEED TO BE OUTSIDE CHATPAGE & WIZARDPAGE
-     ======================================================== -->
-
-<!-- PREMIUM AUDIO PLAYER GUI -->
-<div id="premiumAudioPlayer">
-    <div class="audio-top-bar">
-        <div class="audio-title">🔊 <span id="audioPlayingStatus">Playing Answer...</span></div>
-        <button class="audio-close-btn" onclick="stopAudio()">✖</button>
-    </div>
-    <div class="audio-progress-wrap">
-        <div class="audio-time" id="audioCurrentTime">0:00</div>
-        <div class="audio-progress-bar" id="audioProgressBar" onclick="seekAudio(event)">
-            <div class="audio-progress-fill" id="audioProgressFill"></div>
-        </div>
-        <div class="audio-time" id="audioTotalTime">0:00</div>
-    </div>
-    <div class="audio-controls">
-        <select class="audio-speed-select" id="audioSpeed" onchange="changeAudioSpeed()">
-            <option value="0.75">0.75x</option>
-            <option value="1" selected>1.0x Normal</option>
-            <option value="1.25">1.25x</option>
-            <option value="1.5">1.5x Fast</option>
-            <option value="2">2.0x</option>
-        </select>
-        <button class="audio-main-btn" id="premiumAudioToggle" onclick="toggleAudio()">⏸</button>
-    </div>
-</div>
-
-<div id="voiceModal" class="modal-overlay">
-    <div class="modal-box" style="text-align: center;">
-        <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🎤 Speak to Type</h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Choose a language to start listening.</p>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn btn-primary" style="padding: 15px; border-radius: 12px; font-size: 15px;" onclick="startVoice('hi-IN')">🇮🇳 Speak in Hindi</button>
-            <button class="btn btn-primary" style="padding: 15px; background: #10b981; border-radius: 12px; font-size: 15px;" onclick="startVoice('en-US')">🇺🇸 Speak in English</button>
-            <button class="btn" style="padding: 12px; background: transparent; color: #ef4444; border: 2px solid #ef4444; border-radius: 12px; font-size: 14px; margin-top: 5px;" onclick="document.getElementById('voiceModal').style.display='none'">Cancel</button>
-        </div>
+<div id="customAlertModal" class="modal-overlay">
+    <div class="modal-box" style="text-align: center; max-width: 350px;">
+        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 20px; font-weight: bold;">System Notification</h3>
+        <p id="alertMessage" style="font-size: 15px; color: var(--text-main); margin-bottom: 25px;"></p>
+        <button class="btn btn-primary" style="width: 100%; padding: 12px; border-radius: 12px; font-size: 16px;" onclick="closeCustomAlert()">Done</button>
     </div>
 </div>
 
@@ -415,7 +359,7 @@
         <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the authorized mobile number to send notes.</p>
         <input type="number" id="waNumberInput" placeholder="e.g. 919876543210" class="standard" style="text-align:center; font-weight:bold; font-size:18px;">
         <div style="display: flex; gap: 10px;">
-            <button class="btn" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white;" onclick="submitWhatsAppSelection(event)">🚀 Send</button>
+            <button id="waSendBtn" class="btn" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white;" onclick="submitWhatsAppSelection(event)">🚀 Send</button>
             <button class="btn" style="flex: 1; padding: 12px; border-radius: 12px; background: #ef4444; color: white;" onclick="document.getElementById('whatsappModal').style.display='none'">✖ Cancel</button>
         </div>
     </div>
@@ -432,7 +376,6 @@
     </div>
 </div>
 
-<!-- BOOK PREVIEW MODAL (ABSOLUTE ROOT LAYER) -->
 <div id="bookPreviewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999999; flex-direction:column; align-items:center; justify-content:center; padding: 20px; backdrop-filter: blur(10px);">
     <h3 style="color:white; margin-bottom:15px; font-size:20px; font-weight:bold;">📸 Review Chapter Photo</h3>
     <img id="bookPreviewImg" style="max-width:100%; max-height:60vh; border-radius:12px; border:3px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
@@ -443,7 +386,6 @@
     <button style="margin-top:25px; background:transparent; border:none; color:#ef4444; font-weight:bold; font-size:16px; cursor:pointer;" onclick="closeBookPreview()">✖ Cancel Scanning</button>
 </div>
 
-<!-- CAMERA SYSTEM (ABSOLUTE ROOT LAYER) -->
 <div id="cameraModal">
     <video id="cameraVideo" autoplay playsinline></video>
     <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
@@ -456,10 +398,47 @@
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
-<!-- ========================================================
-     MASTER JAVASCRIPT ENGINE (ALL BUGS TERMINATED)
-     ======================================================== -->
 <script>
+    // GUI Alerts System
+    window.showCustomAlert = function(msg) {
+        document.getElementById('alertMessage').innerText = msg;
+        document.getElementById('customAlertModal').style.display = 'flex';
+    };
+    function closeCustomAlert() { document.getElementById('customAlertModal').style.display = 'none'; }
+    window.alert = function(msg) { showCustomAlert(msg); }; // Override native alert
+
+    // Toast System
+    function showToast(msg) {
+        let t = document.createElement('div'); t.innerText = msg;
+        t.style.cssText = "position:fixed; bottom:130px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:9999999; font-weight:bold; font-size:13px; box-shadow:0 5px 15px rgba(0,0,0,0.5); animation:slideUpToast 0.3s ease;";
+        document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
+    }
+
+    localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
+    let appHistory = [];
+    let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
+
+    document.addEventListener("DOMContentLoaded", () => {
+        localforage.getItem('aiHistory').then(data => {
+            if(data) { appHistory = data; const restoreId = new URLSearchParams(window.location.search).get('restore'); if(restoreId) restoreSession(Number(restoreId)); }
+        });
+        validateSendButton(); // Initialize grey button
+    });
+
+    function saveHistorySafe() { localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); }
+
+    // 🛑 GLOBAL PRESET FIX 🛑
+    window.runPreset = function(cmd) { 
+        document.getElementById('chatInput').value = cmd; 
+        resizeInputBox();
+        sendMessage(); 
+    }
+
+    function copyUserText(btn) {
+        navigator.clipboard.writeText(decodeURIComponent(btn.getAttribute('data-text')));
+        showToast("✅ Copied your message!");
+    }
+
     function toggleSidebar() {
         const s = document.getElementById("sidebar"), o = document.getElementById("overlay");
         const a = !s.classList.contains("active");
@@ -476,10 +455,9 @@
 
     function deleteMsg(btn, e) {
         e.stopPropagation();
-        if(confirm("Are you sure you want to delete this message?")) {
-            let msg = btn.closest('.msg');
-            if(msg) { msg.remove(); saveHistory(); }
-        }
+        let msg = btn.closest('.msg');
+        if(msg) { msg.remove(); saveHistory(); showToast("Message deleted."); }
+        document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
     }
 
     function copyMsg(btn, e) {
@@ -487,9 +465,7 @@
         let bubble = btn.closest('.bubble');
         let text = bubble.innerText.replace('⋮','').replace('📋','').replace('🗑️ Delete','').trim();
         navigator.clipboard.writeText(text);
-        let orig = btn.innerHTML;
-        btn.innerHTML = '✅';
-        setTimeout(() => { btn.innerHTML = orig; }, 1500);
+        let orig = btn.innerHTML; btn.innerHTML = '✅'; setTimeout(() => { btn.innerHTML = orig; }, 1500);
     }
 
     const msgMenuHTML = `
@@ -501,9 +477,7 @@
 
     window.addEventListener('click', function(e) { 
         if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); 
-        if (!e.target.closest('.msg-menu-wrap')) {
-            document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
-        }
+        if (!e.target.closest('.msg-menu-wrap')) document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
         if (document.getElementById("overlay").contains(e.target)) toggleSidebar();
     });
 
@@ -517,31 +491,24 @@
         }
     }
 
-    function showToast(msg) {
-        let t = document.createElement('div'); t.innerText = msg;
-        t.style.cssText = "position:fixed; bottom:130px; left:50%; transform:translateX(-50%); background:var(--primary); color:white; padding:10px 20px; border-radius:20px; z-index:9999999; font-weight:bold; font-size:13px; box-shadow:0 5px 15px rgba(0,0,0,0.5); animation:slideUpToast 0.3s ease;";
-        document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
-    }
-
     let selectedData = {};
     let currentImageBase64 = null;
     let documentMemory = ""; 
     let webUrls = []; 
-    let currentSessionId = new URLSearchParams(window.location.search).get('restore') || Date.now();
 
     // ==========================================
-    // 📷 BULLETPROOF CAMERA ENGINE
+    // 📷 CAMERA & AUTO-INITIALIZE ENGINE
     // ==========================================
     let cameraTarget = 'chat';
     let bookRecognitionImageBase64 = null;
     let camStream = null; let camFacing = "environment"; let isFlash = false;
     
     function nextStep(step) {
-        cameraTarget = 'chat'; // Ensure it resets from book scanning
+        cameraTarget = 'chat'; // Reset default
         
-        if(step === 2 && !document.getElementById('publisherSelect').value) return alert("Select Publisher!");
-        if(step === 3 && !document.getElementById('classSelect').value) return alert("Select Class!");
-        if(step === 4 && !document.getElementById('subjectSelect').value) return alert("Select Subject!");
+        if(step === 2 && !document.getElementById('publisherSelect').value) return showCustomAlert("Please Select Publisher!");
+        if(step === 3 && !document.getElementById('classSelect').value) return showCustomAlert("Please Select Class!");
+        if(step === 4 && !document.getElementById('subjectSelect').value) return showCustomAlert("Please Select Subject!");
         
         document.querySelectorAll('.step-card').forEach(el => el.classList.remove('active'));
         document.getElementById(`step-${step}`).classList.add('active');
@@ -556,7 +523,7 @@
             if(sub === 'Other') sub = document.getElementById('customSubjectInput').value || "Custom Subject";
             
             let finalChap = chapMan ? chapMan : chapList;
-            if(!finalChap) { nextStep(4); return alert("Select or type a chapter!"); }
+            if(!finalChap) { nextStep(4); return showCustomAlert("Please select or type a chapter!"); }
 
             selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
             
@@ -571,11 +538,7 @@
                 fetchRealBookCover(pub, sub, cls);
             }
 
-            document.getElementById('selectionSummary').innerHTML = 
-                `<span style="color:var(--primary)">Publisher:</span> ${pub}<br>
-                 <span style="color:var(--secondary)">Class:</span> ${cls}<br>
-                 <span style="color:var(--accent)">Subject:</span> ${sub}<br>
-                 <span style="color:#10b981">Chapter:</span> ${finalChap}`;
+            document.getElementById('selectionSummary').innerHTML = `<span style="color:var(--primary)">Publisher:</span> ${pub}<br><span style="color:var(--secondary)">Class:</span> ${cls}<br><span style="color:var(--accent)">Subject:</span> ${sub}<br><span style="color:#10b981">Chapter:</span> ${finalChap}`;
         }
     }
 
@@ -585,8 +548,6 @@
     async function openCamera() { 
         closePlusMenu();
         const mod = document.getElementById('cameraModal');
-        if (!mod) return alert("Camera module missing!");
-        
         mod.style.display = 'flex'; 
         try { 
             if(camStream) camStream.getTracks().forEach(t => t.stop()); 
@@ -604,19 +565,12 @@
                     document.getElementById('flashBtn').innerText = "🔦";
                 }
             }, 500); 
-        } catch(e) { 
-            alert("Camera Error: Please grant camera permissions."); 
-            mod.style.display = 'none'; 
-        } 
+        } catch(e) { showCustomAlert("Camera Error: Please grant camera permissions."); mod.style.display = 'none'; } 
     }
     
     function closeCamera() { 
         document.getElementById('cameraModal').style.display = 'none'; 
-        if(camStream) {
-            const track = camStream.getVideoTracks()[0];
-            try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){}
-            camStream.getTracks().forEach(t => t.stop()); 
-        }
+        if(camStream) { const track = camStream.getVideoTracks()[0]; try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){} camStream.getTracks().forEach(t => t.stop()); }
         isFlash = false; 
     }
     
@@ -624,7 +578,7 @@
     
     async function toggleFlash() { 
         if(!camStream) return; const track = camStream.getVideoTracks()[0]; 
-        try { if(track && track.getCapabilities && track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } else { showToast("Flash not supported on this camera."); } } catch(err) {}
+        try { if(track && track.getCapabilities && track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } else { showToast("Flash not supported."); } } catch(err) {}
     }
     
     function takePhoto() { 
@@ -636,6 +590,7 @@
             document.getElementById('imagePreviewContainer').style.display = 'block';
             document.getElementById('imgChip').src = currentImageBase64;
             closeCamera();
+            validateSendButton();
         } else if (cameraTarget === 'bookRecognition') {
             bookRecognitionImageBase64 = c.toDataURL("image/jpeg", 0.7);
             document.getElementById('bookPreviewImg').src = bookRecognitionImageBase64;
@@ -644,16 +599,10 @@
         }
     }
 
-    function retakeBookPhoto() {
-        document.getElementById('bookPreviewModal').style.display = 'none';
-        openBookRecognitionCamera();
-    }
+    function retakeBookPhoto() { document.getElementById('bookPreviewModal').style.display = 'none'; openBookRecognitionCamera(); }
+    function closeBookPreview() { document.getElementById('bookPreviewModal').style.display = 'none'; bookRecognitionImageBase64 = null; }
 
-    function closeBookPreview() {
-        document.getElementById('bookPreviewModal').style.display = 'none';
-        bookRecognitionImageBase64 = null;
-    }
-
+    // 🛑 AUTO-START CHAT FROM BOOK PHOTO FIX 🛑
     async function submitBookPhoto() {
         document.getElementById('bookPreviewModal').style.display = 'none';
         document.getElementById('loadingPage').style.display = 'flex';
@@ -671,53 +620,82 @@
             selectedData.publisher = document.getElementById('publisherSelect').value || "Unknown Publisher";
             selectedData.class = document.getElementById('classSelect').value || "Unknown Class";
 
+            // INSTANTLY START CHAT
             startConversation(true);
         } catch(e) {
-            alert("Failed to analyze image. Please type details manually.");
+            showCustomAlert("Failed to analyze image. Please type details manually.");
             document.getElementById('loadingPage').style.display = 'none';
             document.getElementById('wizardPage').style.display = 'block';
         }
     }
 
-    let manualVoiceTimeout;
-    function startChapterVoice() {
-        if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice input not supported by this browser."); 
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; 
-        const rec = new SpeechRec(); 
-        rec.lang = 'hi-IN'; 
-        const micBtn = document.getElementById("manualChapterMicBtn");
-        const input = document.getElementById("manualChapter");
-        rec.onstart = () => { micBtn.style.backgroundColor = "#ef4444"; micBtn.style.transform = "scale(1.1)"; input.placeholder = "Listening..."; }; 
-        rec.onspeechstart = () => { clearTimeout(manualVoiceTimeout); };
-        rec.onresult = (e) => { clearTimeout(manualVoiceTimeout); input.value = e.results[0][0].transcript; manualVoiceTimeout = setTimeout(() => { rec.stop(); }, 2000); }; 
-        rec.onend = () => { clearTimeout(manualVoiceTimeout); micBtn.style.backgroundColor = "var(--primary)"; micBtn.style.transform = "scale(1)"; input.placeholder = "e.g. Motion / गति"; };
-        rec.start(); 
+    // "PLEASE SELECT SUBJECT" LIST BUG FIX
+    function handleSubjectChange() {
+        let sub = document.getElementById('subjectSelect').value;
+        if(sub === 'Other') { document.getElementById('customSubjectContainer').style.display = 'block'; } 
+        else { document.getElementById('customSubjectContainer').style.display = 'none'; }
+        triggerChapterFetch();
     }
 
-    function openVoiceModal() { closePlusMenu(); document.getElementById('voiceModal').style.display = 'flex'; }
-    function startVoice(lang) {
-        document.getElementById('voiceModal').style.display = 'none';
-        if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice input not supported."); 
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; const rec = new SpeechRec(); rec.lang = lang; 
-        const micBtn = document.getElementById("micBtn"); const chatInput = document.getElementById("chatInput");
-        rec.onstart = () => { micBtn.style.color = "#ef4444"; micBtn.style.transform = "scale(1.2)"; chatInput.placeholder = "Listening..."; }; 
-        rec.onresult = (e) => { chatInput.value += (chatInput.value ? " " : "") + e.results[0][0].transcript; resizeInputBox(); }; 
-        rec.onend = () => { micBtn.style.color = "var(--primary)"; micBtn.style.transform = "scale(1)"; chatInput.placeholder = "Ask your question here..."; };
-        rec.start(); 
+    async function triggerChapterFetch() {
+        let pub = document.getElementById('publisherSelect').value;
+        let sub = document.getElementById('subjectSelect').value;
+        let cls = document.getElementById('classSelect').value;
+        let chapSelect = document.getElementById('chapterSelect');
+        let statusLabel = document.getElementById('chapterFetchStatus');
+        
+        if(sub === 'Other') sub = document.getElementById('customSubjectInput').value;
+
+        // FIXED: Don't show "Subject not found" if they haven't picked a subject/class yet
+        if(!sub || !cls) {
+            statusLabel.innerText = "Please select Subject and Class first.";
+            statusLabel.style.color = "var(--text-muted)";
+            return;
+        }
+
+        statusLabel.innerText = "⏳ Checking Database...";
+        chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching... --</option>';
+        document.getElementById('initBtnStep4').style.display = 'block'; 
+        
+        let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(sub);
+        let targetLang = isEnglishSub ? 'ENGLISH' : 'HINDI (Devanagari script)';
+
+        try {
+            const sysPrompt = `You are a strict API. The user will provide a Class, Subject, and Publisher. CRITICAL RULES: 1. IF the requested Subject is NOT standardly taught in the specified Class, output an empty array: [] 2. DO NOT guess. 3. IF it is real, return a JSON array of chapter names. 4. Output strictly in ${targetLang}. ONLY output raw JSON array.`;
+            const userPrmpt = `Class: ${cls}, Subject: ${sub}, Publisher: ${pub || 'NCERT'}`;
+            const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: userPrmpt }) });
+            const data = await r.json();
+            if(data.error) throw new Error(data.error);
+
+            let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            let fetchedChapters = JSON.parse(cleanJson);
+            if(!Array.isArray(fetchedChapters)) throw new Error("Invalid Array");
+
+            if(fetchedChapters.length === 0) {
+                chapSelect.innerHTML = '<option value="" selected disabled>-- ❌ Subject not taught in this class --</option>';
+                statusLabel.innerText = "Subject not found in database! Type manually below.";
+                statusLabel.style.color = "#ef4444";
+                return;
+            }
+
+            statusLabel.style.color = "var(--text-muted)";
+            chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
+            fetchedChapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; });
+            statusLabel.innerText = "Select Chapter (Generated by AI):";
+
+        } catch(e) {
+            statusLabel.innerText = "Select Chapter (Fetch Failed):";
+            chapSelect.innerHTML = '<option value="" selected disabled>-- ❌ Fetch Failed. Please type manually below --</option>';
+        }
     }
 
     async function fetchChapterContext() {
         try {
-            const sysPrompt = `Search the internet for the exact textbook solutions for: Publisher: ${selectedData.publisher}, Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}. Extract the end-of-chapter questions and answers. Just store them internally. Do not output markdown.`;
+            const sysPrompt = `Search internet for textbook solutions for: Publisher: ${selectedData.publisher}, Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}. Extract end-of-chapter questions and answers. Just store them internally. Do not output markdown.`;
             const userPrmpt = `Find textbook exercises for ${selectedData.publisher} Class ${selectedData.class} ${selectedData.subject} ${selectedData.chapter}`;
-
-            const r = await fetch("/api/gemini-text", {
-                method: "POST", headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: userPrmpt })
-            });
-            const data = await r.json();
-            if(data.text) { documentMemory = data.text; }
-        } catch(e) { console.error("Silent fetch failed:", e); }
+            const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: userPrmpt }) });
+            const data = await r.json(); if(data.text) documentMemory = data.text; 
+        } catch(e) { console.error(e); }
     }
 
     async function fetchRealBookCover(pub, sub, cls) {
@@ -725,32 +703,20 @@
         let coverDiv = document.getElementById('dynamicBookCover');
         let statusSub = document.getElementById('coverSub');
         try {
-            statusSub.innerText = "Searching for Book Cover...";
+            statusSub.innerText = "Searching...";
             let query = encodeURIComponent(`intitle:${sub} ${pub} class ${cls.replace('Class ','')}`);
             let res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=3`);
             let data = await res.json();
             let thumb = null;
-            if (data.items) {
-                for(let item of data.items) {
-                    if(item.volumeInfo && item.volumeInfo.imageLinks && item.volumeInfo.imageLinks.thumbnail) {
-                        thumb = item.volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//i, 'https://');
-                        break;
-                    }
-                }
-            }
+            if (data.items) { for(let item of data.items) { if(item.volumeInfo && item.volumeInfo.imageLinks && item.volumeInfo.imageLinks.thumbnail) { thumb = item.volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//i, 'https://'); break; } } }
             if (!thumb) {
                 let query2 = encodeURIComponent(`${pub} ${sub}`);
                 let res2 = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query2}&maxResults=1`);
                 let data2 = await res2.json();
-                if (data2.items && data2.items.length > 0 && data2.items[0].volumeInfo.imageLinks) {
-                    thumb = data2.items[0].volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//i, 'https://');
-                }
+                if (data2.items && data2.items.length > 0 && data2.items[0].volumeInfo.imageLinks) { thumb = data2.items[0].volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//i, 'https://'); }
             }
-            if (thumb) {
-                coverDiv.innerHTML = `<img src="${thumb}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
-            } else {
-                statusSub.innerText = sub;
-            }
+            if (thumb) coverDiv.innerHTML = `<img src="${thumb}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+            else statusSub.innerText = sub;
         } catch(e) { statusSub.innerText = sub; }
     }
 
@@ -759,50 +725,64 @@
 
     function openWebImport() { closePlusMenu(); document.getElementById('webImportModal').style.display = 'flex'; }
     function saveWebUrls() {
-        let text = document.getElementById('webUrlInput').value.trim();
-        let urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-        if (urls.length > 10) { alert("⚠️ Maximum 10 URLs allowed!"); urls = urls.slice(0, 10); }
+        let text = document.getElementById('webUrlInput').value.trim(); let urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        if (urls.length > 10) { showCustomAlert("⚠️ Maximum 10 URLs allowed!"); urls = urls.slice(0, 10); }
         if (urls.length > 0) { webUrls = urls; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`; }
-        document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = '';
+        document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = ''; validateSendButton();
     }
 
     function handleFileSelect(event) {
-        closePlusMenu();
-        const file = event.target.files[0];
-        if(!file) return;
-
+        closePlusMenu(); const file = event.target.files[0]; if(!file) return;
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onload = function(e) { currentImageBase64 = e.target.result; document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64; };
+            reader.onload = function(e) { currentImageBase64 = e.target.result; document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64; validateSendButton(); };
             reader.readAsDataURL(file);
         } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-            const reader = new FileReader();
-            document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = "⏳ Reading PDF...";
+            const reader = new FileReader(); document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = "⏳ Reading PDF...";
             reader.onload = async function() {
                 try {
                     const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = "";
                     for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(item=>item.str).join(' '); }
-                    documentMemory = text; document.getElementById("attachName").innerText = `📄 ${file.name}`;
-                } catch(err) { alert("❌ Failed to read PDF. It might be corrupted or secured."); clearAttachment(); }
+                    documentMemory = text; document.getElementById("attachName").innerText = `📄 ${file.name}`; validateSendButton();
+                } catch(err) { showCustomAlert("❌ Failed to read PDF. It might be corrupted or secured."); clearAttachment(); }
             };
             reader.readAsArrayBuffer(file);
-        } else { alert("Only Images and PDFs are supported right now."); }
+        } else { showCustomAlert("Only Images and PDFs are supported right now."); }
         event.target.value = ''; 
     }
     
-    function removeImage() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; }
-    function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; }
+    function removeImage() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; validateSendButton(); }
+    function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; validateSendButton(); }
 
-    // 🛑 WHATSAPP INPUT RESIZE BUG FIXED 🛑
-    let previousInputHeight = "24px";
-    function resizeInputBox() {
+    // 🛑 2000 CHAR LIMIT & SMART GREY BUTTON LOGIC 🛑
+    window.validateSendButton = function() {
         const inp = document.getElementById('chatInput');
-        if (inp.value === "") { inp.style.height = '24px'; previousInputHeight = '24px'; return; }
-        inp.style.height = '24px'; 
-        inp.style.height = Math.max(24, Math.min(inp.scrollHeight, 100)) + 'px';
-        previousInputHeight = inp.style.height;
+        const btn = document.getElementById('sendBtn');
+        const text = inp.value.trim();
+        const hasAttachment = currentImageBase64 || bookRecognitionImageBase64 || documentMemory || webUrls.length > 0;
+        
+        if (text.length > 2000) {
+            btn.classList.remove('active-btn');
+        } else if (text.length === 0 && !hasAttachment) {
+            btn.classList.remove('active-btn');
+        } else {
+            btn.classList.add('active-btn');
+        }
     }
 
+    let previousInputHeight = "24px";
+    window.resizeInputBox = function() {
+        const inp = document.getElementById('chatInput');
+        if (inp.value === "") { inp.style.height = '24px'; previousInputHeight = '24px'; }
+        else {
+            inp.style.height = '24px'; 
+            inp.style.height = Math.max(24, Math.min(inp.scrollHeight, 120)) + 'px';
+            previousInputHeight = inp.style.height;
+        }
+        validateSendButton(); // Check limit on every keystroke
+    }
+
+    // 🛑 WHATSAPP MULTI-IMAGE SEQUENTIAL SENDER 🛑
     let isShareMode = false;
     function toggleShareMode() {
         previousInputHeight = document.getElementById('chatInput').style.height || '24px';
@@ -818,35 +798,92 @@
         document.getElementById('mainInputArea').style.display = 'flex'; 
         isShareMode = false; 
         document.getElementById('chatHistory').classList.remove('share-mode-active');
-        
-        // Restore Input Height
         setTimeout(() => { document.getElementById('chatInput').style.height = previousInputHeight; }, 10);
-
         document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
     }
 
     function proceedToShare() {
-        if(document.querySelectorAll('.bubble.selected-for-share').length === 0) return alert("Please tap at least one message to share!");
+        if(document.querySelectorAll('.bubble.selected-for-share').length === 0) return showCustomAlert("Please tap at least one message to share!");
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
+    async function submitWhatsAppSelection(event) {
+        const number = document.getElementById('waNumberInput').value.trim();
+        if (!number) return showCustomAlert("Please enter a mobile number.");
+        
+        const btn = document.getElementById('waSendBtn');
+        const originalText = btn.innerHTML; 
+        btn.innerHTML = "⏳ Sending..."; 
+        btn.disabled = true;
+
+        const selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
+        
+        try {
+            for (let i = 0; i < selectedNodes.length; i++) {
+                let node = selectedNodes[i];
+                let clone = node.cloneNode(true);
+                clone.querySelectorAll('.msg-menu-wrap, .user-copy-btn, .action-buttons-container, button').forEach(el => el.remove());
+                
+                // Extract and remove images from clone
+                let imgs = clone.querySelectorAll('img');
+                let imgDataArray = [];
+                imgs.forEach(img => {
+                    imgDataArray.push(img.src);
+                    img.remove();
+                });
+
+                // Clean Text Math
+                let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
+                clone.innerHTML = htmlStr;
+                let msgText = clone.innerText.replace(/\n\s*\n/g, '\n\n').trim();
+                msgText = msgText.replace(/✨.*?VIA.*?\n/i, ''); 
+
+                const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
+                const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
+                msgText = msgText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
+
+                // 1. Send Text (if exists)
+                if (msgText.length > 0) {
+                    let formattedText = `📚 *Book Deep Study Note*\n\n${msgText}\n\n------------------------`;
+                    await fetch("/api/secure-whatsapp", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: number, message: formattedText }) });
+                    await new Promise(r => setTimeout(r, 1000)); // Delay between texts
+                }
+
+                // 2. Send Images sequentially
+                for (let j = 0; j < imgDataArray.length; j++) {
+                    await fetch("/api/secure-whatsapp", { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ number: number, message: "[Image Attached]", imageBase64: imgDataArray[j] }) 
+                    });
+                    await new Promise(r => setTimeout(r, 1500)); // Delay for images
+                }
+            }
+            
+            showCustomAlert("✅ Selected notes and images sent successfully!"); 
+            document.getElementById('whatsappModal').style.display = 'none'; 
+            cancelShareMode();
+
+        } catch (e) { 
+            showCustomAlert("❌ Failed to send. Server connection error."); 
+        }
+        
+        btn.innerHTML = originalText; btn.disabled = false;
+    }
+
     function printFullChat() {
-        closePlusMenu();
-        let content = document.getElementById('chatHistory').innerHTML;
-        if(!content.trim()) return alert("Chat is empty!");
+        closePlusMenu(); let content = document.getElementById('chatHistory').innerHTML; if(!content.trim()) return showCustomAlert("Chat is empty!");
         let win = window.open('', '', 'width=800,height=600');
-        // Nuke all the interactive garbage so the print is clean
         win.document.write(`<html><head><title>Print Chat</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;} .msg-menu-wrap, .user-copy-btn, .typing-indicator{display:none;} .bubble{background:#f3f4f6; padding:15px; border-radius:10px; margin-bottom:10px;} img{max-width:100%; border-radius:8px;} h2{color:#3b82f6; text-align:center;} hr{margin-bottom:20px; border:none; border-bottom:2px solid #3b82f6;}</style></head><body><h2>📚 Book Deep Study: ${document.getElementById('sessionTitleDisplay').innerText}</h2><hr>${content}</body></html>`);
         win.document.close(); win.focus(); setTimeout(() => { win.print(); win.close(); }, 500);
     }
 
     function downloadSelectedAsPDF() {
         let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
-        if(selectedNodes.length === 0) return alert("Please tap at least one message to save!");
+        if(selectedNodes.length === 0) return showCustomAlert("Please tap at least one message to save!");
         let content = "<h2 style='text-align:center; color:#3b82f6;'>📚 Book Deep Study - Notes</h2><hr>";
         selectedNodes.forEach(n => {
-            let clone = n.cloneNode(true);
-            clone.querySelectorAll('.msg-menu-wrap, .user-copy-btn').forEach(el => el.remove());
+            let clone = n.cloneNode(true); clone.querySelectorAll('.msg-menu-wrap, .user-copy-btn').forEach(el => el.remove());
             content += `<div style="margin-bottom:20px; padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9fafb;">${clone.innerHTML}</div>`;
         });
         let win = window.open('', '', 'width=800,height=600');
@@ -854,71 +891,23 @@
         win.document.close(); win.focus(); setTimeout(() => { win.print(); cancelShareMode(); }, 500);
     }
 
-    async function submitWhatsAppSelection(event) {
-        const number = document.getElementById('waNumberInput').value.trim();
-        if (!number) return alert("Please enter a mobile number.");
-        let fullChatText = "📚 *Book Deep Study - Selected Notes* 📚\n\n";
-        document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
-            let clone = node.cloneNode(true);
-            clone.querySelectorAll('.msg-menu-wrap, .user-copy-btn, .action-buttons-container, button').forEach(el => el.remove());
-            let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
-            clone.innerHTML = htmlStr;
-            let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
-            if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
-        });
+    // SETTINGS X BUTTON LOGIC
+    function openSettings() {
+        document.getElementById('chatPage').style.display = 'none'; 
+        document.getElementById('wizardPage').style.display = 'block';
         
-        // Standardize Math
-        const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
-        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
-        fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
-
-        const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
-        try {
-            const response = await fetch("/api/secure-whatsapp", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: number, message: fullChatText.trim() }) });
-            if (response.status === 403) alert("ERROR - 324 (UNAUTHORIZED PROTECTION)");
-            else if (response.ok) { showToast("✅ Selected notes sent successfully!"); document.getElementById('whatsappModal').style.display = 'none'; cancelShareMode(); } 
-            else alert("❌ Failed to send. Server responded with an error.");
-        } catch (e) { alert("❌ Connection error. Is your server running?"); }
-        btn.innerHTML = originalText; btn.disabled = false;
-    }
-
-    // 🛑 INITIALIZE BUG FIX 🛑
-    function handleSubjectChange() {
-        let sub = document.getElementById('subjectSelect').value;
-        if(sub === 'Other') { document.getElementById('customSubjectContainer').style.display = 'block'; } 
-        else { document.getElementById('customSubjectContainer').style.display = 'none'; }
-        triggerChapterFetch();
-    }
-
-    window.onload = function() {
-        let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
-        let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
-        
-        if(urlRestoreId) {
-            let session = savedSessions.find(s => s.id == urlRestoreId);
-            if(session) {
-                selectedData = session.data; currentSessionId = session.id;
-                document.getElementById('sessionTitleDisplay').innerText = session.title || "📚 Book Deep Study";
-                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-                document.getElementById('shareBtn').style.display = 'block'; 
-                document.getElementById('chatHistory').innerHTML = session.html;
-                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
-            }
+        if (document.getElementById('chatHistory').innerHTML.trim() !== "") {
+            document.getElementById('closeSettingsWizardBtn').style.display = 'block';
         } else {
-            let activeSession = localStorage.getItem('bookChatHistory_VUltimateAI');
-            let activeSettings = localStorage.getItem('bookSettings_VUltimateAI');
-            if(activeSession && activeSettings) {
-                selectedData = JSON.parse(activeSettings);
-                document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`.substring(0,25) + "...";
-                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-                document.getElementById('shareBtn').style.display = 'block'; 
-                document.getElementById('chatHistory').innerHTML = activeSession;
-                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
-            }
+            document.getElementById('closeSettingsWizardBtn').style.display = 'none';
         }
-    };
+        nextStep(1); 
+    }
+    
+    function closeSettingsWizard() {
+        document.getElementById('wizardPage').style.display = 'none';
+        document.getElementById('chatPage').style.display = 'flex';
+    }
 
     function clearChat() {
         if(confirm("Are you sure you want to clear the chat history?")) {
@@ -933,7 +922,6 @@
         let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
         let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
         
-        // THE BUG FIX: Seamless re-initialization
         if(forceNew) {
             if (oldHistory && oldHistory.trim() !== "" && !oldHistory.includes("SYSTEM ONLINE")) {
                 let oldSettings = oldSettingsStr ? JSON.parse(oldSettingsStr) : selectedData;
@@ -968,38 +956,35 @@
         if(document.getElementById('chatHistory').innerHTML.trim() === "") {
             let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
             
+            // 🛑 PRESET BUTTONS FIXED TO USE GLOBAL `window.runPreset` 🛑
             let initialMessageHTML = isEnglishSub ? 
                 `Hello! I am your AI Tutor. <br><br>We are ready to discuss Chapter **"${selectedData.chapter}"** of **${selectedData.subject}** (${selectedData.class}). <br><br>**I will respond in English by default.**<br>*Note: If you ask to solve a specific exercise, I will check the real textbook data first!*<br><br>
                 <div class="preset-chips" style="margin-top: 15px;">
-                    <button class="preset-btn" onclick="runPreset('Generate detailed study notes for this chapter.')">📝 Generate Notes</button>
-                    <button class="preset-btn" onclick="runPreset('Create 10 important MCQs from this chapter with answers.')">✅ Objectives</button>
-                    <button class="preset-btn" onclick="runPreset('Analyze this chapter in simple terms.')">📊 Analyze Chapter</button>
+                    <button class="preset-btn" onclick="window.runPreset('Generate detailed study notes for this chapter.')">📝 Generate Notes</button>
+                    <button class="preset-btn" onclick="window.runPreset('Create 10 important MCQs from this chapter with answers.')">✅ Objectives</button>
+                    <button class="preset-btn" onclick="window.runPreset('Analyze this chapter in simple terms.')">📊 Analyze Chapter</button>
                 </div>`
                 : 
                 `नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।**<br>*नोट: यदि आप किसी विशिष्ट अभ्यास (जैसे 'Solve C') को हल करने के लिए कहते हैं, तो मैं असली किताब के डेटा की जांच करूंगा!*<br><br>
                 <div class="preset-chips" style="margin-top: 15px;">
-                    <button class="preset-btn" onclick="runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स</button>
-                    <button class="preset-btn" onclick="runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न</button>
-                    <button class="preset-btn" onclick="runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
+                    <button class="preset-btn" onclick="window.runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स</button>
+                    <button class="preset-btn" onclick="window.runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न</button>
+                    <button class="preset-btn" onclick="window.runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
                 </div>`;
             
             addAiMessage(initialMessageHTML, false);
         }
     }
 
-    function openSettings() {
-        document.getElementById('chatPage').style.display = 'none'; document.getElementById('settingsBtn').style.display = 'none'; document.getElementById('clearBtn').style.display = 'none'; document.getElementById('shareBtn').style.display = 'none'; document.getElementById('wizardPage').style.display = 'block';
-        nextStep(1); 
-    }
-
-    function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+    function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (document.getElementById('sendBtn').classList.contains('active-btn')) sendMessage(); } }
 
     async function sendMessage() {
         const inputEl = document.getElementById('chatInput');
         const text = inputEl.value.trim();
         const img = currentImageBase64;
+        const btn = document.getElementById('sendBtn');
 
-        if(!text && !img && !documentMemory && webUrls.length === 0 && !bookRecognitionImageBase64) return;
+        if(!btn.classList.contains('active-btn')) return; // Block sending if disabled
 
         const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
         let imgHtml = img ? `<img src="${img}"><br>` : "";
@@ -1016,16 +1001,12 @@
         document.getElementById('chatHistory').appendChild(loadDiv);
         c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); 
 
-        let recentHistory = "";
-        let chatNodes = document.querySelectorAll('#chatHistory .msg');
-        let startIdx = Math.max(0, chatNodes.length - 8); 
+        let recentHistory = ""; let chatNodes = document.querySelectorAll('#chatHistory .msg'); let startIdx = Math.max(0, chatNodes.length - 8); 
         for(let i = startIdx; i < chatNodes.length; i++) {
             let m = chatNodes[i]; if(m.id === loadingId) continue;
             let role = m.classList.contains('user') ? "User" : "AI";
-            let clone = m.cloneNode(true);
-            let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let msgText = clone.innerText.trim().replace(/\s+/g, ' ');
-            if(msgText) recentHistory += `${role}: ${msgText}\n`;
+            let clone = m.cloneNode(true); let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
+            let msgText = clone.innerText.trim().replace(/\s+/g, ' '); if(msgText) recentHistory += `${role}: ${msgText}\n`;
         }
 
         let isEnglishSub = ['English', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
@@ -1071,8 +1052,6 @@ $$[Equation]$$
             if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
 
             document.getElementById(loadingId).remove();
-            
-            // 14ms Typewriter Call
             await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
 
         } catch(err) {
@@ -1083,7 +1062,6 @@ $$[Equation]$$
         }
     }
 
-    // 14ms/char Typewriter
     async function addAiMessage(text, typewrite = false) {
         const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
         const bubble = document.createElement("div"); bubble.className = "bubble";
@@ -1107,7 +1085,7 @@ $$[Equation]$$
                         else { currentHTML += (char === '\n') ? '<br>' : char; i++; }
                         bubble.innerHTML = currentHTML;
                     }
-                }, 14); // Exactly 14ms per character
+                }, 14); 
             });
         } else {
             bubble.innerHTML = formattedText.replace(/\n/g, '<br>');
@@ -1117,10 +1095,7 @@ $$[Equation]$$
         }
     }
 
-    function saveHistory() {
-        const histHTML = document.getElementById('chatHistory').innerHTML;
-        localStorage.setItem('bookChatHistory_VUltimateAI', histHTML);
-    }
+    function saveHistory() { localStorage.setItem('bookChatHistory_VUltimateAI', document.getElementById('chatHistory').innerHTML); }
 </script>
 </body>
 </html>
