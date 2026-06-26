@@ -40,7 +40,9 @@
         .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.4s ease; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
         .topbar.hidden { transform: translateY(-100%); }
         
-        .appTitle-container { flex: 1; overflow: hidden; white-space: nowrap; margin: 0 15px; position: relative; border-radius: 8px; cursor: pointer; }
+        /* TOUCH SCROLLABLE MARQUEE TITLE */
+        .appTitle-container { flex: 1; overflow-x: auto; white-space: nowrap; margin: 0 15px; position: relative; border-radius: 8px; cursor: pointer; touch-action: pan-x; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .appTitle-container::-webkit-scrollbar { display: none; }
         .appTitle { font-size: 18px; font-weight: bold; color: var(--text-main); display: inline-block; padding: 5px; white-space: nowrap; }
         
         @media (max-width: 600px) {
@@ -72,7 +74,7 @@
 
         /* CHAT LAYOUT */
         #chatPage { display: none; flex-direction: column; position: fixed; inset: 0; background: var(--bg-base); z-index: 50; overflow: hidden; }
-        .chat-scroll-area { flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px; padding-bottom: 180px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+        .chat-scroll-area { flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px; padding-bottom: 140px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         .msg { display: flex; width: 100%; flex-direction: column; animation: slideUpFade 0.3s ease; }
         .user { align-items: flex-end; }
         .ai { align-items: flex-start; }
@@ -106,9 +108,6 @@
         .send-btn.active-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); box-shadow: 0 4px 10px var(--primary-glow); pointer-events: auto; }
         .send-btn.active-btn:hover { transform: scale(1.1); }
         .send-btn.stop-btn { background: #ef4444 !important; pointer-events: auto; animation: pulse 1s infinite alternate; }
-
-        .action-btn { background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #plusMenu { display: none; position: absolute; bottom: 75px; left: 15px; border-radius: 15px; flex-direction: column; z-index: 200; width: 220px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -153,7 +152,7 @@
         .audio-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .audio-btn:hover { transform: scale(1.1); }
 
-        /* Modals */
+        /* Modals & Overlays */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
         .modal-box { background:var(--bg-surface); width:90%; max-width:400px; padding:25px; border-radius:20px; position:relative; border: 1px solid var(--border-light); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.3s ease; }
 
@@ -212,7 +211,6 @@
 </div>
 
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
-    <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
     <h2 id="loadingTitle" style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; text-align: center;">📚 Preparing Tutor...</h2>
     <p id="loadingDesc" style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait...</p>
     <div style="width:80%; max-width:300px; height:6px; background:rgba(255,255,255,0.2); border-radius:3px; margin-top:20px; overflow:hidden;">
@@ -337,9 +335,10 @@
     <div class="chat-scroll-area" id="chatHistory"></div>
 
     <div id="shareActionArea" class="bottom-action-container" style="display:none; border-top: 2px solid #25D366;">
-        <div style="color:white; text-align:center; font-weight:bold; font-size:14px; margin-bottom: 10px;">👆 Tap messages above to select them</div>
+        <div style="color:var(--text-main); text-align:center; font-weight:bold; font-size:14px; margin-bottom: 10px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:10px;">
             <button class="btn btn-secondary" style="flex:1; padding: 12px;" onclick="cancelShareMode()">Cancel</button>
+            <button class="btn btn-primary" style="flex:1; background:#3b82f6; border:none; padding: 12px;" onclick="downloadSelectedAsPDF()">📄 Save PDF</button>
             <button class="btn btn-primary" style="flex:1; background:#25D366; border:none; padding: 12px;" onclick="proceedToShare()">📤 WhatsApp</button>
         </div>
     </div>
@@ -468,10 +467,35 @@
     let currentTypewriterInterval = null;
     let isHindiUI = true;
 
-    document.addEventListener("DOMContentLoaded", () => {
-        localforage.getItem('aiHistory').then(data => {
-            if(data) { appHistory = data; const restoreId = new URLSearchParams(window.location.search).get('restore'); if(restoreId) restoreSession(Number(restoreId)); }
-        });
+    // 🛑 AUTO RESTORE LOGIC 🛑
+    window.addEventListener('load', function() {
+        let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
+        let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
+        
+        if(urlRestoreId) {
+            let session = savedSessions.find(s => s.id == urlRestoreId);
+            if(session) {
+                selectedData = session.data; currentSessionId = session.id;
+                document.getElementById('sessionTitleDisplay').innerText = session.title || "📚 Book Deep Study";
+                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+                document.getElementById('shareBtn').style.display = 'block'; 
+                document.getElementById('chatHistory').innerHTML = session.html;
+                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
+            }
+        } else {
+            let activeSession = localStorage.getItem('bookChatHistory_VUltimateAI');
+            let activeSettings = localStorage.getItem('bookSettings_VUltimateAI');
+            if(activeSession && activeSettings) {
+                selectedData = JSON.parse(activeSettings);
+                document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
+                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+                document.getElementById('shareBtn').style.display = 'block'; 
+                document.getElementById('chatHistory').innerHTML = activeSession;
+                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
+            }
+        }
         validateSendButton(); 
         startMarquee();
     });
@@ -823,6 +847,26 @@
             showCustomAlert("✅ Selected notes and images sent successfully!"); document.getElementById('whatsappModal').style.display = 'none'; cancelShareMode();
         } catch (e) { showCustomAlert("❌ Failed to send. Server connection error."); }
         btn.innerHTML = originalText; btn.disabled = false;
+    }
+
+    function printFullChat() {
+        closePlusMenu(); let content = document.getElementById('chatHistory').innerHTML; if(!content.trim()) return showCustomAlert("Chat is empty!");
+        let win = window.open('', '', 'width=800,height=600');
+        win.document.write(`<html><head><title>Print Chat</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;} .msg-menu-wrap, .user-copy-btn, .typing-indicator{display:none;} .bubble{background:#f3f4f6; padding:15px; border-radius:10px; margin-bottom:10px;} img{max-width:100%; border-radius:8px;} h2{color:#3b82f6; text-align:center;} hr{margin-bottom:20px; border:none; border-bottom:2px solid #3b82f6;}</style></head><body><h2>📚 Book Deep Study: ${document.getElementById('sessionTitleDisplay').innerText}</h2><hr>${content}</body></html>`);
+        win.document.close(); win.focus(); setTimeout(() => { win.print(); win.close(); }, 500);
+    }
+
+    function downloadSelectedAsPDF() {
+        let selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
+        if(selectedNodes.length === 0) return showCustomAlert("Please tap at least one message to save!");
+        let content = "<h2 style='text-align:center; color:#3b82f6;'>📚 Book Deep Study - Notes</h2><hr>";
+        selectedNodes.forEach(n => {
+            let clone = n.cloneNode(true); clone.querySelectorAll('.msg-menu-wrap, .user-copy-btn').forEach(el => el.remove());
+            content += `<div style="margin-bottom:20px; padding:15px; border:1px solid #ddd; border-radius:10px; background:#f9fafb;">${clone.innerHTML}</div>`;
+        });
+        let win = window.open('', '', 'width=800,height=600');
+        win.document.write(`<html><head><title>Saved Notes</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;}</style></head><body>${content}</body></html>`);
+        win.document.close(); win.focus(); setTimeout(() => { win.print(); cancelShareMode(); }, 500);
     }
 
     function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
