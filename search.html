@@ -23,9 +23,6 @@
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* =========================================================
-           MASTER CSS ENGINE FOR DEEP SEARCH
-           ========================================================= */
         :root {
             --app-bg: var(--bg-base, #f8fafc);
             --chat-user-bg: var(--primary, #3b82f6);
@@ -37,8 +34,10 @@
 
         body { overflow: hidden; position: relative; background: var(--app-bg); font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
         
-        .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.3s; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        
+        /* DYNAMIC TOP BAR */
+        .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.4s ease; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .topbar.hidden { transform: translateY(-100%); }
+
         /* Modals & Menus */
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #plusMenu { display: none; position: absolute; bottom: 85px; left: 15px; border-radius: 15px; flex-direction: column; z-index: 200; width: 220px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -59,6 +58,22 @@
         .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
         .play-btn { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
 
+        /* User Upload Badge & Copy Button */
+        .user-attachment-badge { background: rgba(0,0,0,0.2); color: inherit; padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; }
+        .chat-user .bubble { position: relative; }
+        .user-copy-btn { position: absolute; top: -10px; left: -10px; background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border-light); border-radius: 50%; width: 28px; height: 28px; font-size: 12px; cursor: pointer; display: none; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; z-index: 10; }
+        .user-copy-btn:hover { background: var(--primary); color: white; transform: scale(1.1); }
+        .chat-user .bubble:hover .user-copy-btn { display: flex; animation: popUp 0.2s ease; }
+
+        /* Quick Reply Suggestions */
+        .quick-suggestions-wrap { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-light); animation: fadeIn 0.5s ease; }
+        .quick-reply-btn { background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-block; }
+        .quick-reply-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        /* Advanced SVG Renderer */
+        .math-svg-wrap { background: #ffffff !important; border-radius: 12px; padding: 15px; margin: 15px 0; text-align: center; overflow-x: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid var(--primary); }
+        .math-svg-wrap svg { max-width: 100%; height: auto; border-radius: 8px; }
+
         /* AI Thinking Animation */
         .ai-thinking { padding: 15px 20px; display: flex; align-items: center; gap: 15px; min-width: 200px; }
         .data-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; position: relative; }
@@ -66,9 +81,11 @@
         @keyframes scan { 0% { left: -50%; } 100% { left: 100%; } }
         .thinking-text { font-size: 12px; font-weight: bold; color: var(--primary); letter-spacing: 1px; animation: blink 1.5s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Chat Layout */
-        .search-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface); padding: 15px; border-top: 1px solid var(--border-light); z-index: 100; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: transform 0.3s; }
+        .search-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface); padding: 15px; border-top: 1px solid var(--border-light); z-index: 100; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: transform 0.4s ease; }
+        .search-input-area.hidden { transform: translateY(100%); }
         .search-input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 25px; padding: 8px 12px; }
         
         .chat-scroll-area { height: 100vh; overflow-y: auto; padding-top: 90px; padding-bottom: 150px; scroll-behavior: smooth; }
@@ -76,24 +93,8 @@
         .chat-user { justify-content: flex-end; }
         .chat-ai { justify-content: flex-start; }
         .bubble { max-width: 85%; padding: 15px 20px; border-radius: 20px; font-size: 15px; line-height: 1.6; word-wrap: break-word; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .chat-user .bubble { background: var(--chat-user-bg); color: var(--chat-user-text); border-bottom-right-radius: 5px; position: relative; }
+        .chat-user .bubble { background: var(--chat-user-bg); color: var(--chat-user-text); border-bottom-right-radius: 5px; }
         .chat-ai .bubble { background: var(--chat-ai-bg); border: 1px solid var(--chat-ai-border); border-bottom-left-radius: 5px; color: var(--text-main); }
-
-        /* User Copy Button */
-        .user-copy-btn { position: absolute; top: -10px; left: -10px; background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border-light); border-radius: 50%; width: 28px; height: 28px; font-size: 12px; cursor: pointer; display: none; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; z-index: 10; }
-        .user-copy-btn:hover { background: var(--primary); color: white; transform: scale(1.1); }
-        .chat-user .bubble:hover .user-copy-btn { display: flex; animation: popUp 0.2s ease; }
-
-        /* Badges & Suggestions */
-        .user-attachment-badge { background: rgba(0,0,0,0.2); color: inherit; padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; }
-        .quick-suggestions-wrap { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-light); animation: fadeIn 0.5s ease; }
-        .quick-reply-btn { background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-block; }
-        .quick-reply-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Advanced SVG Math Renderer */
-        .math-svg-wrap { background: #ffffff !important; border-radius: 12px; padding: 15px; margin: 15px 0; text-align: center; overflow-x: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid var(--primary); }
-        .math-svg-wrap svg { max-width: 100%; height: auto; border-radius: 8px; }
 
         /* Markdown Enhancements */
         .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 0; color: var(--text-main); font-weight: 800; }
@@ -117,11 +118,20 @@
 
         #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; border: 2px solid white; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; z-index: 999999; box-shadow: 0 5px 15px rgba(0,0,0,0.5); align-items: center; justify-content: center; }
 
-        /* Advanced Audio Player */
-        #topAudioPlayer { display: none; position: fixed; top: 85px; left: 50%; transform: translateX(-50%); z-index: 1000; align-items: center; gap: 15px; padding: 10px 20px; border-radius: 30px; border: 2px solid var(--primary); background: var(--bg-surface); animation: slideDown 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        @keyframes slideDown { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-        .audio-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
-        .audio-btn:hover { transform: scale(1.1); }
+        /* Premium Audio Player GUI (25% Screen) */
+        #premiumAudioPlayer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 25vh; min-height: 200px; background: var(--bg-surface); border-top: 2px solid var(--primary); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 -15px 40px rgba(0,0,0,0.3); animation: slideInUp 0.4s ease; padding: 20px; box-sizing: border-box; }
+        @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .audio-top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .audio-title { font-weight: 800; font-size: 16px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .audio-close-btn { background: #ef4444; border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .audio-progress-wrap { width: 100%; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .audio-time { font-size: 12px; font-weight: bold; color: var(--text-muted); font-family: monospace; width: 45px; text-align: center; }
+        .audio-progress-bar { flex: 1; height: 8px; background: var(--input-bg); border-radius: 4px; border: 1px solid var(--border-light); position: relative; cursor: pointer; overflow: hidden; }
+        .audio-progress-fill { width: 0%; height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.1s linear; }
+        .audio-controls { display: flex; align-items: center; gap: 20px; }
+        .audio-main-btn { background: linear-gradient(135deg, var(--secondary), var(--primary)); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px 15px var(--primary-glow); transition: 0.2s; }
+        .audio-main-btn:hover { transform: scale(1.1); }
+        .audio-speed-select { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-light); padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 12px; outline: none; cursor: pointer; }
 
         /* Premium Image GUI */
         #fullImageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
@@ -131,6 +141,21 @@
         .img-gui-btn.close-btn { background: rgba(239, 68, 68, 0.5); border-color: #ef4444; }
         .img-gui-btn.close-btn:hover { background: #ef4444; }
         #fullImageSrc { max-width: 95%; max-height: 80vh; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); object-fit: contain; animation: popUp 0.3s ease; }
+
+        /* YouTube Results Modal */
+        #ytResultsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
+        .yt-modal-box { background:var(--bg-surface); width:95%; max-width:600px; height:80vh; max-height:800px; padding:20px; border-radius:20px; position:relative; border: 1px solid var(--primary); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.3s ease; display:flex; flex-direction:column; }
+        .yt-result-item { display:flex; gap:15px; padding:15px; border-bottom:1px solid var(--border-light); cursor:pointer; transition:0.2s; border-radius:12px; }
+        .yt-result-item:hover { background:var(--input-bg); }
+        .yt-thumb { width:120px; height:68px; border-radius:8px; object-fit:cover; flex-shrink:0; }
+        .yt-info { flex:1; display:flex; flex-direction:column; justify-content:center; }
+        .yt-title { font-size:14px; font-weight:bold; color:var(--text-main); margin-bottom:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .yt-meta { font-size:11px; color:var(--text-muted); }
+
+        /* YouTube Player Fullscreen */
+        #ytPlayerFullscreen { display:none; position:fixed; inset:0; background:#000; z-index:9999999; align-items:center; justify-content:center; flex-direction:column; }
+        .yt-close-fs { position:absolute; top:20px; right:20px; background:#ef4444; color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:18px; font-weight:bold; cursor:pointer; z-index:100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        iframe.yt-iframe { width:100%; height:100%; max-width:1000px; max-height:562.5px; border:none; }
 
         /* Modals */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
@@ -155,6 +180,7 @@
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
+    <!-- AI PRO SUITE TOPBAR -->
     <div class="topbar" id="appTopbar">
         <div style="display:flex; align-items:center; gap:15px;">
             <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer;">☰</button>
@@ -166,22 +192,17 @@
         </div>
     </div>
 
-    <div id="topAudioPlayer">
-        <span style="font-weight:bold; font-size:13px; color:var(--text-main);">🔊 AI Voice</span>
-        <button class="audio-btn" id="audioToggleBtn" onclick="toggleAudio()">⏸</button>
-        <button class="audio-btn" style="background:#ef4444;" onclick="stopAudio()">⏹</button>
-    </div>
-
     <div class="chat-scroll-area" id="searchScrollArea">
         <div class="chat-history" id="searchChatHistory">
             <div class="chat-msg chat-ai" id="welcomeMessage">
                 <div class="bubble" style="border: 2px solid var(--primary);">
                     <div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div>
                     <b>Welcome to DEEP SEARCH!</b><br><br>
-                    • <b>Chat, Code & Math Diagram:</b> Generates clean code & high-end SVGs!<br>
-                    • <b>Universal Uploads:</b> Click <b>+</b> for PDF, Website URLs, or images.<br>
-                    • <b>Smart Suggestions:</b> AI suggests quick questions below its answers.<br>
-                    • <b>Photo Gen Mode:</b> Generate images directly via Gemini (Max 15/day).
+                    • <b>Chat, Code & Math Diagram:</b> Clean code & Highly Detailed SVGs.<br>
+                    • <b>Universal Uploads:</b> PDF, Website URLs, or up to 20 images.<br>
+                    • <b>Smart Suggestions:</b> AI suggests quick questions.<br>
+                    • <b>YouTube Search:</b> Find & Play YouTube videos directly here.<br>
+                    • <b>Advanced Audio Player:</b> Speed control & accurate timeline.
                 </div>
             </div>
         </div>
@@ -195,9 +216,11 @@
         </div>
     </div>
 
+    <!-- MAIN INPUT AREA -->
     <div class="search-input-area" id="appInputArea">
         <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">File</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
         <div id="photoModeChip" class="status-chip" style="border-color:#8b5cf6;">🎨 Photo Gen ON (Gemini) <button class="chip-close" onclick="togglePhotoMode()">✕</button></div>
+        <div id="ytModeChip" class="status-chip" style="border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,0.1);">▶️ YouTube Mode ON <button class="chip-close" style="background:#ef4444;" onclick="toggleYoutubeMode()">✕</button></div>
         
         <div id="multiImagePreview" style="display:none; gap:10px; margin-bottom:10px; overflow-x:auto; padding-bottom:5px;"></div>
 
@@ -205,6 +228,7 @@
             <button class="menu-item" onclick="openCamera()">📷 Open Camera</button>
             <button class="menu-item" onclick="document.getElementById('fileUploader').click()">📎 Upload File</button>
             <button class="menu-item" onclick="openWebImport()">🌐 Import from Web URL</button>
+            <button class="menu-item" onclick="toggleYoutubeMode()">▶️ Find YouTube Video</button>
             <button class="menu-item" onclick="togglePhotoMode()" id="photoModeMenuBtn">🎨 Turn On Photo Gen</button>
             <button class="menu-item" onclick="openNotesModal()">📝 Create Notes</button>
         </div>
@@ -213,29 +237,91 @@
             <input type="file" id="fileUploader" accept="image/*,.pdf,.txt,.html,.py,.java,.js,.bat,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none;" onchange="handleFileUpload(event)">
             <button id="plusBtn" onclick="togglePlusMenu(event)" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:var(--primary); padding:5px;">➕</button>
             
-            <textarea id="searchInput" placeholder="Message AI..." rows="1" style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:15px; outline:none; resize:none; min-height: 20px; max-height:120px; padding:10px 5px;" oninput="resizeInputBox()"></textarea>
+            <textarea id="searchInput" placeholder="Message AI..." rows="1" style="flex:1; background:transparent; border:none; color:var(--text-main); font-size:15px; outline:none; resize:none; padding:10px 5px; height:40px; min-height:40px; max-height:120px;" oninput="resizeInputBox()"></textarea>
             
             <button onclick="document.getElementById('voiceModal').style.display='flex'" style="background:transparent; border:none; font-size:20px; cursor:pointer; color:var(--primary); padding:5px;">🎤</button>
             <button id="sendSearchBtn" onclick="runMainSearch()" style="background:var(--primary); color:white; border:none; width:42px; height:42px; border-radius:50%; font-size:18px; cursor:pointer; display:flex; justify-content:center; align-items:center; transition:0.2s;">🚀</button>
         </div>
     </div>
 
-    <div id="webImportModal" class="modal-overlay">
-        <div class="modal-box" style="text-align: center;">
-            <button onclick="document.getElementById('webImportModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
-            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Paste a website or PDF URL here for the AI to read.</p>
-            <textarea id="webUrlInput" rows="3" placeholder="https://example.com/document.pdf" style="width:100%; padding:10px; border-radius:12px; background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); margin-bottom:15px; resize:none; font-family:monospace;"></textarea>
-            <button class="action-btn" style="width:100%; padding:15px; background:var(--primary); color:white; font-size:15px;" onclick="saveWebUrls()">💾 Attach URL</button>
+    <!-- PREMIUM AUDIO PLAYER GUI -->
+    <div id="premiumAudioPlayer">
+        <div class="audio-top-bar">
+            <div class="audio-title">🔊 <span id="audioPlayingStatus">Playing Answer...</span></div>
+            <button class="audio-close-btn" onclick="stopAudio()">✖</button>
+        </div>
+        
+        <div class="audio-progress-wrap">
+            <div class="audio-time" id="audioCurrentTime">0:00</div>
+            <div class="audio-progress-bar" id="audioProgressBar" onclick="seekAudio(event)">
+                <div class="audio-progress-fill" id="audioProgressFill"></div>
+            </div>
+            <div class="audio-time" id="audioTotalTime">0:00</div>
+        </div>
+
+        <div class="audio-controls">
+            <select class="audio-speed-select" id="audioSpeed" onchange="changeAudioSpeed()">
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1.0x Normal</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x Fast</option>
+                <option value="2">2.0x</option>
+            </select>
+            <button class="audio-main-btn" id="premiumAudioToggle" onclick="toggleAudio()">⏸</button>
         </div>
     </div>
 
+    <!-- YOUTUBE RESULTS MODAL -->
+    <div id="ytResultsModal" class="modal-overlay" onclick="closeYtModal(event)">
+        <div class="yt-modal-box" onclick="event.stopPropagation()">
+            <button onclick="closeYtModal(null, true)" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; z-index:10;">✕</button>
+            <h3 style="color: #ef4444; margin-bottom: 15px; font-size: 20px; font-weight: 900; display:flex; align-items:center; gap:8px;">▶️ YouTube Results</h3>
+            <div id="ytResultsList" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
+            <button id="ytLoadMoreBtn" class="action-btn" style="margin-top:15px; padding:12px; font-size:14px; background:var(--primary); color:white; display:none;" onclick="loadMoreYt()">Load 10 More</button>
+        </div>
+    </div>
+
+    <!-- YOUTUBE PLAY IN APP FULLSCREEN -->
+    <div id="ytPlayerFullscreen">
+        <button class="yt-close-fs" onclick="closeYtFullscreen()">✖</button>
+        <iframe id="ytIframe" class="yt-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    </div>
+
+    <!-- YT ACTION SELECTOR -->
+    <div id="ytActionModal" class="modal-overlay">
+        <div class="modal-box" style="text-align:center;">
+            <button onclick="document.getElementById('ytActionModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
+            <h3 style="color: var(--text-main); margin-bottom: 20px; font-size: 18px; font-weight: 900;" id="ytActionTitle">Video Options</h3>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <button class="action-btn" style="padding:15px; background:var(--primary); color:white; font-size:15px;" onclick="playYtInApp()">▶️ Play in App (Ad-Free)</button>
+                <button class="action-btn" style="padding:15px; background:#ef4444; color:white; font-size:15px;" onclick="openYtExternal()">🌐 Open in YouTube</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-box">
             <button onclick="document.getElementById('settingsModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
             <h2 style="color:var(--primary); margin-bottom:20px;">⚙️ AI Settings</h2>
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:14px; font-weight:bold;"><span>Language:</span>
-                <select id="appLang" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border-light); padding:8px; border-radius:8px;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; font-size:14px; font-weight:bold;">
+                <span>AI Model:</span>
+                <select id="modelSelector" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border-light); padding:8px; border-radius:8px; width:150px;">
+                    <option value="auto" selected>Auto (Smart)</option>
+                    <option value="API 1">API 1 (Gemini)</option>
+                    <option value="API 2">API 2 (Gemini)</option>
+                    <option value="API 3">API 3 (Gemini)</option>
+                    <option value="API 4">API 4 (Gemini)</option>
+                    <option value="API 5">API 5 (Gemini Pro)</option>
+                    <option value="groq">Groq (Llama 3)</option>
+                    <option value="cloudflare">Cloudflare</option>
+                </select>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; font-size:14px; font-weight:bold;">
+                <span>Language:</span>
+                <select id="appLang" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border-light); padding:8px; border-radius:8px; width:150px;">
                     <option value="Hindi" selected>Hindi (हिंदी)</option>
                     <option value="English">English</option>
                 </select>
@@ -247,6 +333,7 @@
         </div>
     </div>
 
+    <!-- WHATSAPP MODAL -->
     <div id="whatsappModal" class="modal-overlay">
         <div class="modal-box" style="text-align:center; border:2px solid #25D366;">
             <button onclick="document.getElementById('whatsappModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
@@ -256,6 +343,16 @@
                 <button class="action-btn" style="flex: 1; padding: 15px; background: #10b981; color: white; border: none; font-size:14px;" onclick="submitWhatsAppSelection(event)">🚀 Send</button>
                 <button class="action-btn" style="flex: 1; padding: 15px; background: #ef4444; color: white; border: none; font-size:14px;" onclick="document.getElementById('whatsappModal').style.display='none'">✖ Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <!-- WEB IMPORT -->
+    <div id="webImportModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: center;">
+            <button onclick="document.getElementById('webImportModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
+            <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
+            <textarea id="webUrlInput" rows="3" placeholder="https://example.com/document.pdf" style="width:100%; padding:10px; border-radius:12px; background:var(--input-bg); border:1px solid var(--border-light); color:var(--text-main); margin-bottom:15px; resize:none; font-family:monospace;"></textarea>
+            <button class="action-btn" style="width:100%; padding:15px; background:var(--primary); color:white; font-size:15px;" onclick="saveWebUrls()">💾 Attach URL</button>
         </div>
     </div>
 
@@ -286,6 +383,7 @@
         </div>
     </div>
 
+    <!-- PREMIUM FULLSCREEN IMAGE VIEWER GUI -->
     <div id="fullImageViewer">
         <div class="img-gui-topbar">
             <button class="img-gui-btn" onclick="downloadFullImage()">📥 Download</button>
@@ -294,6 +392,7 @@
         <img id="fullImageSrc">
     </div>
 
+    <!-- CAMERA SYSTEM -->
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
         <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover"></video>
         <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100;" onclick="closeCamera()">✕</button>
@@ -305,6 +404,9 @@
         <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>
 
+    <!-- ========================================================
+         THE MASTER JAVASCRIPT ENGINE (100% COMPLETE & UPGRADED)
+         ======================================================== -->
     <script>
         localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
         let appHistory = [];
@@ -335,7 +437,6 @@
                 let userImgs = (inter.images || []).map(img => `<img src="${img}" onclick="openFullImage('${img}')" style="max-height:100px; border-radius:8px; margin:2px; cursor:pointer;">`).join('');
                 let attachHtml = inter.fileName ? `<div class="user-attachment-badge">📄 Attached: ${inter.fileName}</div><br>` : "";
 
-                // Restored User bubble with copy button
                 chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"><div class="bubble"><button onclick="copyUserText(this)" data-text="${encodeURIComponent(inter.question)}" class="user-copy-btn">📋</button>${attachHtml}${userImgs}${userImgs?'<br>':''}${inter.question.replace(/\n/g, '<br>')}</div></div>`);
                 
                 const lId = "restored_" + Date.now() + Math.floor(Math.random() * 1000); const textId = "txt_" + lId;
@@ -358,14 +459,15 @@
             setTimeout(() => document.getElementById("searchScrollArea").scrollTo(0, document.getElementById("searchScrollArea").scrollHeight), 100);
         }
 
-        // Input Resize Logic Fix
+        // Input Resize Logic - REMOVED AUTO SO IT STAYS 40px UNTIL TYPED
         function resizeInputBox() {
             const inp = document.getElementById('searchInput');
-            inp.style.height = 'auto'; 
-            inp.style.height = Math.max(20, Math.min(inp.scrollHeight, 120)) + 'px';
+            if (inp.value === "") { inp.style.height = '40px'; return; }
+            inp.style.height = '40px'; 
+            inp.style.height = Math.max(40, Math.min(inp.scrollHeight, 120)) + 'px';
         }
 
-        // Share Mode Logic
+        // Share Mode
         let isShareMode = false;
         function toggleShareMode() {
             document.getElementById('appInputArea').style.display = 'none'; document.getElementById('shareActionArea').style.display = 'flex'; 
@@ -377,8 +479,8 @@
             document.getElementById('shareActionArea').style.display = 'none'; document.getElementById('appInputArea').style.display = 'flex'; 
             isShareMode = false; document.getElementById('searchScrollArea').classList.remove('share-mode-active');
             
-            // 🛑 BUG FIX: RESIZE THE INPUT BOX BACK TO NORMAL 🛑
-            setTimeout(() => resizeInputBox(), 10);
+            // 🛑 SHRINK BUG DESTROYED: Force inline style to vanish, relying purely on CSS min-height 🛑
+            document.getElementById('searchInput').style.height = ''; 
             
             document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
         }
@@ -391,26 +493,19 @@
         async function submitWhatsAppSelection(event) {
             const number = document.getElementById('waNumberInput').value.trim();
             if (!number) return showToast("Please enter a mobile number.");
-            let fullChatText = "🔎 *AI PRO SUITE - Selected Answers* 🔎\n\n";
+            let fullChatText = "🔎 *DEEP SEARCH - Selected Notes* 🔎\n\n";
             
             document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
                 let clone = node.cloneNode(true);
-                
-                // 🛑 STRIP BUTTONS AND UI GARBAGE BEFORE CONVERTING TO TEXT 🛑
-                let actions = clone.querySelector('.msg-actions'); if(actions) actions.remove(); 
-                let headers = clone.querySelector('.code-header'); if(headers) headers.remove(); 
-                clone.querySelectorAll('button, .msg-menu-wrap, .code-header, .quick-suggestions-wrap').forEach(el => el.remove());
-                
+                clone.querySelectorAll('button, .msg-actions, .code-header, .quick-suggestions-wrap').forEach(el => el.remove());
                 let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
                 clone.innerHTML = htmlStr;
-                
                 let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
-                msgText = msgText.replace(/Listen/gi, '').replace(/Copy/gi, '').replace(/Delete/gi, '').trim();
                 msgText = msgText.replace(/✨.*?VIA.*?\n/i, ''); 
-
                 if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
             });
 
+            // NO RAW LATEX EXPORT - Cleaning symbols
             const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
             const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
             fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
@@ -418,9 +513,7 @@
             const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
             try {
                 const response = await fetch("/api/secure-whatsapp", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: number, message: fullChatText.trim() }) });
-                if (response.status === 403) alert("UNAUTHORIZED - Server restricted.");
-                else if (response.ok) { showToast("✅ Shared successfully!"); document.getElementById('whatsappModal').style.display = 'none'; cancelShareMode(); } 
-                else alert("❌ Failed to send. Server error.");
+                if (response.status === 403) alert("UNAUTHORIZED - Server restricted."); else if (response.ok) { showToast("✅ Shared successfully!"); document.getElementById('whatsappModal').style.display = 'none'; cancelShareMode(); } else alert("❌ Failed to send.");
             } catch (e) { alert("❌ Connection error."); }
             btn.innerHTML = originalText; btn.disabled = false;
         }
@@ -434,29 +527,117 @@
         const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
             let safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
-            let isHtml = (language && language.toLowerCase() === 'html') || safeCode.toLowerCase().includes('&lt;html');
-            let playBtnStr = isHtml ? `<button class="action-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
+            let playBtnStr = (language === 'html' || safeCode.includes('&lt;html')) ? `<button class="action-btn play-btn" onclick="playHtmlCode(this)">▶ Play HTML</button>` : '';
             return `<div class="code-box"><div class="code-header">${playBtnStr}<button class="action-btn" onclick="copyCodeEngine(this)">📋 Copy</button></div><div class="code-body">${safeCode}</div></div>`;
         };
         marked.setOptions({ renderer: renderer });
         function copyCodeEngine(btn) { navigator.clipboard.writeText(btn.parentElement.nextElementSibling.innerText); btn.innerText = "✅ Copied"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerText = "📋 Copy"; btn.style.background = "var(--input-bg)"; }, 2000); showToast("Code Copied!"); }
 
-        // AUDIO SYSTEM (PLAY, PAUSE, STOP FIXED)
-        let isAudioPaused = false;
+        // ==========================================
+        // 🚀 PREMIUM AUDIO PLAYER ENGINE (25% UI)
+        // ==========================================
+        let ttsInterval = null;
+        let estimatedDurationSeconds = 0;
+        let elapsedSeconds = 0;
+        let currentTextToSpeak = "";
+
+        function formatTime(secs) {
+            let m = Math.floor(secs / 60); let s = Math.floor(secs % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
         function playAudio(btn) { 
-            const text = document.getElementById(btn.getAttribute('data-target')).innerText; 
+            currentTextToSpeak = document.getElementById(btn.getAttribute('data-target')).innerText; 
             window.speechSynthesis.cancel(); 
+            clearInterval(ttsInterval); elapsedSeconds = 0;
+
+            // Estimate duration (Assuming 150 words per min at 1.0x speed)
+            let wordCount = currentTextToSpeak.split(/\s+/).length;
+            estimatedDurationSeconds = Math.max(2, Math.ceil((wordCount / 150) * 60)); 
+
+            document.getElementById("audioTotalTime").innerText = formatTime(estimatedDurationSeconds);
+            document.getElementById("audioCurrentTime").innerText = "0:00";
+            document.getElementById("audioProgressFill").style.width = "0%";
+            document.getElementById("premiumAudioToggle").innerText = "⏸";
+
+            // Hide Top/Input Bars, Show Player
+            document.getElementById("appTopbar").classList.add("hidden");
+            document.getElementById("appInputArea").style.transform = "translateY(100%)";
+            document.getElementById("premiumAudioPlayer").style.display = "flex";
+
+            startUtterance(currentTextToSpeak, parseFloat(document.getElementById("audioSpeed").value));
+        }
+
+        function startUtterance(text, speed) {
             const u = new SpeechSynthesisUtterance(text); 
             u.lang = document.getElementById('appLang').value === 'Hindi' ? 'hi-IN' : 'en-US'; 
-            u.onstart = () => { document.getElementById("topAudioPlayer").style.display = "flex"; document.getElementById("audioToggleBtn").innerText = "⏸"; isAudioPaused = false; }; 
-            u.onend = () => { document.getElementById("topAudioPlayer").style.display = "none"; }; 
-            window.speechSynthesis.speak(u); 
+            u.rate = speed;
+            u.onend = () => { stopAudio(); }; 
+            window.speechSynthesis.speak(u);
+
+            clearInterval(ttsInterval);
+            ttsInterval = setInterval(() => {
+                if (window.speechSynthesis.paused) return;
+                elapsedSeconds += (1 * speed);
+                if (elapsedSeconds >= estimatedDurationSeconds) elapsedSeconds = estimatedDurationSeconds;
+                
+                document.getElementById("audioCurrentTime").innerText = formatTime(elapsedSeconds);
+                let percent = (elapsedSeconds / estimatedDurationSeconds) * 100;
+                document.getElementById("audioProgressFill").style.width = percent + "%";
+            }, 1000);
         }
+
         function toggleAudio() {
-            if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); document.getElementById("audioToggleBtn").innerText = "⏸"; isAudioPaused = false; } 
-            else if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); document.getElementById("audioToggleBtn").innerText = "▶"; isAudioPaused = true; }
+            const btn = document.getElementById("premiumAudioToggle");
+            if (window.speechSynthesis.paused) { 
+                window.speechSynthesis.resume(); 
+                btn.innerText = "⏸"; 
+            } else if (window.speechSynthesis.speaking) { 
+                window.speechSynthesis.pause(); 
+                btn.innerText = "▶"; 
+            }
         }
-        function stopAudio() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
+
+        function changeAudioSpeed() {
+            if (!window.speechSynthesis.speaking) return;
+            let speed = parseFloat(document.getElementById("audioSpeed").value);
+            window.speechSynthesis.cancel();
+            
+            // Calculate remaining words to speak
+            let percentDone = elapsedSeconds / estimatedDurationSeconds;
+            let totalWords = currentTextToSpeak.split(/\s+/);
+            let remainingText = totalWords.slice(Math.floor(totalWords.length * percentDone)).join(" ");
+            
+            startUtterance(remainingText, speed);
+        }
+
+        function seekAudio(e) {
+            if (!window.speechSynthesis.speaking) return;
+            const bar = document.getElementById("audioProgressBar");
+            const rect = bar.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percent = clickX / rect.width;
+            
+            elapsedSeconds = percent * estimatedDurationSeconds;
+            document.getElementById("audioProgressFill").style.width = (percent * 100) + "%";
+            document.getElementById("audioCurrentTime").innerText = formatTime(elapsedSeconds);
+
+            let totalWords = currentTextToSpeak.split(/\s+/);
+            let remainingText = totalWords.slice(Math.floor(totalWords.length * percent)).join(" ");
+            
+            window.speechSynthesis.cancel();
+            let speed = parseFloat(document.getElementById("audioSpeed").value);
+            startUtterance(remainingText, speed);
+        }
+
+        function stopAudio() { 
+            window.speechSynthesis.cancel(); 
+            clearInterval(ttsInterval);
+            document.getElementById("premiumAudioPlayer").style.display = "none";
+            // Restore Top/Input Bars
+            document.getElementById("appTopbar").classList.remove("hidden");
+            document.getElementById("appInputArea").style.transform = "translateY(0)";
+        }
 
         function copyText(btn) { navigator.clipboard.writeText(document.getElementById(btn.getAttribute('data-target')).innerText); btn.innerHTML = "✅ Copied"; setTimeout(() => btn.innerHTML = "📋 Copy", 2000); showToast("Text Copied!"); }
 
@@ -466,14 +647,16 @@
         function openFullImage(src) { currentFullscreenImage = src; document.getElementById('fullImageSrc').src = src; document.getElementById('fullImageViewer').style.display = 'flex'; }
         function downloadFullImage() { const a = document.createElement("a"); a.href = currentFullscreenImage; a.download = `DEEP_SEARCH_${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("📥 Download Started!"); }
 
-        let isPhotoMode = false; let documentMemory = ""; let webUrls = []; let uploadedImagesList = []; let camStream = null; let camFacing = "environment"; let isFlash = true; let isProcessing = false; let windowUploadedFileName = ""; 
+        let isPhotoMode = false; let isYoutubeMode = false; let documentMemory = ""; let webUrls = []; let uploadedImagesList = []; let camStream = null; let camFacing = "environment"; let isFlash = true; let isProcessing = false; let windowUploadedFileName = ""; 
 
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
         function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
         function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
         window.addEventListener('click', function(e) { if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); });
         
-        function togglePhotoMode() { isPhotoMode = !isPhotoMode; document.getElementById("photoModeChip").style.display = isPhotoMode ? "flex" : "none"; document.getElementById("photoModeMenuBtn").innerText = isPhotoMode ? "🎨 Turn Off Photo Gen" : "🎨 Turn On Photo Gen"; if(isPhotoMode) showToast("Photo Gen Ready"); closePlusMenu(); }
+        function togglePhotoMode() { isPhotoMode = !isPhotoMode; document.getElementById("photoModeChip").style.display = isPhotoMode ? "flex" : "none"; document.getElementById("photoModeMenuBtn").innerText = isPhotoMode ? "🎨 Turn Off Photo Gen" : "🎨 Turn On Photo Gen"; if(isPhotoMode) { isYoutubeMode = false; document.getElementById("ytModeChip").style.display = "none"; showToast("Photo Gen Ready"); } closePlusMenu(); }
+
+        function toggleYoutubeMode() { isYoutubeMode = !isYoutubeMode; document.getElementById("ytModeChip").style.display = isYoutubeMode ? "flex" : "none"; if(isYoutubeMode) { isPhotoMode = false; document.getElementById("photoModeChip").style.display = "none"; showToast("YouTube Mode Ready"); } closePlusMenu(); }
 
         function toggleFocus() { const topBar = document.getElementById('appTopbar'); const inputArea = document.getElementById('appInputArea'); const exitBtn = document.getElementById('exitFocusBtn'); const isFocus = topBar.style.display !== 'none'; topBar.style.display = isFocus ? 'none' : 'flex'; inputArea.style.transform = isFocus ? 'translateY(200%)' : 'translateY(0)'; exitBtn.style.display = isFocus ? 'flex' : 'none'; document.getElementById('settingsModal').style.display = 'none'; showToast(isFocus ? "Focus Mode ON" : "Focus Mode OFF"); }
 
@@ -505,7 +688,7 @@
         function openNotesModal() { closePlusMenu(); document.getElementById('notesModal').style.display = 'flex'; }
         async function generateNotes() { const b = document.getElementById("noteBookName").value.trim(); const c = document.getElementById("noteChapter").value.trim(); if(!b || !c) return showToast("Enter both book and chapter details."); document.getElementById('notesModal').style.display = 'none'; document.getElementById('searchInput').value = `Create highly detailed, structured study notes for the book/subject "${b}", focusing specifically on the chapter/topic: "${c}". Provide definitions, important concepts, and key bullet points. STRICT RULE: ONLY include formulas, equations, or math symbols if "${b}" is explicitly a Mathematics, Physics, Chemistry, or Science subject.`; runMainSearch(); }
 
-        // --- TYPEWRITER (14 WORDS / SEC) ---
+        // --- 14 WORDS/SEC TYPEWRITER (~14ms per char) ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div'); tempDiv.innerHTML = fullHtml; let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
             function typeNextNode() {
@@ -536,28 +719,105 @@
             let attachHtml = ""; let currentFileNameForHistory = null;
             if (windowUploadedFileName) { attachHtml = `<div class="user-attachment-badge">📄 Attached: ${windowUploadedFileName}</div><br>`; currentFileNameForHistory = windowUploadedFileName; }
 
-            // 🛑 BUBBLE WITH COPY ICON
+            // User Bubble with Copy Button
             let userHtml = `<div class="chat-msg chat-user"><div class="bubble"><button onclick="copyUserText(this)" data-text="${encodeURIComponent(q)}" class="user-copy-btn">📋</button>${attachHtml}${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
             chatBox.insertAdjacentHTML('beforeend', userHtml); inp.value = ""; resizeInputBox(); 
             
-            const scrollArea = document.getElementById("searchScrollArea"); scrollArea.scrollTo(0, scrollArea.scrollHeight); // 🛑 SCROLL ONLY ON SEND
+            // 🛑 ONLY SCROLL TO BOTTOM WHEN USER SENDS MESSAGE 🛑
+            const scrollArea = document.getElementById("searchScrollArea"); 
+            scrollArea.scrollTo({top: scrollArea.scrollHeight, behavior: 'smooth'}); 
+            
             const loadId = "load_" + Date.now();
-            
             chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble ai-thinking"><div class="thinking-text">PROCESSING...</div><div class="data-bar"></div></div></div>`);
-            
+            scrollArea.scrollTo({top: scrollArea.scrollHeight, behavior: 'smooth'});
+
             try {
-                if (isPhotoMode) { await handlePhotoGeneration(q, loadId, currentImagesToSave); if(isPhotoMode) togglePhotoMode(); }
+                if (isYoutubeMode) { await handleYoutubeAppSearch(q, loadId); toggleYoutubeMode(); }
+                else if (isPhotoMode) { await handlePhotoGeneration(q, loadId, currentImagesToSave); if(isPhotoMode) togglePhotoMode(); }
                 else { await handleTextSearch(q, loadId, currentImagesToSave, currentFileNameForHistory); }
             } catch(e) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Error: ${e.message}</div>`; }
             
             isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImagesList = []; updateImageUI(); clearAttachment();
         }
 
+        // ==========================================
+        // 🚀 YOUTUBE SEARCH APP MODE
+        // ==========================================
+        let ytVideosStore = [];
+        async function handleYoutubeAppSearch(query, loadId) {
+            document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">SEARCHING YOUTUBE...</div><div class="data-bar"></div></div>`;
+            try {
+                const res = await fetch("/api/youtube-search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: query }) });
+                const data = await res.json();
+                if (!data.results || data.results.length === 0) throw new Error("No videos found.");
+                
+                ytVideosStore = data.results;
+                
+                // Let AI pick top 5
+                let top5List = ytVideosStore.slice(0, 5); 
+                
+                let htmlAns = `<div style="font-size:10px; color:#ef4444; font-weight:900; margin-bottom:10px;">▶️ YOUTUBE RESULTS</div>`;
+                htmlAns += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+                
+                top5List.forEach((v, idx) => {
+                    htmlAns += `
+                    <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
+                        <img src="${v.thumbnail}" class="yt-thumb">
+                        <div class="yt-info">
+                            <div class="yt-title">${v.title}</div>
+                            <div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div>
+                        </div>
+                    </div>`;
+                });
+                
+                htmlAns += `<button class="action-btn" style="margin-top:10px; padding:10px; background:#ef4444; color:white;" onclick="openYtFullList()">Load More Videos</button></div>`;
+                
+                document.getElementById(loadId).innerHTML = `<div class="bubble">${htmlAns}</div>`;
+                saveInteractionToLocalForage(query, htmlAns, [], "YouTube Mode");
+                
+            } catch (error) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ YouTube Error: ${error.message}</div>`; }
+        }
+
+        function openYtFullList() {
+            const list = document.getElementById("ytResultsList");
+            list.innerHTML = ytVideosStore.slice(0, 15).map(v => `
+                <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
+                    <img src="${v.thumbnail}" class="yt-thumb">
+                    <div class="yt-info">
+                        <div class="yt-title">${v.title}</div>
+                        <div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div>
+                    </div>
+                </div>`).join('');
+            document.getElementById("ytResultsModal").style.display = "flex";
+        }
+
+        let currentActiveVid = "";
+        function openYtSelector(vidId) { currentActiveVid = vidId; document.getElementById("ytActionModal").style.display = "flex"; }
+        function closeYtModal(e, force = false) { if (force || e.target === document.getElementById('ytResultsModal')) { document.getElementById('ytResultsModal').style.display='none'; } }
+        function openYtExternal() { document.getElementById("ytActionModal").style.display = "none"; window.open(`https://www.youtube.com/watch?v=${currentActiveVid}`, "_blank"); }
+        function playYtInApp() {
+            document.getElementById("ytActionModal").style.display = "none";
+            document.getElementById("ytResultsModal").style.display = "none";
+            document.getElementById("ytIframe").src = `https://www.youtube.com/embed/${currentActiveVid}?autoplay=1`;
+            document.getElementById("ytPlayerFullscreen").style.display = "flex";
+            if (screen.orientation && screen.orientation.lock) { screen.orientation.lock("landscape").catch(e=>{}); }
+        }
+        function closeYtFullscreen() {
+            document.getElementById("ytPlayerFullscreen").style.display = "none";
+            document.getElementById("ytIframe").src = "";
+            if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
+        }
+
+
+        // ==========================================
+        // 🚀 HIGH-END IMAGE GENERATOR
+        // ==========================================
         async function handlePhotoGeneration(promptText, loadId, savedImages) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">OPTIMIZING PROMPTS...</div><div class="data-bar"></div></div>`;
             try {
+                let currentModel = document.getElementById('modelSelector').value;
                 const enhancePrompt = `You are an elite AI image prompt engineer optimizing for the Flux model. The user wants an image based on: "${promptText}". Create 3 distinct, highly detailed, 4k resolution text-to-image prompts. STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."].`;
-                const res = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userPrompt: enhancePrompt, systemPrompt: "Return strictly a JSON array." }) });
+                const res = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userPrompt: enhancePrompt, systemPrompt: "Return strictly a JSON array.", providerOverride: currentModel === "auto" ? "api_1" : currentModel }) });
                 const data = await res.json(); let options = [];
                 try { let cleanJson = data.text.replace(/```json/gi, '').replace(/```/gi, '').trim(); options = JSON.parse(cleanJson); } catch(e) { options = [promptText + " highly detailed", promptText + " cinematic lighting", promptText + " masterpiece"]; }
                 if(!Array.isArray(options) || options.length < 3) options = [promptText, promptText + " 4k", promptText + " realistic"];
@@ -565,9 +825,9 @@
                 const optionsHtml = `
                     <div style="margin-bottom:12px; font-weight:600; color:var(--text-main);">✨ <b>Select a style for your image:</b></div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
-                        <button onclick="executeFinalImageGen('${loadId}', \`${options[0].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; font-size:13px;">1️⃣ ${options[0]}</button>
-                        <button onclick="executeFinalImageGen('${loadId}', \`${options[1].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; font-size:13px;">2️⃣ ${options[1]}</button>
-                        <button onclick="executeFinalImageGen('${loadId}', \`${options[2].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; font-size:13px;">3️⃣ ${options[2]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[0].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s; font-size:13px; line-height:1.4;">1️⃣ ${options[0]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[1].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s; font-size:13px; line-height:1.4;">2️⃣ ${options[1]}</button>
+                        <button onclick="executeFinalImageGen('${loadId}', \`${options[2].replace(/`/g, '')}\`)" style="text-align:left; padding:12px; border-radius:10px; border:1px solid var(--primary); background:rgba(59,130,246,0.1); color:var(--text-main); cursor:pointer; transition:0.2s; font-size:13px; line-height:1.4;">3️⃣ ${options[2]}</button>
                     </div>`;
                 document.getElementById(loadId).innerHTML = `<div class="bubble"><div style="font-size:10px; color:var(--primary); font-weight:900; margin-bottom:10px;">✨ AI PROMPT OPTIMIZER</div>${optionsHtml}</div>`;
             } catch (error) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Prompt optimization failed. Try again.</div>`; }
@@ -586,31 +846,40 @@
             } catch (error) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Cloudflare API Error: ${error.message}</div>`; }
         };
 
-        // 🛑 MASTER TEXT ENGINE (BANNED RAW LaTeX & ENHANCED SVG) 🛑
+        // ==========================================
+        // 🚀 MASTER TEXT ENGINE
+        // ==========================================
         async function handleTextSearch(prompt, loadId, savedImages, attachedFileName) {
             const lang = document.getElementById("appLang").value; const customRules = document.getElementById("aiInstructions").value.trim();
             
+            // 🛑 STRICT MATH & SVG PROTOCOL INJECTED 🛑
+            let isMathQ = /math|solve|calculate|equation|find the value|त्रिज्या|व्यास|formula|[0-9]+[\+\-\*\/\^]/i.test(prompt);
+
             let sysPrompt = `You are the ultimate educational AI Tutor.
             1. LANGUAGE RULE: Answer entirely in ${lang}. DO NOT mix English and Hindi freely.
-            2. TRANSLITERATION: For difficult technical terms, format exactly as "Hindi-Word (English-Term)".
-            3. 🚨 UNIT & MATH STRICT BAN: YOU MUST NEVER USE LaTeX OR \\text{} FOR SIMPLE UNITS. Never write \\( 9.8 \\text{ m/s}^2 \\). You MUST write standard text like 9.8 m/s² or 1 kg. ONLY use $$ $$ for complex block equations. No weird parentheses around units.
-            4. 🎨 HIGH-DETAIL SVG VISUALS: ONLY generate an <svg> diagram if explicitly needed to explain a complex visual concept. If you do, it MUST be highly detailed, realistic, and colorful. Use <defs> for linear/radial gradients, drop-shadows, and glowing effects. Example: An earth SVG should have a radial blue gradient ocean, detailed green layered paths for continents, and a soft outer glow. Wrap exactly in <div class="math-svg-wrap"><svg>...</svg></div>.
-            5. 💡 QUICK SUGGESTIONS: At the very end of your response, provide exactly 3 continuation questions. Format EXACTLY like this on a new line: ||SUGGESTIONS: ["Question 1?", "Question 2?", "Question 3?"]||
-            6. FOLLOW THIS OUTPUT TEMPLATE EXACTLY FOR EVERY MATH SOLUTION(ONLY MATH SOLUTION NOT FOR ANY OTHER THINGS):
-
-[Brief 1-line summary/intro. DO NOT rewrite the original question!]
-**1. [Step 1 Heading]**
-[Step 1 explanation using FULL WORDS in ${lang}]
-$$[Proper math equation with \\frac]$$
-**2. [Step 2 Heading]**
-[Step 2 explanation using FULL WORDS in ${lang}]
-$$[Proper math equation]$$
-
-[OPTIONAL: **💡 Shortcut / Trick** - Only include if a genuinely useful shortcut exists, otherwise skip this.]
-
-**✅ Final Answer**
-[Final explicit answer sentence in ${lang}]`;
+            2. TRANSLITERATION: For difficult technical terms, format exactly as "Hindi-Word (English-Term)". Example: "गुरुत्वाकर्षण (Gravitation)". Do NOT do this for simple everyday words.
+            3. 🚨 UNIT STRICT BAN: YOU MUST NEVER USE LaTeX OR \\text{} FOR SIMPLE UNITS. Never write \\( 9.8 \\text{ m/s}^2 \\). You MUST write standard text like "9.8 m/s²" or "1 kg" or "15 cm". 
+            4. MATH FORMULAS: ONLY use $$ $$ or \\( \\) for pure mathematical equations. NEVER wrap normal text or units in MathJax blocks.
+            5. 💡 QUICK SUGGESTIONS: At the very end of your response, provide exactly 3 continuation questions. Format EXACTLY like this on a new line: ||SUGGESTIONS: ["Question 1?", "Question 2?", "Question 3?"]||`;
             
+            if (isMathQ) {
+                sysPrompt += `\n\n🚨 MATH DETECTED: FOLLOW THIS OUTPUT TEMPLATE EXACTLY:
+                [Brief 1-line summary/intro. DO NOT rewrite the original question!]
+                **1. [Step 1 Heading]**
+                [Step 1 explanation using FULL WORDS in ${lang}]
+                $$[Proper math equation with \\frac]$$
+                **2. [Step 2 Heading]**
+                [Step 2 explanation using FULL WORDS in ${lang}]
+                $$[Proper math equation]$$
+
+                [OPTIONAL: **💡 Shortcut / Trick** - Only include if a genuinely useful shortcut exists]
+
+                **✅ Final Answer**
+                [Final explicit answer sentence in ${lang}]`;
+            }
+
+            sysPrompt += `\n\n6. 🎨 HIGH-DETAIL SVG VISUALS: ONLY generate an <svg> diagram if explicitly needed to explain a complex visual concept (like planetary orbits, shapes, circuits). If you do, it MUST be highly detailed, realistic, and colorful. Use <defs> for linear/radial gradients, drop-shadows, and glowing effects. Do NOT output a plain flat circle for Earth, make it look like a real blue/green globe with gradients. Wrap exactly in <div class="math-svg-wrap"><svg>...</svg></div>.`;
+
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if (webUrls.length > 0) sysPrompt += `\n\nUSER ATTACHED WEB URL: ${webUrls[0]}`;
             if (documentMemory) sysPrompt += `\n\nLOCAL KNOWLEDGE BASE:\n${documentMemory.substring(0, 60000)}`;
@@ -621,7 +890,14 @@ $$[Proper math equation]$$
             }
             if (memoryContext) sysPrompt += `\n\n--- CHAT MEMORY (Last 10 Messages) ---\n${memoryContext}`;
 
-            let isCode = /math|solve|code|python|java|html|notes/i.test(prompt); let targetProvider = isCode ? "api_5" : "api_1"; let payloadImage = savedImages.length > 0 ? savedImages[0] : null;
+            // Refined code detection
+            let isCode = /(?:python|java|html|javascript|c\+\+|def |function\s*\()(?!\s)/i.test(prompt); 
+            
+            // Explicit Model Selection
+            let currentModel = document.getElementById('modelSelector').value;
+            let targetProvider = currentModel === "auto" ? (isCode ? "api_5" : "api_1") : currentModel; 
+            
+            let payloadImage = savedImages.length > 0 ? savedImages[0] : null;
 
             const payload = { userPrompt: prompt, systemPrompt: sysPrompt, imageBase64: payloadImage, isCode: isCode, providerOverride: targetProvider };
             const res = await fetch("/api/smart-search", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
