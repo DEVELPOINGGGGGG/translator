@@ -180,7 +180,6 @@
       <button onclick="window.location.href='history.html'">🕒 History</button>
     </div>
 
-    <!-- AI PRO SUITE TOPBAR -->
     <div class="topbar" id="appTopbar">
         <div style="display:flex; align-items:center; gap:15px;">
             <button class="menu-btn" onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; color:var(--text-main); cursor:pointer;">☰</button>
@@ -200,7 +199,7 @@
                     <b>Welcome to DEEP SEARCH!</b><br><br>
                     • <b>Chat, Code & Math Diagram:</b> Clean code & Highly Detailed SVGs.<br>
                     • <b>Universal Uploads:</b> PDF, Website URLs, or up to 20 images.<br>
-                    • <b>Smart Suggestions:</b> AI suggests quick questions.<br>
+                    • <b>Smart Suggestions:</b> AI suggests quick questions below its answers.<br>
                     • <b>YouTube Search:</b> Find & Play YouTube videos directly here.<br>
                     • <b>Advanced Audio Player:</b> Speed control & accurate timeline.
                 </div>
@@ -216,7 +215,6 @@
         </div>
     </div>
 
-    <!-- MAIN INPUT AREA -->
     <div class="search-input-area" id="appInputArea">
         <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">File</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
         <div id="photoModeChip" class="status-chip" style="border-color:#8b5cf6;">🎨 Photo Gen ON (Gemini) <button class="chip-close" onclick="togglePhotoMode()">✕</button></div>
@@ -244,7 +242,6 @@
         </div>
     </div>
 
-    <!-- PREMIUM AUDIO PLAYER GUI -->
     <div id="premiumAudioPlayer">
         <div class="audio-top-bar">
             <div class="audio-title">🔊 <span id="audioPlayingStatus">Playing Answer...</span></div>
@@ -271,7 +268,6 @@
         </div>
     </div>
 
-    <!-- YOUTUBE RESULTS MODAL -->
     <div id="ytResultsModal" class="modal-overlay" onclick="closeYtModal(event)">
         <div class="yt-modal-box" onclick="event.stopPropagation()">
             <button onclick="closeYtModal(null, true)" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold; z-index:10;">✕</button>
@@ -281,13 +277,11 @@
         </div>
     </div>
 
-    <!-- YOUTUBE PLAY IN APP FULLSCREEN -->
     <div id="ytPlayerFullscreen">
         <button class="yt-close-fs" onclick="closeYtFullscreen()">✖</button>
         <iframe id="ytIframe" class="yt-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     </div>
 
-    <!-- YT ACTION SELECTOR -->
     <div id="ytActionModal" class="modal-overlay">
         <div class="modal-box" style="text-align:center;">
             <button onclick="document.getElementById('ytActionModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
@@ -299,7 +293,6 @@
         </div>
     </div>
 
-    <!-- SETTINGS MODAL -->
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-box">
             <button onclick="document.getElementById('settingsModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
@@ -333,7 +326,6 @@
         </div>
     </div>
 
-    <!-- WHATSAPP MODAL -->
     <div id="whatsappModal" class="modal-overlay">
         <div class="modal-box" style="text-align:center; border:2px solid #25D366;">
             <button onclick="document.getElementById('whatsappModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
@@ -346,7 +338,6 @@
         </div>
     </div>
 
-    <!-- WEB IMPORT -->
     <div id="webImportModal" class="modal-overlay">
         <div class="modal-box" style="text-align: center;">
             <button onclick="document.getElementById('webImportModal').style.display='none'" style="position:absolute; top:15px; right:15px; background:var(--input-bg); border:none; color:var(--text-main); width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;">✕</button>
@@ -383,7 +374,6 @@
         </div>
     </div>
 
-    <!-- PREMIUM FULLSCREEN IMAGE VIEWER GUI -->
     <div id="fullImageViewer">
         <div class="img-gui-topbar">
             <button class="img-gui-btn" onclick="downloadFullImage()">📥 Download</button>
@@ -392,7 +382,6 @@
         <img id="fullImageSrc">
     </div>
 
-    <!-- CAMERA SYSTEM -->
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
         <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover"></video>
         <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100;" onclick="closeCamera()">✕</button>
@@ -404,9 +393,6 @@
         <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>
 
-    <!-- ========================================================
-         THE MASTER JAVASCRIPT ENGINE (100% COMPLETE & UPGRADED)
-         ======================================================== -->
     <script>
         localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
         let appHistory = [];
@@ -415,19 +401,24 @@
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('appLang').value = "Hindi";
             localforage.getItem('aiHistory').then(data => {
-                if(data) { appHistory = data; const restoreId = new URLSearchParams(window.location.search).get('restore'); if(restoreId) restoreSession(Number(restoreId)); }
+                if(data) { 
+                    appHistory = data; 
+                    const restoreId = new URLSearchParams(window.location.search).get('restore'); 
+                    if(restoreId) {
+                        restoreSession(Number(restoreId)); 
+                    }
+                }
             });
         });
 
         function saveHistorySafe() { localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); }
 
-        // User Copy functionality
         function copyUserText(btn) {
             navigator.clipboard.writeText(decodeURIComponent(btn.getAttribute('data-text')));
             showToast("✅ Copied your message!");
         }
 
-        // Session Restore
+        // Session Restore (Shows toast only on manual restore from history page)
         function restoreSession(id) {
             let numericId = Number(id); const session = appHistory.find(s => Number(s.id) === numericId || s.id == id);
             if(!session) return; currentSessionId = numericId || id;
@@ -457,30 +448,36 @@
                 if(window.MathJax) MathJax.typesetPromise([document.getElementById(lId)]);
             });
             setTimeout(() => document.getElementById("searchScrollArea").scrollTo(0, document.getElementById("searchScrollArea").scrollHeight), 100);
+            
+            showToast("🔄 Session Restored Successfully");
         }
 
-        // Input Resize Logic - REMOVED AUTO SO IT STAYS 40px UNTIL TYPED
+        // Input Resize Logic - DESTROYED THE BUG WITH MEMORY STATE
+        let previousInputHeight = "40px";
         function resizeInputBox() {
             const inp = document.getElementById('searchInput');
-            if (inp.value === "") { inp.style.height = '40px'; return; }
+            if (inp.value === "") { inp.style.height = '40px'; previousInputHeight = '40px'; return; }
             inp.style.height = '40px'; 
             inp.style.height = Math.max(40, Math.min(inp.scrollHeight, 120)) + 'px';
+            previousInputHeight = inp.style.height;
         }
 
-        // Share Mode
         let isShareMode = false;
         function toggleShareMode() {
-            document.getElementById('appInputArea').style.display = 'none'; document.getElementById('shareActionArea').style.display = 'flex'; 
+            previousInputHeight = document.getElementById('searchInput').style.height || '40px';
+            document.getElementById('appInputArea').style.display = 'none'; 
+            document.getElementById('shareActionArea').style.display = 'flex'; 
             isShareMode = true; document.getElementById('searchScrollArea').classList.add('share-mode-active');
             document.querySelectorAll('.bubble').forEach(b => { b.onclick = function(e) { if(!isShareMode) return; this.classList.toggle('selected-for-share'); } });
         }
         
         function cancelShareMode() {
-            document.getElementById('shareActionArea').style.display = 'none'; document.getElementById('appInputArea').style.display = 'flex'; 
+            document.getElementById('shareActionArea').style.display = 'none'; 
+            document.getElementById('appInputArea').style.display = 'flex'; 
             isShareMode = false; document.getElementById('searchScrollArea').classList.remove('share-mode-active');
             
-            // 🛑 SHRINK BUG DESTROYED: Force inline style to vanish, relying purely on CSS min-height 🛑
-            document.getElementById('searchInput').style.height = ''; 
+            // 🛑 FORCE RESTORE TO EXACT HEIGHT BEFORE SHARING
+            document.getElementById('searchInput').style.height = previousInputHeight; 
             
             document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
         }
@@ -505,7 +502,6 @@
                 if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
             });
 
-            // NO RAW LATEX EXPORT - Cleaning symbols
             const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
             const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
             fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
@@ -534,12 +530,13 @@
         function copyCodeEngine(btn) { navigator.clipboard.writeText(btn.parentElement.nextElementSibling.innerText); btn.innerText = "✅ Copied"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerText = "📋 Copy"; btn.style.background = "var(--input-bg)"; }, 2000); showToast("Code Copied!"); }
 
         // ==========================================
-        // 🚀 PREMIUM AUDIO PLAYER ENGINE (25% UI)
+        // 🚀 PREMIUM AUDIO PLAYER ENGINE (25% UI + GC FIX)
         // ==========================================
         let ttsInterval = null;
         let estimatedDurationSeconds = 0;
         let elapsedSeconds = 0;
         let currentTextToSpeak = "";
+        window.activeUtterance = null; // GLOBAL VARIABLE TO PREVENT GC PAUSE BUG
 
         function formatTime(secs) {
             let m = Math.floor(secs / 60); let s = Math.floor(secs % 60);
@@ -551,7 +548,6 @@
             window.speechSynthesis.cancel(); 
             clearInterval(ttsInterval); elapsedSeconds = 0;
 
-            // Estimate duration (Assuming 150 words per min at 1.0x speed)
             let wordCount = currentTextToSpeak.split(/\s+/).length;
             estimatedDurationSeconds = Math.max(2, Math.ceil((wordCount / 150) * 60)); 
 
@@ -562,28 +558,36 @@
 
             // Hide Top/Input Bars, Show Player
             document.getElementById("appTopbar").classList.add("hidden");
-            document.getElementById("appInputArea").style.transform = "translateY(100%)";
+            document.getElementById("appInputArea").classList.add("hidden");
             document.getElementById("premiumAudioPlayer").style.display = "flex";
 
             startUtterance(currentTextToSpeak, parseFloat(document.getElementById("audioSpeed").value));
         }
 
         function startUtterance(text, speed) {
+            window.speechSynthesis.cancel(); // Clear queue
             const u = new SpeechSynthesisUtterance(text); 
             u.lang = document.getElementById('appLang').value === 'Hindi' ? 'hi-IN' : 'en-US'; 
             u.rate = speed;
             u.onend = () => { stopAudio(); }; 
-            window.speechSynthesis.speak(u);
+            window.activeUtterance = u; // 🛑 PROTECT FROM GARBAGE COLLECTION 🛑
+            window.speechSynthesis.speak(window.activeUtterance);
 
             clearInterval(ttsInterval);
             ttsInterval = setInterval(() => {
                 if (window.speechSynthesis.paused) return;
                 elapsedSeconds += (1 * speed);
-                if (elapsedSeconds >= estimatedDurationSeconds) elapsedSeconds = estimatedDurationSeconds;
                 
-                document.getElementById("audioCurrentTime").innerText = formatTime(elapsedSeconds);
                 let percent = (elapsedSeconds / estimatedDurationSeconds) * 100;
+                if (percent > 100) percent = 100;
+
+                document.getElementById("audioCurrentTime").innerText = formatTime(Math.min(elapsedSeconds, estimatedDurationSeconds));
                 document.getElementById("audioProgressFill").style.width = percent + "%";
+
+                // 🛑 FORCE CLOSE WHEN FINISHED 🛑
+                if (elapsedSeconds >= estimatedDurationSeconds) {
+                    stopAudio();
+                }
             }, 1000);
         }
 
@@ -603,7 +607,6 @@
             let speed = parseFloat(document.getElementById("audioSpeed").value);
             window.speechSynthesis.cancel();
             
-            // Calculate remaining words to speak
             let percentDone = elapsedSeconds / estimatedDurationSeconds;
             let totalWords = currentTextToSpeak.split(/\s+/);
             let remainingText = totalWords.slice(Math.floor(totalWords.length * percentDone)).join(" ");
@@ -636,7 +639,7 @@
             document.getElementById("premiumAudioPlayer").style.display = "none";
             // Restore Top/Input Bars
             document.getElementById("appTopbar").classList.remove("hidden");
-            document.getElementById("appInputArea").style.transform = "translateY(0)";
+            document.getElementById("appInputArea").classList.remove("hidden");
         }
 
         function copyText(btn) { navigator.clipboard.writeText(document.getElementById(btn.getAttribute('data-target')).innerText); btn.innerHTML = "✅ Copied"; setTimeout(() => btn.innerHTML = "📋 Copy", 2000); showToast("Text Copied!"); }
@@ -729,8 +732,7 @@
             
             const loadId = "load_" + Date.now();
             chatBox.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-ai" id="${loadId}"><div class="bubble ai-thinking"><div class="thinking-text">PROCESSING...</div><div class="data-bar"></div></div></div>`);
-            scrollArea.scrollTo({top: scrollArea.scrollHeight, behavior: 'smooth'});
-
+            
             try {
                 if (isYoutubeMode) { await handleYoutubeAppSearch(q, loadId); toggleYoutubeMode(); }
                 else if (isPhotoMode) { await handlePhotoGeneration(q, loadId, currentImagesToSave); if(isPhotoMode) togglePhotoMode(); }
@@ -741,9 +743,11 @@
         }
 
         // ==========================================
-        // 🚀 YOUTUBE SEARCH APP MODE
+        // 🚀 YOUTUBE SEARCH APP MODE (LOAD 10 MORE FIX)
         // ==========================================
         let ytVideosStore = [];
+        let ytCurrentIndex = 0;
+
         async function handleYoutubeAppSearch(query, loadId) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">SEARCHING YOUTUBE...</div><div class="data-bar"></div></div>`;
             try {
@@ -752,14 +756,11 @@
                 if (!data.results || data.results.length === 0) throw new Error("No videos found.");
                 
                 ytVideosStore = data.results;
-                
-                // Let AI pick top 5
                 let top5List = ytVideosStore.slice(0, 5); 
                 
                 let htmlAns = `<div style="font-size:10px; color:#ef4444; font-weight:900; margin-bottom:10px;">▶️ YOUTUBE RESULTS</div>`;
                 htmlAns += `<div style="display:flex; flex-direction:column; gap:10px;">`;
-                
-                top5List.forEach((v, idx) => {
+                top5List.forEach(v => {
                     htmlAns += `
                     <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
                         <img src="${v.thumbnail}" class="yt-thumb">
@@ -769,7 +770,6 @@
                         </div>
                     </div>`;
                 });
-                
                 htmlAns += `<button class="action-btn" style="margin-top:10px; padding:10px; background:#ef4444; color:white;" onclick="openYtFullList()">Load More Videos</button></div>`;
                 
                 document.getElementById(loadId).innerHTML = `<div class="bubble">${htmlAns}</div>`;
@@ -779,8 +779,9 @@
         }
 
         function openYtFullList() {
+            ytCurrentIndex = 15;
             const list = document.getElementById("ytResultsList");
-            list.innerHTML = ytVideosStore.slice(0, 15).map(v => `
+            list.innerHTML = ytVideosStore.slice(0, ytCurrentIndex).map(v => `
                 <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
                     <img src="${v.thumbnail}" class="yt-thumb">
                     <div class="yt-info">
@@ -788,7 +789,30 @@
                         <div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div>
                     </div>
                 </div>`).join('');
+            
             document.getElementById("ytResultsModal").style.display = "flex";
+            document.getElementById("ytLoadMoreBtn").style.display = (ytVideosStore.length > ytCurrentIndex) ? "block" : "none";
+        }
+
+        function loadMoreYt() {
+            const list = document.getElementById("ytResultsList");
+            let nextBatch = ytVideosStore.slice(ytCurrentIndex, ytCurrentIndex + 10);
+            
+            let htmlToAppend = nextBatch.map(v => `
+                <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
+                    <img src="${v.thumbnail}" class="yt-thumb">
+                    <div class="yt-info">
+                        <div class="yt-title">${v.title}</div>
+                        <div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div>
+                    </div>
+                </div>`).join('');
+            
+            list.insertAdjacentHTML('beforeend', htmlToAppend);
+            ytCurrentIndex += 10;
+            
+            if (ytCurrentIndex >= ytVideosStore.length) {
+                document.getElementById("ytLoadMoreBtn").style.display = "none";
+            }
         }
 
         let currentActiveVid = "";
@@ -807,7 +831,6 @@
             document.getElementById("ytIframe").src = "";
             if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
         }
-
 
         // ==========================================
         // 🚀 HIGH-END IMAGE GENERATOR
@@ -851,8 +874,6 @@
         // ==========================================
         async function handleTextSearch(prompt, loadId, savedImages, attachedFileName) {
             const lang = document.getElementById("appLang").value; const customRules = document.getElementById("aiInstructions").value.trim();
-            
-            // 🛑 STRICT MATH & SVG PROTOCOL INJECTED 🛑
             let isMathQ = /math|solve|calculate|equation|find the value|त्रिज्या|व्यास|formula|[0-9]+[\+\-\*\/\^]/i.test(prompt);
 
             let sysPrompt = `You are the ultimate educational AI Tutor.
@@ -878,7 +899,7 @@
                 [Final explicit answer sentence in ${lang}]`;
             }
 
-            sysPrompt += `\n\n6. 🎨 HIGH-DETAIL SVG VISUALS: ONLY generate an <svg> diagram if explicitly needed to explain a complex visual concept (like planetary orbits, shapes, circuits). If you do, it MUST be highly detailed, realistic, and colorful. Use <defs> for linear/radial gradients, drop-shadows, and glowing effects. Do NOT output a plain flat circle for Earth, make it look like a real blue/green globe with gradients. Wrap exactly in <div class="math-svg-wrap"><svg>...</svg></div>.`;
+            sysPrompt += `\n\n6. 🎨 HIGH-DETAIL SVG VISUALS: ONLY generate an <svg> diagram if explicitly needed to explain a complex visual concept. If you do, it MUST be highly detailed, realistic, and colorful. Use <defs> for linear/radial gradients, drop-shadows, and glowing effects. Wrap exactly in <div class="math-svg-wrap"><svg>...</svg></div>.`;
 
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if (webUrls.length > 0) sysPrompt += `\n\nUSER ATTACHED WEB URL: ${webUrls[0]}`;
@@ -890,13 +911,9 @@
             }
             if (memoryContext) sysPrompt += `\n\n--- CHAT MEMORY (Last 10 Messages) ---\n${memoryContext}`;
 
-            // Refined code detection
             let isCode = /(?:python|java|html|javascript|c\+\+|def |function\s*\()(?!\s)/i.test(prompt); 
-            
-            // Explicit Model Selection
             let currentModel = document.getElementById('modelSelector').value;
             let targetProvider = currentModel === "auto" ? (isCode ? "api_5" : "api_1") : currentModel; 
-            
             let payloadImage = savedImages.length > 0 ? savedImages[0] : null;
 
             const payload = { userPrompt: prompt, systemPrompt: sysPrompt, imageBase64: payloadImage, isCode: isCode, providerOverride: targetProvider };
@@ -930,10 +947,17 @@
             });
         }
 
+        // 🛑 SAVES TO CURRENT ACTIVE SESSION ID (1-Time Toast) 🛑
         function saveInteractionToLocalForage(question, answer, images, provider, sources = [], fileName = null) {
             let existingSession = appHistory.find(s => Number(s.id) === Number(currentSessionId));
-            if (existingSession) { existingSession.interactions.push({ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }); } 
-            else { appHistory.unshift({ id: currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }] }); }
+            if (existingSession) { 
+                existingSession.interactions.push({ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }); 
+            } 
+            else { 
+                appHistory.unshift({ id: currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }] }); 
+                // Only show Save notification when starting a brand new conversation
+                showToast("✅ Session Saved Successfully");
+            }
             saveHistorySafe();
         }
 
