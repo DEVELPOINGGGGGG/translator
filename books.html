@@ -102,6 +102,14 @@
         
         .generated-cover { width: 140px; height: 190px; background: linear-gradient(135deg, #1e293b, #3b82f6); border-radius: 4px 12px 12px 4px; box-shadow: inset 4px 0 10px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.3), 5px 10px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 10px; box-sizing: border-box; color: white; text-align: center; position: relative; margin: 0 auto 20px auto; border-left: 6px solid #0f172a; }
         .generated-cover::after { content: ''; position: absolute; left: 0px; top: 0; bottom: 0; width: 3px; background: rgba(255,255,255,0.2); }
+        #cameraModal { 
+        display:none; 
+        position:fixed; 
+        inset:0; 
+        background:#000; 
+        z-index:9999999; /* Higher than everything else */
+        flex-direction:column; 
+    }
     </style>
 </head>
 <body onclick="closePlusMenu(event)">
@@ -932,7 +940,12 @@
     }
 
     function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-
+    // Add this function to your books.html script
+async function openBookRecognitionCamera() { 
+    cameraTarget = 'bookRecognition'; 
+    // This calls the same unified openCamera function used in the chat
+    await openCamera(); 
+}
     async function sendMessage() {
         const inputEl = document.getElementById('chatInput');
         const text = inputEl.value.trim();
