@@ -880,8 +880,14 @@
             1. LANGUAGE RULE: Answer entirely in ${lang}. DO NOT mix English and Hindi freely.
             2. TRANSLITERATION: For difficult technical terms, format exactly as "Hindi-Word (English-Term)". Example: "गुरुत्वाकर्षण (Gravitation)". Do NOT do this for simple everyday words.
             3. 🚨 UNIT STRICT BAN: YOU MUST NEVER USE LaTeX OR \\text{} FOR SIMPLE UNITS. Never write \\( 9.8 \\text{ m/s}^2 \\). You MUST write standard text like "9.8 m/s²" or "1 kg" or "15 cm". 
-            4. MATH FORMULAS: ONLY use $$ $$ or \\( \\) for pure mathematical equations. NEVER wrap normal text or units in MathJax blocks.
-            5. 💡 QUICK SUGGESTIONS: At the very end of your response, provide exactly 3 continuation questions. Format EXACTLY like this on a new line: ||SUGGESTIONS: ["Question 1?", "Question 2?", "Question 3?"]||`;
+            4. NEVER use raw LaTeX for scientific notation. 
+              - Write numbers like: 5.972 × 10²⁴ or 10¹² (using superscript characters).
+              - Write units like: m/s², kg, N, or cm.
+            5. FORMAT: If a number requires scientific notation, use the '× 10ⁿ' style with superscript exponents. 
+              - WRONG: ( 5.972 \\times 10^{24} )
+              - RIGHT: 5.972 × 10²⁴
+            6. MATH FORMULAS: ONLY use $$ $$ or \\( \\) for pure mathematical equations. NEVER wrap normal text or units in MathJax blocks.
+            7. 💡 QUICK SUGGESTIONS: At the very end of your response, provide exactly 3 continuation questions. Format EXACTLY like this on a new line: ||SUGGESTIONS: ["Question 1?", "Question 2?", "Question 3?"]||`;
             
             if (isMathQ) {
                 sysPrompt += `\n\n🚨 MATH DETECTED: FOLLOW THIS OUTPUT TEMPLATE EXACTLY:
