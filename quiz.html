@@ -64,11 +64,15 @@
         .mic-btn-main { background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; color: #ef4444; padding: 20px; border-radius: 50%; font-size: 24px; cursor: pointer; transition: 0.3s; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin: 15px auto; box-shadow: 0 0 15px rgba(239,68,68,0.2); }
         .mic-btn-main.recording { background: #ef4444; color: white; animation: pulseRedText 1s infinite; box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); }
 
-        /* YOUTUBE APP ANIMATED LOADER */
-        #global-loader { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; padding: 12px 30px; border-radius: 50px; font-weight: 800; font-size: 16px; box-shadow: 0 10px 30px rgba(255,8,68,0.5); z-index: 10000; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; gap: 12px; pointer-events: none;}
+        /* YOUTUBE APP ANIMATED LOADER - UPDATED FOR INDETERMINATE ANIMATION */
+        #global-loader { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; padding: 12px 30px; border-radius: 20px; font-weight: 800; font-size: 16px; box-shadow: 0 10px 30px rgba(255,8,68,0.5); z-index: 10000; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; align-items: center; pointer-events: none;}
         #global-loader.active { top: 30px; }
         .spinner { width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .indeterminate-loader-bar { width: 100%; min-width: 150px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; position: relative; margin-top: 8px; }
+        .indeterminate-loader-progress { position: absolute; top: 0; left: -50%; width: 50%; height: 100%; background: white; border-radius: 2px; animation: loaderSweep 1.2s infinite ease-in-out; box-shadow: 0 0 8px white; }
+        @keyframes loaderSweep { 0% { left: -50%; } 100% { left: 100%; } }
 
         /* DANGER TIMER VIGNETTE (< 5s) */
         #red-vignette { position: fixed; inset: 0; pointer-events: none; z-index: 9998; box-shadow: inset 0 0 0px rgba(239, 68, 68, 0); transition: box-shadow 0.3s ease; }
@@ -85,8 +89,11 @@
 <div id="red-vignette"></div>
 
 <div id="global-loader">
-    <div class="spinner" id="loaderSpinner"></div> 
-    <span id="loaderText">Loading...</span>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="spinner" id="loaderSpinner"></div> 
+        <span id="loaderText">Loading...</span>
+    </div>
+    <div class="indeterminate-loader-bar"><div class="indeterminate-loader-progress"></div></div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -142,14 +149,14 @@
 
 <div id="speakModal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(5px); z-index: 100002; align-items: center; justify-content: center; padding: 20px;">
     <div class="card" style="width: 100%; max-width: 400px; padding: 25px; display: flex; flex-direction: column; align-items: center;">
-        <h3 style="color: white; margin: 0 0 15px 0; font-size: 20px;">🎙️ Speak Your Answer</h3>
+        <h3 style="color: white; margin: 0 0 15px 0; font-size: 20px;">🎙️ Speak or Type Answer</h3>
         <button id="speakMicBtn" class="mic-btn-main" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">🎤</button>
-        <div id="speakStatus" style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Hold to speak...</div>
+        <div id="speakStatus" style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Hold mic to speak, or type below...</div>
         
-        <textarea id="speakTranscript" readonly style="width: 100%; height: 100px; background: rgba(0,0,0,0.3); color: white; border: 1px solid #38bdf8; border-radius: 12px; padding: 10px; margin-bottom: 20px; resize: none; font-size:15px; font-weight:600;" placeholder="Your spoken answer will appear here..."></textarea>
+        <textarea id="speakTranscript" style="width: 100%; height: 100px; background: rgba(0,0,0,0.3); color: white; border: 1px solid #38bdf8; border-radius: 12px; padding: 10px; margin-bottom: 20px; resize: none; font-size:15px; font-weight:600;" placeholder="Speak using the mic, or manually type your answer here..."></textarea>
         
         <div style="display: flex; width: 100%; gap: 10px;">
-            <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px;" onclick="clearRecording()">🔄 Re-Record</button>
+            <button class="btn red" style="flex: 1; padding: 12px; border-radius: 12px;" onclick="clearRecording()">🔄 Clear</button>
             <button class="btn green" style="flex: 1; padding: 12px; border-radius: 12px;" onclick="saveSpeakAnswer()">✅ Save Answer</button>
         </div>
     </div>
@@ -266,7 +273,7 @@
         
         <div id="verbalActionContainer" style="display:none; text-align:center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.2);">
             <div id="verbalRecordedPreview" style="font-size: 14px; color: #22c55e; margin-bottom: 15px; font-weight: 600; min-height: 20px;">No answer recorded yet.</div>
-            <button onclick="openSpeakGui()" class="btn" style="background: #38bdf8; color: white; padding: 12px 25px; border-radius: 20px; font-size: 16px; width: 100%;">🗣️ Open Speaker GUI</button>
+            <button onclick="openSpeakGui()" class="btn" style="background: #38bdf8; color: white; padding: 12px 25px; border-radius: 20px; font-size: 16px; width: 100%;">🗣️ Open Speaker / Typist GUI</button>
         </div>
 
         <div style="display: flex; gap: 15px; margin-top: 25px;">
@@ -498,7 +505,7 @@
     let currentQuestionIndex = 0;
     let userAnswers = [];
     
-    // Audio Rec Vars (FIXED VOICE RECORDING BUG)
+    // Audio Rec Vars
     let mediaRecorder;
     let audioChunks = [];
     let currentAudioUrl = null;
@@ -510,16 +517,23 @@
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         recognition = new SpeechRecognition();
-        recognition.continuous = true; // Keeps it running better
-        recognition.interimResults = true; // Gets live results
+        recognition.continuous = true; 
+        recognition.interimResults = true; 
     }
 
     const setupEl = document.getElementById('quizSetup'), activeEl = document.getElementById('quizActive'), resultsEl = document.getElementById('quizResults');
     const startBtn = document.getElementById('startQuizBtn');
     const nextBtn = document.getElementById('nextBtn');
 
-    // ORIGINAL FETCH CHUNK AND ROBUST FALLBACK LOGIC
-    async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride) {
+    // 🛑 UPDATED FETCH LOGIC: Prevents "Which of the following" for Mokhik
+    async function fetchQuizChunk(chunkCount, grade, finalTopicStr, language, providerOverride, quizMode) {
+        
+        // Critical instruction injection when verbal mode is active
+        let modeRule = "";
+        if (quizMode === "mokhik" || quizMode === "mixed") {
+            modeRule = `8. NO "WHICH OF THE FOLLOWING" (CRITICAL): Because some questions will be answered VERBALLY without seeing options, YOU MUST NOT ask questions that require seeing a list (e.g., do NOT ask "Which of these is a Rabi crop?"). Ask direct, self-contained questions (e.g., "Name any one Rabi crop." or "What is the capital of India?").`;
+        }
+
         const prompt = `Create a quiz with exactly ${chunkCount} multiple choice questions for a Class ${grade} student on the subject/topic: "${finalTopicStr}". 
         CRITICAL RULES:
         1. DIFFICULTY SCALING: The difficulty level MUST strictly match Class ${grade} academic standards.
@@ -529,6 +543,7 @@
         5. Use LaTeX for ALL math equations. Wrap inline math in $...$ and display math in $$...$$.
         6. JSON ESCAPING (CRITICAL): Double-escape ALL LaTeX backslashes. Write \\\\frac instead of \\frac.
         7. Return ONLY a valid JSON array. NO markdown code blocks. NO extra conversational text.
+        ${modeRule}
         Format exactly like this:
         [
           {
@@ -575,11 +590,11 @@
         }));
     }
 
-    async function robustFetchChunk(chunkCount, grade, topicStr, language, modelQueue) {
+    async function robustFetchChunk(chunkCount, grade, topicStr, language, modelQueue, quizMode) {
         for (let i = 0; i < modelQueue.length; i++) {
             let currentModel = modelQueue[i];
             try {
-                return await fetchQuizChunk(chunkCount, grade, topicStr, language, currentModel);
+                return await fetchQuizChunk(chunkCount, grade, topicStr, language, currentModel, quizMode);
             } catch (e) {
                 console.warn(`[Fallback Triggered] ${currentModel} failed:`, e);
             }
@@ -636,9 +651,9 @@
                 let chunk2 = Math.ceil((count - chunk1) / 2);
                 let chunk3 = count - chunk1 - chunk2;
                 const promises = [];
-                if (chunk1 > 0) promises.push(robustFetchChunk(chunk1, grade, finalTopicStr, language, [baseModelOrder[0], baseModelOrder[1], baseModelOrder[2]]));
-                if (chunk2 > 0) promises.push(robustFetchChunk(chunk2, grade, finalTopicStr, language, [baseModelOrder[1], baseModelOrder[2], baseModelOrder[0]]));
-                if (chunk3 > 0) promises.push(robustFetchChunk(chunk3, grade, finalTopicStr, language, [baseModelOrder[2], baseModelOrder[0], baseModelOrder[1]]));
+                if (chunk1 > 0) promises.push(robustFetchChunk(chunk1, grade, finalTopicStr, language, [baseModelOrder[0], baseModelOrder[1], baseModelOrder[2]], quizMode));
+                if (chunk2 > 0) promises.push(robustFetchChunk(chunk2, grade, finalTopicStr, language, [baseModelOrder[1], baseModelOrder[2], baseModelOrder[0]], quizMode));
+                if (chunk3 > 0) promises.push(robustFetchChunk(chunk3, grade, finalTopicStr, language, [baseModelOrder[2], baseModelOrder[0], baseModelOrder[1]], quizMode));
                 const results = await Promise.all(promises);
                 allFetchedQuestions = results.flat();
             } else {
@@ -651,7 +666,7 @@
                     remaining -= c;
                 }
                 for (let c of chunks) {
-                    let result = await robustFetchChunk(c, grade, finalTopicStr, language, baseModelOrder);
+                    let result = await robustFetchChunk(c, grade, finalTopicStr, language, baseModelOrder, quizMode);
                     allFetchedQuestions = allFetchedQuestions.concat(result);
                 }
             }
@@ -781,7 +796,7 @@
         }
     }
 
-    // SPEAK GUI LOGIC (FIXED)
+    // SPEAK GUI LOGIC (EDITABLE FIX)
     function openSpeakGui() {
         document.getElementById('speakModal').style.display = 'flex';
     }
@@ -819,7 +834,6 @@
                 recognition.lang = document.getElementById('quizLanguage').value === 'Hindi' ? 'hi-IN' : 'en-US';
                 recognition.start();
                 
-                // CORRECTED TRANSCRIPTION LOGIC
                 recognition.onresult = (e) => {
                     let interimTranscript = '';
                     for (let i = e.resultIndex; i < e.results.length; ++i) {
@@ -829,7 +843,7 @@
                             interimTranscript += e.results[i][0].transcript;
                         }
                     }
-                    // Combine them properly in the text area so it writes instantly
+                    // Since it is not readonly, user can see the text generated
                     document.getElementById('speakTranscript').value = currentTranscript + interimTranscript;
                 };
             }
@@ -845,7 +859,7 @@
         isRecordingActive = false;
         
         document.getElementById('speakMicBtn').classList.remove('recording');
-        document.getElementById('speakStatus').innerText = "Recording stopped. You can save or re-record.";
+        document.getElementById('speakStatus').innerText = "Recording stopped. You can edit the text before saving.";
         
         try {
             if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
@@ -858,13 +872,14 @@
         currentAudioUrl = null;
         currentTranscript = "";
         document.getElementById('speakTranscript').value = "";
-        document.getElementById('speakStatus').innerText = "Hold to speak...";
+        document.getElementById('speakStatus').innerText = "Hold to speak or type below...";
     }
 
     function saveSpeakAnswer() {
+        // Because the textarea is no longer readonly, users can freely modify the STT text or type their own answer.
         let finalTxt = document.getElementById('speakTranscript').value.trim();
         if(finalTxt === "" && !currentAudioUrl) {
-            showToast("⚠️ Please record an answer first!");
+            showToast("⚠️ Please record or type an answer first!");
             return;
         }
         if (finalTxt === "") finalTxt = "Audio Only";
@@ -877,7 +892,7 @@
         
         document.getElementById('verbalRecordedPreview').innerText = `🎙️ Saved: "${finalTxt}"`;
         closeSpeakGui();
-        showToast("✅ Audio Answer Saved!");
+        showToast("✅ Answer Saved!");
     }
 
     function isLenientMatch(userText, correctText) {
@@ -901,7 +916,7 @@
     nextBtn.addEventListener('click', () => {
         const qData = quizData[currentQuestionIndex];
         if (qData.isVerbal && (!userAnswers[currentQuestionIndex] || !userAnswers[currentQuestionIndex].text)) {
-            return showToast("⚠️ Please open Speaker GUI and record an answer first!");
+            return showToast("⚠️ Please open the GUI and answer first!");
         }
         if (!qData.isVerbal && !userAnswers[currentQuestionIndex]) {
             return showToast("⚠️ Please select an answer first! Wait for timer to skip.");
@@ -911,14 +926,13 @@
 
     function handleNextQuestion() {
         clearInterval(timerInterval);
-        document.getElementById('red-vignette').classList.remove('active'); // Turn off red flash immediately
+        document.getElementById('red-vignette').classList.remove('active');
         if('speechSynthesis' in window) speechSynthesis.cancel();
         
         currentQuestionIndex++;
         if (currentQuestionIndex >= quizData.length) {
             finishQuiz(); 
         } else {
-            // Apply Beautiful Animation between questions
             document.getElementById('quizPageContainer').style.opacity = '0.3';
             showGlobalLoader("Loading Question...");
             
@@ -935,11 +949,9 @@
         resultsEl.classList.add('active');
         document.getElementById('red-vignette').classList.remove('active');
         
-        // Restore Aa Button
         const fDock = document.getElementById('fontSizeDock');
         if (fDock) fDock.style.display = 'flex';
         
-        // Trigger Fireworks Animation
         if(typeof confetti === 'function') {
             const duration = 3000;
             const end = Date.now() + duration;
@@ -982,7 +994,6 @@
             const safeC = String(q.correctOption).replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const safeE = String(q.explanation).replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-            // Added Expandable Detailed View Button
             reviewHtml += `
             <div class="result-card">
                 <div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; color: white;">${index + 1}. ${safeQ}</div>
@@ -1056,7 +1067,6 @@
         }
     }
 
-    // CUSTOM PDF GENERATION GUI LOGIC
     function downloadPDF() {
         const modal = document.getElementById('pdfModal');
         const spinner = document.getElementById('pdfModalSpinner');
@@ -1064,7 +1074,6 @@
         const manualBtn = document.getElementById('pdfManualBtn');
         const closeBtn = document.getElementById('pdfCloseBtn');
         
-        // Reset and show modal
         modal.style.display = 'flex';
         spinner.style.display = 'block';
         text.innerText = "Creating your PDF...";
@@ -1075,11 +1084,9 @@
         const element = document.getElementById('pdfExportArea');
         const filenameSafe = window.activeQuizTitle ? window.activeQuizTitle.replace(/\s+/g, '_') : 'Mixed_Quiz';
         
-        // Ensure background is solid for the render
         element.style.backgroundColor = "#0f172a";
         element.style.color = "#ffffff";
         
-        // Generate Blob using output('blob')
         html2pdf().set({ 
             margin: 10, 
             filename: `AI_Quiz_Result_${filenameSafe}.pdf`, 
@@ -1089,7 +1096,6 @@
         }).from(element).output('blob').then((blob) => {
             const url = URL.createObjectURL(blob);
             
-            // Auto download automatically once done
             const a = document.createElement('a');
             a.href = url;
             a.download = `AI_Quiz_Result_${filenameSafe}.pdf`;
@@ -1097,14 +1103,12 @@
             a.click();
             document.body.removeChild(a);
             
-            // Update GUI to Success State
             spinner.style.display = 'none';
             text.innerText = "✅ PDF Ready & Downloading!";
             text.style.color = "#22c55e";
             manualBtn.style.display = 'block';
             closeBtn.style.display = 'block';
             
-            // Wire up the manual button to the generated object URL
             manualBtn.onclick = () => {
                 const manualA = document.createElement('a');
                 manualA.href = url;
