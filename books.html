@@ -35,7 +35,7 @@
         .btn-primary:hover { transform: translateY(-3px); }
         .btn-secondary { background: #475569; }
         
-        /* 🛑 FIXED MOBILE CHAT LAYOUT 🛑 */
+        /* MOBILE CHAT LAYOUT */
         #chatPage { display: none; flex-direction: column; position: fixed; inset: 0; background: var(--bg-base); z-index: 50; overflow: hidden; }
         .chat-scroll-area { flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         .msg { display: flex; width: 100%; flex-direction: column; animation: slideUpFade 0.3s ease; }
@@ -51,7 +51,7 @@
         .preset-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--primary); color: var(--text-main); padding: 10px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .preset-btn:hover { background: var(--primary); color: white; }
 
-        /* 🛑 FIXED MOBILE BOTTOM MENUS (Input & Share) 🛑 */
+        /* MOBILE BOTTOM MENUS */
         .bottom-action-container { flex-shrink: 0; width: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-light); display: flex; flex-direction: column; box-sizing: border-box; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); position: relative; z-index: 100; }
         
         .chat-input-wrapper { display: flex; align-items: flex-end; gap: 10px; width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid var(--border-light); border-radius: 24px; padding: 8px 15px; position: relative; }
@@ -132,7 +132,7 @@
 <div id="loadingPage" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px);">
     <div style="width:60px; height:60px; border:5px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-bottom: 25px;"></div>
     <h2 style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; letter-spacing: 1px; text-align: center;">📚 Preparing Tutor...</h2>
-    <p style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait while we search the database for this specific textbook.</p>
+    <p style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Please wait while we set up your study session.</p>
 </div>
 
 <div id="wizardPage">
@@ -186,7 +186,7 @@
         <div class="step-card" id="step-3">
             <h2>Step 3: Subject</h2>
             <label>Select Subject:</label>
-            <select id="subjectSelect" class="standard" onchange="triggerChapterFetch()">
+            <select id="subjectSelect" class="standard" onchange="handleSubjectChange()">
                 <option value="" selected disabled>-- Select Subject --</option>
                 <option value="Science">Science</option>
                 <option value="Physics">Physics</option>
@@ -202,8 +202,14 @@
                 <option value="Hindi">Hindi</option>
                 <option value="Sanskrit">Sanskrit</option>
                 <option value="Computer Science">Computer Science</option>
-                <option value="Other">Other Subject</option>
+                <option value="Other">Other Subject (Type Manually)</option>
             </select>
+            
+            <!-- Custom Subject Input -->
+            <div id="customSubjectContainer" style="display:none; margin-top: 10px;">
+                <input type="text" id="customSubjectInput" class="standard" placeholder="Type custom subject here..." oninput="triggerChapterFetch()">
+            </div>
+
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="nextStep(2)">⬅ Back</button>
                 <button class="btn btn-primary" onclick="nextStep(4)">Next ➔</button>
@@ -223,7 +229,7 @@
                 <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="startChapterVoice()">🎤</button>
                 <button class="icon-btn" style="background:#10b981; color:white; border-radius:12px; width:50px; height:50px; transition: 0.3s;" onclick="openBookRecognitionCamera()" title="Take photo of book page">📷</button>
             </div>
-            <p style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:-10px; margin-bottom:15px;">*If your publisher is private (e.g., Arvind Vigyan), click 📷 to snap the chapter page so AI knows the exact questions!</p>
+            <p style="font-size:11px; color:var(--text-muted); text-align:left; margin-top:-10px; margin-bottom:15px;">*Click 📷 to snap the chapter page so AI knows the exact questions!</p>
             
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="nextStep(3)">⬅ Back</button>
@@ -243,7 +249,7 @@
 
             <div id="selectionSummary" style="text-align:left; background: rgba(0,0,0,0.3); border: 1px solid var(--border-light); padding:15px; border-radius:12px; margin-bottom:20px; font-weight:600; line-height:2;"></div>
             
-            <button id="initFinalBtn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation()">Initialize AI Tutor 🚀</button>
+            <button id="initFinalBtn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation(true)">Initialize AI Tutor 🚀</button>
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="nextStep(4)">⬅ Edit Details</button>
             </div>
@@ -276,7 +282,7 @@
             <button class="menu-item" onclick="openCameraChat()">📷 Open Camera</button>
             <button class="menu-item" onclick="document.getElementById('imageInput').click()">📎 Upload PDF/Image</button>
             <button class="menu-item" onclick="openWebImport()">🌐 Import from Web</button>
-            <button class="menu-item" onclick="window.print()">🖨️ Print Chat</button> 
+            <button class="menu-item" onclick="printFullChat()">🖨️ Print Chat</button> 
         </div>
         
         <div class="chat-input-wrapper">
@@ -324,6 +330,18 @@
         </div>
     </div>
 
+    <!-- BOOK PREVIEW MODAL -->
+    <div id="bookPreviewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999999; flex-direction:column; align-items:center; justify-content:center; padding: 20px;">
+        <h3 style="color:white; margin-bottom:15px; font-size:20px;">📸 Review Chapter Photo</h3>
+        <img id="bookPreviewImg" style="max-width:100%; max-height:60vh; border-radius:12px; border:3px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="display:flex; gap:15px; margin-top:25px; width: 100%; max-width: 400px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="retakeBookPhoto()">🔄 Retake</button>
+            <button class="btn btn-primary" style="flex:1.5; font-size: 16px;" onclick="submitBookPhoto()">✅ Submit</button>
+        </div>
+        <button style="margin-top:20px; background:transparent; border:none; color:#ef4444; font-weight:bold; font-size:16px;" onclick="closeBookPreview()">✖ Cancel</button>
+    </div>
+
+    <!-- CAMERA SYSTEM -->
     <div id="cameraModal" style="display:none; position:fixed; inset:0; background:#000; z-index:999999; flex-direction:column;">
         <video id="cameraVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
         <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:100; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
@@ -458,13 +476,48 @@
             currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
             document.getElementById('imagePreviewContainer').style.display = 'block';
             document.getElementById('imgChip').src = currentImageBase64;
+            closeCamera();
         } else if (cameraTarget === 'bookRecognition') {
             bookRecognitionImageBase64 = c.toDataURL("image/jpeg", 0.7);
-            alert("✅ Book page snapped successfully! We will use this to find the exact questions.");
-            let coverDiv = document.getElementById('dynamicBookCover');
-            coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
+            document.getElementById('bookPreviewImg').src = bookRecognitionImageBase64;
+            document.getElementById('bookPreviewModal').style.display = 'flex';
+            closeCamera();
         }
-        closeCamera(); 
+    }
+
+    function retakeBookPhoto() {
+        document.getElementById('bookPreviewModal').style.display = 'none';
+        openBookRecognitionCamera();
+    }
+
+    function closeBookPreview() {
+        document.getElementById('bookPreviewModal').style.display = 'none';
+        bookRecognitionImageBase64 = null;
+    }
+
+    async function submitBookPhoto() {
+        document.getElementById('bookPreviewModal').style.display = 'none';
+        document.getElementById('loadingPage').style.display = 'flex';
+        document.getElementById('wizardPage').style.display = 'none';
+        
+        try {
+            let prompt = "Extract the Subject Name and Chapter Name/Number from this textbook page image. Return ONLY a valid JSON object: {\"subject\": \"...\", \"chapter\": \"...\"}. Do not include markdown formatting.";
+            const r = await fetch("/api/gemini-vision", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ imageBase64: bookRecognitionImageBase64, userPrompt: prompt }) });
+            const data = await r.json();
+            let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            let parsed = JSON.parse(cleanJson);
+            
+            selectedData.subject = parsed.subject || document.getElementById('subjectSelect').value || "Unknown Subject";
+            selectedData.chapter = parsed.chapter || "Extracted Chapter";
+            selectedData.publisher = document.getElementById('publisherSelect').value || "Unknown Publisher";
+            selectedData.class = document.getElementById('classSelect').value || "Unknown Class";
+
+            startConversation(true);
+        } catch(e) {
+            alert("Failed to analyze image. Please type details manually.");
+            document.getElementById('loadingPage').style.display = 'none';
+            document.getElementById('wizardPage').style.display = 'block';
+        }
     }
 
     let manualVoiceTimeout;
@@ -508,7 +561,7 @@
         } catch(e) { console.error("Silent fetch failed:", e); }
     }
 
-    // 🛑 IMPROVED GOOGLE BOOKS + OPEN LIBRARY COVER FETCHER 🛑
+    // IMPROVED GOOGLE BOOKS + OPEN LIBRARY COVER FETCHER
     async function fetchRealBookCover(pub, sub, cls) {
         if (bookRecognitionImageBase64) return;
 
@@ -518,7 +571,6 @@
         try {
             statusSub.innerText = "Searching for Book Cover...";
             
-            // Search 1: Highly specific
             let query = encodeURIComponent(`intitle:${sub} ${pub} class ${cls.replace('Class ','')}`);
             let res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=3`);
             let data = await res.json();
@@ -533,7 +585,6 @@
                 }
             }
 
-            // Search 2: Broader fallback if Google fails
             if (!thumb) {
                 let query2 = encodeURIComponent(`${pub} ${sub}`);
                 let res2 = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query2}&maxResults=1`);
@@ -610,6 +661,15 @@
     function proceedToShare() {
         if(document.querySelectorAll('.bubble.selected-for-share').length === 0) return alert("Please tap at least one message to share!");
         document.getElementById('whatsappModal').style.display = 'flex';
+    }
+
+    function printFullChat() {
+        closePlusMenu();
+        let content = document.getElementById('chatHistory').innerHTML;
+        if(!content.trim()) return alert("Chat is empty!");
+        let win = window.open('', '', 'width=800,height=600');
+        win.document.write(`<html><head><title>Print Chat</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;} .msg-menu-wrap{display:none;} .bubble{background:#f3f4f6; padding:15px; border-radius:10px; margin-bottom:10px;} img{max-width:100%;}</style></head><body><h2>📚 Book Deep Study: ${document.getElementById('sessionTitleDisplay').innerText}</h2>${content}</body></html>`);
+        win.document.close(); win.focus(); setTimeout(() => { win.print(); win.close(); }, 500);
     }
 
     function downloadSelectedAsPDF() {
@@ -730,6 +790,16 @@
         }
     }
 
+    function handleSubjectChange() {
+        let sub = document.getElementById('subjectSelect').value;
+        if(sub === 'Other') {
+            document.getElementById('customSubjectContainer').style.display = 'block';
+        } else {
+            document.getElementById('customSubjectContainer').style.display = 'none';
+        }
+        triggerChapterFetch();
+    }
+
     async function triggerChapterFetch() {
         let pub = document.getElementById('publisherSelect').value;
         let sub = document.getElementById('subjectSelect').value;
@@ -737,6 +807,10 @@
         let chapSelect = document.getElementById('chapterSelect');
         let statusLabel = document.getElementById('chapterFetchStatus');
         
+        if(sub === 'Other') {
+            sub = document.getElementById('customSubjectInput').value;
+        }
+
         if(!sub || !cls) return;
 
         statusLabel.innerText = "⏳ Checking Database...";
@@ -795,17 +869,22 @@
         let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
         let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
         
-        if(!forceNew && oldSettingsStr && oldHistory) {
-            let oldSettings = JSON.parse(oldSettingsStr);
-            if(oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) {
-                let savedArray = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
-                savedArray.unshift({
-                    id: currentSessionId, title: `${oldSettings.subject} - ${oldSettings.chapter}`.substring(0,40), data: oldSettings, html: oldHistory
-                });
-                if(savedArray.length > 20) savedArray.pop();
-                localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedArray));
+        // 🛑 RE-INITIALIZE BUG FIX: Auto save and clear if changed
+        if(forceNew || (oldSettingsStr && oldHistory)) {
+            let oldSettings = oldSettingsStr ? JSON.parse(oldSettingsStr) : {};
+            if(forceNew || oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) {
+                if (oldHistory && oldHistory.trim() !== "") {
+                    let savedArray = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
+                    savedArray.unshift({
+                        id: currentSessionId, title: `${oldSettings.subject || 'Session'} - ${oldSettings.chapter || 'Chat'}`.substring(0,40), data: oldSettings, html: oldHistory
+                    });
+                    if(savedArray.length > 50) savedArray.pop();
+                    localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedArray));
+                }
                 
-                document.getElementById('chatHistory').innerHTML = ""; currentSessionId = Date.now(); 
+                document.getElementById('chatHistory').innerHTML = ""; 
+                localStorage.removeItem('bookChatHistory_VUltimateAI');
+                currentSessionId = Date.now(); 
             }
         }
 
