@@ -1077,20 +1077,17 @@
             }
             saveHistorySafe(); 
 
-            // Trigger outbound background push up to the Google Sheet cloud
-            fetch('/api/pti-save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    pti: currentPti || existingSession.id,
-                    title: existingSession.title,
-                    interactions: existingSession.interactions
-                })
-            })
-            .then(res => res.json())
-            .then(serverResult => {
-                if (serverResult.success && !currentPti) {
-                    currentPti = serverResult.pti;
+fetch('/api/pti-save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ /* ... */ })
+})
+.then(res => {
+    console.log("Server response status:", res.status); // 🚨 CHECK THIS IN CONSOLE
+    return res.json();
+})
+.then(data => console.log("Success:", data))
+.catch(err => console.error("Sync Error:", err)); // 🚨 CHECK THIS IN CONSOLE
                     // Dynamically rewrite browser address bar to use ?pti= without reloading the page
                     const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
                     window.history.replaceState({ path: newUrl }, '', newUrl);
