@@ -909,17 +909,19 @@
         win.document.close(); win.focus(); setTimeout(() => { win.print(); window.cancelShareMode(); }, 500);
     }
 async function submitWhatsAppSelection(event) {
-    // 1. Get the raw number and the country code
-    const rawCountry = document.getElementById('waCountryCode').value; // e.g., "+91"
-    const country = rawCountry.replace('+', ''); // Clean to "91"
-    const rawNumber = document.getElementById('waNumberInput').value.trim(); // e.g., "9876543210"
+    // 1. Get the country code (remove the '+') and the number
+    const countryCodeRaw = document.getElementById('waCountryCode').value; // This is "+91"
+    const countryCode = countryCodeRaw.replace('+', ''); // This makes it "91"
     
-    // 2. Combine them to match your server's expected format (e.g., "919876543210")
-    const number = country + rawNumber;
+    const phoneNumber = document.getElementById('waNumberInput').value.trim(); // e.g., "9876543210"
     
-    if (!rawNumber) return alert("Please enter a mobile number.");
+    // 2. Combine them: "91" + "9876543210" = "919876543210"
+    const finalNumber = countryCode + phoneNumber;
+    
+    // 3. Validation: Make sure it's not empty
+    if (!phoneNumber) return alert("Please enter a mobile number.");
 
-    // 3. Prepare the message text (stripping HTML/LaTeX)
+    // 4. Prepare the message text
     let fullChatText = "📚 *Book Deep Study - Selected Notes* 📚\n\n";
     document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
         let clone = node.cloneNode(true);
@@ -929,9 +931,8 @@ async function submitWhatsAppSelection(event) {
         if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
     });
 
-    // 4. Send to server
+    // 5. Send to server
     const btn = event.target; 
-    const originalText = btn.innerHTML; 
     btn.innerHTML = "⏳ Sending..."; 
     btn.disabled = true;
 
@@ -939,23 +940,26 @@ async function submitWhatsAppSelection(event) {
         const response = await fetch("/api/secure-whatsapp", { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ number: number, message: fullChatText.trim() }) 
+            // HERE IS THE FIX: Sending the combined 'finalNumber'
+            body: JSON.stringify({ number: finalNumber, message: fullChatText.trim() }) 
         });
         
         if (response.status === 403) {
-            alert("❌ 403 Forbidden: Number not authorized on server!");
+            // This now proves that 'finalNumber' (e.g., 919876543210) 
+            // is not in your authorized list on the server.
+            alert("❌ 403 Forbidden: The number " + finalNumber + " is not authorized on the server!");
         } else if (response.ok) {
             alert("✅ Selected notes sent successfully!"); 
             document.getElementById('whatsappModal').style.display = 'none'; 
             cancelShareMode(); 
         } else {
-            alert("❌ Failed to send. Server responded with an error.");
+            alert("❌ Failed to send. Server error.");
         }
     } catch (e) {
         alert("❌ Connection error. Is your server running?");
     }
     
-    btn.innerHTML = originalText; 
+    btn.innerHTML = "🚀 Send"; 
     btn.disabled = false;
 }
     function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
