@@ -449,7 +449,7 @@ async function handleFeedbackRoute(req, res) {
 const crypto = require("crypto");
 
 // 🚨 REPLACE THIS WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL
-const GOOGLE_DATABASE_URL = "https://script.google.com/macros/library/d/1Kpdm-njJmr5ZSIDYx8LmPyW4pkRk8AyGuA9BGbiKQ7IZiD0KwmEdXbUB/1";
+const GOOGLE_DATABASE_URL = "https://script.google.com/macros/s/AKfycbwuSwz8wvT24TUYq_eWy9Ak4Lj7CfWUXGiTsaFT9oGrBAvdN93X4sV6eJlMgRJbNbKjnA/exec";
 
 // 1. Handles saving chat sessions to Google Sheets
 async function handlePtiSyncSave(req, res) {
@@ -478,6 +478,7 @@ async function handlePtiSyncSave(req, res) {
         // Forward straight to Google Sheets Cloud Storage
         await fetch(GOOGLE_DATABASE_URL, {
             method: "POST",
+            mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 action: "save",
