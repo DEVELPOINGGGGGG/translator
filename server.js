@@ -597,37 +597,38 @@ const server = http.createServer((req, res) => {
         return res.end();
     }
 
-    // 2. Handle GET routes (Where the 404 is happening)
-    if (req.method === "GET") {
-        const urlObj = new URL(req.url, `http://${req.headers.host}`);
-        
-        // Explicit route for PTI fetching
-        if (urlObj.pathname === "/api/pti-get") {
-            return handleGetPtiSync(req, res);
-        }
-        
-        // Everything else: serve static files
-        return serveStatic(req, res);
-    }
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
 
-    // 3. Handle POST routes
+    // 2. Handle POST routes
     if (req.method === "POST") {
         if (req.url === "/api/smart-search") return handleSmartSearch(req, res);
-        if (req.url === "/api/pti-save") return handlePtiSyncSave(req, res);
-        if (req.url === "/api/send-dual-share") return handleDualShare(req, res);
         if (req.url === "/api/gemini-text") return handleGeminiText(req, res);
         if (req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
         if (req.url === "/api/groq-search") return handleGroqSearch(req, res);
         if (req.url === "/api/cloudflare-image") return handleCloudflareImage(req, res);
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
-        if (req.url === "/api/feedback") return handleFeedbackRoute(req, res); // 🚨 FIXED ROUTE MAP 🚨
+        if (req.url === "/api/feedback") return handleFeedbackRoute(req, res);
         if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); 
+        if (req.url === "/api/pti-save") return handlePtiSyncSave(req, res);
+        if (req.url === "/api/send-dual-share") return handleDualShare(req, res);
+        return sendJson(res, 404, { error: "POST Route not found" });
     }
-    
-    if (req.method === "GET" && req.url.startsWith("/api/pti-get")) return handleGetPtiSync(req, res);   
-    if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
-    if (req.method === "GET" || req.method === "HEAD") return serveStatic(req, res);
+
+    // 3. Handle GET routes
+    if (req.method === "GET") {
+        // PTI Sync GET route
+        if (urlObj.pathname === "/api/pti-get") {
+            return handleGetPtiSync(req, res);
+        }
+        // Usage stats
+        if (urlObj.pathname === "/api/usage") {
+            return sendJson(res, 200, apiUsageStats);
+        }
+        
+        // Everything else: serve static files
+        return serveStatic(req, res);
+    }
 });
 
 server.listen(port, '0.0.0.0', () => console.log(`Server running on ${port}`));
