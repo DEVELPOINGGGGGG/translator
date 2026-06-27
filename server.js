@@ -597,6 +597,19 @@ const server = http.createServer((req, res) => {
         return res.end();
     }
 
+    // 🚨 THIS PART MUST HANDLE YOUR GET REQUEST
+    if (req.method === "GET") {
+        const urlObj = new URL(req.url, `http://${req.headers.host}`);
+        
+        // This line catches the /api/pti-get?pti=... request
+        if (urlObj.pathname === "/api/pti-get") {
+            return handleGetPtiSync(req, res);
+        }
+        
+        // Default static file serving
+        return serveStatic(req, res);
+    }
+
     if (req.method === "POST") {
         if (req.url === "/api/smart-search") return handleSmartSearch(req, res);
         if (req.url === "/api/gemini-text") return handleGeminiText(req, res);
