@@ -393,23 +393,88 @@
         <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>
 
-    <script>
+<script>
         localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
         let appHistory = [];
         let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
+        let currentPti = new URLSearchParams(window.location.search).get('pti') || null;
 
-        document.addEventListener("DOMContentLoaded", () => {
+        // ==========================================
+        // 1. INITIALIZATION & LIVE PTI SYNC
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById('appLang').value = "Hindi";
-            localforage.getItem('aiHistory').then(data => {
-                if(data) { 
-                    appHistory = data; 
-                    const restoreId = new URLSearchParams(window.location.search).get('restore'); 
-                    if(restoreId) {
-                        restoreSession(Number(restoreId)); 
+            
+            if (currentPti) {
+                showToast("⏳ Linking to Live PTI Session...");
+                await fetchAndInjectPtiSession(currentPti);
+                
+                // Continuous update loop: checks back every 4 seconds for mobile updates
+                setInterval(() => {
+                    silentCheckPtiUpdates();
+                }, 4000);
+            } else {
+                // Regular fallback tracking logic if no pti parameter exists
+                localforage.getItem('aiHistory').then(data => {
+                    if(data) { 
+                        appHistory = data; 
+                        const restoreId = new URLSearchParams(window.location.search).get('restore'); 
+                        if(restoreId) {
+                            restoreSession(Number(restoreId)); 
+                        }
                     }
-                }
-            });
+                });
+            }
         });
+
+        async function fetchAndInjectPtiSession(ptiString) {
+            try {
+                const response = await fetch(`/api/pti-get?pti=${ptiString}`);
+                if (!response.ok) throw new Error("Not Found");
+                const sessionRecord = await response.json();
+                
+                currentSessionId = sessionRecord.id;
+                
+                let data = await localforage.getItem('aiHistory') || [];
+                appHistory = data; 
+                const matchIndex = appHistory.findIndex(s => s.id === sessionRecord.id);
+                if (matchIndex !== -1) {
+                    appHistory[matchIndex] = sessionRecord;
+                } else {
+                    appHistory.unshift(sessionRecord);
+                }
+                saveHistorySafe(); 
+                
+                restoreSession(sessionRecord.id); 
+            } catch (e) {
+                showToast("❌ Unable to locate active PTI profile.");
+            }
+        }
+
+        async function silentCheckPtiUpdates() {
+            if (!currentPti || isProcessing) return;
+            try {
+                const response = await fetch(`/api/pti-get?pti=${currentPti}`);
+                if (!response.ok) return;
+                const freshSession = await response.json();
+                
+                let localSession = appHistory.find(s => s.id === freshSession.id);
+                const localLength = (localSession && localSession.interactions) ? localSession.interactions.length : 0;
+                const remoteLength = freshSession.interactions.length;
+
+                if (remoteLength > localLength) {
+                    let data = await localforage.getItem('aiHistory') || [];
+                    appHistory = data; 
+                    const idx = appHistory.findIndex(s => s.id === freshSession.id);
+                    if (idx !== -1) appHistory[idx] = freshSession;
+                    else appHistory.unshift(freshSession);
+                    
+                    saveHistorySafe(); 
+                    restoreSession(freshSession.id); 
+                    showToast("📲 Mobile additions sync applied!");
+                }
+            } catch(e) {}
+        }
 
         function saveHistorySafe() { localforage.setItem('aiHistory', appHistory).catch(e => console.log(e)); }
 
@@ -418,7 +483,6 @@
             showToast("✅ Copied your message!");
         }
 
-        // Session Restore (Shows toast only on manual restore from history page)
         function restoreSession(id) {
             let numericId = Number(id); const session = appHistory.find(s => Number(s.id) === numericId || s.id == id);
             if(!session) return; currentSessionId = numericId || id;
@@ -448,11 +512,9 @@
                 if(window.MathJax) MathJax.typesetPromise([document.getElementById(lId)]);
             });
             setTimeout(() => document.getElementById("searchScrollArea").scrollTo(0, document.getElementById("searchScrollArea").scrollHeight), 100);
-            
             showToast("🔄 Session Restored Successfully");
         }
 
-        // Input Resize Logic - DESTROYED THE BUG WITH MEMORY STATE
         let previousInputHeight = "40px";
         function resizeInputBox() {
             const inp = document.getElementById('searchInput');
@@ -475,10 +537,7 @@
             document.getElementById('shareActionArea').style.display = 'none'; 
             document.getElementById('appInputArea').style.display = 'flex'; 
             isShareMode = false; document.getElementById('searchScrollArea').classList.remove('share-mode-active');
-            
-            // 🛑 FORCE RESTORE TO EXACT HEIGHT BEFORE SHARING
             document.getElementById('searchInput').style.height = previousInputHeight; 
-            
             document.querySelectorAll('.bubble').forEach(b => { b.classList.remove('selected-for-share'); b.onclick = null; });
         }
         
@@ -487,11 +546,14 @@
             document.getElementById('whatsappModal').style.display = 'flex';
         }
 
+        // ==========================================
+        // 2. WHATSAPP ENGINE (DUAL SHARE + PTI SYNC)
+        // ==========================================
         async function submitWhatsAppSelection(event) {
             const number = document.getElementById('waNumberInput').value.trim();
             if (!number) return showToast("Please enter a mobile number.");
-            let fullChatText = "🔎 *DEEP SEARCH - Selected Notes* 🔎\n\n";
             
+            let fullChatText = "🔎 *DEEP SEARCH - Selected Notes* 🔎\n\n";
             document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
                 let clone = node.cloneNode(true);
                 clone.querySelectorAll('button, .msg-actions, .code-header, .quick-suggestions-wrap').forEach(el => el.remove());
@@ -506,12 +568,68 @@
             const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
             fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
 
-            const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
+            const activeTokenId = currentPti || currentSessionId;
+            const liveChatPtiUrl = `${window.location.origin}/search.html?pti=${activeTokenId}`;
+
+            const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ Sending 2 Messages..."; btn.disabled = true;
+            
             try {
-                const response = await fetch("/api/secure-whatsapp", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: number, message: fullChatText.trim() }) });
-                if (response.status === 403) alert("UNAUTHORIZED - Server restricted."); else if (response.ok) { showToast("✅ Shared successfully!"); document.getElementById('whatsappModal').style.display = 'none'; cancelShareMode(); } else alert("❌ Failed to send.");
-            } catch (e) { alert("❌ Connection error."); }
+                const response = await fetch("/api/send-dual-share", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        number: number,
+                        notesMessage: fullChatText.trim(),
+                        targetUrl: liveChatPtiUrl
+                    })
+                });
+
+                if (response.ok) {
+                    showToast("✅ Both messages dispatched successfully!");
+                    document.getElementById('whatsappModal').style.display = 'none';
+                    cancelShareMode();
+                } else {
+                    alert("❌ Transmission sequence failed.");
+                }
+            } catch (e) {
+                alert("❌ Connection error while sending.");
+            }
+            
             btn.innerHTML = originalText; btn.disabled = false;
+        }
+
+        async function triggerMobileSync() {
+            const btn = document.getElementById('mobileSyncBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ Dispatching Link...";
+            btn.disabled = true;
+
+            if (!currentPti) {
+                showToast("⚠️ Send a message first to generate a valid PTI token.");
+                btn.innerText = originalText; btn.disabled = false; return;
+            }
+
+            try {
+                const targetUrl = `${window.location.origin}/search.html?pti=${currentPti}`;
+                const response = await fetch("/api/secure-whatsapp", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        number: "917992410411", // Your default sync number
+                        message: `📲 *DEEP AI PTI LIVE CHAT LINK* \n\nContinue interacting instantly on your phone here:\n${targetUrl}`
+                    })
+                });
+
+                if (response.ok) {
+                    showToast("✅ PTI WhatsApp sync message transmitted!");
+                    btn.innerText = "✅ Link Sent!";
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                showToast("❌ Dispatch failed.");
+            }
+            setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 3000);
         }
 
         function showToast(msg) {
@@ -530,13 +648,13 @@
         function copyCodeEngine(btn) { navigator.clipboard.writeText(btn.parentElement.nextElementSibling.innerText); btn.innerText = "✅ Copied"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerText = "📋 Copy"; btn.style.background = "var(--input-bg)"; }, 2000); showToast("Code Copied!"); }
 
         // ==========================================
-        // 🚀 PREMIUM AUDIO PLAYER ENGINE (25% UI + GC FIX)
+        // 3. AUDIO PLAYER ENGINE
         // ==========================================
         let ttsInterval = null;
         let estimatedDurationSeconds = 0;
         let elapsedSeconds = 0;
         let currentTextToSpeak = "";
-        window.activeUtterance = null; // GLOBAL VARIABLE TO PREVENT GC PAUSE BUG
+        window.activeUtterance = null; 
 
         function formatTime(secs) {
             let m = Math.floor(secs / 60); let s = Math.floor(secs % 60);
@@ -556,7 +674,6 @@
             document.getElementById("audioProgressFill").style.width = "0%";
             document.getElementById("premiumAudioToggle").innerText = "⏸";
 
-            // Hide Top/Input Bars, Show Player
             document.getElementById("appTopbar").classList.add("hidden");
             document.getElementById("appInputArea").classList.add("hidden");
             document.getElementById("premiumAudioPlayer").style.display = "flex";
@@ -565,12 +682,12 @@
         }
 
         function startUtterance(text, speed) {
-            window.speechSynthesis.cancel(); // Clear queue
+            window.speechSynthesis.cancel(); 
             const u = new SpeechSynthesisUtterance(text); 
             u.lang = document.getElementById('appLang').value === 'Hindi' ? 'hi-IN' : 'en-US'; 
             u.rate = speed;
             u.onend = () => { stopAudio(); }; 
-            window.activeUtterance = u; // 🛑 PROTECT FROM GARBAGE COLLECTION 🛑
+            window.activeUtterance = u; 
             window.speechSynthesis.speak(window.activeUtterance);
 
             clearInterval(ttsInterval);
@@ -584,10 +701,7 @@
                 document.getElementById("audioCurrentTime").innerText = formatTime(Math.min(elapsedSeconds, estimatedDurationSeconds));
                 document.getElementById("audioProgressFill").style.width = percent + "%";
 
-                // 🛑 FORCE CLOSE WHEN FINISHED 🛑
-                if (elapsedSeconds >= estimatedDurationSeconds) {
-                    stopAudio();
-                }
+                if (elapsedSeconds >= estimatedDurationSeconds) stopAudio();
             }, 1000);
         }
 
@@ -637,7 +751,6 @@
             window.speechSynthesis.cancel(); 
             clearInterval(ttsInterval);
             document.getElementById("premiumAudioPlayer").style.display = "none";
-            // Restore Top/Input Bars
             document.getElementById("appTopbar").classList.remove("hidden");
             document.getElementById("appInputArea").classList.remove("hidden");
         }
@@ -650,6 +763,9 @@
         function openFullImage(src) { currentFullscreenImage = src; document.getElementById('fullImageSrc').src = src; document.getElementById('fullImageViewer').style.display = 'flex'; }
         function downloadFullImage() { const a = document.createElement("a"); a.href = currentFullscreenImage; a.download = `DEEP_SEARCH_${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("📥 Download Started!"); }
 
+        // ==========================================
+        // 4. UI STATE & APP LOGIC
+        // ==========================================
         let isPhotoMode = false; let isYoutubeMode = false; let documentMemory = ""; let webUrls = []; let uploadedImagesList = []; let camStream = null; let camFacing = "environment"; let isFlash = true; let isProcessing = false; let windowUploadedFileName = ""; 
 
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
@@ -663,7 +779,7 @@
 
         function toggleFocus() { const topBar = document.getElementById('appTopbar'); const inputArea = document.getElementById('appInputArea'); const exitBtn = document.getElementById('exitFocusBtn'); const isFocus = topBar.style.display !== 'none'; topBar.style.display = isFocus ? 'none' : 'flex'; inputArea.style.transform = isFocus ? 'translateY(200%)' : 'translateY(0)'; exitBtn.style.display = isFocus ? 'flex' : 'none'; document.getElementById('settingsModal').style.display = 'none'; showToast(isFocus ? "Focus Mode ON" : "Focus Mode OFF"); }
 
-        function clearSearchChat() { document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai" id="welcomeMessage"><div class="bubble" style="border: 2px solid var(--primary);"><div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div><b>Memory Cleared. Ready for new questions.</b></div></div>`; documentMemory = ""; webUrls = []; uploadedImagesList = []; updateImageUI(); clearAttachment(); document.getElementById('settingsModal').style.display = 'none'; currentSessionId = Date.now(); showToast("Memory Wiped Clean."); }
+        function clearSearchChat() { document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai" id="welcomeMessage"><div class="bubble" style="border: 2px solid var(--primary);"><div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div><b>Memory Cleared. Ready for new questions.</b></div></div>`; documentMemory = ""; webUrls = []; uploadedImagesList = []; updateImageUI(); clearAttachment(); document.getElementById('settingsModal').style.display = 'none'; currentSessionId = Date.now(); currentPti = null; window.history.replaceState({}, document.title, window.location.pathname); showToast("Memory Wiped Clean."); }
 
         async function openCamera() { closePlusMenu(); document.getElementById('cameraModal').style.display='flex'; try { if(camStream) camStream.getTracks().forEach(t => t.stop()); camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); document.getElementById("cameraVideo").srcObject = camStream; setTimeout(async () => { const track = camStream.getVideoTracks()[0]; if (track.getCapabilities().torch && camFacing === "environment") { isFlash = true; await track.applyConstraints({ advanced: [{ torch: true }] }); document.getElementById('flashBtn').innerText = "💡"; } }, 500); } catch(e) { alert("Camera Error."); document.getElementById('cameraModal').style.display='none'; } }
         function closeCamera() { document.getElementById('cameraModal').style.display='none'; if(camStream) camStream.getTracks().forEach(t=>t.stop()); isFlash=false; }
@@ -691,7 +807,6 @@
         function openNotesModal() { closePlusMenu(); document.getElementById('notesModal').style.display = 'flex'; }
         async function generateNotes() { const b = document.getElementById("noteBookName").value.trim(); const c = document.getElementById("noteChapter").value.trim(); if(!b || !c) return showToast("Enter both book and chapter details."); document.getElementById('notesModal').style.display = 'none'; document.getElementById('searchInput').value = `Create highly detailed, structured study notes for the book/subject "${b}", focusing specifically on the chapter/topic: "${c}". Provide definitions, important concepts, and key bullet points. STRICT RULE: ONLY include formulas, equations, or math symbols if "${b}" is explicitly a Mathematics, Physics, Chemistry, or Science subject.`; runMainSearch(); }
 
-        // --- 14 WORDS/SEC TYPEWRITER (~14ms per char) ---
         function runInsaneTypewriter(targetElement, fullHtml, callback) {
             let tempDiv = document.createElement('div'); tempDiv.innerHTML = fullHtml; let nodes = Array.from(tempDiv.childNodes); targetElement.innerHTML = ""; let nodeIndex = 0;
             function typeNextNode() {
@@ -707,6 +822,9 @@
         window.sendQuickReply = function(btn) { document.getElementById("searchInput").value = btn.innerText; btn.parentElement.remove(); resizeInputBox(); runMainSearch(); }
         function checkDailyImageLimit() { const today = new Date().toDateString(); let usage = JSON.parse(localStorage.getItem('geminiImgUsage') || '{"count": 0, "date": ""}'); if (usage.date !== today) usage = { count: 0, date: today }; if (usage.count >= 15) { showToast("❌ Daily limit of 15 Image Generations reached. Try again tomorrow!"); return false; } usage.count++; localStorage.setItem('geminiImgUsage', JSON.stringify(usage)); return true; }
 
+        // ==========================================
+        // 5. CORE SEARCH ENGINE LOGIC
+        // ==========================================
         async function runMainSearch() {
             if(isProcessing) return; const inp = document.getElementById("searchInput"); let q = inp.value.trim();
             if (!q && uploadedImagesList.length === 0 && !documentMemory && webUrls.length === 0) return;
@@ -722,11 +840,9 @@
             let attachHtml = ""; let currentFileNameForHistory = null;
             if (windowUploadedFileName) { attachHtml = `<div class="user-attachment-badge">📄 Attached: ${windowUploadedFileName}</div><br>`; currentFileNameForHistory = windowUploadedFileName; }
 
-            // User Bubble with Copy Button
             let userHtml = `<div class="chat-msg chat-user"><div class="bubble"><button onclick="copyUserText(this)" data-text="${encodeURIComponent(q)}" class="user-copy-btn">📋</button>${attachHtml}${userImgs}${userImgs?'<br>':''}${q.replace(/\n/g, '<br>')}</div></div>`;
             chatBox.insertAdjacentHTML('beforeend', userHtml); inp.value = ""; resizeInputBox(); 
             
-            // 🛑 ONLY SCROLL TO BOTTOM WHEN USER SENDS MESSAGE 🛑
             const scrollArea = document.getElementById("searchScrollArea"); 
             scrollArea.scrollTo({top: scrollArea.scrollHeight, behavior: 'smooth'}); 
             
@@ -742,9 +858,7 @@
             isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImagesList = []; updateImageUI(); clearAttachment();
         }
 
-        // ==========================================
-        // 🚀 YOUTUBE SEARCH APP MODE (LOAD 10 MORE FIX)
-        // ==========================================
+        // --- YOUTUBE APP MODE ---
         let ytVideosStore = [];
         let ytCurrentIndex = 0;
 
@@ -810,9 +924,7 @@
             list.insertAdjacentHTML('beforeend', htmlToAppend);
             ytCurrentIndex += 10;
             
-            if (ytCurrentIndex >= ytVideosStore.length) {
-                document.getElementById("ytLoadMoreBtn").style.display = "none";
-            }
+            if (ytCurrentIndex >= ytVideosStore.length) document.getElementById("ytLoadMoreBtn").style.display = "none";
         }
 
         let currentActiveVid = "";
@@ -832,9 +944,7 @@
             if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
         }
 
-        // ==========================================
-        // 🚀 HIGH-END IMAGE GENERATOR
-        // ==========================================
+        // --- IMAGE GENERATION MODE ---
         async function handlePhotoGeneration(promptText, loadId, savedImages) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">OPTIMIZING PROMPTS...</div><div class="data-bar"></div></div>`;
             try {
@@ -869,9 +979,7 @@
             } catch (error) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Cloudflare API Error: ${error.message}</div>`; }
         };
 
-        // ==========================================
-        // 🚀 MASTER TEXT ENGINE
-        // ==========================================
+        // --- TEXT / MATH ENGINE ---
         async function handleTextSearch(prompt, loadId, savedImages, attachedFileName) {
             const lang = document.getElementById("appLang").value; const customRules = document.getElementById("aiInstructions").value.trim();
             let isMathQ = /math|solve|calculate|equation|find the value|त्रिज्या|व्यास|formula|[0-9]+[\+\-\*\/\^]/i.test(prompt);
@@ -953,18 +1061,43 @@
             });
         }
 
-        // 🛑 SAVES TO CURRENT ACTIVE SESSION ID (1-Time Toast) 🛑
+        // ==========================================
+        // 6. PTI CLOUD SAVING HOOK
+        // ==========================================
         function saveInteractionToLocalForage(question, answer, images, provider, sources = [], fileName = null) {
-            let existingSession = appHistory.find(s => Number(s.id) === Number(currentSessionId));
+            let existingSession = appHistory.find(s => Number(s.id) === Number(currentSessionId) || s.id === currentSessionId);
+            
             if (existingSession) { 
                 existingSession.interactions.push({ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }); 
             } 
             else { 
-                appHistory.unshift({ id: currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }] }); 
-                // Only show Save notification when starting a brand new conversation
-                showToast("✅ Session Saved Successfully");
+                existingSession = { id: currentPti || currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }] };
+                appHistory.unshift(existingSession); 
+                showToast("✅ Session Saved Successfully"); 
             }
-            saveHistorySafe();
+            saveHistorySafe(); 
+
+            // Trigger outbound background push up to the Google Sheet cloud
+            fetch('/api/pti-save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pti: currentPti || existingSession.id,
+                    title: existingSession.title,
+                    interactions: existingSession.interactions
+                })
+            })
+            .then(res => res.json())
+            .then(serverResult => {
+                if (serverResult.success && !currentPti) {
+                    currentPti = serverResult.pti;
+                    // Dynamically rewrite browser address bar to use ?pti= without reloading the page
+                    const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
+                    window.history.replaceState({ path: newUrl }, '', newUrl);
+                    console.log("PTI tracking token finalized:", currentPti);
+                }
+            })
+            .catch(err => console.error("Disk Cloud Sync Failed:", err));
         }
 
         function openSources(loadId) { const urls = window['sources_' + loadId]; const list = document.getElementById("sourcesList"); list.innerHTML = urls.map(url => `<a href="${url.replace(/[\)\.\"]+$/, '')}" target="_blank" style="color:var(--primary); text-decoration:none; background:var(--input-bg); padding:12px; border-radius:8px; border:1px solid var(--border-light); word-break:break-all;">${url}</a>`).join(''); document.getElementById("sourcesModal").style.display = "flex"; }
