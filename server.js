@@ -443,7 +443,132 @@ async function handleFeedbackRoute(req, res) {
         return sendJson(res, 502, { error: "Failed to dispatch feedback." });
     }
 }
+// ==========================================
+// 🧠 GOOGLE SHEETS CLOUD PTI ENGINE & DUAL SHARE
+// ==========================================
+const crypto = require("crypto");
 
+// 🚨 REPLACE THIS WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL
+const GOOGLE_DATABASE_URL = "https://script.google.com/macros/library/d/1Kpdm-njJmr5ZSIDYx8LmPyW4pkRk8AyGuA9BGbiKQ7IZiD0KwmEdXbUB/1";
+
+// 1. Handles saving chat sessions to Google Sheets
+async function handlePtiSyncSave(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        let pti = body.pti;
+        const interactions = body.interactions || [];
+
+        if (!pti || pti === "null" || pti === "undefined") {
+            pti = "pti_" + crypto.randomBytes(8).toString("hex");
+        }
+
+        // Clean out images to keep the Google Sheet cell footprint thin
+        const spaceEfficientInteractions = interactions.map(inter => ({
+            ...inter,
+            images: []
+        }));
+
+        const sessionPayload = {
+            id: pti,
+            type: 'search',
+            title: body.title || "Shared PTI Session",
+            interactions: spaceEfficientInteractions
+        };
+
+        // Forward straight to Google Sheets Cloud Storage
+        await fetch(GOOGLE_DATABASE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "save",
+                pti: pti,
+                sessionData: sessionPayload
+            })
+        });
+
+        return sendJson(res, 200, { success: true, pti: pti, data: sessionPayload });
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+// 2. Handles pulling chat sessions from Google Sheets
+async function handleGetPtiSync(req, res) {
+    try {
+        const urlObj = new URL(req.url, `http://${req.headers.host}`);
+        const pti = urlObj.searchParams.get("pti");
+
+        if (!pti) return sendJson(res, 400, { error: "Missing token parameter." });
+
+        // Request directly from Google sheets database
+        const response = await fetch(`${GOOGLE_DATABASE_URL}?pti=${pti}`);
+        const cloudData = await response.json();
+
+        if (cloudData.error) {
+            return sendJson(res, 404, cloudData);
+        }
+        return sendJson(res, 200, cloudData);
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+// 3. Handles sending consecutive WhatsApp messages (1st: Text Notes, 2nd: Interactive Button)
+async function handleDualShare(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        let number = body.number;
+        const notesMessage = body.notesMessage;
+        const targetUrl = body.targetUrl;
+
+        const idInstance = process.env.ID_INSTANCE || "";
+        const apiToken = process.env.API_TOKEN || "";
+
+        if (!idInstance || !apiToken) {
+            throw new Error("Green API credentials missing on server.");
+        }
+
+        // Clean out formatting artifacts from the number string
+        const cleanNumber = number.replace(/[^0-9]/g, '') + "@c.us";
+
+        // --- MESSAGE 1: Send the selected text notes ---
+        const urlMessage1 = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
+        const response1 = await fetch(urlMessage1, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chatId: cleanNumber,
+                message: notesMessage
+            })
+        });
+        await response1.json(); // Wait for confirmation of first transmission
+
+        // --- MESSAGE 2: Send the Interactive Button Link ---
+        const urlMessage2 = `https://api.green-api.com/waInstance${idInstance}/sendInteractiveButtons/${apiToken}`;
+        const response2 = await fetch(urlMessage2, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chatId: cleanNumber,
+                body: "🔗 Click the action button below to instantly view the continuous live conversation loop:",
+                buttons: [
+                    {
+                        "type": "url",
+                        "buttonId": "view_conv_btn",
+                        "buttonText": "See conversation",
+                        "url": targetUrl
+                    }
+                ]
+            })
+        });
+        const data2 = await response2.json();
+
+        return sendJson(res, 200, { success: true, greenApiResponse: data2 });
+    } catch (e) {
+        console.error("[Dual Share Error]:", e.message);
+        return sendJson(res, 502, { error: e.message });
+    }
+}
 // ==========================================
 // STATIC FILE SERVER
 // ==========================================
@@ -481,8 +606,11 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
         if (req.url === "/api/feedback") return handleFeedbackRoute(req, res); // 🚨 FIXED ROUTE MAP 🚨
         if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); 
+        if (req.url === "/api/pti-save") return handlePtiSyncSave(req, res);
+        if (req.url === "/api/send-dual-share") return handleDualShare(req, res);
     }
     
+    if (req.method === "GET" && req.url.startsWith("/api/pti-get")) return handleGetPtiSync(req, res);   
     if (req.method === "GET" && req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
     if (req.method === "GET" || req.method === "HEAD") return serveStatic(req, res);
 });
