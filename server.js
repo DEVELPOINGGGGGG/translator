@@ -587,7 +587,7 @@ function serveStatic(req, res) {
 // MASTER ROUTER
 // ==========================================
 const server = http.createServer((req, res) => {
-    // Handling Preflight CORS requests
+    // 1. Handle Preflight CORS
     if (req.method === "OPTIONS") {
         res.writeHead(204, {
             "Access-Control-Allow-Origin": "*",
@@ -597,21 +597,24 @@ const server = http.createServer((req, res) => {
         return res.end();
     }
 
-    // 🚨 THIS PART MUST HANDLE YOUR GET REQUEST
+    // 2. Handle GET routes (Where the 404 is happening)
     if (req.method === "GET") {
         const urlObj = new URL(req.url, `http://${req.headers.host}`);
         
-        // This line catches the /api/pti-get?pti=... request
+        // Explicit route for PTI fetching
         if (urlObj.pathname === "/api/pti-get") {
             return handleGetPtiSync(req, res);
         }
         
-        // Default static file serving
+        // Everything else: serve static files
         return serveStatic(req, res);
     }
 
+    // 3. Handle POST routes
     if (req.method === "POST") {
         if (req.url === "/api/smart-search") return handleSmartSearch(req, res);
+        if (req.url === "/api/pti-save") return handlePtiSyncSave(req, res);
+        if (req.url === "/api/send-dual-share") return handleDualShare(req, res);
         if (req.url === "/api/gemini-text") return handleGeminiText(req, res);
         if (req.url === "/api/gemini-vision") return handleGeminiVision(req, res);
         if (req.url === "/api/groq-search") return handleGroqSearch(req, res);
@@ -620,8 +623,6 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
         if (req.url === "/api/feedback") return handleFeedbackRoute(req, res); // 🚨 FIXED ROUTE MAP 🚨
         if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); 
-        if (req.url === "/api/pti-save") return handlePtiSyncSave(req, res);
-        if (req.url === "/api/send-dual-share") return handleDualShare(req, res);
     }
     
     if (req.method === "GET" && req.url.startsWith("/api/pti-get")) return handleGetPtiSync(req, res);   
