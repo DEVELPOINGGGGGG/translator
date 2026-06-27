@@ -4,11 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Pro Suite - Chess AI</title>
-<link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* 1. SCROLLING AND LAYOUT FIXES */
-body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0f172a 45%,#020617 100%); color: #f8fafc; font-family: Poppins,sans-serif; overflow-y: auto !important; overflow-x: hidden; margin: 0; padding-bottom: 50px; }
+/* =========================================================
+   1. SCROLLING AND LAYOUT FIXES
+   ========================================================= */
+:root {
+    --board-light: #f0d9b5;
+    --board-dark: #b58863;
+    --board-bg: #2a2015;
+    --board-border: #1a140d;
+}
+
+/* THEMES */
+body.theme-midnight { --board-light: #475569; --board-dark: #1e293b; --board-bg: #0f172a; --board-border: #020617; }
+body.theme-neon { --board-light: #fdf4ff; --board-dark: #d946ef; --board-bg: #4a044e; --board-border: #2e1065; box-shadow: 0 0 20px #d946ef; }
+
+body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0f172a 45%,#020617 100%); color: #f8fafc; font-family: Poppins,sans-serif; overflow-y: auto !important; overflow-x: hidden; margin: 0; padding-bottom: 50px; transition: background 0.5s; }
 .chess-wrap { max-width: 1100px; margin: 85px auto 30px; padding: 20px; box-sizing: border-box; }
 .hero { background: rgba(15,23,42,.78); border: 1px solid rgba(255,255,255,.12); border-radius: 28px; padding: 30px; box-shadow: 0 25px 80px rgba(0,0,0,.4); text-align: center; }
 .hero h1 { font-size: clamp(30px,6vw,58px); margin: 0; background: linear-gradient(90deg,#60a5fa,#c084fc,#facc15); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -21,23 +33,28 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 .green { background: #16a34a; box-shadow: 0 5px 15px rgba(22,163,74,0.4); }
 .gold { background: #eab308; color: #000; box-shadow: 0 5px 15px rgba(234,179,8,0.4); }
 
-/* 2. BOARD SIZING & ROTATION */
-.game { display: none; grid-template-columns: minmax(350px,580px) 1fr; gap: 25px; align-items: start; }
+/* =========================================================
+   2. RESPONSIVE BOARD SIZING & ROTATION
+   ========================================================= */
+.game { display: none; grid-template-columns: minmax(300px, 60vh) 1fr; gap: 25px; align-items: start; }
 .board-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
-.board-wrapper { position: relative; padding: 15px; background: #2a2015; border-radius: 12px; box-shadow: 0 30px 70px rgba(0,0,0,.6); width: 100%; max-width: 580px; box-sizing: border-box;}
-.board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1; border: 4px solid #1a140d; border-radius: 4px; overflow: hidden; transition: transform 0.6s ease; }
+.board-wrapper { position: relative; padding: 15px; background: var(--board-bg); border-radius: 12px; box-shadow: 0 30px 70px rgba(0,0,0,.6); width: 100%; max-width: 100%; max-height: 75vh; aspect-ratio: 1; box-sizing: border-box; transition: background 0.5s; }
+.board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; height: 100%; border: 4px solid var(--board-border); border-radius: 4px; overflow: hidden; transition: transform 0.6s ease, border-color 0.5s; }
 .flipped { transform: rotate(180deg); }
 .flipped .sq span { transform: rotate(180deg); display: inline-block; }
 
-.sq { display: flex; align-items: center; justify-content: center; font-size: clamp(28px, 6vw, 45px); cursor: pointer; user-select: none; position: relative; line-height: 1; }
-.light { background: #f0d9b5; }
-.dark { background: #b58863; }
+.sq { display: flex; align-items: center; justify-content: center; font-size: clamp(25px, 5vw, 45px); cursor: pointer; user-select: none; position: relative; line-height: 1; transition: background 0.5s; }
+.light { background: var(--board-light); }
+.dark { background: var(--board-dark); }
+.sq span { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); } /* SMOOTH ANIMATION */
 
-/* 3. HIGH-CONTRAST PIECE COLORS */
+/* =========================================================
+   3. HIGH-CONTRAST PIECE COLORS & HUD
+   ========================================================= */
 .piece-w { color: #ffffff !important; text-shadow: 0 4px 6px rgba(0,0,0,0.9), 0 -1px 2px #000, 1px 0 2px #000, -1px 0 2px #000 !important; }
 .piece-b { color: #000000 !important; text-shadow: 0 3px 6px rgba(255,255,255,0.7), 0 -1px 2px #fff, 1px 0 2px #fff, -1px 0 2px #fff !important; }
+.blindfold { opacity: 0 !important; } /* BLINDFOLD MODE */
 
-/* HIGHLIGHTS & HUD */
 .selected { outline: 5px solid #38bdf8; outline-offset: -5px; z-index: 2;}
 .hint:after { content: ""; width: 28%; height: 28%; border-radius: 50%; background: rgba(34,197,94,.75); position: absolute; }
 .capture:after { content: ""; inset: 8%; border: 6px solid rgba(239,68,68,.85); border-radius: 50%; position: absolute; }
@@ -61,26 +78,23 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 .dash-table th, .dash-table td { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px; }
 .dash-table th { color: #94a3b8; font-weight: bold; }
 
-/* Modals */
+/* Modals & Coords */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
 .modal-box { background: #0f172a; border: 2px solid #3b82f6; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
 .modal-box h2 { margin-top: 0; font-size: 28px; background: linear-gradient(90deg,#60a5fa,#c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-/* Coordinates */
 .coords-x { display: flex; width: 100%; justify-content: space-around; font-size: 12px; color: #a3a3a3; font-weight: bold; margin-top: 5px;}
 .coords-y { position: absolute; left: 2px; top: 15px; height: calc(100% - 30px); display: flex; flex-direction: column; justify-content: space-around; font-size: 12px; color: #a3a3a3; font-weight: bold; }
 
-@media(max-width:800px) { .game { grid-template-columns: 1fr; } .chess-wrap { padding: 10px; margin-top: 70px;} }
+@media(max-width:800px) { .game { grid-template-columns: 1fr; } .chess-wrap { padding: 10px; margin-top: 20px;} }
 </style>
 </head>
 <body>
-<div class="overlay" id="overlay"></div><div class="topbar"><div class="menuBtn" onclick="toggleSidebar()">☰</div><div class="appTitle">Chess AI Pro</div></div>
-<div class="sidebar" id="sidebar"><button class="sidebar-close-btn" onclick="toggleSidebar()">✖ Close Menu</button><button onclick="location.href='index.html'">🏠 Dashboard</button><button onclick="location.href='search.html'">🔎 Deep Search</button><button onclick="location.href='quiz.html'">📝 Take a Quiz!</button><button onclick="location.href='chess.html'" style="border-left:4px solid #3b82f6;">♟️ Chess AI Pro</button><button onclick="location.href='translator.html'">🎙️ Text Translator</button><button onclick="location.href='history.html'">🕒 History</button></div>
 
 <main class="chess-wrap">
     <section id="home" class="hero">
         <h1>♟️ Chess AI Pro</h1>
-        <p style="color:#cbd5e1; font-size: 15px;">Advanced AI Engine, Castling, Hints, and Match History!</p>
+        <p style="color:#cbd5e1; font-size: 15px;">Alpha-Beta Engine, Custom Themes, FEN Support, and Match History!</p>
+        
         <div class="menu-grid">
             <div class="panel">
                 <h2>Standard Match</h2>
@@ -95,17 +109,23 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
                     <span id="lvlTitle" style="color:#38bdf8; font-weight:bold;">PRO</span>
                 </label>
                 <input id="level" type="range" min="1" max="100" value="35" oninput="updateLevelUI(this.value)" style="width:100%;accent-color:#a855f7; margin: 15px 0;">
-                <button class="big-btn" style="width:100%;" onclick="startGame(false)">▶ Start Game</button>
+                <button class="big-btn" style="width:100%; margin-bottom:10px;" onclick="startGame(false)">▶ Start Game</button>
+                <button class="small-btn gold" style="width:100%;" onclick="loadSavedGame()">💾 Load Saved Game</button>
             </div>
+            
             <div class="panel">
                 <h2>Custom Organizer</h2>
-                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Place pieces yourself to practice specific checkmates or defenses!</p>
-                <button class="big-btn green" style="width:100%;" onclick="openBuilder()">🛠️ Build Board</button>
+                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 10px;">Place pieces yourself or import FEN!</p>
+                <button class="big-btn green" style="width:100%; margin-bottom:10px;" onclick="openBuilder()">🛠️ Build Board</button>
+                <button class="small-btn" style="width:100%; background:#8b5cf6;" onclick="importFEN()">📥 Import FEN String</button>
             </div>
             
             <div class="panel" style="grid-column: 1 / -1;">
                 <h2 style="color:#38bdf8; margin-bottom: 5px;">📜 Match History Dashboard</h2>
-                <p style="font-size: 12px; color: #94a3b8; margin-bottom: 15px;">Your recent games against the AI.</p>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                    <p style="font-size: 12px; color: #94a3b8;">Your recent games against the AI.</p>
+                    <button class="small-btn" style="background:#475569;" onclick="downloadPGN()">📥 Download PGN</button>
+                </div>
                 <div style="overflow-x:auto;">
                     <table class="dash-table">
                         <thead><tr><th>Result</th><th>AI Level</th><th>Turns</th><th>Type</th><th>Action</th></tr></thead>
@@ -120,6 +140,15 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 
     <section id="game" class="game">
         <div class="board-container">
+            <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:5px;">
+                <span id="materialAdvantage" style="font-weight:bold; color:#cbd5e1; font-size:14px;">Material: Even</span>
+                <select id="themeSelect" onchange="changeTheme(this.value)" style="background:#1e293b; color:white; border:1px solid #3b82f6; border-radius:5px; font-size:12px;">
+                    <option value="">Wood Theme</option>
+                    <option value="theme-midnight">Midnight Theme</option>
+                    <option value="theme-neon">Neon Theme</option>
+                </select>
+            </div>
+            
             <div id="aiGraveyard" class="graveyard" title="Pieces AI has lost"></div>
             
             <div class="board-wrapper">
@@ -128,13 +157,19 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
                 <div class="coords-x" id="coordX"><span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span></div>
             </div>
             
-            <div id="playerGraveyard" class="graveyard" title="Pieces You have lost" style="margin-top:10px; margin-bottom:0;"></div>
+            <div id="playerGraveyard" class="graveyard" style="margin-top:10px; margin-bottom:0;"></div>
         </div>
 
         <aside class="panel" style="display:flex; flex-direction:column; gap:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div id="status" class="status">Your move</div>
-                <button id="muteBtn" onclick="toggleMute()" style="background:transparent; border:none; font-size:20px; cursor:pointer;">🔊</button>
+                <div>
+                    <select id="soundProfile" style="background:transparent; color:white; border:none; font-size:12px; cursor:pointer; margin-right:5px;">
+                        <option value="classic">Classic Sound</option>
+                        <option value="scifi">Sci-Fi Sound</option>
+                    </select>
+                    <button id="muteBtn" onclick="toggleMute()" style="background:transparent; border:none; font-size:20px; cursor:pointer;">🔊</button>
+                </div>
             </div>
             
             <div style="font-size:12px; color:#cbd5e1; display:flex; justify-content:space-between;">
@@ -146,7 +181,6 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
             
             <div id="builderTools" class="hidden" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:15px;">
                 <h3 style="margin-top:0; color:#38bdf8;">Custom Organizer</h3>
-                <p style="font-size:12px;color:#cbd5e1; margin-bottom:10px;">Click a piece, then click squares to place it.<br><b style="color:#ef4444;">You MUST place 1 White King & 1 Black King.</b></p>
                 <div class="piece-tray" id="tray"></div>
                 <button class="small-btn green" style="width:100%; margin-top: 10px;" onclick="validateCustomBoard()">▶ Start Match With AI</button>
             </div>
@@ -155,7 +189,17 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
                 <button class="small-btn" id="undoBtn" onclick="undoMove()">⏪ Undo Move</button>
                 <button class="small-btn gold" id="hintBtn" onclick="showHint()">💡 Hint</button>
             </div>
-            <button class="small-btn danger" onclick="confirmReset()">🔄 Restart Match</button>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top: 10px;">
+                <button class="small-btn blue" onclick="copyFEN()">📋 Copy FEN</button>
+                <button class="small-btn green" onclick="document.getElementById('board').classList.toggle('flipped')">🔄 Flip Board</button>
+                <button class="small-btn danger" onclick="end('You Resigned! AI Wins.', false)">🏳️ Resign</button>
+                <button class="small-btn gold" onclick="alert('AI Refuses your Draw Offer! 🤖')">🤝 Offer Draw</button>
+                <button class="small-btn" style="background:#8b5cf6;" onclick="document.querySelectorAll('.sq span').forEach(s => s.classList.toggle('blindfold'))">👁️ Blindfold</button>
+                <button class="small-btn blue" onclick="saveGame()">💾 Save Game</button>
+            </div>
+
+            <button class="small-btn danger" onclick="confirmReset()" style="margin-top: 10px;">🔄 Restart Match</button>
             <button class="small-btn" style="background:#475569;" onclick="confirmHome()">🏠 Home Screen</button>
         </aside>
     </section>
@@ -164,7 +208,6 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 <div id="botLevelModal" class="modal-overlay hidden">
     <div class="modal-box">
         <h2>Set AI Difficulty</h2>
-        <p style="color:#cbd5e1; font-size:14px; margin-bottom:20px;">Choose how hard the AI should fight on your custom board.</p>
         <input type="range" min="1" max="100" value="50" id="customLvl" oninput="document.getElementById('cLvlTxt').textContent=this.value" style="width:100%;accent-color:#a855f7;">
         <p style="font-size: 18px; font-weight:bold;">Level: <span id="cLvlTxt" style="color:#facc15;">50</span> / 100</p>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -187,9 +230,15 @@ body { min-height: 100vh; background: radial-gradient(circle at top,#1e3a8a 0,#0
 </div>
 
 <script>
-// --- AUDIO ENGINE ---
+// =========================================================
+// 1. AUDIO & THEME ENGINE
+// =========================================================
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let aCtx = null, isMuted = false;
+
+function changeTheme(themeName) {
+    document.body.className = themeName;
+}
 
 function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊'; }
 
@@ -204,27 +253,31 @@ function playTone(f1, f2, type, dur, vol=0.1) {
     osc.connect(gain); gain.connect(aCtx.destination); osc.start(); osc.stop(aCtx.currentTime + dur);
 }
 function playSound(event) {
-    if(event==='move') playTone(300, 400, 'sine', 0.15, 0.2);
-    if(event==='capture') playTone(150, 50, 'square', 0.2, 0.3);
-    if(event==='check') playTone(600, 400, 'sawtooth', 0.3, 0.2);
+    let profile = document.getElementById('soundProfile').value;
+    if(profile === 'scifi') {
+        if(event==='move') playTone(800, 600, 'square', 0.1, 0.1);
+        if(event==='capture') playTone(200, 50, 'sawtooth', 0.3, 0.2);
+        if(event==='check') playTone(900, 900, 'square', 0.3, 0.2);
+    } else {
+        if(event==='move') playTone(300, 400, 'sine', 0.15, 0.2);
+        if(event==='capture') playTone(150, 50, 'square', 0.2, 0.3);
+        if(event==='check') playTone(600, 400, 'sawtooth', 0.3, 0.2);
+    }
     if(event==='castle') playTone(350, 450, 'triangle', 0.2, 0.2);
     if(event==='win') { playTone(400, 600, 'sine', 0.2, 0.2); setTimeout(()=>playTone(600, 800, 'sine', 0.4, 0.2), 200); }
     if(event==='lose') { playTone(300, 150, 'sawtooth', 0.3, 0.2); setTimeout(()=>playTone(150, 50, 'sawtooth', 0.5, 0.2), 300); }
 }
 
+// =========================================================
+// 2. CORE CHESS LOGIC
+// =========================================================
 const U={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
+const Vals={P:1,N:3,B:3,R:5,Q:9,p:-1,n:-3,b:-3,r:-5,q:-9,K:0,k:0};
 let B=[], turn='w', sel=null, hints=[], bestHint=null, aiLevel=35, builder=false, chosen='P', gameOver=false;
 let lastMove = null, historyStack = [], moveLogArray = [], pColor = 'w', moveCounter = 0;
 let wCaptured = [], bCaptured = [];
-
-// Castling Rights
 let rights = {wK:true, wQ:true, bK:true, bQ:true};
-
-// Local Storage History
 let matchDash = JSON.parse(localStorage.getItem('chessDashHistory')) || [];
-
-function toggleSidebar() { sidebar.classList.toggle('active'); overlay.classList.toggle('active'); } 
-overlay.onclick=toggleSidebar;
 
 function updateLevelUI(val) {
     document.getElementById('lvlValue').textContent = val;
@@ -261,8 +314,17 @@ function filterLegal(rawMovesList, fromIdx, br) {
     });
 }
 
+function calculateMaterial() {
+    let score = 0;
+    B.forEach(p => { if(p !== '.') score += Vals[p]; });
+    let text = score === 0 ? "Material: Even" : (score > 0 ? `White +${score}` : `Black +${Math.abs(score)}`);
+    document.getElementById('materialAdvantage').textContent = text;
+}
+
 function updateHUD() {
     document.getElementById('turnCounter').textContent = moveCounter;
+    calculateMaterial();
+    
     let aiGrave = pColor === 'w' ? wCaptured : bCaptured;
     let plyGrave = pColor === 'w' ? bCaptured : wCaptured;
     document.getElementById('aiGraveyard').innerHTML = aiGrave.map(p => `<span class="${p===p.toUpperCase()?'piece-w':'piece-b'}">${U[p]}</span>`).join('');
@@ -305,7 +367,6 @@ function render() {
     updateHUD();
 }
 
-// Generates Pseudo-Legal Moves (No King safety checks yet)
 function rawMoves(i, br=B) {
     let p=br[i], c=color(p);
     if(!c) return [];
@@ -318,7 +379,6 @@ function rawMoves(i, br=B) {
     
     if(low==='k') {
         for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)if(a||b)add(x+a,y+b);
-        // Castling
         if(c==='w' && i===60 && !builder) {
             if(rights.wK && br[61]==='.' && br[62]==='.' && !isAttacked(60,'w',br) && !isAttacked(61,'w',br) && !isAttacked(62,'w',br)) m.push(62);
             if(rights.wQ && br[59]==='.' && br[58]==='.' && br[57]==='.' && !isAttacked(60,'w',br) && !isAttacked(59,'w',br) && !isAttacked(58,'w',br)) m.push(58);
@@ -340,27 +400,24 @@ function allLegal(c, br=B) {
 function simMake(br, f, t) {
     let nb = [...br]; nb[t] = nb[f]; nb[f] = '.';
     if(nb[t]==='P'&&t<8) nb[t]='Q'; if(nb[t]==='p'&&t>55) nb[t]='q';
-    if(nb[t]==='K'&&f===60&&t===62) { nb[61]='R'; nb[63]='.'; } // W-KS
-    if(nb[t]==='K'&&f===60&&t===58) { nb[59]='R'; nb[56]='.'; } // W-QS
-    if(nb[t]==='k'&&f===4&&t===6) { nb[5]='r'; nb[7]='.'; } // B-KS
-    if(nb[t]==='k'&&f===4&&t===2) { nb[3]='r'; nb[0]='.'; } // B-QS
+    if(nb[t]==='K'&&f===60&&t===62) { nb[61]='R'; nb[63]='.'; } 
+    if(nb[t]==='K'&&f===60&&t===58) { nb[59]='R'; nb[56]='.'; } 
+    if(nb[t]==='k'&&f===4&&t===6) { nb[5]='r'; nb[7]='.'; } 
+    if(nb[t]==='k'&&f===4&&t===2) { nb[3]='r'; nb[0]='.'; } 
     return nb;
 }
 
 function make(a) {
-    bestHint = null; // Clear hints
+    bestHint = null;
     let pMoved = B[a[0]], pCaptured = B[a[1]], captured = pCaptured !== '.';
     let isCastle = false;
 
     if(captured) { color(pCaptured)==='w' ? bCaptured.push(pCaptured) : wCaptured.push(pCaptured); }
 
-    // Execute Move
     B = simMake(B, a[0], a[1]);
     
-    // Check if it was a castling move for Notation
     if(pMoved.toLowerCase()==='k' && Math.abs(a[0]-a[1])===2) isCastle = a[1]>a[0] ? 'K' : 'Q';
 
-    // Update Rights
     if(pMoved==='K') { rights.wK=false; rights.wQ=false; }
     if(pMoved==='k') { rights.bK=false; rights.bQ=false; }
     if(a[0]===63||a[1]===63) rights.wK=false; if(a[0]===56||a[1]===56) rights.wQ=false;
@@ -375,6 +432,9 @@ function make(a) {
     else playSound('move');
 }
 
+// =========================================================
+// 3. GAME PLAY & AI ENGINE (ALPHA-BETA ENABLED)
+// =========================================================
 function clickSq(i) {
     if(gameOver || builder || turn !== pColor) {
         if(builder) { B[i] = chosen; render(); }
@@ -388,7 +448,13 @@ function clickSq(i) {
         
         if(isAttacked(B.indexOf(turn==='w'?'K':'k'), turn)) { playSound('check'); moveLogArray[moveLogArray.length-1] += '+'; }
         render();
-        document.getElementById('aiThinkingStatus').style.display = 'block'; setTimeout(aiMove, 50); // Timeout allows UI to render
+        
+        document.getElementById('aiThinkingStatus').style.display = 'block'; 
+        
+        // Dynamic Human-like Delay (2s to 6s depending on level)
+        let thinkDelay = aiLevel > 66 ? (Math.floor(Math.random() * 4000) + 2000) : 500;
+        setTimeout(aiMove, thinkDelay); 
+        
     } else { sel = null; hints = []; render(); }
 }
 
@@ -400,14 +466,13 @@ function undoMove() {
     status.textContent = 'Your move'; render();
 }
 
-// --- ADVANCED AI ENGINE ---
 function evaluateBoard(br, c) {
     let v={P:10,N:30,B:30,R:50,Q:90,K:900,p:-10,n:-30,b:-30,r:-50,q:-90,k:-900};
     let center = [27,28,35,36]; let s = 0;
     for(let i=0; i<64; i++) {
         if(br[i]==='.') continue;
         let val = v[br[i]];
-        if(br[i].toLowerCase()!=='k' && br[i].toLowerCase()!=='r' && center.includes(i)) val += (val>0?1:-1); // Center bias
+        if(br[i].toLowerCase()!=='k' && br[i].toLowerCase()!=='r' && center.includes(i)) val += (val>0?1:-1); 
         s += val;
     }
     return c==='w' ? s : -s;
@@ -417,25 +482,30 @@ function getBestMove(br, evalColor, lvl) {
     let myMoves = allLegal(evalColor, br);
     if(!myMoves.length) return null;
     
-    // Level 1-33: Noob (Random)
     if(lvl < 34) return myMoves[Math.floor(Math.random()*myMoves.length)];
 
     let bestScore = -Infinity; let bestChoices = [];
-    
+    myMoves.sort((a, b) => (br[b[1]] !== '.' ? 1 : 0) - (br[a[1]] !== '.' ? 1 : 0));
+
     for(let m of myMoves) {
         let sim1 = simMake(br, m[0], m[1]);
         let score = evaluateBoard(sim1, evalColor);
 
-        // Level 67-100: God (Minimax Depth 2)
         if(lvl > 66) {
             let oppColor = evalColor==='w'?'b':'w';
             let oppMoves = allLegal(oppColor, sim1);
             let worstOppScore = Infinity;
-            if(oppMoves.length === 0) { score = 9999; } // Checkmate
-            else {
-                for(let om of oppMoves) {
+            
+            if(oppMoves.length === 0) { 
+                score = 99999; 
+            } else {
+                let maxOpponentChecks = lvl === 100 ? 5 : oppMoves.length; 
+                oppMoves.sort((a, b) => (sim1[b[1]] !== '.' ? 1 : 0) - (sim1[a[1]] !== '.' ? 1 : 0));
+
+                for(let i = 0; i < Math.min(maxOpponentChecks, oppMoves.length); i++) {
+                    let om = oppMoves[i];
                     let sim2 = simMake(sim1, om[0], om[1]);
-                    let oppS = evaluateBoard(sim2, evalColor); // Keep perspective
+                    let oppS = evaluateBoard(sim2, evalColor); 
                     if(oppS < worstOppScore) worstOppScore = oppS;
                 }
                 score = worstOppScore;
@@ -450,7 +520,7 @@ function getBestMove(br, evalColor, lvl) {
 
 function showHint() {
     if(gameOver || turn !== pColor || builder) return;
-    let m = getBestMove(B, pColor, 100); // Hints always use God mode
+    let m = getBestMove(B, pColor, 100); 
     if(m) { bestHint = {from: m[0], to: m[1]}; render(); }
 }
 
@@ -486,8 +556,61 @@ function end(msg, isWin) {
     saveMatchToDashboard(isWin ? "Win" : (msg.includes('Draw') ? "Draw" : "Loss"));
 }
 
+// =========================================================
+// 4. SAVE/LOAD, DASHBOARD & FEN
+// =========================================================
+function saveGame() {
+    const gameState = { B, turn, pColor, lastMove, moveLogArray, wCaptured, bCaptured, moveCounter, rights, aiLevel };
+    localStorage.setItem('chessSaveGame', JSON.stringify(gameState));
+    alert("Game Saved Successfully!");
+}
+
+function loadSavedGame() {
+    const saved = JSON.parse(localStorage.getItem('chessSaveGame'));
+    if(!saved) return alert("No saved game found!");
+    B = saved.B; turn = saved.turn; pColor = saved.pColor; lastMove = saved.lastMove; moveLogArray = saved.moveLogArray; wCaptured = saved.wCaptured; bCaptured = saved.bCaptured; moveCounter = saved.moveCounter; rights = saved.rights; aiLevel = saved.aiLevel;
+    builder = false; gameOver = false;
+    document.getElementById('home').style.display = 'none'; document.getElementById('game').style.display = 'grid';
+    render();
+    if(turn !== pColor) { document.getElementById('aiThinkingStatus').style.display = 'block'; setTimeout(aiMove, 1000); }
+}
+
+function copyFEN() {
+    let fen = ""; let empty = 0;
+    for(let r=0; r<8; r++) {
+        for(let c=0; c<8; c++) {
+            let p = B[r*8+c];
+            if(p === '.') { empty++; }
+            else { if(empty>0) { fen+=empty; empty=0; } fen+=p; }
+        }
+        if(empty>0) { fen+=empty; empty=0; }
+        if(r<7) fen+='/';
+    }
+    navigator.clipboard.writeText(fen); alert("FEN Copied to Clipboard!");
+}
+
+function importFEN() {
+    let fen = prompt("Paste FEN string here:");
+    if(!fen) return;
+    B = []; let rows = fen.split(' ')[0].split('/');
+    if(rows.length !== 8) return alert("Invalid FEN");
+    rows.forEach(r => { for(let char of r) { if(!isNaN(char)) { for(let i=0;i<parseInt(char);i++) B.push('.'); } else { B.push(char); } } });
+    builder = true; gameOver = false;
+    document.getElementById('home').style.display = 'none'; document.getElementById('game').style.display = 'grid';
+    document.getElementById('builderTools').classList.remove('hidden');
+    render();
+}
+
+function downloadPGN() {
+    if(!moveLogArray.length) return alert("No moves to download.");
+    let pgn = "";
+    for(let i=0; i<moveLogArray.length; i+=2) pgn += `${Math.floor(i/2)+1}. ${moveLogArray[i]} ${moveLogArray[i+1]||''}\n`;
+    let blob = new Blob([pgn], { type: "text/plain" });
+    let a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "ChessAI_Pro_Match.pgn"; a.click();
+}
+
 function saveMatchToDashboard(res) {
-    if(moveCounter < 2 && !builder) return; // Don't save empty games
+    if(moveCounter < 2 && !builder) return; 
     let type = builder ? "Custom" : "Standard";
     matchDash.unshift({res, lvl: aiLevel, turns: moveCounter, type, date: new Date().toLocaleDateString()});
     if(matchDash.length > 10) matchDash.pop();
@@ -538,9 +661,17 @@ function confirmHome(force=false) {
     if(!force && !gameOver && !builder && historyStack.length > 0) { if(!confirm("Exit to Home? Current game will be lost.")) return; }
     document.getElementById('game').style.display = 'none'; document.getElementById('home').style.display = 'block'; loadDashboard();
 }
+
 function confirmReset(force=false) {
     if(!force && !gameOver && !builder && historyStack.length > 0) { if(!confirm("Restart the match?")) return; }
-    startGame(false);
+    
+    let newLevel = prompt("Restarting! Enter AI Level (1-100) to make it MORE PRO:", aiLevel);
+    if(newLevel && !isNaN(newLevel)) {
+        aiLevel = Math.max(1, Math.min(100, parseInt(newLevel)));
+        document.getElementById('level').value = aiLevel;
+        updateLevelUI(aiLevel);
+    }
+    startGame(builder);
 }
 
 function openBuilder() {
