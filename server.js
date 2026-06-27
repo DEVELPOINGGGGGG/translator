@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto"); // Added for PTI Generation
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
@@ -11,6 +12,9 @@ dns.setDefaultResultOrder('ipv4first');
 const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
+
+// 🚨 PUT YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE 🚨
+const GOOGLE_DATABASE_URL = "https://script.google.com/macros/s/AKfycbwuSwz8wvT24TUYq_eWy9Ak4Lj7CfWUXGiTsaFT9oGrBAvdN93X4sV6eJlMgRJbNbKjnA/exec";
 
 // 🛑 GLOBAL AI INSTRUCTIONS 🛑
 const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
@@ -42,7 +46,11 @@ const SEARCH_PROVIDERS = [...TEXT_PROVIDERS];
 
 const publicDir = __dirname;
 const contentTypes = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
+const apiUsageStats = {}; 
 
+// ==========================================
+// 1. CORE UTILITIES
+// ==========================================
 function sendJson(res, statusCode, payload) { 
     res.writeHead(statusCode, { 
         "Content-Type": "application/json; charset=utf-8",
@@ -65,13 +73,10 @@ function readRequestBody(req) {
     }); 
 }
 
-const apiUsageStats = {}; 
-
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
     let targetProviders = [...providers]; 
     
-    // Check if dropdown wants to force a specific provider (like "api_5")
     if (override && override !== "auto") {
         targetProviders.sort((a, b) => {
             const isA = a.type.toLowerCase() === override.toLowerCase() || (a.id && a.id.replace(/\s+/g, '').toLowerCase() === override.replace(/\s+/g, '').toLowerCase());
@@ -102,7 +107,99 @@ async function tryProviders(providers, requestFn, override = null) {
 }
 
 // ==========================================
-// 🚀 THE BEAST MODE SMART SEARCH ROUTER
+// 2. NEW PTI SYNC AND DUAL SHARE ENGINE
+// ==========================================
+async function handlePtiSyncSave(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        let pti = body.pti;
+        const interactions = body.interactions || [];
+
+        if (!pti || pti === "null" || pti === "undefined") {
+            pti = "pti_" + crypto.randomBytes(8).toString("hex");
+        }
+
+        const spaceEfficientInteractions = interactions.map(inter => ({ ...inter, images: [] }));
+
+        const sessionPayload = {
+            id: pti,
+            type: 'search',
+            title: body.title || "Shared PTI Session",
+            interactions: spaceEfficientInteractions
+        };
+
+        const response = await fetch(GOOGLE_DATABASE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "save", pti: pti, sessionData: sessionPayload })
+        });
+
+        const sheetData = await response.json();
+        return sendJson(res, 200, { success: true, pti: pti, data: sessionPayload, sheetData: sheetData });
+    } catch (e) {
+        console.error("Save PTI Error:", e.message);
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+async function handleGetPtiSync(req, res) {
+    try {
+        const urlObj = new URL(req.url, `http://${req.headers.host}`);
+        const pti = urlObj.searchParams.get("pti");
+        
+        console.log("DEBUG: GET Request received for PTI:", pti);
+
+        if (!pti) return sendJson(res, 400, { error: "Missing token parameter." });
+
+        const response = await fetch(`${GOOGLE_DATABASE_URL}?pti=${pti}`);
+        const cloudData = await response.json();
+
+        if (cloudData.error) {
+            console.log("DEBUG: Google said Not Found for PTI:", pti);
+            return sendJson(res, 404, cloudData);
+        }
+        
+        console.log("DEBUG: Successfully fetched PTI:", pti);
+        return sendJson(res, 200, cloudData);
+    } catch (e) {
+        console.error("CRITICAL GET PTI ERROR:", e.message);
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+async function handleDualShare(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        let number = body.number.replace(/[^0-9]/g, '') + "@c.us";
+        const idInstance = process.env.ID_INSTANCE || "";
+        const apiToken = process.env.API_TOKEN || "";
+
+        if (!idInstance || !apiToken) throw new Error("Green API credentials missing on server.");
+
+        // Message 1: Text Notes
+        await fetch(`https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatId: number, message: body.notesMessage })
+        }).then(r => r.json());
+
+        // Message 2: Button
+        const data2 = await fetch(`https://api.green-api.com/waInstance${idInstance}/sendInteractiveButtons/${apiToken}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chatId: number,
+                body: "🔗 Click the action button below to instantly view the continuous live conversation loop:",
+                buttons: [{ "type": "url", "buttonId": "view_conv_btn", "buttonText": "See conversation", "url": body.targetUrl }]
+            })
+        }).then(r => r.json());
+
+        return sendJson(res, 200, { success: true, greenApiResponse: data2 });
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+// ==========================================
+// 3. AI HANDLERS
 // ==========================================
 async function handleSmartSearch(req, res) {
     try {
@@ -113,7 +210,6 @@ async function handleSmartSearch(req, res) {
         const imgBase64 = body.imageBase64 || null;
         
         const override = body.providerOverride || null;
-
         const providersList = imgBase64 ? VISION_PROVIDERS : TEXT_PROVIDERS;
 
         let orderedProviders = [];
@@ -126,10 +222,8 @@ async function handleSmartSearch(req, res) {
         const pGroq = providersList.find(p => p.type === 'groq');
 
        if (isCode) {
-            console.log("🛠️ SMART ROUTER: Code Request Detected. Initiating High-Performance Cascade");
             orderedProviders = [p5, p4, p3, p2, p1, pCf, pGroq].filter(Boolean);
         } else {
-            console.log("📝 SMART ROUTER: Text Request Detected. Initiating Standard Cascade");
             orderedProviders = [p1, p2, p3, p4, p5, pCf, pGroq].filter(Boolean);
         }
 
@@ -199,9 +293,6 @@ async function handleSmartSearch(req, res) {
     }
 }
 
-// ==========================================
-// LEGACY TEXT ENDPOINT
-// ==========================================
 async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -235,9 +326,6 @@ async function handleGeminiText(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
-// ==========================================
-// LEGACY VISION ENDPOINT
-// ==========================================
 async function handleGeminiVision(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -287,9 +375,6 @@ async function handleGeminiVision(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
-// ==========================================
-// SEARCH ENDPOINT
-// ==========================================
 async function handleGroqSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -320,9 +405,6 @@ async function handleGroqSearch(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
-// ==========================================
-// YOUTUBE SEARCH ENDPOINT
-// ==========================================
 async function handleYoutubeSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -333,9 +415,6 @@ async function handleYoutubeSearch(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
-// ==========================================
-// CLOUDFLARE IMAGE GENERATION ENDPOINT
-// ==========================================
 async function handleCloudflareImage(req, res) {
     try {
         if (!cfAccountId || !cfApiKey) return sendJson(res, 503, { error: "Cloudflare image generation is not configured." });
@@ -355,13 +434,6 @@ async function handleCloudflareImage(req, res) {
         return sendJson(res, 200, { base64, image: `data:image/png;base64,${base64}`, provider: "CLOUDFLARE (IMAGE)" });
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
-// ==========================================
-// 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
-// ==========================================
-const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "")
-    .split(',')
-    .map(num => num.trim())
-    .filter(num => num.length > 0);
 
 async function handleSecureWhatsapp(req, res) {
     try {
@@ -369,225 +441,80 @@ async function handleSecureWhatsapp(req, res) {
         const number = body.number;
         const message = body.message;
 
-        if (!AUTHORIZED_NUMBERS.includes(number)) {
+        const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "").split(',').map(n => n.trim()).filter(n => n.length > 0);
+        if (AUTHORIZED_NUMBERS.length > 0 && !AUTHORIZED_NUMBERS.includes(number)) {
             return sendJson(res, 403, { error: "ERROR - 324 (UNAUTHORIZED PROTECTION)" });
         }
 
         const idInstance = process.env.ID_INSTANCE || "";
         const apiToken = process.env.API_TOKEN || "";
 
-        if (!idInstance || !apiToken) {
-            throw new Error("Green API credentials missing on server.");
-        }
+        if (!idInstance || !apiToken) throw new Error("Green API credentials missing on server.");
 
         const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chatId: number + "@c.us",
-                message: message
-            })
-        });
-
+        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatId: number + "@c.us", message: message }) });
         const data = await response.json();
+        
         return sendJson(res, 200, data);
-    } catch (e) {
-        return sendJson(res, 502, { error: e.message });
-    }
+    } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
-// ==========================================
-// 🚨 DIRECT FEEDBACK ENDPOINT 🚨
-// ==========================================
 async function handleFeedbackRoute(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const message = body.message;
-
-        if (!message) {
-            return sendJson(res, 400, { error: "Message payload is empty." });
-        }
+        if (!message) return sendJson(res, 400, { error: "Message payload is empty." });
 
         const devNumber = process.env.FEEDBACK_NUMBER;
-        if (!devNumber) {
-            console.error("[Feedback Engine] ERROR: FEEDBACK_NUMBER missing in .env");
-            return sendJson(res, 500, { error: "Feedback destination not configured on server." });
-        }
+        if (!devNumber) return sendJson(res, 500, { error: "Feedback destination not configured on server." });
 
         const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
         const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
+        if (!idInstance || !apiToken) return sendJson(res, 500, { error: "Green API credentials missing on server." });
 
-        if (!idInstance || !apiToken) {
-            console.error("[Feedback Engine] ERROR: Green API credentials missing.");
-            return sendJson(res, 500, { error: "Green API credentials missing on server." });
-        }
-
-        // Clean number (remove non-digits to ensure @c.us works cleanly)
         const cleanNumber = devNumber.replace(/[^0-9]/g, '');
         const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-        
-        const payload = {
-            chatId: `${cleanNumber}@c.us`,
-            message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}`
-        };
+        const payload = { chatId: `${cleanNumber}@c.us`, message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}` };
 
         const response = await axios.post(url, payload, { headers: { 'Content-Type': 'application/json' } });
-
-        console.log(`[Feedback Engine] Successfully dispatched feedback to Dev: ${cleanNumber}`);
         return sendJson(res, 200, response.data);
-
-    } catch (error) {
-        console.error("[Feedback Engine Error]:", error.message);
-        return sendJson(res, 502, { error: "Failed to dispatch feedback." });
-    }
+    } catch (error) { return sendJson(res, 502, { error: "Failed to dispatch feedback." }); }
 }
+
+// Fallback stub if it was called in your original router but not defined
+async function handleHFSearchImage(req, res) {
+    return sendJson(res, 501, { error: "Endpoint not implemented yet." });
+}
+
 // ==========================================
-// 🧠 GOOGLE SHEETS CLOUD PTI ENGINE & DUAL SHARE
-// ==========================================
-const crypto = require("crypto");
-
-// 🚨 REPLACE THIS WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL
-const GOOGLE_DATABASE_URL = "https://script.google.com/macros/s/AKfycbwuSwz8wvT24TUYq_eWy9Ak4Lj7CfWUXGiTsaFT9oGrBAvdN93X4sV6eJlMgRJbNbKjnA/exec";
-
-// 1. Handles saving chat sessions to Google Sheets
-async function handlePtiSyncSave(req, res) {
-    try {
-        const body = JSON.parse(await readRequestBody(req));
-        let pti = body.pti;
-        const interactions = body.interactions || [];
-
-        if (!pti || pti === "null" || pti === "undefined") {
-            pti = "pti_" + crypto.randomBytes(8).toString("hex");
-        }
-
-        // Clean out images to keep the Google Sheet cell footprint thin
-        const spaceEfficientInteractions = interactions.map(inter => ({
-            ...inter,
-            images: []
-        }));
-
-        const sessionPayload = {
-            id: pti,
-            type: 'search',
-            title: body.title || "Shared PTI Session",
-            interactions: spaceEfficientInteractions
-        };
-
-        // Forward straight to Google Sheets Cloud Storage
-        await fetch(GOOGLE_DATABASE_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "save",
-                pti: pti,
-                sessionData: sessionPayload
-            })
-        });
-
-        return sendJson(res, 200, { success: true, pti: pti, data: sessionPayload });
-    } catch (e) {
-        return sendJson(res, 502, { error: e.message });
-    }
-}
-
-// 2. Handles pulling chat sessions from Google Sheets
-async function handleGetPtiSync(req, res) {
-    try {
-        const urlObj = new URL(req.url, `http://${req.headers.host}`);
-        const pti = urlObj.searchParams.get("pti");
-
-        if (!pti) return sendJson(res, 400, { error: "Missing token parameter." });
-
-        // Request directly from Google sheets database
-        const response = await fetch(`${GOOGLE_DATABASE_URL}?pti=${pti}`);
-        const cloudData = await response.json();
-
-        if (cloudData.error) {
-            return sendJson(res, 404, cloudData);
-        }
-        return sendJson(res, 200, cloudData);
-    } catch (e) {
-        return sendJson(res, 502, { error: e.message });
-    }
-}
-
-// 3. Handles sending consecutive WhatsApp messages (1st: Text Notes, 2nd: Interactive Button)
-async function handleDualShare(req, res) {
-    try {
-        const body = JSON.parse(await readRequestBody(req));
-        let number = body.number;
-        const notesMessage = body.notesMessage;
-        const targetUrl = body.targetUrl;
-
-        const idInstance = process.env.ID_INSTANCE || "";
-        const apiToken = process.env.API_TOKEN || "";
-
-        if (!idInstance || !apiToken) {
-            throw new Error("Green API credentials missing on server.");
-        }
-
-        // Clean out formatting artifacts from the number string
-        const cleanNumber = number.replace(/[^0-9]/g, '') + "@c.us";
-
-        // --- MESSAGE 1: Send the selected text notes ---
-        const urlMessage1 = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-        const response1 = await fetch(urlMessage1, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chatId: cleanNumber,
-                message: notesMessage
-            })
-        });
-        await response1.json(); // Wait for confirmation of first transmission
-
-        // --- MESSAGE 2: Send the Interactive Button Link ---
-        const urlMessage2 = `https://api.green-api.com/waInstance${idInstance}/sendInteractiveButtons/${apiToken}`;
-        const response2 = await fetch(urlMessage2, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chatId: cleanNumber,
-                body: "🔗 Click the action button below to instantly view the continuous live conversation loop:",
-                buttons: [
-                    {
-                        "type": "url",
-                        "buttonId": "view_conv_btn",
-                        "buttonText": "See conversation",
-                        "url": targetUrl
-                    }
-                ]
-            })
-        });
-        const data2 = await response2.json();
-
-        return sendJson(res, 200, { success: true, greenApiResponse: data2 });
-    } catch (e) {
-        console.error("[Dual Share Error]:", e.message);
-        return sendJson(res, 502, { error: e.message });
-    }
-}
-// ==========================================
-// STATIC FILE SERVER
+// 4. STATIC FILE SERVER
 // ==========================================
 function serveStatic(req, res) {
     let safePath = path.normalize(decodeURIComponent(new URL(req.url, `http://${req.headers.host}`).pathname)).replace(/^(\.\.[/\\])+/, "");
     if (safePath === "/" || safePath === "") safePath = "index.html";
-    let filePath = path.join(publicDir, safePath); if (!path.extname(filePath)) filePath += ".html";
+    let filePath = path.join(publicDir, safePath); 
+    if (!path.extname(filePath)) filePath += ".html";
+    
     fs.readFile(filePath, (error, data) => {
-        if (error) { fs.readFile(path.join(publicDir, "index.html"), (err, fData) => { res.writeHead(200, { "Content-Type": contentTypes[".html"] }); res.end(fData); }); return; }
-        res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); res.end(data);
+        if (error) { 
+            fs.readFile(path.join(publicDir, "index.html"), (err, fData) => { 
+                if(err) { res.writeHead(404); return res.end("Not Found"); }
+                res.writeHead(200, { "Content-Type": contentTypes[".html"] }); 
+                res.end(fData); 
+            }); 
+            return; 
+        }
+        res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); 
+        res.end(data);
     });
 }
 
 // ==========================================
-// MASTER ROUTER
+// 🚀 5. MASTER ROUTER (THE BULLETPROOF FIX)
 // ==========================================
 const server = http.createServer((req, res) => {
-    // 1. Handle Preflight CORS
+    
+    // 1. Instantly process CORS
     if (req.method === "OPTIONS") {
         res.writeHead(204, {
             "Access-Control-Allow-Origin": "*",
@@ -597,9 +524,16 @@ const server = http.createServer((req, res) => {
         return res.end();
     }
 
-    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    // 2. 🚨 THE GET ROUTE CATCHER (Fixes the 404!) 🚨
+    if (req.method === "GET") {
+        if (req.url.startsWith("/api/pti-get")) return handleGetPtiSync(req, res);
+        if (req.url.startsWith("/api/usage")) return sendJson(res, 200, apiUsageStats);
+        
+        // If it's not an API GET request, it must be an HTML/CSS/JS file request
+        return serveStatic(req, res);
+    }
 
-    // 2. Handle POST routes
+    // 3. THE POST ROUTE CATCHER
     if (req.method === "POST") {
         if (req.url === "/api/smart-search") return handleSmartSearch(req, res);
         if (req.url === "/api/gemini-text") return handleGeminiText(req, res);
@@ -609,26 +543,15 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
         if (req.url === "/api/feedback") return handleFeedbackRoute(req, res);
-        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); 
+        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res);
+        
+        // NEW PTI / DUAL SHARE ROUTES
         if (req.url === "/api/pti-save") return handlePtiSyncSave(req, res);
         if (req.url === "/api/send-dual-share") return handleDualShare(req, res);
-        return sendJson(res, 404, { error: "POST Route not found" });
-    }
-
-    // 3. Handle GET routes
-    if (req.method === "GET") {
-        // PTI Sync GET route
-        if (urlObj.pathname === "/api/pti-get") {
-            return handleGetPtiSync(req, res);
-        }
-        // Usage stats
-        if (urlObj.pathname === "/api/usage") {
-            return sendJson(res, 200, apiUsageStats);
-        }
         
-        // Everything else: serve static files
-        return serveStatic(req, res);
+        // If a POST route was sent to a URL that doesn't exist above
+        return sendJson(res, 404, { error: "POST Route not found on server" });
     }
 });
 
-server.listen(port, '0.0.0.0', () => console.log(`Server running on ${port}`));
+server.listen(port, '0.0.0.0', () => console.log(`🚀 Server running perfectly on port ${port}`));
