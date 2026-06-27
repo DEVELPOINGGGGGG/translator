@@ -908,7 +908,56 @@
         win.document.write(`<html><head><title>Saved Notes</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;}</style></head><body>${content}</body></html>`);
         win.document.close(); win.focus(); setTimeout(() => { win.print(); window.cancelShareMode(); }, 500);
     }
+async function submitWhatsAppSelection(event) {
+    // 1. Get the raw number and the country code
+    const rawCountry = document.getElementById('waCountryCode').value; // e.g., "+91"
+    const country = rawCountry.replace('+', ''); // Clean to "91"
+    const rawNumber = document.getElementById('waNumberInput').value.trim(); // e.g., "9876543210"
+    
+    // 2. Combine them to match your server's expected format (e.g., "919876543210")
+    const number = country + rawNumber;
+    
+    if (!rawNumber) return alert("Please enter a mobile number.");
 
+    // 3. Prepare the message text (stripping HTML/LaTeX)
+    let fullChatText = "📚 *Book Deep Study - Selected Notes* 📚\n\n";
+    document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
+        let clone = node.cloneNode(true);
+        let menuWrap = clone.querySelector('.msg-menu-wrap'); 
+        if(menuWrap) menuWrap.remove();
+        let msgText = (clone.textContent || clone.innerText || "").trim();
+        if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
+    });
+
+    // 4. Send to server
+    const btn = event.target; 
+    const originalText = btn.innerHTML; 
+    btn.innerHTML = "⏳ Sending..."; 
+    btn.disabled = true;
+
+    try {
+        const response = await fetch("/api/secure-whatsapp", { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ number: number, message: fullChatText.trim() }) 
+        });
+        
+        if (response.status === 403) {
+            alert("❌ 403 Forbidden: Number not authorized on server!");
+        } else if (response.ok) {
+            alert("✅ Selected notes sent successfully!"); 
+            document.getElementById('whatsappModal').style.display = 'none'; 
+            cancelShareMode(); 
+        } else {
+            alert("❌ Failed to send. Server responded with an error.");
+        }
+    } catch (e) {
+        alert("❌ Connection error. Is your server running?");
+    }
+    
+    btn.innerHTML = originalText; 
+    btn.disabled = false;
+}
     function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
     function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
 
