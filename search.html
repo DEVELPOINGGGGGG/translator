@@ -1080,21 +1080,17 @@
 fetch('/api/pti-save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ /* ... */ })
+    body: JSON.stringify(existingSession) 
 })
-.then(res => {
-    console.log("Server response status:", res.status); // 🚨 CHECK THIS IN CONSOLE
-    return res.json();
+.then(res => res.json())
+.then(data => {
+    if(data.pti) {
+        currentPti = data.pti;
+        const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
+        window.history.replaceState({ path: newUrl }, '', newUrl);
+    }
 })
-.then(data => console.log("Success:", data))
-.catch(err => console.error("Sync Error:", err)); // 🚨 CHECK THIS IN CONSOLE
-                    // Dynamically rewrite browser address bar to use ?pti= without reloading the page
-                    const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
-                    window.history.replaceState({ path: newUrl }, '', newUrl);
-                    console.log("PTI tracking token finalized:", currentPti);
-                }
-            })
-            .catch(err => console.error("Disk Cloud Sync Failed:", err));
+.catch(err => console.error("Disk Cloud Sync Failed:", err));
         }
 
         function openSources(loadId) { const urls = window['sources_' + loadId]; const list = document.getElementById("sourcesList"); list.innerHTML = urls.map(url => `<a href="${url.replace(/[\)\.\"]+$/, '')}" target="_blank" style="color:var(--primary); text-decoration:none; background:var(--input-bg); padding:12px; border-radius:8px; border:1px solid var(--border-light); word-break:break-all;">${url}</a>`).join(''); document.getElementById("sourcesModal").style.display = "flex"; }
