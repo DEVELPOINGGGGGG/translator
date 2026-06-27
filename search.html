@@ -34,23 +34,19 @@
 
         body { overflow: hidden; position: relative; background: var(--app-bg); font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
         
-        /* DYNAMIC TOP BAR */
         .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.4s ease; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .topbar.hidden { transform: translateY(-100%); }
 
-        /* Modals & Menus */
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #plusMenu { display: none; position: absolute; bottom: 85px; left: 15px; border-radius: 15px; flex-direction: column; z-index: 200; width: 220px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
         .menu-item { background: transparent; border: none; color: var(--text-main); padding: 15px; text-align: left; font-size: 14px; font-weight: bold; cursor: pointer; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px; transition: 0.2s; }
         .menu-item:hover { background: var(--primary); color: white; padding-left: 20px; }
 
-        /* Status Chips */
         .status-chip { display: none; align-items: center; gap: 8px; background: var(--input-bg); color: var(--text-main); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; width: max-content; border: 1px solid var(--primary); margin-bottom: 10px; animation: slideIn 0.3s ease; }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .chip-close { background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; display: flex; justify-content: center; align-items: center; }
 
-        /* Code Renderer */
         .code-box { background: #0d1117; color: #c9d1d9; border-radius: 12px; margin: 15px 0; border: 1px solid #30363d; overflow: hidden; font-family: monospace; box-shadow: 0 5px 20px rgba(0,0,0,0.4); }
         .code-header { background: #161b22; padding: 8px 15px; display: flex; justify-content: flex-end; gap: 8px; border-bottom: 1px solid #30363d; }
         .code-body { padding: 15px; overflow-x: auto; font-size: 13px; line-height: 1.5; font-family: monospace !important; white-space: pre-wrap; tab-size: 4; }
@@ -58,23 +54,19 @@
         .action-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
         .play-btn { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
 
-        /* User Upload Badge & Copy Button */
         .user-attachment-badge { background: rgba(0,0,0,0.2); color: inherit; padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; }
         .chat-user .bubble { position: relative; }
         .user-copy-btn { position: absolute; top: -10px; left: -10px; background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border-light); border-radius: 50%; width: 28px; height: 28px; font-size: 12px; cursor: pointer; display: none; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; z-index: 10; }
         .user-copy-btn:hover { background: var(--primary); color: white; transform: scale(1.1); }
         .chat-user .bubble:hover .user-copy-btn { display: flex; animation: popUp 0.2s ease; }
 
-        /* Quick Reply Suggestions */
         .quick-suggestions-wrap { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-light); animation: fadeIn 0.5s ease; }
         .quick-reply-btn { background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-block; }
         .quick-reply-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        /* Advanced SVG Renderer */
         .math-svg-wrap { background: #ffffff !important; border-radius: 12px; padding: 15px; margin: 15px 0; text-align: center; overflow-x: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid var(--primary); }
         .math-svg-wrap svg { max-width: 100%; height: auto; border-radius: 8px; }
 
-        /* AI Thinking Animation */
         .ai-thinking { padding: 15px 20px; display: flex; align-items: center; gap: 15px; min-width: 200px; }
         .data-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; position: relative; }
         .data-bar::after { content: ''; position: absolute; left: -50%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, var(--primary), transparent); animation: scan 1.5s infinite linear; }
@@ -83,7 +75,6 @@
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Chat Layout */
         .search-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface); padding: 15px; border-top: 1px solid var(--border-light); z-index: 100; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); transition: transform 0.4s ease; }
         .search-input-area.hidden { transform: translateY(100%); }
         .search-input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 25px; padding: 8px 12px; }
@@ -96,7 +87,6 @@
         .chat-user .bubble { background: var(--chat-user-bg); color: var(--chat-user-text); border-bottom-right-radius: 5px; }
         .chat-ai .bubble { background: var(--chat-ai-bg); border: 1px solid var(--chat-ai-border); border-bottom-left-radius: 5px; color: var(--text-main); }
 
-        /* Markdown Enhancements */
         .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 0; color: var(--text-main); font-weight: 800; }
         .markdown-body p { margin-bottom: 10px; }
         .markdown-body ul, .markdown-body ol { padding-left: 20px; margin-bottom: 15px; }
@@ -106,11 +96,9 @@
         .markdown-body th, .markdown-body td { border: 1px solid var(--border-light); padding: 8px; text-align: left; }
         .markdown-body th { background: var(--input-bg); font-weight: bold; }
 
-        /* MathJax Constraints */
         mjx-container[jax="CHTML"][display="true"] { margin: 1em 0 !important; overflow-x: auto; overflow-y: hidden; }
         mjx-container[jax="CHTML"][display="false"] { white-space: nowrap !important; display: inline-block !important; }
 
-        /* Share Mode */
         .share-mode-active .bubble { cursor: pointer !important; transition: 0.2s; position: relative; }
         .share-mode-active .bubble::before { content: ''; position: absolute; inset: 0; background: rgba(37, 211, 102, 0.1); border-radius: inherit; opacity: 0; transition: 0.2s; pointer-events: none;}
         .share-mode-active .bubble:hover::before { opacity: 1; }
@@ -118,7 +106,6 @@
 
         #exitFocusBtn { display: none; position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; border: 2px solid white; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; z-index: 999999; box-shadow: 0 5px 15px rgba(0,0,0,0.5); align-items: center; justify-content: center; }
 
-        /* Premium Audio Player GUI (25% Screen) */
         #premiumAudioPlayer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 25vh; min-height: 200px; background: var(--bg-surface); border-top: 2px solid var(--primary); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 -15px 40px rgba(0,0,0,0.3); animation: slideInUp 0.4s ease; padding: 20px; box-sizing: border-box; }
         @keyframes slideInUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .audio-top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -133,7 +120,6 @@
         .audio-main-btn:hover { transform: scale(1.1); }
         .audio-speed-select { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-light); padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 12px; outline: none; cursor: pointer; }
 
-        /* Premium Image GUI */
         #fullImageViewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .img-gui-topbar { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 20px 30px; box-sizing: border-box; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); z-index: 10000000; }
         .img-gui-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px); }
@@ -142,7 +128,6 @@
         .img-gui-btn.close-btn:hover { background: #ef4444; }
         #fullImageSrc { max-width: 95%; max-height: 80vh; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); object-fit: contain; animation: popUp 0.3s ease; }
 
-        /* YouTube Results Modal */
         #ytResultsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
         .yt-modal-box { background:var(--bg-surface); width:95%; max-width:600px; height:80vh; max-height:800px; padding:20px; border-radius:20px; position:relative; border: 1px solid var(--primary); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.3s ease; display:flex; flex-direction:column; }
         .yt-result-item { display:flex; gap:15px; padding:15px; border-bottom:1px solid var(--border-light); cursor:pointer; transition:0.2s; border-radius:12px; }
@@ -152,12 +137,10 @@
         .yt-title { font-size:14px; font-weight:bold; color:var(--text-main); margin-bottom:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
         .yt-meta { font-size:11px; color:var(--text-muted); }
 
-        /* YouTube Player Fullscreen */
         #ytPlayerFullscreen { display:none; position:fixed; inset:0; background:#000; z-index:9999999; align-items:center; justify-content:center; flex-direction:column; }
         .yt-close-fs { position:absolute; top:20px; right:20px; background:#ef4444; color:white; border:none; width:40px; height:40px; border-radius:50%; font-size:18px; font-weight:bold; cursor:pointer; z-index:100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         iframe.yt-iframe { width:100%; height:100%; max-width:1000px; max-height:562.5px; border:none; }
 
-        /* Modals */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
         .modal-box { background:var(--bg-surface); width:90%; max-width:400px; padding:25px; border-radius:20px; position:relative; border: 1px solid var(--border-light); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.3s ease; }
     </style>
@@ -198,7 +181,7 @@
                     <div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div>
                     <b>Welcome to DEEP SEARCH!</b><br><br>
                     • <b>Chat, Code & Math Diagram:</b> Clean code & Highly Detailed SVGs.<br>
-                    • <b>Universal Uploads:</b> PDF, Website URLs, or up to 20 images.<br>
+                    • <b>Massive PDF Uploads:</b> Reads & Compresses PDFs up to 25 pages (max 5MB).<br>
                     • <b>Smart Suggestions:</b> AI suggests quick questions below its answers.<br>
                     • <b>YouTube Search:</b> Find & Play YouTube videos directly here.<br>
                     • <b>Advanced Audio Player:</b> Speed control & accurate timeline.
@@ -393,35 +376,25 @@
         <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>
 
-<script>
+    <script>
         localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
         let appHistory = [];
         let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
         let currentPti = new URLSearchParams(window.location.search).get('pti') || null;
 
-        // ==========================================
-        // 1. INITIALIZATION & LIVE PTI SYNC
-        // ==========================================
         document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById('appLang').value = "Hindi";
             
             if (currentPti) {
                 showToast("⏳ Linking to Live PTI Session...");
                 await fetchAndInjectPtiSession(currentPti);
-                
-                // Continuous update loop: checks back every 4 seconds for mobile updates
-                setInterval(() => {
-                    silentCheckPtiUpdates();
-                }, 4000);
+                setInterval(() => { silentCheckPtiUpdates(); }, 4000);
             } else {
-                // Regular fallback tracking logic if no pti parameter exists
                 localforage.getItem('aiHistory').then(data => {
                     if(data) { 
                         appHistory = data; 
                         const restoreId = new URLSearchParams(window.location.search).get('restore'); 
-                        if(restoreId) {
-                            restoreSession(Number(restoreId)); 
-                        }
+                        if(restoreId) restoreSession(Number(restoreId)); 
                     }
                 });
             }
@@ -433,21 +406,20 @@
                 if (!response.ok) throw new Error("Not Found");
                 const sessionRecord = await response.json();
                 
-                currentSessionId = sessionRecord.id;
+                if (sessionRecord.error) throw new Error(sessionRecord.error);
                 
+                currentSessionId = sessionRecord.id;
                 let data = await localforage.getItem('aiHistory') || [];
                 appHistory = data; 
                 const matchIndex = appHistory.findIndex(s => s.id === sessionRecord.id);
-                if (matchIndex !== -1) {
-                    appHistory[matchIndex] = sessionRecord;
-                } else {
-                    appHistory.unshift(sessionRecord);
-                }
-                saveHistorySafe(); 
+                if (matchIndex !== -1) appHistory[matchIndex] = sessionRecord;
+                else appHistory.unshift(sessionRecord);
                 
+                saveHistorySafe(); 
                 restoreSession(sessionRecord.id); 
             } catch (e) {
                 showToast("❌ Unable to locate active PTI profile.");
+                console.error("Fetch Error:", e);
             }
         }
 
@@ -457,18 +429,22 @@
                 const response = await fetch(`/api/pti-get?pti=${currentPti}`);
                 if (!response.ok) return;
                 const freshSession = await response.json();
+                if (freshSession.error) return;
                 
-                let localSession = appHistory.find(s => s.id === freshSession.id);
+                let idx = appHistory.findIndex(s => s.id === freshSession.id || s.id === currentSessionId);
+                let localSession = idx !== -1 ? appHistory[idx] : null;
+                
                 const localLength = (localSession && localSession.interactions) ? localSession.interactions.length : 0;
                 const remoteLength = freshSession.interactions.length;
 
                 if (remoteLength > localLength) {
-                    let data = await localforage.getItem('aiHistory') || [];
-                    appHistory = data; 
-                    const idx = appHistory.findIndex(s => s.id === freshSession.id);
-                    if (idx !== -1) appHistory[idx] = freshSession;
-                    else appHistory.unshift(freshSession);
+                    if (idx !== -1) {
+                        appHistory[idx] = freshSession;
+                    } else {
+                        appHistory.unshift(freshSession);
+                    }
                     
+                    currentSessionId = freshSession.id;
                     saveHistorySafe(); 
                     restoreSession(freshSession.id); 
                     showToast("📲 Mobile additions sync applied!");
@@ -546,9 +522,6 @@
             document.getElementById('whatsappModal').style.display = 'flex';
         }
 
-        // ==========================================
-        // 2. WHATSAPP ENGINE (DUAL SHARE + PTI SYNC)
-        // ==========================================
         async function submitWhatsAppSelection(event) {
             const number = document.getElementById('waNumberInput').value.trim();
             if (!number) return showToast("Please enter a mobile number.");
@@ -577,11 +550,7 @@
                 const response = await fetch("/api/send-dual-share", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        number: number,
-                        notesMessage: fullChatText.trim(),
-                        targetUrl: liveChatPtiUrl
-                    })
+                    body: JSON.stringify({ number: number, notesMessage: fullChatText.trim(), targetUrl: liveChatPtiUrl })
                 });
 
                 if (response.ok) {
@@ -591,9 +560,7 @@
                 } else {
                     alert("❌ Transmission sequence failed.");
                 }
-            } catch (e) {
-                alert("❌ Connection error while sending.");
-            }
+            } catch (e) { alert("❌ Connection error while sending."); }
             
             btn.innerHTML = originalText; btn.disabled = false;
         }
@@ -612,10 +579,9 @@
             try {
                 const targetUrl = `${window.location.origin}/search.html?pti=${currentPti}`;
                 const response = await fetch("/api/secure-whatsapp", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        number: "917992410411", // Your default sync number
+                        number: "917992410411", // Standard sync number
                         message: `📲 *DEEP AI PTI LIVE CHAT LINK* \n\nContinue interacting instantly on your phone here:\n${targetUrl}`
                     })
                 });
@@ -623,12 +589,8 @@
                 if (response.ok) {
                     showToast("✅ PTI WhatsApp sync message transmitted!");
                     btn.innerText = "✅ Link Sent!";
-                } else {
-                    throw new Error();
-                }
-            } catch (e) {
-                showToast("❌ Dispatch failed.");
-            }
+                } else throw new Error();
+            } catch (e) { showToast("❌ Dispatch failed."); }
             setTimeout(() => { btn.innerText = originalText; btn.disabled = false; }, 3000);
         }
 
@@ -647,125 +609,43 @@
         marked.setOptions({ renderer: renderer });
         function copyCodeEngine(btn) { navigator.clipboard.writeText(btn.parentElement.nextElementSibling.innerText); btn.innerText = "✅ Copied"; btn.style.background = "#10b981"; setTimeout(() => { btn.innerText = "📋 Copy"; btn.style.background = "var(--input-bg)"; }, 2000); showToast("Code Copied!"); }
 
-        // ==========================================
-        // 3. AUDIO PLAYER ENGINE
-        // ==========================================
-        let ttsInterval = null;
-        let estimatedDurationSeconds = 0;
-        let elapsedSeconds = 0;
-        let currentTextToSpeak = "";
-        window.activeUtterance = null; 
-
-        function formatTime(secs) {
-            let m = Math.floor(secs / 60); let s = Math.floor(secs % 60);
-            return `${m}:${s < 10 ? '0' : ''}${s}`;
-        }
+        let ttsInterval = null; let estimatedDurationSeconds = 0; let elapsedSeconds = 0; let currentTextToSpeak = ""; window.activeUtterance = null; 
+        function formatTime(secs) { let m = Math.floor(secs / 60); let s = Math.floor(secs % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; }
 
         function playAudio(btn) { 
             currentTextToSpeak = document.getElementById(btn.getAttribute('data-target')).innerText; 
-            window.speechSynthesis.cancel(); 
-            clearInterval(ttsInterval); elapsedSeconds = 0;
-
-            let wordCount = currentTextToSpeak.split(/\s+/).length;
-            estimatedDurationSeconds = Math.max(2, Math.ceil((wordCount / 150) * 60)); 
-
-            document.getElementById("audioTotalTime").innerText = formatTime(estimatedDurationSeconds);
-            document.getElementById("audioCurrentTime").innerText = "0:00";
-            document.getElementById("audioProgressFill").style.width = "0%";
-            document.getElementById("premiumAudioToggle").innerText = "⏸";
-
-            document.getElementById("appTopbar").classList.add("hidden");
-            document.getElementById("appInputArea").classList.add("hidden");
-            document.getElementById("premiumAudioPlayer").style.display = "flex";
-
+            window.speechSynthesis.cancel(); clearInterval(ttsInterval); elapsedSeconds = 0;
+            let wordCount = currentTextToSpeak.split(/\s+/).length; estimatedDurationSeconds = Math.max(2, Math.ceil((wordCount / 150) * 60)); 
+            document.getElementById("audioTotalTime").innerText = formatTime(estimatedDurationSeconds); document.getElementById("audioCurrentTime").innerText = "0:00"; document.getElementById("audioProgressFill").style.width = "0%"; document.getElementById("premiumAudioToggle").innerText = "⏸";
+            document.getElementById("appTopbar").classList.add("hidden"); document.getElementById("appInputArea").classList.add("hidden"); document.getElementById("premiumAudioPlayer").style.display = "flex";
             startUtterance(currentTextToSpeak, parseFloat(document.getElementById("audioSpeed").value));
         }
 
         function startUtterance(text, speed) {
-            window.speechSynthesis.cancel(); 
-            const u = new SpeechSynthesisUtterance(text); 
-            u.lang = document.getElementById('appLang').value === 'Hindi' ? 'hi-IN' : 'en-US'; 
-            u.rate = speed;
-            u.onend = () => { stopAudio(); }; 
-            window.activeUtterance = u; 
-            window.speechSynthesis.speak(window.activeUtterance);
-
+            window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); 
+            u.lang = document.getElementById('appLang').value === 'Hindi' ? 'hi-IN' : 'en-US'; u.rate = speed; u.onend = () => { stopAudio(); }; 
+            window.activeUtterance = u; window.speechSynthesis.speak(window.activeUtterance);
             clearInterval(ttsInterval);
             ttsInterval = setInterval(() => {
-                if (window.speechSynthesis.paused) return;
-                elapsedSeconds += (1 * speed);
-                
-                let percent = (elapsedSeconds / estimatedDurationSeconds) * 100;
-                if (percent > 100) percent = 100;
-
-                document.getElementById("audioCurrentTime").innerText = formatTime(Math.min(elapsedSeconds, estimatedDurationSeconds));
-                document.getElementById("audioProgressFill").style.width = percent + "%";
-
+                if (window.speechSynthesis.paused) return; elapsedSeconds += (1 * speed);
+                let percent = (elapsedSeconds / estimatedDurationSeconds) * 100; if (percent > 100) percent = 100;
+                document.getElementById("audioCurrentTime").innerText = formatTime(Math.min(elapsedSeconds, estimatedDurationSeconds)); document.getElementById("audioProgressFill").style.width = percent + "%";
                 if (elapsedSeconds >= estimatedDurationSeconds) stopAudio();
             }, 1000);
         }
 
-        function toggleAudio() {
-            const btn = document.getElementById("premiumAudioToggle");
-            if (window.speechSynthesis.paused) { 
-                window.speechSynthesis.resume(); 
-                btn.innerText = "⏸"; 
-            } else if (window.speechSynthesis.speaking) { 
-                window.speechSynthesis.pause(); 
-                btn.innerText = "▶"; 
-            }
-        }
-
-        function changeAudioSpeed() {
-            if (!window.speechSynthesis.speaking) return;
-            let speed = parseFloat(document.getElementById("audioSpeed").value);
-            window.speechSynthesis.cancel();
-            
-            let percentDone = elapsedSeconds / estimatedDurationSeconds;
-            let totalWords = currentTextToSpeak.split(/\s+/);
-            let remainingText = totalWords.slice(Math.floor(totalWords.length * percentDone)).join(" ");
-            
-            startUtterance(remainingText, speed);
-        }
-
-        function seekAudio(e) {
-            if (!window.speechSynthesis.speaking) return;
-            const bar = document.getElementById("audioProgressBar");
-            const rect = bar.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const percent = clickX / rect.width;
-            
-            elapsedSeconds = percent * estimatedDurationSeconds;
-            document.getElementById("audioProgressFill").style.width = (percent * 100) + "%";
-            document.getElementById("audioCurrentTime").innerText = formatTime(elapsedSeconds);
-
-            let totalWords = currentTextToSpeak.split(/\s+/);
-            let remainingText = totalWords.slice(Math.floor(totalWords.length * percent)).join(" ");
-            
-            window.speechSynthesis.cancel();
-            let speed = parseFloat(document.getElementById("audioSpeed").value);
-            startUtterance(remainingText, speed);
-        }
-
-        function stopAudio() { 
-            window.speechSynthesis.cancel(); 
-            clearInterval(ttsInterval);
-            document.getElementById("premiumAudioPlayer").style.display = "none";
-            document.getElementById("appTopbar").classList.remove("hidden");
-            document.getElementById("appInputArea").classList.remove("hidden");
-        }
+        function toggleAudio() { const btn = document.getElementById("premiumAudioToggle"); if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); btn.innerText = "⏸"; } else if (window.speechSynthesis.speaking) { window.speechSynthesis.pause(); btn.innerText = "▶"; } }
+        function changeAudioSpeed() { if (!window.speechSynthesis.speaking) return; let speed = parseFloat(document.getElementById("audioSpeed").value); window.speechSynthesis.cancel(); let percentDone = elapsedSeconds / estimatedDurationSeconds; let totalWords = currentTextToSpeak.split(/\s+/); let remainingText = totalWords.slice(Math.floor(totalWords.length * percentDone)).join(" "); startUtterance(remainingText, speed); }
+        function seekAudio(e) { if (!window.speechSynthesis.speaking) return; const bar = document.getElementById("audioProgressBar"); const rect = bar.getBoundingClientRect(); const percent = (e.clientX - rect.left) / rect.width; elapsedSeconds = percent * estimatedDurationSeconds; document.getElementById("audioProgressFill").style.width = (percent * 100) + "%"; document.getElementById("audioCurrentTime").innerText = formatTime(elapsedSeconds); let totalWords = currentTextToSpeak.split(/\s+/); let remainingText = totalWords.slice(Math.floor(totalWords.length * percent)).join(" "); window.speechSynthesis.cancel(); startUtterance(remainingText, parseFloat(document.getElementById("audioSpeed").value)); }
+        function stopAudio() { window.speechSynthesis.cancel(); clearInterval(ttsInterval); document.getElementById("premiumAudioPlayer").style.display = "none"; document.getElementById("appTopbar").classList.remove("hidden"); document.getElementById("appInputArea").classList.remove("hidden"); }
 
         function copyText(btn) { navigator.clipboard.writeText(document.getElementById(btn.getAttribute('data-target')).innerText); btn.innerHTML = "✅ Copied"; setTimeout(() => btn.innerHTML = "📋 Copy", 2000); showToast("Text Copied!"); }
-
         function startVoice(lang) { document.getElementById('voiceModal').style.display='none'; if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Voice not supported."); const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition; const rec = new SpeechRec(); rec.lang = lang; rec.onstart = () => { document.getElementById("searchInput").value = "Listening..."; showToast("Listening..."); }; rec.onresult = (e) => { document.getElementById("searchInput").value = e.results[0][0].transcript; resizeInputBox(); }; rec.start(); }
 
         let currentFullscreenImage = "";
         function openFullImage(src) { currentFullscreenImage = src; document.getElementById('fullImageSrc').src = src; document.getElementById('fullImageViewer').style.display = 'flex'; }
         function downloadFullImage() { const a = document.createElement("a"); a.href = currentFullscreenImage; a.download = `DEEP_SEARCH_${Date.now()}.png`; document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast("📥 Download Started!"); }
 
-        // ==========================================
-        // 4. UI STATE & APP LOGIC
-        // ==========================================
         let isPhotoMode = false; let isYoutubeMode = false; let documentMemory = ""; let webUrls = []; let uploadedImagesList = []; let camStream = null; let camFacing = "environment"; let isFlash = true; let isProcessing = false; let windowUploadedFileName = ""; 
 
         function toggleSidebar() { document.getElementById("sidebar").classList.toggle("active"); document.getElementById("overlay").classList.toggle("active"); }
@@ -774,28 +654,89 @@
         window.addEventListener('click', function(e) { if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); });
         
         function togglePhotoMode() { isPhotoMode = !isPhotoMode; document.getElementById("photoModeChip").style.display = isPhotoMode ? "flex" : "none"; document.getElementById("photoModeMenuBtn").innerText = isPhotoMode ? "🎨 Turn Off Photo Gen" : "🎨 Turn On Photo Gen"; if(isPhotoMode) { isYoutubeMode = false; document.getElementById("ytModeChip").style.display = "none"; showToast("Photo Gen Ready"); } closePlusMenu(); }
-
         function toggleYoutubeMode() { isYoutubeMode = !isYoutubeMode; document.getElementById("ytModeChip").style.display = isYoutubeMode ? "flex" : "none"; if(isYoutubeMode) { isPhotoMode = false; document.getElementById("photoModeChip").style.display = "none"; showToast("YouTube Mode Ready"); } closePlusMenu(); }
-
         function toggleFocus() { const topBar = document.getElementById('appTopbar'); const inputArea = document.getElementById('appInputArea'); const exitBtn = document.getElementById('exitFocusBtn'); const isFocus = topBar.style.display !== 'none'; topBar.style.display = isFocus ? 'none' : 'flex'; inputArea.style.transform = isFocus ? 'translateY(200%)' : 'translateY(0)'; exitBtn.style.display = isFocus ? 'flex' : 'none'; document.getElementById('settingsModal').style.display = 'none'; showToast(isFocus ? "Focus Mode ON" : "Focus Mode OFF"); }
-
         function clearSearchChat() { document.getElementById("searchChatHistory").innerHTML = `<div class="chat-msg chat-ai" id="welcomeMessage"><div class="bubble" style="border: 2px solid var(--primary);"><div style="font-size:12px; font-weight:900; color:var(--primary); margin-bottom:10px;">✨ SYSTEM ONLINE</div><b>Memory Cleared. Ready for new questions.</b></div></div>`; documentMemory = ""; webUrls = []; uploadedImagesList = []; updateImageUI(); clearAttachment(); document.getElementById('settingsModal').style.display = 'none'; currentSessionId = Date.now(); currentPti = null; window.history.replaceState({}, document.title, window.location.pathname); showToast("Memory Wiped Clean."); }
 
         async function openCamera() { closePlusMenu(); document.getElementById('cameraModal').style.display='flex'; try { if(camStream) camStream.getTracks().forEach(t => t.stop()); camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); document.getElementById("cameraVideo").srcObject = camStream; setTimeout(async () => { const track = camStream.getVideoTracks()[0]; if (track.getCapabilities().torch && camFacing === "environment") { isFlash = true; await track.applyConstraints({ advanced: [{ torch: true }] }); document.getElementById('flashBtn').innerText = "💡"; } }, 500); } catch(e) { alert("Camera Error."); document.getElementById('cameraModal').style.display='none'; } }
         function closeCamera() { document.getElementById('cameraModal').style.display='none'; if(camStream) camStream.getTracks().forEach(t=>t.stop()); isFlash=false; }
         async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
         async function toggleFlash() { if(!camStream) return; const track = camStream.getVideoTracks()[0]; if(track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } }
-        
         function takePhoto() { if(uploadedImagesList.length >= 20) return showToast("❌ Max 20 images allowed!"); const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); uploadedImagesList.push(c.toDataURL("image/jpeg", 0.7)); documentMemory = ""; updateImageUI(); closeCamera(); showToast("Photo Added!"); }
 
         function openWebImport() { closePlusMenu(); document.getElementById('webImportModal').style.display = 'flex'; }
         function saveWebUrls() { let text = document.getElementById('webUrlInput').value.trim(); if (text) { webUrls = [text]; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `🌐 URL Linked`; windowUploadedFileName = "🌐 Web Link"; } document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = ''; }
 
+        // ==========================================
+        // 🚀 BULLETPROOF LONG PDF UPLOAD ENGINE
+        // ==========================================
         function handleFileUpload(e) {
             const file = e.target.files[0]; if(!file) return; closePlusMenu(); windowUploadedFileName = file.name;
-            if (file.type.startsWith('image/')) { if(uploadedImagesList.length >= 20) return showToast("❌ Max 20 images!"); const r = new FileReader(); r.onload = (ev) => { uploadedImagesList.push(ev.target.result); documentMemory = ""; updateImageUI(); showToast("Image Uploaded!"); }; r.readAsDataURL(file); } 
-            else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) { showToast("⏳ Reading PDF..."); const r = new FileReader(); r.onload = async function() { try { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(item=>item.str).join(' '); } if (!text.trim()) throw new Error("No readable text found."); documentMemory = text; uploadedImagesList = []; updateImageUI(); document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = file.name; showToast("✅ PDF Saved!"); } catch(err) { showToast("❌ PDF Read Failed."); clearAttachment(); } }; r.readAsArrayBuffer(file); } 
-            else { showToast("⏳ Reading File..."); const r = new FileReader(); r.onload = (ev) => { documentMemory = ev.target.result; uploadedImagesList = []; updateImageUI(); document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = file.name; showToast("✅ File Saved!"); }; r.readAsText(file); } e.target.value = "";
+            
+            // Limit 1: Size validation (5MB max to prevent browser freezing)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("❌ File too large! Max 5MB allowed.");
+                return;
+            }
+
+            if (file.type.startsWith('image/')) { 
+                if(uploadedImagesList.length >= 20) return showToast("❌ Max 20 images!"); 
+                const r = new FileReader(); 
+                r.onload = (ev) => { uploadedImagesList.push(ev.target.result); documentMemory = ""; updateImageUI(); showToast("Image Uploaded!"); }; 
+                r.readAsDataURL(file); 
+            } 
+            else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) { 
+                showToast("⏳ Reading & Compressing PDF..."); 
+                const r = new FileReader(); 
+                r.onload = async function() { 
+                    try { 
+                        const typedarray = new Uint8Array(this.result); 
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise; 
+                        
+                        // Limit 2: Page limits for Gemini Token safety
+                        if (pdf.numPages > 25) {
+                            throw new Error(`PDF is ${pdf.numPages} pages. Max 25 pages allowed.`);
+                        }
+
+                        let text = ""; 
+                        for(let i = 1; i <= pdf.numPages; i++){ 
+                            const p = await pdf.getPage(i); 
+                            const c = await p.getTextContent(); 
+                            text += c.items.map(item => item.str).join(' ') + "\n"; 
+                        } 
+                        
+                        // Compression Phase: Eliminate dead space & multiple empty lines to save thousands of tokens
+                        let compressedText = text.replace(/\s+/g, ' ').trim();
+                        if (!compressedText) throw new Error("No readable text found inside PDF."); 
+                        
+                        documentMemory = compressedText; 
+                        uploadedImagesList = []; 
+                        updateImageUI(); 
+                        document.getElementById("attachmentChip").style.display = "flex"; 
+                        document.getElementById("attachName").innerText = file.name + ` (${pdf.numPages} pgs)`; 
+                        showToast("✅ PDF Processed & Compressed!"); 
+                    } catch(err) { 
+                        showToast("❌ " + err.message); 
+                        clearAttachment(); 
+                    } 
+                }; 
+                r.readAsArrayBuffer(file); 
+            } 
+            else { 
+                showToast("⏳ Reading File..."); 
+                const r = new FileReader(); 
+                r.onload = (ev) => { 
+                    // Compress text files too
+                    documentMemory = ev.target.result.replace(/\s+/g, ' ').trim(); 
+                    uploadedImagesList = []; 
+                    updateImageUI(); 
+                    document.getElementById("attachmentChip").style.display = "flex"; 
+                    document.getElementById("attachName").innerText = file.name; 
+                    showToast("✅ File Saved!"); 
+                }; 
+                r.readAsText(file); 
+            } 
+            e.target.value = "";
         }
 
         function updateImageUI() { const container = document.getElementById("multiImagePreview"); if(uploadedImagesList.length === 0) { container.style.display = "none"; return; } container.style.display = "flex"; container.innerHTML = uploadedImagesList.map((img, i) => `<div style="position:relative; flex-shrink:0;"><button onclick="removeImage(${i})" style="position:absolute; top:-5px; right:-5px; background:#ef4444; color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer;">✕</button><img src="${img}" onclick="openFullImage('${img}')" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); cursor:pointer;"></div>`).join(''); }
@@ -822,9 +763,6 @@
         window.sendQuickReply = function(btn) { document.getElementById("searchInput").value = btn.innerText; btn.parentElement.remove(); resizeInputBox(); runMainSearch(); }
         function checkDailyImageLimit() { const today = new Date().toDateString(); let usage = JSON.parse(localStorage.getItem('geminiImgUsage') || '{"count": 0, "date": ""}'); if (usage.date !== today) usage = { count: 0, date: today }; if (usage.count >= 15) { showToast("❌ Daily limit of 15 Image Generations reached. Try again tomorrow!"); return false; } usage.count++; localStorage.setItem('geminiImgUsage', JSON.stringify(usage)); return true; }
 
-        // ==========================================
-        // 5. CORE SEARCH ENGINE LOGIC
-        // ==========================================
         async function runMainSearch() {
             if(isProcessing) return; const inp = document.getElementById("searchInput"); let q = inp.value.trim();
             if (!q && uploadedImagesList.length === 0 && !documentMemory && webUrls.length === 0) return;
@@ -858,99 +796,46 @@
             isProcessing = false; document.getElementById("sendSearchBtn").innerHTML = "🚀"; uploadedImagesList = []; updateImageUI(); clearAttachment();
         }
 
-        // --- YOUTUBE APP MODE ---
-        let ytVideosStore = [];
-        let ytCurrentIndex = 0;
-
+        let ytVideosStore = []; let ytCurrentIndex = 0;
         async function handleYoutubeAppSearch(query, loadId) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">SEARCHING YOUTUBE...</div><div class="data-bar"></div></div>`;
             try {
                 const res = await fetch("/api/youtube-search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: query }) });
                 const data = await res.json();
                 if (!data.results || data.results.length === 0) throw new Error("No videos found.");
-                
-                ytVideosStore = data.results;
-                let top5List = ytVideosStore.slice(0, 5); 
-                
-                let htmlAns = `<div style="font-size:10px; color:#ef4444; font-weight:900; margin-bottom:10px;">▶️ YOUTUBE RESULTS</div>`;
-                htmlAns += `<div style="display:flex; flex-direction:column; gap:10px;">`;
-                top5List.forEach(v => {
-                    htmlAns += `
-                    <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
-                        <img src="${v.thumbnail}" class="yt-thumb">
-                        <div class="yt-info">
-                            <div class="yt-title">${v.title}</div>
-                            <div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div>
-                        </div>
-                    </div>`;
-                });
+                ytVideosStore = data.results; let top5List = ytVideosStore.slice(0, 5); 
+                let htmlAns = `<div style="font-size:10px; color:#ef4444; font-weight:900; margin-bottom:10px;">▶️ YOUTUBE RESULTS</div><div style="display:flex; flex-direction:column; gap:10px;">`;
+                top5List.forEach(v => { htmlAns += `<div class="yt-result-item" onclick="openYtSelector('${v.videoId}')"><img src="${v.thumbnail}" class="yt-thumb"><div class="yt-info"><div class="yt-title">${v.title}</div><div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div></div></div>`; });
                 htmlAns += `<button class="action-btn" style="margin-top:10px; padding:10px; background:#ef4444; color:white;" onclick="openYtFullList()">Load More Videos</button></div>`;
-                
                 document.getElementById(loadId).innerHTML = `<div class="bubble">${htmlAns}</div>`;
                 saveInteractionToLocalForage(query, htmlAns, [], "YouTube Mode");
-                
             } catch (error) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ YouTube Error: ${error.message}</div>`; }
         }
 
         function openYtFullList() {
-            ytCurrentIndex = 15;
-            const list = document.getElementById("ytResultsList");
-            list.innerHTML = ytVideosStore.slice(0, ytCurrentIndex).map(v => `
-                <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
-                    <img src="${v.thumbnail}" class="yt-thumb">
-                    <div class="yt-info">
-                        <div class="yt-title">${v.title}</div>
-                        <div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div>
-                    </div>
-                </div>`).join('');
-            
-            document.getElementById("ytResultsModal").style.display = "flex";
-            document.getElementById("ytLoadMoreBtn").style.display = (ytVideosStore.length > ytCurrentIndex) ? "block" : "none";
+            ytCurrentIndex = 15; const list = document.getElementById("ytResultsList");
+            list.innerHTML = ytVideosStore.slice(0, ytCurrentIndex).map(v => `<div class="yt-result-item" onclick="openYtSelector('${v.videoId}')"><img src="${v.thumbnail}" class="yt-thumb"><div class="yt-info"><div class="yt-title">${v.title}</div><div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div></div></div>`).join('');
+            document.getElementById("ytResultsModal").style.display = "flex"; document.getElementById("ytLoadMoreBtn").style.display = (ytVideosStore.length > ytCurrentIndex) ? "block" : "none";
         }
 
         function loadMoreYt() {
-            const list = document.getElementById("ytResultsList");
-            let nextBatch = ytVideosStore.slice(ytCurrentIndex, ytCurrentIndex + 10);
-            
-            let htmlToAppend = nextBatch.map(v => `
-                <div class="yt-result-item" onclick="openYtSelector('${v.videoId}')">
-                    <img src="${v.thumbnail}" class="yt-thumb">
-                    <div class="yt-info">
-                        <div class="yt-title">${v.title}</div>
-                        <div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div>
-                    </div>
-                </div>`).join('');
-            
-            list.insertAdjacentHTML('beforeend', htmlToAppend);
-            ytCurrentIndex += 10;
-            
-            if (ytCurrentIndex >= ytVideosStore.length) document.getElementById("ytLoadMoreBtn").style.display = "none";
+            const list = document.getElementById("ytResultsList"); let nextBatch = ytVideosStore.slice(ytCurrentIndex, ytCurrentIndex + 10);
+            list.insertAdjacentHTML('beforeend', nextBatch.map(v => `<div class="yt-result-item" onclick="openYtSelector('${v.videoId}')"><img src="${v.thumbnail}" class="yt-thumb"><div class="yt-info"><div class="yt-title">${v.title}</div><div class="yt-meta">📺 ${v.author} • ⏱️ ${v.timestamp}</div></div></div>`).join(''));
+            ytCurrentIndex += 10; if (ytCurrentIndex >= ytVideosStore.length) document.getElementById("ytLoadMoreBtn").style.display = "none";
         }
 
         let currentActiveVid = "";
         function openYtSelector(vidId) { currentActiveVid = vidId; document.getElementById("ytActionModal").style.display = "flex"; }
         function closeYtModal(e, force = false) { if (force || e.target === document.getElementById('ytResultsModal')) { document.getElementById('ytResultsModal').style.display='none'; } }
         function openYtExternal() { document.getElementById("ytActionModal").style.display = "none"; window.open(`https://www.youtube.com/watch?v=${currentActiveVid}`, "_blank"); }
-        function playYtInApp() {
-            document.getElementById("ytActionModal").style.display = "none";
-            document.getElementById("ytResultsModal").style.display = "none";
-            document.getElementById("ytIframe").src = `https://www.youtube.com/embed/${currentActiveVid}?autoplay=1`;
-            document.getElementById("ytPlayerFullscreen").style.display = "flex";
-            if (screen.orientation && screen.orientation.lock) { screen.orientation.lock("landscape").catch(e=>{}); }
-        }
-        function closeYtFullscreen() {
-            document.getElementById("ytPlayerFullscreen").style.display = "none";
-            document.getElementById("ytIframe").src = "";
-            if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
-        }
+        function playYtInApp() { document.getElementById("ytActionModal").style.display = "none"; document.getElementById("ytResultsModal").style.display = "none"; document.getElementById("ytIframe").src = `https://www.youtube.com/embed/${currentActiveVid}?autoplay=1`; document.getElementById("ytPlayerFullscreen").style.display = "flex"; if (screen.orientation && screen.orientation.lock) { screen.orientation.lock("landscape").catch(e=>{}); } }
+        function closeYtFullscreen() { document.getElementById("ytPlayerFullscreen").style.display = "none"; document.getElementById("ytIframe").src = ""; if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); } }
 
-        // --- IMAGE GENERATION MODE ---
         async function handlePhotoGeneration(promptText, loadId, savedImages) {
             document.getElementById(loadId).innerHTML = `<div class="bubble ai-thinking"><div class="thinking-text">OPTIMIZING PROMPTS...</div><div class="data-bar"></div></div>`;
             try {
                 let currentModel = document.getElementById('modelSelector').value;
-                const enhancePrompt = `You are an elite AI image prompt engineer optimizing for the Flux model. The user wants an image based on: "${promptText}". Create 3 distinct, highly detailed, 4k resolution text-to-image prompts. STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."].`;
-                const res = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userPrompt: enhancePrompt, systemPrompt: "Return strictly a JSON array.", providerOverride: currentModel === "auto" ? "api_1" : currentModel }) });
+                const res = await fetch("/api/gemini-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userPrompt: `You are an elite AI image prompt engineer optimizing for the Flux model. The user wants an image based on: "${promptText}". Create 3 distinct, highly detailed, 4k resolution text-to-image prompts. STRICT RULE: Return ONLY a valid JSON array of 3 strings. Example: ["Prompt 1 detailed...", "Prompt 2 detailed...", "Prompt 3 detailed..."].`, systemPrompt: "Return strictly a JSON array.", providerOverride: currentModel === "auto" ? "api_1" : currentModel }) });
                 const data = await res.json(); let options = [];
                 try { let cleanJson = data.text.replace(/```json/gi, '').replace(/```/gi, '').trim(); options = JSON.parse(cleanJson); } catch(e) { options = [promptText + " highly detailed", promptText + " cinematic lighting", promptText + " masterpiece"]; }
                 if(!Array.isArray(options) || options.length < 3) options = [promptText, promptText + " 4k", promptText + " realistic"];
@@ -979,7 +864,9 @@
             } catch (error) { document.getElementById(loadId).innerHTML = `<div class="bubble" style="color:#ef4444; border:1px solid #ef4444;">❌ Cloudflare API Error: ${error.message}</div>`; }
         };
 
-        // --- TEXT / MATH ENGINE ---
+        // ==========================================
+        // 🚀 MASTER TEXT ENGINE + MEGA PDF CONTEXT
+        // ==========================================
         async function handleTextSearch(prompt, loadId, savedImages, attachedFileName) {
             const lang = document.getElementById("appLang").value; const customRules = document.getElementById("aiInstructions").value.trim();
             let isMathQ = /math|solve|calculate|equation|find the value|त्रिज्या|व्यास|formula|[0-9]+[\+\-\*\/\^]/i.test(prompt);
@@ -1017,7 +904,9 @@
 
             if (customRules) sysPrompt += `\n\nUSER RULES:\n${customRules}`;
             if (webUrls.length > 0) sysPrompt += `\n\nUSER ATTACHED WEB URL: ${webUrls[0]}`;
-            if (documentMemory) sysPrompt += `\n\nLOCAL KNOWLEDGE BASE:\n${documentMemory.substring(0, 60000)}`;
+            
+            // 🚨 EXPANDED CONTEXT INJECTION FOR 25-PAGE PDFs (Up to 150,000 characters) 🚨
+            if (documentMemory) sysPrompt += `\n\nLOCAL KNOWLEDGE BASE (DOCUMENT CONTENT):\n${documentMemory.substring(0, 150000)}`;
 
             let memoryContext = ""; let existingSession = appHistory.find(s => Number(s.id) === Number(currentSessionId));
             if (existingSession && existingSession.interactions) {
@@ -1061,36 +950,44 @@
             });
         }
 
-        // ==========================================
-        // 6. PTI CLOUD SAVING HOOK
-        // ==========================================
         function saveInteractionToLocalForage(question, answer, images, provider, sources = [], fileName = null) {
             let existingSession = appHistory.find(s => Number(s.id) === Number(currentSessionId) || s.id === currentSessionId);
             
             if (existingSession) { 
                 existingSession.interactions.push({ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }); 
-            } 
-            else { 
+            } else { 
                 existingSession = { id: currentPti || currentSessionId, type: 'search', title: question.substring(0, 30), interactions: [{ question: question, answer: answer, images: images, provider: provider, sources: sources, fileName: fileName }] };
                 appHistory.unshift(existingSession); 
                 showToast("✅ Session Saved Successfully"); 
             }
             saveHistorySafe(); 
 
-fetch('/api/pti-save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(existingSession) 
-})
-.then(res => res.json())
-.then(data => {
-    if(data.pti) {
-        currentPti = data.pti;
-        const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
-        window.history.replaceState({ path: newUrl }, '', newUrl);
-    }
-})
-.catch(err => console.error("Disk Cloud Sync Failed:", err));
+            fetch('/api/pti-save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pti: currentPti || existingSession.id,
+                    title: existingSession.title,
+                    interactions: existingSession.interactions
+                })
+            })
+            .then(res => res.json())
+            .then(serverResult => {
+                if (serverResult.success && !currentPti) {
+                    currentPti = serverResult.pti;
+                    
+                    let sessionToUpdate = appHistory.find(s => Number(s.id) === Number(currentSessionId) || s.id === currentSessionId);
+                    if (sessionToUpdate) {
+                        sessionToUpdate.id = currentPti;
+                        currentSessionId = currentPti;
+                        saveHistorySafe();
+                    }
+
+                    const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
+                    window.history.replaceState({ path: newUrl }, '', newUrl);
+                }
+            })
+            .catch(err => console.error("Cloud Sync Failed:", err));
         }
 
         function openSources(loadId) { const urls = window['sources_' + loadId]; const list = document.getElementById("sourcesList"); list.innerHTML = urls.map(url => `<a href="${url.replace(/[\)\.\"]+$/, '')}" target="_blank" style="color:var(--primary); text-decoration:none; background:var(--input-bg); padding:12px; border-radius:8px; border:1px solid var(--border-light); word-break:break-all;">${url}</a>`).join(''); document.getElementById("sourcesModal").style.display = "flex"; }
