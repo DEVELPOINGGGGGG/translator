@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chapter Quiz Maker</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <script>
+      MathJax = { 
+          options: { ignoreHtmlClass: 'code-box', processHtmlClass: 'markdown-body' },
+          tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+          svg: { fontCache: 'global' }, chtml: { displayAlign: 'left' }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --app-bg: var(--bg-base, #f8fafc);
+            --chat-user-bg: var(--primary, #3b82f6);
+            --chat-user-text: #ffffff;
+            --chat-ai-bg: var(--bg-surface, #ffffff);
+            --chat-ai-border: var(--border-light, #e2e8f0);
+            --btn-hover: var(--primary-glow, rgba(59, 130, 246, 0.2));
+            --correct-color: #10b981;
+            --wrong-color: #ef4444;
+        }
+
+        html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; background: var(--app-bg); color: var(--text-main); }
+        
+        .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
+        .appTitle-container { flex: 1; overflow-x: auto; white-space: nowrap; margin: 0 15px; }
+        .appTitle { font-size: 18px; font-weight: bold; color: var(--text-main); }
+
+        .wizard-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; padding-top: 100px; padding-bottom: 80px; width: 100%; box-sizing: border-box; overflow-y: auto; height: 100vh; }
+        .step-card { width: 100%; max-width: 600px; display: none; text-align: center; animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: var(--bg-surface); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border-light); box-sizing: border-box; margin-bottom: 30px; }
+        .step-card.active { display: block; }
+        .step-card h2 { color: var(--primary); margin-bottom: 20px; font-weight: 800; font-size: 24px; }
+        .step-card label { display: block; text-align: left; margin-bottom: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px;}
+        select.standard, input.standard { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border-light); background: var(--input-bg); color: var(--text-main); font-size: 16px; margin-bottom: 20px; box-sizing: border-box; outline: none; transition: 0.3s; font-family: inherit; }
+        select.standard:focus, input.standard:focus { border-color: var(--primary); box-shadow: 0 5px 15px var(--primary-glow); }
+        .btn-row { display: flex; gap: 15px; justify-content: space-between; margin-top: 10px; }
+        .btn { flex: 1; padding: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; color: white; transition: 0.2s; font-size: 15px; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px var(--primary-glow); }
+        .btn-secondary { background: #475569; }
+        .btn-secondary:hover { transform: translateY(-3px); background: #334155; }
+
+        .floating-lang-btn { position: absolute; top: 15px; right: 15px; font-size: 26px; background: transparent; border: none; cursor: pointer; transition: 0.3s; z-index: 100; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+        
+        .generated-cover { width: 140px; height: 190px; background: linear-gradient(135deg, #1e293b, #3b82f6); border-radius: 4px 12px 12px 4px; box-shadow: inset 4px 0 10px rgba(0,0,0,0.3), inset -1px 0 2px rgba(255,255,255,0.3), 5px 10px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 10px; box-sizing: border-box; color: white; text-align: center; margin: 0 auto 20px auto; border-left: 6px solid #0f172a; }
+
+        /* QUIZ ACTIVE UI */
+        #quizActivePage { display: none; flex-direction: column; height: 100vh; padding-top: 70px; background: var(--app-bg); }
+        .quiz-header { padding: 15px 20px; text-align: center; font-weight: bold; font-size: 18px; border-bottom: 1px solid var(--border-light); background: var(--bg-surface); }
+        .timer-bar-container { width: 100%; height: 6px; background: var(--input-bg); position: relative; }
+        .timer-bar-fill { height: 100%; width: 100%; background: var(--correct-color); transition: width 1s linear, background-color 0.3s; }
+        .timer-text { position: absolute; top: 10px; right: 20px; font-weight: 800; font-size: 20px; color: var(--text-main); font-variant-numeric: tabular-nums; }
+        
+        .question-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .question-box { width: 100%; max-width: 700px; background: var(--bg-surface); padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid var(--border-light); margin-bottom: 20px; }
+        .question-text { font-size: 18px; font-weight: 600; margin-bottom: 25px; line-height: 1.5; color: var(--text-main); }
+        
+        .option-btn { width: 100%; text-align: left; padding: 15px 20px; margin-bottom: 12px; background: var(--input-bg); border: 2px solid var(--border-light); border-radius: 12px; font-size: 16px; font-weight: 500; color: var(--text-main); cursor: pointer; transition: 0.2s; font-family: inherit; }
+        .option-btn:hover { border-color: var(--primary); background: rgba(59, 130, 246, 0.05); transform: translateX(5px); }
+        .option-btn.selected { background: var(--primary); color: white; border-color: var(--primary); transform: scale(1.02); }
+        .option-btn.correct { background: var(--correct-color) !important; color: white !important; border-color: var(--correct-color) !important; }
+        .option-btn.wrong { background: var(--wrong-color) !important; color: white !important; border-color: var(--wrong-color) !important; }
+        
+        .quiz-footer { padding: 20px; background: var(--bg-surface); border-top: 1px solid var(--border-light); display: flex; justify-content: center; }
+
+        /* RESULTS UI */
+        #resultPage { display: none; flex-direction: column; height: 100vh; padding-top: 70px; background: var(--app-bg); overflow-y: auto; align-items: center; padding-bottom: 50px;}
+        .score-circle { width: 150px; height: 150px; border-radius: 50%; border: 8px solid var(--primary); display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 30px auto; font-size: 36px; font-weight: 900; color: var(--primary); box-shadow: 0 0 30px rgba(59, 130, 246, 0.3); }
+        .score-circle span { font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        
+        .breakdown-container { width: 100%; max-width: 800px; padding: 0 20px; }
+        .result-card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .result-card.correct { border-left: 6px solid var(--correct-color); }
+        .result-card.wrong { border-left: 6px solid var(--wrong-color); }
+        .res-q { font-size: 16px; font-weight: bold; margin-bottom: 15px; }
+        .res-a { font-size: 14px; margin-bottom: 8px; font-weight: 500; }
+        .res-exp { background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 10px; font-size: 14px; color: var(--text-main); margin-top: 15px; border: 1px solid rgba(59, 130, 246, 0.2); }
+
+        @keyframes popInCard { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+
+        /* Loader */
+        #loadingPage { display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:99999; flex-direction:column; justify-content:center; align-items:center; backdrop-filter: blur(10px); }
+        #loadingBar { width:0%; height:100%; background:var(--primary); transition:width 0.3s; }
+
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
+        .modal-box { background:var(--bg-surface); width:90%; max-width:400px; padding:25px; border-radius:20px; position:relative; border: 1px solid var(--border-light); box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div style="display:flex; align-items:center; flex: 1;">
+        <div class="menuBtn" onclick="window.location.href='index.html'" style="font-size:24px; cursor:pointer; margin-right: 15px; color:var(--text-main);">🏠</div>
+        <div class="appTitle-container">
+            <div class="appTitle">📝 Chapter Quiz Maker</div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingPage">
+    <h2 id="loadingTitle" style="color: var(--primary); font-size: 26px; margin-bottom: 10px; font-weight: 800; text-align: center;">⚙️ Compiling Quiz...</h2>
+    <p id="loadingDesc" style="color: #cbd5e1; font-size: 14px; text-align: center; max-width: 80%;">Generating AI questions from chapter data...</p>
+    <div style="width:80%; max-width:300px; height:6px; background:rgba(255,255,255,0.2); border-radius:3px; margin-top:20px; overflow:hidden;">
+        <div id="loadingBar"></div>
+    </div>
+</div>
+
+<div id="wizardPage">
+    <button class="floating-lang-btn" onclick="window.toggleAppLanguage()" title="Toggle Language">🌐</button>
+    <div class="wizard-container" id="wizardContainer">
+        
+        <div class="step-card active" id="step-1">
+            <h2>Step 1: Board / Publisher</h2>
+            <label>Select Publisher:</label>
+            <select id="publisherSelect" class="standard" onchange="window.triggerSubjectFetch()">
+                <option value="" selected disabled>-- Select Publisher --</option>
+                <option value="NCERT">NCERT</option>
+                <option value="SCERT">SCERT</option>
+                <option value="Bihar Board">Bihar Board</option>
+                <option value="R.D. Sharma">R.D. Sharma</option>
+                <option value="R.S. Aggarwal">R.S. Aggarwal</option>
+                <option value="S Chand">S Chand</option>
+                <option value="Oswaal">Oswaal</option>
+                <option value="Other">Other (Custom)</option>
+            </select>
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="window.nextStep(2)">Next ➔</button>
+            </div>
+        </div>
+
+        <div class="step-card" id="step-2">
+            <h2>Step 2: Class</h2>
+            <label>Select Class:</label>
+            <select id="classSelect" class="standard" onchange="window.triggerSubjectFetch()">
+                <option value="" selected disabled>-- Select Class --</option>
+                <option value="Class 5">Class 5</option>
+                <option value="Class 6">Class 6</option>
+                <option value="Class 7">Class 7</option>
+                <option value="Class 8">Class 8</option>
+                <option value="Class 9">Class 9</option>
+                <option value="Class 10">Class 10</option>
+                <option value="Class 11">Class 11</option>
+                <option value="Class 12">Class 12</option>
+            </select>
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="window.nextStep(1)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="window.nextStep(3)">Next ➔</button>
+            </div>
+        </div>
+
+        <div class="step-card" id="step-3">
+            <h2>Step 3: Subject</h2>
+            <label id="subjectFetchStatus">Select Subject (AI Fetched):</label>
+            <select id="subjectSelect" class="standard" onchange="window.handleSubjectChange()">
+                <option value="" selected disabled>-- Select Publisher & Class First --</option>
+            </select>
+            <div id="customSubjectContainer" style="display:none; margin-top: 10px;">
+                <input type="text" id="customSubjectInput" class="standard" placeholder="Type custom subject here..." oninput="window.triggerChapterFetch()">
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="window.nextStep(2)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="window.nextStep(4)">Next ➔</button>
+            </div>
+        </div>
+
+        <div class="step-card" id="step-4">
+            <h2>Step 4: Chapter</h2>
+            <label id="chapterFetchStatus">Select Chapter (AI Generated):</label>
+            <select id="chapterSelect" class="standard">
+                <option value="" selected disabled>-- Select Subject First --</option>
+            </select>
+            <label style="margin-top:10px;">Or Type Chapter Manually:</label>
+            <input type="text" id="manualChapter" class="standard" placeholder="e.g. Motion / गति">
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="window.nextStep(3)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="window.nextStep(5)">Next ➔</button>
+            </div>
+        </div>
+
+        <div class="step-card" id="step-5">
+            <h2>Quiz Settings</h2>
+            <div id="dynamicBookCover">
+                <div class="generated-cover">
+                    <span style="font-size:11px; text-transform:uppercase; opacity:0.9;" id="coverPub">Publisher</span>
+                    <span style="font-size:20px; font-weight:800; line-height:1.2; margin:10px 0;" id="coverSub">Loading...</span>
+                    <span style="font-size:12px; font-weight:bold; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:12px;" id="coverCls">Class</span>
+                </div>
+            </div>
+
+            <label>Number of Questions:</label>
+            <select id="quizCount" class="standard">
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="15">15 Questions</option>
+                <option value="20">20 Questions</option>
+            </select>
+
+            <label>Difficulty Level:</label>
+            <select id="quizDiff" class="standard">
+                <option value="Easy">Easy (Basic Concepts)</option>
+                <option value="Medium" selected>Medium (Standard Board Level)</option>
+                <option value="Hard">Hard (HOTS / Competitive)</option>
+            </select>
+
+            <label>Timer per Question:</label>
+            <select id="quizTimer" class="standard">
+                <option value="0">No Timer (Relaxed)</option>
+                <option value="30">30 Seconds (Fast)</option>
+                <option value="60" selected>60 Seconds (Standard)</option>
+                <option value="120">120 Seconds (Math/Calculations)</option>
+            </select>
+
+            <button class="btn btn-primary" style="width: 100%; padding: 18px; font-size: 18px; background: linear-gradient(135deg, #10b981, #047857);" onclick="window.startQuizGeneration()">Generate Quiz 🚀</button>
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="window.nextStep(4)">⬅ Edit Details</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="quizActivePage">
+    <div class="quiz-header">
+        <span id="quizProgressText">Question 1 of 10</span>
+        <div class="timer-text" id="timerText" style="display:none;">00:60</div>
+    </div>
+    <div class="timer-bar-container" id="timerBarContainer" style="display:none;">
+        <div class="timer-bar-fill" id="timerBar"></div>
+    </div>
+
+    <div class="question-container">
+        <div class="question-box">
+            <div class="question-text markdown-body" id="qText">Loading question...</div>
+            <div id="optionsContainer">
+                </div>
+        </div>
+    </div>
+
+    <div class="quiz-footer">
+        <button id="nextQBtn" class="btn btn-primary" style="max-width: 400px; display:none;" onclick="window.handleNextQuestion()">Next Question ➔</button>
+    </div>
+</div>
+
+<div id="resultPage">
+    <h2 style="font-weight: 800; font-size: 28px; margin-top: 20px;">Quiz Complete! 🎉</h2>
+    <div class="score-circle">
+        <div id="finalScoreText">10/10</div>
+        <span id="finalPercentText">100%</span>
+    </div>
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+        <button class="btn btn-primary" onclick="window.location.reload()">Create New Quiz</button>
+        <button class="btn btn-secondary" onclick="window.location.href='history.html'">View History</button>
+    </div>
+
+    <div class="breakdown-container" id="resultsBreakdown">
+        </div>
+</div>
+
+<div id="customAlertModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 20px; font-weight: bold;">Notice</h3>
+        <p id="alertMessage" style="font-size: 15px; margin-bottom: 25px;"></p>
+        <button class="btn btn-primary" style="width: 100%;" onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>
+    </div>
+</div>
+
+<script>
+    let isHindiUI = true;
+    let selectedData = {};
+    
+    let generatedQuiz = [];
+    let currentQIndex = 0;
+    let userAnswers = []; // stores { questionIdx, selectedOptionIdx, isCorrect }
+    let score = 0;
+    
+    let timerDuration = 0;
+    let timerInterval = null;
+    let timeLeft = 0;
+
+    window.showCustomAlert = function(msg) {
+        document.getElementById('alertMessage').innerText = msg;
+        document.getElementById('customAlertModal').style.display = 'flex';
+    };
+    window.alert = window.showCustomAlert;
+
+    window.toggleAppLanguage = function() {
+        isHindiUI = !isHindiUI;
+        alert(isHindiUI ? "🌐 Language set to Hindi" : "🌐 Language set to English");
+    }
+
+    // --- WIZARD LOGIC (COPIED EXACTLY FROM BOOKS.HTML) ---
+    window.nextStep = function(step) {
+        if(step === 2 && !document.getElementById('publisherSelect').value) return alert("Please Select Publisher!");
+        if(step === 3 && !document.getElementById('classSelect').value) return alert("Please Select Class!");
+        if(step === 4 && !document.getElementById('subjectSelect').value) return alert("Please Select Subject!");
+        
+        document.querySelectorAll('.step-card').forEach(el => el.classList.remove('active'));
+        document.getElementById(`step-${step}`).classList.add('active');
+
+        if(step === 5) {
+            let pub = document.getElementById('publisherSelect').value;
+            let sub = document.getElementById('subjectSelect').value;
+            let cls = document.getElementById('classSelect').value;
+            let chapList = document.getElementById('chapterSelect').value;
+            let chapMan = document.getElementById('manualChapter').value;
+            
+            if(sub === 'Other') sub = document.getElementById('customSubjectInput').value || "Custom Subject";
+            let finalChap = chapMan ? chapMan : chapList;
+            if(!finalChap) { window.nextStep(4); return alert("Please select or type a chapter!"); }
+
+            selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
+            
+            document.getElementById('coverPub').innerText = pub;
+            document.getElementById('coverSub').innerText = sub;
+            document.getElementById('coverCls').innerText = cls;
+        }
+    }
+
+    window.triggerSubjectFetch = async function() {
+        let pub = document.getElementById('publisherSelect').value; 
+        let cls = document.getElementById('classSelect').value; 
+        let subSelect = document.getElementById('subjectSelect');
+        if(!pub || !cls) return;
+
+        subSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching Subjects... --</option>';
+        try {
+            const sysPrompt = `You are a syllabus mapping expert. The user wants the EXACT subjects published for Class ${cls} by the publisher/board "${pub}". 
+            CRITICAL RULES: ONLY return subjects that are ACTUALLY PUBLISHED by "${pub}". Return a raw JSON array of strings ONLY.`;
+            const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: `Fetch real subjects for ${cls} ${pub}` }) });
+            const data = await r.json(); 
+            let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim(); 
+            let fetchedSubjects = JSON.parse(cleanJson);
+            
+            if(!Array.isArray(fetchedSubjects) || fetchedSubjects.length === 0) throw new Error("Fallback");
+            subSelect.innerHTML = '<option value="" selected disabled>-- Select Subject --</option>';
+            fetchedSubjects.forEach(sub => { subSelect.innerHTML += `<option value="${sub}">${sub}</option>`; });
+            subSelect.innerHTML += `<option value="Other">Other Subject (Type Manually)</option>`;
+        } catch(e) {
+            subSelect.innerHTML = `<option value="" selected disabled>-- Select Subject --</option><option value="Science">Science</option><option value="Mathematics">Mathematics</option><option value="English">English</option><option value="Hindi">Hindi</option><option value="Other">Other Subject (Type Manually)</option>`;
+        }
+    }
+
+    window.handleSubjectChange = function() {
+        let sub = document.getElementById('subjectSelect').value;
+        if(sub === 'Other') { document.getElementById('customSubjectContainer').style.display = 'block'; } 
+        else { document.getElementById('customSubjectContainer').style.display = 'none'; }
+        window.triggerChapterFetch();
+    }
+
+    window.triggerChapterFetch = async function() {
+        let pub = document.getElementById('publisherSelect').value; 
+        let sub = document.getElementById('subjectSelect').value; 
+        let cls = document.getElementById('classSelect').value; 
+        let chapSelect = document.getElementById('chapterSelect'); 
+        let statusLabel = document.getElementById('chapterFetchStatus');
+        if(sub === 'Other') sub = document.getElementById('customSubjectInput').value;
+
+        if(!sub || !cls) return;
+
+        statusLabel.innerText = "⏳ Checking Database..."; 
+        chapSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching... --</option>';
+        
+        let isEnglishSub = ['English', 'English Grammar', 'Computer Science'].includes(sub);
+        let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI';
+
+        try {
+            const sysPrompt = `Return JSON array of strings for chapter index of Class ${cls}, Subject ${sub}, Publisher ${pub}. Output strictly in ${targetLang}. ONLY output raw JSON array.`;
+            const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: "Fetch chapters" }) });
+            const data = await r.json(); 
+            
+            // Safe JSON Extraction
+            let cleanJson = data.text.match(/\[.*\]/s);
+            let fetchedChapters = JSON.parse(cleanJson[0]);
+            
+            if(!Array.isArray(fetchedChapters)) throw new Error("Invalid Array");
+
+            statusLabel.style.color = "var(--text-muted)"; 
+            chapSelect.innerHTML = '<option value="" selected disabled>-- Select Chapter --</option>';
+            fetchedChapters.forEach((chap, i) => { chapSelect.innerHTML += `<option value="Chapter ${i+1}: ${chap}">Chapter ${i+1}: ${chap}</option>`; });
+            statusLabel.innerText = "Select Chapter (Generated by AI):";
+        } catch(e) { 
+            statusLabel.innerText = "Select Chapter (Fetch Failed):"; 
+            chapSelect.innerHTML = '<option value="" selected disabled>-- ❌ Fetch Failed. Type manually below --</option>'; 
+        }
+    }
+
+    // --- QUIZ GENERATION ENGINE ---
+    window.startQuizGeneration = async function() {
+        const numQ = document.getElementById('quizCount').value;
+        const diff = document.getElementById('quizDiff').value;
+        timerDuration = parseInt(document.getElementById('quizTimer').value);
+
+        document.getElementById('wizardPage').style.display = 'none';
+        document.getElementById('loadingPage').style.display = 'flex';
+        
+        let bar = document.getElementById('loadingBar');
+        bar.style.width = '20%';
+
+        let isEnglishSub = ['English', 'English Grammar', 'Computer Science'].includes(selectedData.subject);
+        let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI (Devanagari script)';
+
+        const sysPrompt = `You are an expert examiner. Generate a highly accurate multiple-choice quiz based on this exact textbook syllabus: Publisher: ${selectedData.publisher}, Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}".
+        
+        CRITICAL RULES:
+        1. Generate EXACTLY ${numQ} questions.
+        2. Difficulty level MUST be: ${diff}.
+        3. Language MUST be: ${targetLang}.
+        4. Math Equations MUST be wrapped in $$ $$ for block and $ $ for inline.
+        5. Output STRICTLY as a raw JSON array of objects. NO markdown formatting, NO backticks. DO NOT output anything except the array.
+        
+        Format Requirement:
+        [
+          {
+            "question": "Question text here?",
+            "options": ["Option A", "Option B", "Option C", "Option D"],
+            "correctIndex": 0, // MUST be an integer 0-3 corresponding to the correct option
+            "explanation": "Detailed explanation of why this is correct."
+          }
+        ]`;
+
+        try {
+            bar.style.width = '50%';
+            // Use Gemini API directly
+            const r = await fetch("/api/gemini-text", {
+                method: "POST", headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ userPrompt: `Generate ${numQ} questions now.`, systemPrompt: sysPrompt })
+            });
+            const data = await r.json();
+            if(!r.ok) throw new Error(data.error);
+
+            bar.style.width = '80%';
+            
+            // Regex to extract just the array to prevent JSON parse crashes
+            let match = data.text.match(/\[\s*\{.*\}\s*\]/s);
+            if (!match) throw new Error("AI failed to format JSON properly.");
+            
+            generatedQuiz = JSON.parse(match[0]);
+            
+            if (!Array.isArray(generatedQuiz) || generatedQuiz.length === 0) throw new Error("Empty quiz array returned.");
+
+            bar.style.width = '100%';
+            setTimeout(() => {
+                document.getElementById('loadingPage').style.display = 'none';
+                startQuizMode();
+            }, 500);
+
+        } catch(e) {
+            console.error(e);
+            alert("❌ Failed to generate quiz. The AI might be overloaded. Please try again.");
+            document.getElementById('loadingPage').style.display = 'none';
+            document.getElementById('wizardPage').style.display = 'block';
+        }
+    }
+
+    // --- ACTIVE QUIZ CONTROLLER ---
+    function startQuizMode() {
+        document.getElementById('quizActivePage').style.display = 'flex';
+        currentQIndex = 0;
+        userAnswers = [];
+        score = 0;
+
+        if(timerDuration > 0) {
+            document.getElementById('timerBarContainer').style.display = 'block';
+            document.getElementById('timerText').style.display = 'block';
+        }
+
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        document.getElementById('nextQBtn').style.display = 'none';
+        let qData = generatedQuiz[currentQIndex];
+        
+        document.getElementById('quizProgressText').innerText = `Question ${currentQIndex + 1} of ${generatedQuiz.length}`;
+        
+        // Render Question Text with MathJax support
+        let qEl = document.getElementById('qText');
+        qEl.innerHTML = marked.parse(qData.question);
+        if(window.MathJax) { MathJax.typesetClear([qEl]); MathJax.typesetPromise([qEl]); }
+
+        // Render Options
+        let optsContainer = document.getElementById('optionsContainer');
+        optsContainer.innerHTML = "";
+        
+        qData.options.forEach((opt, idx) => {
+            let btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerHTML = marked.parseInline(opt); // Inline parse for options
+            btn.onclick = () => window.selectOption(idx, btn);
+            optsContainer.appendChild(btn);
+        });
+        
+        if(window.MathJax) { MathJax.typesetClear([optsContainer]); MathJax.typesetPromise([optsContainer]); }
+
+        // Start Timer
+        if(timerDuration > 0) {
+            timeLeft = timerDuration;
+            updateTimerUI();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerUI();
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    window.selectOption(-1, null); // Auto submit blank
+                }
+            }, 1000);
+        }
+    }
+
+    function updateTimerUI() {
+        document.getElementById('timerText').innerText = `00:${timeLeft < 10 ? '0'+timeLeft : timeLeft}`;
+        let pct = (timeLeft / timerDuration) * 100;
+        let bar = document.getElementById('timerBar');
+        bar.style.width = `${pct}%`;
+        
+        if(pct > 50) bar.style.backgroundColor = 'var(--correct-color)';
+        else if(pct > 20) bar.style.backgroundColor = '#f59e0b';
+        else bar.style.backgroundColor = 'var(--wrong-color)';
+    }
+
+    window.selectOption = function(selectedIndex, btnElement) {
+        clearInterval(timerInterval); // Stop timer
+        
+        let qData = generatedQuiz[currentQIndex];
+        let correctIdx = qData.correctIndex;
+        let isCorrect = (selectedIndex === correctIdx);
+        
+        if(isCorrect) score++;
+
+        userAnswers.push({
+            questionObj: qData,
+            selectedIdx: selectedIndex,
+            isCorrect: isCorrect
+        });
+
+        // Disable all buttons and show colors
+        let allBtns = document.getElementById('optionsContainer').children;
+        for(let i=0; i<allBtns.length; i++) {
+            allBtns[i].disabled = true;
+            allBtns[i].style.cursor = 'default';
+            if (i === correctIdx) {
+                allBtns[i].classList.add('correct');
+            } else if (i === selectedIndex && !isCorrect) {
+                allBtns[i].classList.add('wrong');
+            }
+        }
+
+        // Show Next button
+        let nextBtn = document.getElementById('nextQBtn');
+        if (currentQIndex === generatedQuiz.length - 1) {
+            nextBtn.innerText = "Finish Quiz 🏁";
+        } else {
+            nextBtn.innerText = "Next Question ➔";
+        }
+        nextBtn.style.display = 'block';
+    }
+
+    window.handleNextQuestion = function() {
+        if(currentQIndex < generatedQuiz.length - 1) {
+            currentQIndex++;
+            renderQuestion();
+        } else {
+            finishQuiz();
+        }
+    }
+
+    // --- RESULTS CONTROLLER ---
+    function finishQuiz() {
+        document.getElementById('quizActivePage').style.display = 'none';
+        document.getElementById('resultPage').style.display = 'flex';
+
+        // Calculate and Show Score
+        let total = generatedQuiz.length;
+        let percent = Math.round((score / total) * 100);
+        
+        document.getElementById('finalScoreText').innerText = `${score}/${total}`;
+        document.getElementById('finalPercentText').innerText = `${percent}%`;
+        
+        let circle = document.querySelector('.score-circle');
+        if(percent >= 80) circle.style.borderColor = "var(--correct-color)";
+        else if(percent >= 50) circle.style.borderColor = "#f59e0b";
+        else circle.style.borderColor = "var(--wrong-color)";
+
+        // Build Detailed Breakdown
+        let breakdownContainer = document.getElementById('resultsBreakdown');
+        breakdownContainer.innerHTML = "<h3>Detailed Breakdown:</h3><hr style='border:none; border-bottom:1px solid var(--border-light); margin-bottom:20px;'>";
+
+        userAnswers.forEach((ans, i) => {
+            let q = ans.questionObj;
+            let card = document.createElement("div");
+            card.className = `result-card ${ans.isCorrect ? 'correct' : 'wrong'}`;
+            
+            let userOptText = ans.selectedIdx === -1 ? "<i>Time ran out / Skipped</i>" : q.options[ans.selectedIdx];
+            let correctOptText = q.options[q.correctIndex];
+
+            card.innerHTML = `
+                <div class="res-q">Q${i+1}. ${marked.parseInline(q.question)}</div>
+                <div class="res-a"><b>Your Answer:</b> <span style="color:${ans.isCorrect ? 'var(--correct-color)' : 'var(--wrong-color)'}">${marked.parseInline(userOptText)}</span></div>
+                ${!ans.isCorrect ? `<div class="res-a"><b>Correct Answer:</b> <span style="color:var(--correct-color)">${marked.parseInline(correctOptText)}</span></div>` : ''}
+                <div class="res-exp"><b>Explanation:</b> ${marked.parseInline(q.explanation)}</div>
+            `;
+            breakdownContainer.appendChild(card);
+        });
+
+        if(window.MathJax) { MathJax.typesetClear([breakdownContainer]); MathJax.typesetPromise([breakdownContainer]); }
+
+        // SAVE TO HISTORY
+        saveQuizToHistory(score, total, percent);
+    }
+
+    function saveQuizToHistory(s, t, p) {
+        let historyTitle = `${selectedData.subject}: ${selectedData.chapter} Quiz`;
+        let record = {
+            id: Date.now(),
+            type: 'quiz',
+            title: historyTitle,
+            score: s,
+            total: t,
+            percentage: p,
+            date: new Date().toLocaleDateString()
+        };
+
+        // Saving to the main AI_Pro_Suite database format so history.html can fetch it later
+        localforage.getItem('aiHistory').then(data => {
+            let historyArray = data || [];
+            historyArray.unshift(record);
+            localforage.setItem('aiHistory', historyArray);
+        });
+    }
+
+</script>
+</body>
+</html>
