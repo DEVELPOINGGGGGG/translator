@@ -1,7 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto"); // Added for PTI Generation
+const crypto = require("crypto"); // Added for explicit PTI Token Generation
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
@@ -13,7 +13,7 @@ const port = process.env.PORT || 10000;
 const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
 const cfApiKey = process.env.CLOUDFLARE_API_KEY || "";
 
-// 🚨 PUT YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE 🚨
+// 🚨 PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL HERE 🚨
 const GOOGLE_DATABASE_URL = "https://script.google.com/macros/s/AKfycbwuSwz8wvT24TUYq_eWy9Ak4Lj7CfWUXGiTsaFT9oGrBAvdN93X4sV6eJlMgRJbNbKjnA/exec";
 
 // 🛑 GLOBAL AI INSTRUCTIONS 🛑
@@ -46,11 +46,7 @@ const SEARCH_PROVIDERS = [...TEXT_PROVIDERS];
 
 const publicDir = __dirname;
 const contentTypes = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
-const apiUsageStats = {}; 
 
-// ==========================================
-// 1. CORE UTILITIES
-// ==========================================
 function sendJson(res, statusCode, payload) { 
     res.writeHead(statusCode, { 
         "Content-Type": "application/json; charset=utf-8",
@@ -72,6 +68,8 @@ function readRequestBody(req) {
         req.on("error", reject);
     }); 
 }
+
+const apiUsageStats = {}; 
 
 async function tryProviders(providers, requestFn, override = null) {
     let lastError;
@@ -107,99 +105,7 @@ async function tryProviders(providers, requestFn, override = null) {
 }
 
 // ==========================================
-// 2. NEW PTI SYNC AND DUAL SHARE ENGINE
-// ==========================================
-async function handlePtiSyncSave(req, res) {
-    try {
-        const body = JSON.parse(await readRequestBody(req));
-        let pti = body.pti;
-        const interactions = body.interactions || [];
-
-        if (!pti || pti === "null" || pti === "undefined") {
-            pti = "pti_" + crypto.randomBytes(8).toString("hex");
-        }
-
-        const spaceEfficientInteractions = interactions.map(inter => ({ ...inter, images: [] }));
-
-        const sessionPayload = {
-            id: pti,
-            type: 'search',
-            title: body.title || "Shared PTI Session",
-            interactions: spaceEfficientInteractions
-        };
-
-        const response = await fetch(GOOGLE_DATABASE_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "save", pti: pti, sessionData: sessionPayload })
-        });
-
-        const sheetData = await response.json();
-        return sendJson(res, 200, { success: true, pti: pti, data: sessionPayload, sheetData: sheetData });
-    } catch (e) {
-        console.error("Save PTI Error:", e.message);
-        return sendJson(res, 502, { error: e.message });
-    }
-}
-
-async function handleGetPtiSync(req, res) {
-    try {
-        const urlObj = new URL(req.url, `http://${req.headers.host}`);
-        const pti = urlObj.searchParams.get("pti");
-        
-        console.log("DEBUG: GET Request received for PTI:", pti);
-
-        if (!pti) return sendJson(res, 400, { error: "Missing token parameter." });
-
-        const response = await fetch(`${GOOGLE_DATABASE_URL}?pti=${pti}`);
-        const cloudData = await response.json();
-
-        if (cloudData.error) {
-            console.log("DEBUG: Google said Not Found for PTI:", pti);
-            return sendJson(res, 404, cloudData);
-        }
-        
-        console.log("DEBUG: Successfully fetched PTI:", pti);
-        return sendJson(res, 200, cloudData);
-    } catch (e) {
-        console.error("CRITICAL GET PTI ERROR:", e.message);
-        return sendJson(res, 502, { error: e.message });
-    }
-}
-
-async function handleDualShare(req, res) {
-    try {
-        const body = JSON.parse(await readRequestBody(req));
-        let number = body.number.replace(/[^0-9]/g, '') + "@c.us";
-        const idInstance = process.env.ID_INSTANCE || "";
-        const apiToken = process.env.API_TOKEN || "";
-
-        if (!idInstance || !apiToken) throw new Error("Green API credentials missing on server.");
-
-        // Message 1: Text Notes
-        await fetch(`https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chatId: number, message: body.notesMessage })
-        }).then(r => r.json());
-
-        // Message 2: Button
-        const data2 = await fetch(`https://api.green-api.com/waInstance${idInstance}/sendInteractiveButtons/${apiToken}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chatId: number,
-                body: "🔗 Click the action button below to instantly view the continuous live conversation loop:",
-                buttons: [{ "type": "url", "buttonId": "view_conv_btn", "buttonText": "See conversation", "url": body.targetUrl }]
-            })
-        }).then(r => r.json());
-
-        return sendJson(res, 200, { success: true, greenApiResponse: data2 });
-    } catch (e) {
-        return sendJson(res, 502, { error: e.message });
-    }
-}
-
-// ==========================================
-// 3. AI HANDLERS
+// 🚀 THE BEAST MODE SMART SEARCH ROUTER
 // ==========================================
 async function handleSmartSearch(req, res) {
     try {
@@ -210,6 +116,7 @@ async function handleSmartSearch(req, res) {
         const imgBase64 = body.imageBase64 || null;
         
         const override = body.providerOverride || null;
+
         const providersList = imgBase64 ? VISION_PROVIDERS : TEXT_PROVIDERS;
 
         let orderedProviders = [];
@@ -222,8 +129,10 @@ async function handleSmartSearch(req, res) {
         const pGroq = providersList.find(p => p.type === 'groq');
 
        if (isCode) {
+            console.log("🛠️ SMART ROUTER: Code Request Detected. Initiating High-Performance Cascade");
             orderedProviders = [p5, p4, p3, p2, p1, pCf, pGroq].filter(Boolean);
         } else {
+            console.log("📝 SMART ROUTER: Text Request Detected. Initiating Standard Cascade");
             orderedProviders = [p1, p2, p3, p4, p5, pCf, pGroq].filter(Boolean);
         }
 
@@ -293,6 +202,9 @@ async function handleSmartSearch(req, res) {
     }
 }
 
+// ==========================================
+// LEGACY TEXT ENDPOINT
+// ==========================================
 async function handleGeminiText(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -326,6 +238,9 @@ async function handleGeminiText(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// LEGACY VISION ENDPOINT
+// ==========================================
 async function handleGeminiVision(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -375,6 +290,9 @@ async function handleGeminiVision(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// SEARCH ENDPOINT
+// ==========================================
 async function handleGroqSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -405,6 +323,9 @@ async function handleGroqSearch(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// YOUTUBE SEARCH ENDPOINT
+// ==========================================
 async function handleYoutubeSearch(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
@@ -415,6 +336,9 @@ async function handleYoutubeSearch(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// CLOUDFLARE IMAGE GENERATION ENDPOINT
+// ==========================================
 async function handleCloudflareImage(req, res) {
     try {
         if (!cfAccountId || !cfApiKey) return sendJson(res, 503, { error: "Cloudflare image generation is not configured." });
@@ -435,13 +359,20 @@ async function handleCloudflareImage(req, res) {
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
+// ==========================================
+// 🛡️ SECURE WHATSAPP ENDPOINT (GREEN API) 🛡️
+// ==========================================
+const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "")
+    .split(',')
+    .map(num => num.trim())
+    .filter(num => num.length > 0);
+
 async function handleSecureWhatsapp(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const number = body.number;
         const message = body.message;
 
-        const AUTHORIZED_NUMBERS = (process.env.AUTHORIZED_NUMBERS || "").split(',').map(n => n.trim()).filter(n => n.length > 0);
         if (AUTHORIZED_NUMBERS.length > 0 && !AUTHORIZED_NUMBERS.includes(number)) {
             return sendJson(res, 403, { error: "ERROR - 324 (UNAUTHORIZED PROTECTION)" });
         }
@@ -449,72 +380,174 @@ async function handleSecureWhatsapp(req, res) {
         const idInstance = process.env.ID_INSTANCE || "";
         const apiToken = process.env.API_TOKEN || "";
 
-        if (!idInstance || !apiToken) throw new Error("Green API credentials missing on server.");
+        if (!idInstance || !apiToken) {
+            throw new Error("Green API credentials missing on server.");
+        }
 
         const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatId: number + "@c.us", message: message }) });
-        const data = await response.json();
         
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chatId: number + "@c.us",
+                message: message
+            })
+        });
+
+        const data = await response.json();
         return sendJson(res, 200, data);
-    } catch (e) { return sendJson(res, 502, { error: e.message }); }
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
 }
 
+// ==========================================
+// 🧠 GOOGLE SHEETS LIVE PTI DATA SYNC CORE 🧠
+// ==========================================
+async function handlePtiSyncSave(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        let pti = body.pti;
+
+        if (!pti || pti === "null" || pti === "undefined") {
+            pti = "pti_" + crypto.randomBytes(8).toString("hex");
+        }
+
+        // Forward raw payload packet directly to deployed gas macro endpoint
+        const response = await fetch(GOOGLE_DATABASE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "save",
+                pti: pti,
+                title: body.title || "Book Deep Study Session",
+                htmlPayload: body.htmlPayload || "",
+                metaSettings: body.metaSettings || {},
+                sessionData: body.interactions ? body : null // Ensure search app compatibility mapping
+            })
+        });
+
+        const sheetResponse = await response.json();
+        return sendJson(res, 200, { success: true, pti: pti, sheetResponse });
+    } catch (e) {
+        console.error("PTI Sync Save Critical Error:", e.message);
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+async function handleGetPtiSync(req, res) {
+    try {
+        const urlObj = new URL(req.url, `http://${req.headers.host}`);
+        const pti = urlObj.searchParams.get("pti");
+        
+        if (!pti) return sendJson(res, 400, { error: "Missing active token token matching target parameter." });
+
+        console.log(`[PTI Engine] Pulling database records for key: ${pti}`);
+        const response = await fetch(`${GOOGLE_DATABASE_URL}?pti=${pti}`);
+        const cloudData = await response.json();
+
+        if (cloudData.error) return sendJson(res, 404, cloudData);
+        return sendJson(res, 200, cloudData);
+    } catch (e) {
+        console.error("PTI Get Engine Failure:", e.message);
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+async function handleDualShare(req, res) {
+    try {
+        const body = JSON.parse(await readRequestBody(req));
+        let number = body.number.replace(/[^0-9]/g, '');
+        if(!number.startsWith('91') && number.length === 10) number = '91' + number;
+        
+        const idInstance = process.env.ID_INSTANCE || "";
+        const apiToken = process.env.API_TOKEN || "";
+
+        if (!idInstance || !apiToken) throw new Error("Green API keys missing from engine parameters.");
+
+        // Pack 1: Fire core content notes block
+        await fetch(`https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatId: number + "@c.us", message: body.notesMessage })
+        });
+
+        // Pack 2: Hyperlink direct route map text hook
+        const res2 = await fetch(`https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatId: number + "@c.us", message: `🔗 *Live Conversation Synchronization Link:*\n${body.targetUrl}` })
+        });
+
+        const data = await res2.json();
+        return sendJson(res, 200, data);
+    } catch (e) {
+        return sendJson(res, 502, { error: e.message });
+    }
+}
+
+// Fallback Stub mapping
+async function handleHFSearchImage(req, res) {
+    return sendJson(res, 501, { error: "Not Implemented" });
+}
+
+// ==========================================
+// 🚨 DIRECT FEEDBACK ENDPOINT 🚨
+// ==========================================
 async function handleFeedbackRoute(req, res) {
     try {
         const body = JSON.parse(await readRequestBody(req));
         const message = body.message;
-        if (!message) return sendJson(res, 400, { error: "Message payload is empty." });
+
+        if (!message) {
+            return sendJson(res, 400, { error: "Message payload is empty." });
+        }
 
         const devNumber = process.env.FEEDBACK_NUMBER;
-        if (!devNumber) return sendJson(res, 500, { error: "Feedback destination not configured on server." });
+        if (!devNumber) {
+            return sendJson(res, 500, { error: "Feedback destination not configured on server." });
+        }
 
         const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
         const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
-        if (!idInstance || !apiToken) return sendJson(res, 500, { error: "Green API credentials missing on server." });
+
+        if (!idInstance || !apiToken) {
+            return sendJson(res, 500, { error: "Green API credentials missing on server." });
+        }
 
         const cleanNumber = devNumber.replace(/[^0-9]/g, '');
         const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-        const payload = { chatId: `${cleanNumber}@c.us`, message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}` };
+        
+        const payload = {
+            chatId: `${cleanNumber}@c.us`,
+            message: `⚠️ *DEEP AI PRO FEEDBACK*\n\n${message}`
+        };
 
         const response = await axios.post(url, payload, { headers: { 'Content-Type': 'application/json' } });
         return sendJson(res, 200, response.data);
-    } catch (error) { return sendJson(res, 502, { error: "Failed to dispatch feedback." }); }
-}
-
-// Fallback stub if it was called in your original router but not defined
-async function handleHFSearchImage(req, res) {
-    return sendJson(res, 501, { error: "Endpoint not implemented yet." });
+    } catch (error) {
+        return sendJson(res, 502, { error: "Failed to dispatch feedback." });
+    }
 }
 
 // ==========================================
-// 4. STATIC FILE SERVER
+// STATIC FILE SERVER
 // ==========================================
 function serveStatic(req, res) {
     let safePath = path.normalize(decodeURIComponent(new URL(req.url, `http://${req.headers.host}`).pathname)).replace(/^(\.\.[/\\])+/, "");
     if (safePath === "/" || safePath === "") safePath = "index.html";
-    let filePath = path.join(publicDir, safePath); 
-    if (!path.extname(filePath)) filePath += ".html";
-    
+    let filePath = path.join(publicDir, safePath); if (!path.extname(filePath)) filePath += ".html";
     fs.readFile(filePath, (error, data) => {
-        if (error) { 
-            fs.readFile(path.join(publicDir, "index.html"), (err, fData) => { 
-                if(err) { res.writeHead(404); return res.end("Not Found"); }
-                res.writeHead(200, { "Content-Type": contentTypes[".html"] }); 
-                res.end(fData); 
-            }); 
-            return; 
-        }
-        res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); 
-        res.end(data);
+        if (error) { fs.readFile(path.join(publicDir, "index.html"), (err, fData) => { res.writeHead(200, { "Content-Type": contentTypes[".html"] }); res.end(fData); }); return; }
+        res.writeHead(200, { "Content-Type": contentTypes[path.extname(filePath)] || "text/plain" }); res.end(data);
     });
 }
 
 // ==========================================
-// 🚀 5. MASTER ROUTER (THE BULLETPROOF FIX)
+// MASTER ROUTER
 // ==========================================
 const server = http.createServer((req, res) => {
-    
-    // 1. Instantly process CORS
     if (req.method === "OPTIONS") {
         res.writeHead(204, {
             "Access-Control-Allow-Origin": "*",
@@ -524,16 +557,14 @@ const server = http.createServer((req, res) => {
         return res.end();
     }
 
-    // 2. 🚨 THE GET ROUTE CATCHER (Fixes the 404!) 🚨
+    // 1. Explicit GET Routing Hooks
     if (req.method === "GET") {
         if (req.url.startsWith("/api/pti-get")) return handleGetPtiSync(req, res);
-        if (req.url.startsWith("/api/usage")) return sendJson(res, 200, apiUsageStats);
-        
-        // If it's not an API GET request, it must be an HTML/CSS/JS file request
+        if (req.url === "/api/usage") return sendJson(res, 200, apiUsageStats);
         return serveStatic(req, res);
     }
 
-    // 3. THE POST ROUTE CATCHER
+    // 2. Explicit POST Routing Hooks
     if (req.method === "POST") {
         if (req.url === "/api/smart-search") return handleSmartSearch(req, res);
         if (req.url === "/api/gemini-text") return handleGeminiText(req, res);
@@ -543,15 +574,16 @@ const server = http.createServer((req, res) => {
         if (req.url === "/api/youtube-search") return handleYoutubeSearch(req, res);
         if (req.url === "/api/secure-whatsapp") return handleSecureWhatsapp(req, res);
         if (req.url === "/api/feedback") return handleFeedbackRoute(req, res);
-        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res);
+        if (req.url === "/api/hf-search-image") return handleHFSearchImage(req, res); 
         
-        // NEW PTI / DUAL SHARE ROUTES
+        // Injected Books Sync Routes
         if (req.url === "/api/pti-save") return handlePtiSyncSave(req, res);
         if (req.url === "/api/send-dual-share") return handleDualShare(req, res);
-        
-        // If a POST route was sent to a URL that doesn't exist above
+
         return sendJson(res, 404, { error: "POST Route not found on server" });
     }
+    
+    if (req.method === "HEAD") return serveStatic(req, res);
 });
 
-server.listen(port, '0.0.0.0', () => console.log(`🚀 Server running perfectly on port ${port}`));
+server.listen(port, '0.0.0.0', () => console.log(`Server running perfectly on ${port}`));
