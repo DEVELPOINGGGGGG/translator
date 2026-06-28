@@ -466,11 +466,17 @@ async function handleDualShare(req, res) {
 
         if (!idInstance || !apiToken) throw new Error("Green API keys missing from engine parameters.");
 
+        // 🚨 THE UNIVERSAL CORRECTION 🚨
+        // If it comes from search it uses notesMessage, if from books it might just be 'message'
+        const messageContent = body.notesMessage || body.message || "Deep Study Notes Dispatch";
+
+        console.log(`[WhatsApp Share Engine] Sending notes packet to: ${number}`);
+
         // Pack 1: Fire core content notes block
         await fetch(`https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chatId: number + "@c.us", message: body.notesMessage })
+            body: JSON.stringify({ chatId: number + "@c.us", message: messageContent })
         });
 
         // Pack 2: Hyperlink direct route map text hook
@@ -483,6 +489,7 @@ async function handleDualShare(req, res) {
         const data = await res2.json();
         return sendJson(res, 200, data);
     } catch (e) {
+        console.error("Critical Failure in Dual Share Route:", e.message);
         return sendJson(res, 502, { error: e.message });
     }
 }
