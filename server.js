@@ -20,6 +20,7 @@ const SUPABASE_URL = "https://cnexypomeopydsvhmpzv.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuZXh5cG9tZW9weWRzdmhtcHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDgzMTQsImV4cCI6MjA5ODE4NDMxNH0.WwxIuUMFR6PQTkNhjN8TYtFFz5nR-AmSebzkB-Rf2G0";
 const BUCKET_NAME = "whatsapp-session";
 const SESSION_DIR = path.join(__dirname, "user_data");
+global.WebSocket = require('ws');
 
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
