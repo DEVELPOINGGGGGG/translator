@@ -311,34 +311,8 @@ async function handleCloudflareImage(req, res) {
 }
 
 // =========================================================================
-// 🛡️ DUAL-LAYERED WHATSAPP CONTROLLER (PLAYWRIGHT -> GREEN API FALLBACK) 🛡️
+// 🛡️ DUAL-LAYERED WHATSAPP CONTROLLER (GREEN API FIRST -> PLAYWRIGHT SECOND) 🛡️
 // =========================================================================
-async function sendViaGreenAPIFallback(number, message) {
-    // Dynamic import from process.env based on Render config
-    const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
-    const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
-
-    if (!idInstance || !apiToken) {
-        throw new Error("Green API credentials missing in environment variables.");
-    }
-
-    const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            chatId: `${number}@c.us`,
-            message: message
-        })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(`Green API Rejected: ${JSON.stringify(data)}`);
-    }
-    return data;
-}
-
 async function handleSecureWhatsapp(req, res) {
     let browserContext;
     try {
@@ -354,15 +328,55 @@ async function handleSecureWhatsapp(req, res) {
             number = "91" + number;
         }
 
-        let primarySuccess = false;
         let primaryErrorLog = "";
 
         // =====================================================
-        // LAYER 1: PRIMARY PLAYWRIGHT BROWSER AUTOMATION
+        // LAYER 1: GREEN API (FAST & PRIMARY)
+        // =====================================================
+        console.log(`🌐 [LAYER 1] Attempting delivery via Green API for: ${number}`);
+        try {
+            const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
+            const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
+
+            if (!idInstance || !apiToken) {
+                throw new Error("Green API credentials missing in environment variables.");
+            }
+
+            const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
+            const greenResponse = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId: `${number}@c.us`,
+                    message: message
+                })
+            });
+
+            const greenData = await greenResponse.json();
+            if (!greenResponse.ok || greenData.idMessage === undefined) {
+                throw new Error(`Green API Rejected: ${JSON.stringify(greenData)}`);
+            }
+
+            console.log(`✅ [LAYER 1] Success! Message sent via Green API.`);
+            return sendJson(res, 200, { 
+                success: true, 
+                method: "GreenAPI", 
+                message: "Dispatched via Green API Primary", 
+                details: greenData 
+            });
+
+        } catch (greenError) {
+            primaryErrorLog = greenError.message;
+            console.error(`❌ [LAYER 1] Green API Failed: ${primaryErrorLog}`);
+            console.log(`⚠️ Triggering Playwright Browser Fallback...`);
+        }
+
+        // =====================================================
+        // LAYER 2: PLAYWRIGHT BROWSER AUTOMATION (FALLBACK)
         // =====================================================
         try {
             await downloadSessionFromCloud();
-            console.log(`🌐 [LAYER 1] Deploying primary browser channel for: ${number}`);
+            console.log(`🌐 [LAYER 2] Deploying fallback browser channel for: ${number}`);
             
             browserContext = await chromium.launchPersistentContext(SESSION_DIR, {
                 headless: true,
@@ -373,7 +387,7 @@ async function handleSecureWhatsapp(req, res) {
             const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURIComponent(message)}`;
             await page.goto(url);
 
-            console.log("⏳ [LAYER 1] Waiting for WhatsApp Web interface to sync (Giving it 20s)...");
+            console.log("⏳ [LAYER 2] Waiting for WhatsApp Web interface to sync (Giving it 20s)...");
             await page.waitForTimeout(20000); 
 
             try {
@@ -382,7 +396,7 @@ async function handleSecureWhatsapp(req, res) {
                 await page.focus(chatBoxSelector);
                 await page.click(chatBoxSelector);
             } catch (e) {
-                console.log("⚠️ [LAYER 1] Direct focus missed. Falling back to global layout...");
+                console.log("⚠️ [LAYER 2] Direct focus missed. Falling back to global layout...");
             }
 
             const selectors = [
@@ -397,58 +411,36 @@ async function handleSecureWhatsapp(req, res) {
                     if (await page.$(selector)) {
                         await page.click(selector);
                         sent = true;
-                        console.log("✅ [LAYER 1] Selector Hit! Message dispatched via Send Button.");
+                        console.log("✅ [LAYER 2] Selector Hit! Message dispatched via Send Button.");
                         break;
                     }
                 } catch (e) {}
             }
 
             if (!sent) {
-                console.log("⌨️ [LAYER 1] Forcing physical keyboard Enter execution...");
+                console.log("⌨️ [LAYER 2] Forcing physical keyboard Enter execution...");
                 await page.keyboard.press("Enter");
             }
 
             await page.waitForTimeout(6000); // Hold channel open for network transit
-            primarySuccess = true;
-            
-        } catch (playwrightError) {
-            primaryErrorLog = playwrightError.message;
-            console.error(`❌ [LAYER 1] Playwright Automation Failed: ${primaryErrorLog}`);
-        } finally {
-            if (browserContext) await browserContext.close();
-        }
-
-        // Return immediately if Primary was successful
-        if (primarySuccess) {
-            return sendJson(res, 200, { success: true, method: "Playwright", message: "Dispatched over custom cloud automation engine" });
-        }
-
-
-        // =====================================================
-        // LAYER 2: GREEN API FALLBACK (Only runs if Layer 1 fails)
-        // =====================================================
-        console.log(`⚠️ [LAYER 2] Triggering Green API Fallback for ${number}...`);
-        
-        try {
-            const greenResult = await sendViaGreenAPIFallback(number, message);
-            console.log(`✅ [LAYER 2] Fallback Successful! Message sent via Green API.`);
             
             return sendJson(res, 200, { 
                 success: true, 
-                method: "GreenAPI", 
-                message: "Dispatched via Green API Fallback", 
-                details: greenResult 
+                method: "Playwright", 
+                message: "Dispatched over fallback cloud automation engine" 
             });
-            
-        } catch (greenError) {
-            console.error(`❌ [LAYER 2] Green API Fallback also Failed: ${greenError.message}`);
+
+        } catch (playwrightError) {
+            console.error(`❌ [LAYER 2] Playwright Fallback also Failed: ${playwrightError.message}`);
             
             // Both layers failed, report full diagnostic payload to client
             return sendJson(res, 502, { 
-                error: "Both primary and fallback messaging pipelines failed.",
+                error: "Both primary (Green API) and fallback (Playwright) messaging pipelines failed.",
                 primaryError: primaryErrorLog,
-                fallbackError: greenError.message
+                fallbackError: playwrightError.message
             });
+        } finally {
+            if (browserContext) await browserContext.close();
         }
 
     } catch (e) {
@@ -502,7 +494,6 @@ async function handleDualShare(req, res) {
         });
 
         // Pass packet 2 into our dual-layered security pipeline
-        // (This will also properly route through Playwright, and hit Send/Enter for the 2nd message, or fallback to GreenAPI)
         await new Promise((resolve) => {
             const mockRes = { writeHead: () => {}, end: () => resolve() };
             const fakeReq = { on: (ev, cb) => { if(ev === 'data') cb(JSON.stringify({ number, message: customUrlLink })); if(ev === 'end') cb(); } };
