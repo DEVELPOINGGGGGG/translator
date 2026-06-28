@@ -36,11 +36,9 @@
 
         html, body { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; background: var(--app-bg); color: var(--text-main); }
         
-        /* DYNAMIC TOP BAR */
         .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.4s ease; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
         .topbar.hidden { transform: translateY(-100%); }
         
-        /* TOUCH SCROLLABLE MARQUEE TITLE */
         .appTitle-container { flex: 1; overflow-x: auto; white-space: nowrap; margin: 0 15px; position: relative; border-radius: 8px; cursor: pointer; touch-action: pan-x; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .appTitle-container::-webkit-scrollbar { display: none; }
         .appTitle { font-size: 18px; font-weight: bold; color: var(--text-main); display: inline-block; padding: 5px; white-space: nowrap; }
@@ -54,7 +52,6 @@
             #settingsBtn { font-size: 20px !important; padding: 0 !important; }
         }
 
-        /* WIZARD UI */
         .wizard-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; padding-top: 100px; padding-bottom: 80px; width: 100%; box-sizing: border-box; overflow-y: auto; height: 100vh; position: relative;}
         .step-card { width: 100%; max-width: 600px; display: none; text-align: center; animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: var(--bg-surface); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border-light); box-sizing: border-box; margin-bottom: 30px; position: relative;}
         .step-card.active { display: block; }
@@ -74,7 +71,6 @@
         #closeSettingsWizardBtn { display: none; position: absolute; top: 15px; left: 15px; background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         #closeSettingsWizardBtn:hover { background: #ef4444; color: white; border-color: #ef4444; }
 
-        /* CHAT LAYOUT */
         #chatPage { display: none; flex-direction: column; position: fixed; inset: 0; background: var(--bg-base); z-index: 50; overflow: hidden; }
         .chat-scroll-area { flex: 1; overflow-y: auto; padding: 25px; padding-top: 90px; padding-bottom: 140px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         .msg { display: flex; width: 100%; flex-direction: column; animation: floatUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
@@ -98,12 +94,10 @@
         .preset-btn { background: var(--input-bg); border: 1px solid var(--primary); color: var(--primary); padding: 10px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .preset-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); }
 
-        /* ADVANCED LISTEN BUTTON */
         .listen-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 25px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(16,185,129,0.3); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); border: none; font-weight: 800; font-size: 13px; cursor: pointer; margin-top: 12px; letter-spacing: 0.5px; text-transform: uppercase; }
         .listen-btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 8px 25px rgba(16,185,129,0.5); }
         .listen-btn:active { transform: translateY(1px); }
 
-        /* BOTTOM INPUT AREA */
         .bottom-action-container { flex-shrink: 0; width: 100%; background: var(--bg-surface); backdrop-filter: blur(10px); border-top: 1px solid var(--border-light); display: flex; flex-direction: column; box-sizing: border-box; padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); position: fixed; bottom: 0; z-index: 100; transition: transform 0.4s ease; }
         
         .chat-input-wrapper { display: flex; align-items: flex-end; gap: 8px; width: 100%; box-sizing: border-box; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 24px; padding: 8px 12px; position: relative; transition: 0.3s; }
@@ -128,7 +122,6 @@
         .img-chip { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 2px solid var(--primary); }
         .remove-img-btn { position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:22px; height:22px; font-size:10px; cursor:pointer; }
 
-        /* Animations */
         @keyframes floatUp { 0% { opacity:0; transform:translateY(20px); } 100% { opacity:1; transform:translateY(0); } }
         @keyframes popInCard { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes popUp { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
@@ -160,11 +153,9 @@
         .audio-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .audio-btn:hover { transform: scale(1.1); }
 
-        /* Modals & Overlays */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:99999999; justify-content:center; align-items:center; backdrop-filter: blur(5px); }
         .modal-box { background:var(--bg-surface); width:90%; max-width:400px; padding:25px; border-radius:20px; position:relative; border: 1px solid var(--border-light); box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: popUp 0.3s ease; }
 
-        /* Hold to Speak Voice GUI */
         #holdToSpeakBtn { user-select: none; -webkit-user-select: none; transition: 0.1s; }
         #holdToSpeakBtn:active { transform: scale(0.95); background: #ef4444 !important; box-shadow: 0 0 20px rgba(239,68,68,0.5); }
 
@@ -174,7 +165,6 @@
         
         #bookPreviewModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999999 !important; flex-direction: column; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
 
-        /* Advanced SVG Renderer */
         .math-svg-wrap { background: #ffffff !important; border-radius: 12px; padding: 15px; margin: 15px 0; text-align: center; overflow-x: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid var(--primary); }
         .math-svg-wrap svg { max-width: 100%; height: auto; border-radius: 8px; }
 
@@ -704,7 +694,6 @@
         }
     }
 
-    // 🛑 DYNAMIC SUBJECTS FETCH 🛑
     async function triggerSubjectFetch() {
         let pub = document.getElementById('publisherSelect').value; let cls = document.getElementById('classSelect').value; let subSelect = document.getElementById('subjectSelect');
         if(!pub || !cls) return;
@@ -744,7 +733,6 @@
         let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI (Devanagari script)';
 
         try {
-            // 🛑 STRICT PUBLISHER LOGIC FIX 🛑
             const sysPrompt = `You are a syllabus expert. The user wants the EXACT chapter index for Class ${cls}, Subject ${sub}, Publisher ${pub}. 
             CRITICAL: Do NOT return standard NCERT chapters if the publisher is ${pub}. You MUST search your knowledge base for the specific state board or private publisher index for ${pub}.
             Return JSON array of strings. Output strictly in ${targetLang}. ONLY output the raw JSON array.`;
@@ -784,7 +772,6 @@
         } catch(e) { statusSub.innerText = sub; }
     }
 
-    // 🛑 STRICT GREY SEND BUTTON LOGIC 🛑
     window.validateSendButton = function() {
         const inp = document.getElementById('chatInput');
         const btn = document.getElementById('sendBtn');
@@ -827,7 +814,6 @@
     function removeImage() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; validateSendButton(); }
     function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; validateSendButton(); }
 
-    // 🛑 GLOBAL SHARE LOGIC BINDINGS 🛑
     let isShareMode = false;
     window.toggleShareMode = function() {
         previousInputHeight = document.getElementById('chatInput').style.height || '40px';
@@ -845,48 +831,6 @@
     window.proceedToShare = function() {
         if(document.querySelectorAll('.bubble.selected-for-share').length === 0) return window.showCustomAlert("Please tap at least one message to share!");
         document.getElementById('whatsappModal').style.display = 'flex';
-    }
-
-    window.submitWhatsAppSelection = async function(event) {
-        const code = document.getElementById('waCountryCode').value;
-        const rawNumber = document.getElementById('waNumberInput').value.trim();
-        if (!rawNumber) return window.showCustomAlert("Please enter a mobile number.");
-        const number = code + rawNumber;
-        
-        const btn = document.getElementById('waSendBtn');
-        const originalText = btn.innerHTML; btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
-
-        const selectedNodes = document.querySelectorAll('.bubble.selected-for-share');
-        
-        try {
-            for (let i = 0; i < selectedNodes.length; i++) {
-                let node = selectedNodes[i]; let clone = node.cloneNode(true);
-                clone.querySelectorAll('.msg-menu-wrap, .user-copy-btn, .action-buttons-container, button').forEach(el => el.remove());
-                
-                let imgs = clone.querySelectorAll('img'); let imgDataArray = [];
-                imgs.forEach(img => { imgDataArray.push(img.src); img.remove(); });
-
-                let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
-                clone.innerHTML = htmlStr; let msgText = clone.innerText.replace(/\n\s*\n/g, '\n\n').trim(); msgText = msgText.replace(/✨.*?VIA.*?\n/i, ''); 
-
-                const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
-                const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
-                msgText = msgText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\^\{([^}]+)\}/g, (m, p1) => toSuper(p1)).replace(/\^([0-9a-zA-Z+-]+)/g, (m, p1) => toSuper(p1)).replace(/\\sqrt{([^}]+)}/g, '√$1').replace(/\\times/g, '×').replace(/\\cdot/g, '·').replace(/\\pi/g, 'π').replace(/\\theta/g, 'θ').replace(/\\left/g, '').replace(/\\right/g, '').replace(/\\/g, '');
-
-                if (msgText.length > 0) {
-                    let formattedText = `📚 *Book Deep Study Note*\n\n${msgText}\n\n------------------------`;
-                    await fetch("/api/secure-whatsapp", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: number, message: formattedText }) });
-                    await new Promise(r => setTimeout(r, 1000)); 
-                }
-
-                for (let j = 0; j < imgDataArray.length; j++) {
-                    await fetch("/api/secure-whatsapp", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: number, message: "[Image Attached]", imageBase64: imgDataArray[j] }) });
-                    await new Promise(r => setTimeout(r, 1500)); 
-                }
-            }
-            window.showCustomAlert("✅ Selected notes and images sent successfully!"); document.getElementById('whatsappModal').style.display = 'none'; window.cancelShareMode();
-        } catch (e) { window.showCustomAlert("❌ Failed to send. Server connection error."); }
-        btn.innerHTML = originalText; btn.disabled = false;
     }
 
     window.printFullChat = function() {
@@ -908,60 +852,7 @@
         win.document.write(`<html><head><title>Saved Notes</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;}</style></head><body>${content}</body></html>`);
         win.document.close(); win.focus(); setTimeout(() => { win.print(); window.cancelShareMode(); }, 500);
     }
-async function submitWhatsAppSelection(event) {
-    // 1. Get the country code (remove the '+') and the number
-    const countryCodeRaw = document.getElementById('waCountryCode').value; // This is "+91"
-    const countryCode = countryCodeRaw.replace('+', ''); // This makes it "91"
-    
-    const phoneNumber = document.getElementById('waNumberInput').value.trim(); // e.g., "9876543210"
-    
-    // 2. Combine them: "91" + "9876543210" = "919876543210"
-    const finalNumber = countryCode + phoneNumber;
-    
-    // 3. Validation: Make sure it's not empty
-    if (!phoneNumber) return alert("Please enter a mobile number.");
 
-    // 4. Prepare the message text
-    let fullChatText = "📚 *Book Deep Study - Selected Notes* 📚\n\n";
-    document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
-        let clone = node.cloneNode(true);
-        let menuWrap = clone.querySelector('.msg-menu-wrap'); 
-        if(menuWrap) menuWrap.remove();
-        let msgText = (clone.textContent || clone.innerText || "").trim();
-        if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
-    });
-
-    // 5. Send to server
-    const btn = event.target; 
-    btn.innerHTML = "⏳ Sending..."; 
-    btn.disabled = true;
-
-    try {
-        const response = await fetch("/api/secure-whatsapp", { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            // HERE IS THE FIX: Sending the combined 'finalNumber'
-            body: JSON.stringify({ number: finalNumber, message: fullChatText.trim() }) 
-        });
-        
-        if (response.status === 403) {
-            // This now proves that 'finalNumber' (e.g., 919876543210) 
-            // is not in your authorized list on the server.
-            alert("❌ 403 Forbidden: The number " + finalNumber + " is not authorized on the server!");
-        } else if (response.ok) {
-            alert("✅ Selected notes sent successfully!"); 
-            document.getElementById('whatsappModal').style.display = 'none'; 
-            cancelShareMode(); 
-        } else {
-            alert("❌ Failed to send. Server error.");
-        }
-    } catch (e) {
-        alert("❌ Connection error. Is your server running?");
-    }
-    
-    btn.innerHTML = "🚀 Send"; 
-    btn.disabled = false;
-}
     function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
     function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
 
@@ -973,78 +864,8 @@ async function submitWhatsAppSelection(event) {
     }
     function closeSettingsWizard() { document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex'; }
 
-    function clearChat() {
-        if(confirm("Are you sure you want to clear the chat history?")) {
-            localStorage.removeItem('bookChatHistory_VUltimateAI'); document.getElementById('chatHistory').innerHTML = ""; clearAttachment(); 
-            startConversation(true, true); // Force full reset
-        }
-    }
-
-    // 🛑 SEAMLESS NEW CHAPTER LOGIC (NO CLEARING) 🛑
-    async function startConversation(forceNew = false, forceClear = false) {
-        let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
-        let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
-        let isNewChapter = false;
-
-        if (oldSettingsStr && oldHistory) {
-            let oldSettings = JSON.parse(oldSettingsStr);
-            if (oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) isNewChapter = true;
-        }
-
-        if (forceClear) {
-            document.getElementById('chatHistory').innerHTML = ""; localStorage.removeItem('bookChatHistory_VUltimateAI'); currentSessionId = Date.now();
-        } else if (isNewChapter) {
-            document.getElementById('chatHistory').insertAdjacentHTML('beforeend', `<div class="chapter-divider">--- Started New Session: ${selectedData.chapter} ---</div>`);
-        }
-
-        document.getElementById('wizardPage').style.display = 'none'; 
-        document.getElementById('loadingPage').style.display = 'flex';
-        
-        let bar = document.getElementById('loadingBar'); let desc = document.getElementById('loadingDesc');
-        bar.style.width = '30%'; desc.innerText = "Connecting to AI Core...";
-        await new Promise(r => setTimeout(r, 400));
-        bar.style.width = '60%'; desc.innerText = "Analyzing Chapter Context...";
-        await fetchChapterContext();
-        bar.style.width = '90%'; desc.innerText = "Setting up Tutor Interface...";
-        await new Promise(r => setTimeout(r, 400));
-        bar.style.width = '100%';
-        
-        setTimeout(async () => {
-            document.getElementById('loadingPage').style.display = 'none'; 
-            document.getElementById('chatPage').style.display = 'flex';
-            document.getElementById('settingsBtn').style.display = 'block'; 
-            document.getElementById('clearBtn').style.display = 'block'; 
-            document.getElementById('shareBtn').style.display = 'block'; 
-            
-            document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
-            startMarquee();
-            localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
-
-            if(document.getElementById('chatHistory').innerHTML.trim() === "" || isNewChapter) {
-                let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-                let initialMessageHTML = (isEnglishSub || !isHindiUI) ? 
-                    `Hello! I am your AI Tutor. <br><br>We are ready to discuss Chapter **"${selectedData.chapter}"** of **${selectedData.subject}** (${selectedData.class}). <br><br>**I will respond in English by default.**<br>*Note: If you ask to solve a specific exercise, I will check the real textbook data first!*<br><br>
-                    <div class="preset-chips" style="margin-top: 15px;">
-                        <button class="preset-btn" onclick="window.runPreset('Generate detailed study notes for this chapter.')">📝 Generate Notes</button>
-                        <button class="preset-btn" onclick="window.runPreset('Create 10 important MCQs from this chapter with answers.')">✅ Objectives</button>
-                        <button class="preset-btn" onclick="window.runPreset('Analyze this chapter in simple terms.')">📊 Analyze Chapter</button>
-                    </div>`
-                    : 
-                    `नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।**<br><br>
-                    <div class="preset-chips" style="margin-top: 15px;">
-                        <button class="preset-btn" onclick="window.runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स</button>
-                        <button class="preset-btn" onclick="window.runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न</button>
-                        <button class="preset-btn" onclick="window.runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
-                    </div>`;
-                
-                await addAiMessage(initialMessageHTML, false);
-            }
-        }, 300);
-    }
-
     function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (document.getElementById('sendBtn').classList.contains('active-btn')) sendMessage(); } }
 
-    // 🛑 NEW VOICE HOLD-TO-SPEAK GUI 🛑
     let voiceRec = null; let voiceText = "";
     function openVoiceLang() { closePlusMenu(); document.getElementById('voiceLangModal').style.display='flex'; }
     function selectVoiceLang(lang) {
@@ -1084,87 +905,6 @@ async function submitWhatsAppSelection(event) {
     function clearVoice() { voiceText = ""; document.getElementById('voiceDictateText').value = ""; }
     function closeVoiceDictate() { document.getElementById('voiceDictateModal').style.display='none'; if(voiceRec) voiceRec.stop(); }
 
-    // 🛑 SEND MESSAGE WITH STOP BUTTON LOGIC 🛑
-    async function sendMessage() {
-        const inputEl = document.getElementById('chatInput');
-        const text = inputEl.value.trim();
-        const img = currentImageBase64;
-        const btn = document.getElementById('sendBtn');
-
-        if(!btn.classList.contains('active-btn')) return;
-
-        btn.classList.remove('active-btn', 'send-btn'); btn.classList.add('stop-btn'); btn.innerHTML = '⏹'; btn.onclick = cancelAiRequest;
-
-        const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
-        let imgHtml = img ? `<img src="${img}"><br>` : "";
-        msgDiv.innerHTML = `<div class="bubble"><button onclick="copyUserText(this)" data-text="${encodeURIComponent(text)}" class="user-copy-btn">📋</button>${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}${msgMenuHTML}</div>`;
-        document.getElementById('chatHistory').appendChild(msgDiv);
-        
-        // ONLY SCROLL ON USER MESSAGE
-        const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
-
-        inputEl.value = ""; resizeInputBox(); removeImage(); 
-
-        const loadingId = "load_" + Date.now();
-        const loadDiv = document.createElement("div"); loadDiv.className = "msg ai"; loadDiv.id = loadingId;
-        loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
-        document.getElementById('chatHistory').appendChild(loadDiv);
-        c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); 
-
-        let recentHistory = ""; let chatNodes = document.querySelectorAll('#chatHistory .msg'); let startIdx = Math.max(0, chatNodes.length - 8); 
-        for(let i = startIdx; i < chatNodes.length; i++) {
-            let m = chatNodes[i]; if(m.id === loadingId) continue;
-            let role = m.classList.contains('user') ? "User" : "AI";
-            let clone = m.cloneNode(true); let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-            let msgText = clone.innerText.trim().replace(/\s+/g, ' '); if(msgText) recentHistory += `${role}: ${msgText}\n`;
-        }
-
-        let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-        let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI (Devanagari script)';
-        let isMathSub = ['Mathematics', 'Physics', 'Chemistry', 'Science'].includes(selectedData.subject);
-        
-        let sysPrompt = `You are a premium AI expert educational tutor. Answer entirely in ${targetLang}. Context: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}. Use **bolding**. NO HASHTAGS (#). NO RAW UNITS like \\text{m/s}^2.`;
-
-        if (isMathSub) {
-            sysPrompt += `\n\n🚨 MATH TEMPLATE: For calculation questions, follow exactly:
-**1. [Step 1 Heading]**
-[Step 1 explanation in full words]
-$$[Equation]$$
-**✅ Final Answer**
-[Final sentence in ${targetLang}]`;
-            
-            // 🛑 SMART SVG VISUALS 🛑
-            sysPrompt += `\n\n🎨 VISUAL RULE: IF the question relates to Geometry, Physics concepts, Chemistry structures, or visual Math, YOU MUST generate a highly detailed, colorful <svg> diagram wrapped exactly in <div class="math-svg-wrap"><svg>...</svg></div>.`;
-        } else { 
-            sysPrompt += `\n\nIF SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`; 
-        }
-
-        if(recentHistory) sysPrompt += `\n\n--- CHAT HISTORY ---\n${recentHistory}`;
-        if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY ---\n${documentMemory.substring(0, 40000)}`;
-        
-        let payloadImg = img;
-        if (!img && bookRecognitionImageBase64) { payloadImg = bookRecognitionImageBase64; sysPrompt += `\nCRITICAL: Extract the text/questions strictly from the provided image.`; }
-
-        const payload = payloadImg ? { imageBase64: payloadImg, userPrompt: text || "Please solve the questions visible.", systemPrompt: sysPrompt } : { userPrompt: text || "Please provide the chapter exercises.", systemPrompt: sysPrompt };
-        
-        try {
-            currentAbortController = new AbortController();
-            const endpoint = payloadImg ? "/api/gemini-vision" : "/api/gemini-text";
-            const r = await fetch(endpoint, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload), signal: currentAbortController.signal });
-            const data = await r.json();
-            if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
-
-            document.getElementById(loadingId).remove();
-            await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
-
-        } catch(err) {
-            let errorMsg = err.message;
-            if(err.name === 'AbortError') errorMsg = "⚠️ Generation stopped by user.";
-            document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
-            saveHistorySafe(); resetSendButton();
-        }
-    }
-
     function cancelAiRequest() {
         if(currentAbortController) currentAbortController.abort();
         if(currentTypewriterInterval) clearInterval(currentTypewriterInterval);
@@ -1178,70 +918,313 @@ $$[Equation]$$
         validateSendButton();
     }
 
-    // 🛑 8MS LIVE MATHJAX TYPEWRITER ENGINE (NO AUTO SCROLL) 🛑
-    async function addAiMessage(text, typewrite = false) {
-        const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
-        const bubble = document.createElement("div"); bubble.className = "bubble";
-        msgDiv.appendChild(bubble); document.getElementById('chatHistory').appendChild(msgDiv);
-
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        let btnHtml = `<button class="listen-btn" onclick="playAudio(this)" data-target="tts_${Date.now()}">🔊 Listen</button>`;
-
-        if(typewrite) {
-            let currentHTML = ""; let i = 0;
-            bubble.innerHTML = `<div id="tts_${Date.now()}" style="margin-bottom:10px;"></div>`;
-            let txtBox = bubble.firstChild;
-            
-            return new Promise((resolve) => {
-                currentTypewriterInterval = setInterval(() => {
-                    if(i >= formattedText.length) {
-                        clearInterval(currentTypewriterInterval);
-                        bubble.insertAdjacentHTML('beforeend', btnHtml + msgMenuHTML);
-                        if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
-                        saveHistorySafe(); resetSendButton(); resolve();
-                    } else {
-                        let char = formattedText[i];
-                        if(char === '<') { let end = formattedText.indexOf('>', i); if(end !== -1) { currentHTML += formattedText.substring(i, end + 1); i = end + 1; } }
-                        else { currentHTML += (char === '\n') ? '<br>' : char; i++; }
-                        txtBox.innerHTML = currentHTML;
-                        
-                        if((currentHTML.endsWith('$$') || currentHTML.endsWith('\\)')) && window.MathJax) {
-                            MathJax.typesetClear([txtBox]); MathJax.typesetPromise([txtBox]).catch(()=>{});
-                        }
-                    }
-                }, 8); // 8ms Fast Speed
-            });
-        } else {
-            let id = `tts_${Date.now()}`;
-            bubble.innerHTML = `<div id="${id}" style="margin-bottom:10px;">${formattedText.replace(/\n/g, '<br>')}</div>${btnHtml}${msgMenuHTML}`;
-            if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
-            saveHistorySafe(); resetSendButton();
-        }
-    }
-
-    // TTS AUDIO PLAYER WITH RESUME BUG FIX
-    function playAudio(btn) { 
-        let targetId = btn.getAttribute('data-target');
-        let text = document.getElementById(targetId).innerText; 
-        window.speechSynthesis.cancel(); 
-        const u = new SpeechSynthesisUtterance(text); 
-        u.lang = isHindiUI ? 'hi-IN' : 'en-US'; 
-        u.onstart = () => { document.getElementById("topAudioPlayer").style.display = "flex"; document.getElementById("audioToggleBtn").innerText = "⏸"; }; 
-        u.onend = () => { document.getElementById("topAudioPlayer").style.display = "none"; }; 
-        window.activeUtterance = u; // Fixes the browser GC bug
-        window.speechSynthesis.speak(window.activeUtterance); 
-    }
     function toggleAudio() {
         const btn = document.getElementById("audioToggleBtn");
-        if (window.speechSynthesis.paused) { 
-            window.speechSynthesis.resume(); 
-            btn.innerText = "⏸"; 
-        } else { 
-            window.speechSynthesis.pause(); 
-            btn.innerText = "▶"; 
-        }
+        if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); btn.innerText = "⏸"; } 
+        else { window.speechSynthesis.pause(); btn.innerText = "▶"; }
     }
     function stopAudio() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
+
+    // =========================================================================
+    // 🚨 🧠 INJECTED PTI SYNC LOGIC (CROSS DEVICE BULLETPROOF ENGINE) 🧠 🚨
+    // ==========================================================================
+    async function fetchAndInjectPtiSession(ptiString) {
+        try {
+            const response = await fetch(`/api/pti-get?pti=${ptiString}`);
+            if (!response.ok) throw new Error("Not Found");
+            const sessionRecord = await response.json();
+            if (sessionRecord.error) throw new Error(sessionRecord.error);
+            
+            currentSessionId = sessionRecord.id;
+            selectedData = sessionRecord.metaSettings || {};
+            
+            document.getElementById('sessionTitleDisplay').innerText = sessionRecord.title || "📚 Book Deep Study";
+            document.getElementById('wizardPage').style.display = 'none'; 
+            document.getElementById('chatPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block'; 
+            document.getElementById('clearBtn').style.display = 'block'; 
+            document.getElementById('shareBtn').style.display = 'block';
+            
+            document.getElementById('chatHistory').innerHTML = sessionRecord.htmlPayload || "";
+            setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
+            startMarquee();
+        } catch (e) {
+            showToast("❌ Unable to locate active PTI profile.");
+            console.error("Fetch Error:", e);
+        }
+    }
+
+    async function silentCheckPtiUpdates() {
+        if (!currentPti || document.getElementById('sendBtn').classList.contains('stop-btn')) return;
+        try {
+            const response = await fetch(`/api/pti-get?pti=${currentPti}`);
+            if (!response.ok) return;
+            const freshSession = await response.json();
+            if (freshSession.error) return;
+            
+            let localContainer = document.getElementById('chatHistory');
+            // If the incoming text updates are longer, update the view instantly
+            if (freshSession.html && freshSession.html.length > localSessionHTMLSize) {
+                localSessionHTMLSize = freshSession.html.length;
+                document.getElementById('chatHistory').innerHTML = freshSession.html;
+                currentSessionId = freshSession.id;
+                localStorage.setItem('bookChatHistory_VUltimateAI', freshSession.html);
+                const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
+                showToast("📲 Live session update applied!");
+            }
+        } catch(e) {}
+    }
+
+    function cloudSaveSyncEngine(htmlDataToCloud) {
+        let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
+        let curIdx = savedSessions.findIndex(s => s.id == currentSessionId || s.id === currentPti);
+        
+        let sessionObj = { id: currentPti || currentSessionId, title: document.getElementById('sessionTitleDisplay').innerText, html: htmlDataContainer, data: selectedData };
+        if(curIdx !== -1) savedSessions[curIdx] = sessionObj; else savedSessions.unshift(winSessionObj);
+        localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedSessions));
+
+        fetch('/api/pti-save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pti: currentPti || currentSessionId,
+                title: document.getElementById('sessionTitleDisplay').innerText,
+                interactions: [{ question: "Book Deep Study Update", answer: htmlData }] // Standard payload wrapper compatible with database router mapping
+            })
+        })
+        .then(res => res.json())
+        .then(serverResult => {
+            if (serverResult.success && !currentPti) {
+                currentPti = serverResult.pti;
+                currentSessionId = currentPti;
+                
+                const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
+                window.history.replaceState({ path: newUrl }, '', newUrl);
+            }
+        })
+        .catch(err => console.error("Cloud Sync Failed:", err));
+    }
+
+    // Initialize logic checking url targets upon component registration
+    let initialUrlCheck = new URLSearchParams(window.location.search).get('pti');
+    if(initialMessageHTML = null, initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "🤖 Dual engine connected", currentPti) {
+            setInterval(() => { silentCheckPtiUpdates(); }, 4000);
+        }
+
+        async function startConversation(forceNew = false, forceClear = false) {
+            let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
+            let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
+            let isNewChapter = false;
+
+            if (oldSettingsStr && oldHistory) {
+                let oldSettings = JSON.parse(oldSettingsStr);
+                if (oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) isNewChapter = true;
+            }
+
+            if (forceClear) {
+                document.getElementById('chatHistory').innerHTML = ""; localStorage.removeItem('bookChatHistory_VUltimateAI'); currentSessionId = Date.now();
+            } else if (isNewChapter) {
+                document.getElementById('chatHistory').insertAdjacentHTML('beforeend', `<div class="chapter-divider">--- Started New Session: ${selectedData.chapter} ---</div>`);
+            }
+
+            document.getElementById('wizardPage').style.display = 'none'; 
+            document.getElementById('loadingPage').style.display = 'flex';
+            
+            let bar = document.getElementById('loadingBar'); let desc = document.getElementById('loadingDesc');
+            bar.style.width = '30%'; desc.innerText = "Connecting to AI Core...";
+            await new Promise(r => setTimeout(r, 400));
+            bar.style.width = '60%'; desc.innerText = "Analyzing Chapter Context...";
+            await fetchChapterContext();
+            bar.style.width = '90%'; desc.innerText = "Setting up Tutor Interface...";
+            await new Promise(r => setTimeout(r, 400));
+            bar.style.width = '100%';
+            
+            setTimeout(async () => {
+                document.getElementById('loadingPage').style.display = 'none'; 
+                document.getElementById('chatPage').style.display = 'flex';
+                document.getElementById('settingsBtn').style.display = 'block'; 
+                document.getElementById('clearBtn').style.display = 'block'; 
+                document.getElementById('shareBtn').style.display = 'block'; 
+                
+                document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
+                startMarquee();
+                localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
+
+                if(document.getElementById('chatHistory').innerHTML.trim() === "" || isNewChapter) {
+                    let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
+                    let initialMessageHTML = (isEnglishSub || !isHindiUI) ? 
+                        `Hello! I am your AI Tutor. <br><br>We are ready to discuss Chapter **"${selectedData.chapter}"** of **${selectedData.subject}** (${selectedData.class}). <br><br>**I will respond in English by default.**<br>*Note: If you ask to solve a specific exercise, I will check the real textbook data first!*<br><br>
+                        <div class="preset-chips" style="margin-top: 15px;">
+                            <button class="preset-btn" onclick="window.runPreset('Generate detailed study notes for this chapter.')">📝 Generate Notes</button>
+                            <button class="preset-btn" onclick="window.runPreset('Create 10 important MCQs from this chapter with answers.')">✅ Objectives</button>
+                            <button class="preset-btn" onclick="window.runPreset('Analyze this chapter in simple terms.')">📊 Analyze Chapter</button>
+                        </div>`
+                        : 
+                        `नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।**<br><br>
+                        <div class="preset-chips" style="margin-top: 15px;">
+                            <button class="preset-btn" onclick="window.runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स</button>
+                            <button class="preset-btn" onclick="window.runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न</button>
+                            <button class="preset-btn" onclick="window.runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
+                        </div>`;
+                    
+                    await addAiMessage(initialMessageHTML, false);
+                }
+            }, 300);
+        }
+
+        async function sendMessage() {
+            const inputEl = document.getElementById('chatInput');
+            const text = inputEl.value.trim();
+            const img = currentImageBase64;
+            const btn = document.getElementById('sendBtn');
+
+            if(!btn.classList.contains('active-btn')) return;
+
+            btn.classList.remove('active-btn', 'send-btn'); btn.classList.add('stop-btn'); btn.innerHTML = '⏹'; btn.onclick = cancelAiRequest;
+
+            const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
+            let imgHtml = img ? `<img src="${img}"><br>` : "";
+            msgDiv.innerHTML = `<div class="bubble"><button onclick="copyUserText(this)" data-text="${encodeURIComponent(text)}" class="user-copy-btn">📋</button>${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}${msgMenuHTML}</div>`;
+            document.getElementById('chatHistory').appendChild(msgDiv);
+            
+            const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
+
+            inputEl.value = ""; resizeInputBox(); removeImage(); 
+
+            const loadingId = "load_" + Date.now();
+            const loadDiv = document.createElement("div"); loadDiv.className = "msg ai"; loadDiv.id = loadingId;
+            loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+            document.getElementById('chatHistory').appendChild(loadDiv);
+            c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); 
+
+            let recentHistory = ""; let chatNodes = document.querySelectorAll('#chatHistory .msg'); let startIdx = Math.max(0, chatNodes.length - 8); 
+            for(let i = startIdx; i < chatNodes.length; i++) {
+                let m = chatNodes[i]; if(m.id === loadingId) continue;
+                let role = m.classList.contains('user') ? "User" : "AI";
+                let clone = m.cloneNode(true); let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
+                let msgText = clone.innerText.trim().replace(/\s+/g, ' '); if(msgText) recentHistory += `${role}: ${msgText}\n`;
+            }
+
+            let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
+            let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI (Devanagari script)';
+            let isMathSub = ['Mathematics', 'Physics', 'Chemistry', 'Science'].includes(selectedData.subject);
+            
+            let sysPrompt = `You are a premium AI expert educational tutor. Answer entirely in ${targetLang}. Context: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}. Use **bolding**. NO HASHTAGS (#). NO RAW UNITS like \\text{m/s}^2.`;
+
+            if (isMathSub) {
+                sysPrompt += `\n\n🚨 MATH TEMPLATE: For calculation questions, follow exactly:
+**1. [Step 1 Heading]**
+[Step 1 explanation in full words]
+$$[Equation]$$
+**✅ Final Answer**
+[Final sentence in ${targetLang}]`;
+                sysPrompt += `\n\n🎨 VISUAL RULE: IF the question relates to Geometry, Physics concepts, Chemistry structures, or visual Math, YOU MUST generate a highly detailed, colorful <svg> diagram wrapped exactly in <div class="math-svg-wrap"><svg>...</svg></div>.`;
+            } else { 
+                sysPrompt += `\n\nIF SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`; 
+            }
+
+            if(recentHistory) sysPrompt += `\n\n--- CHAT HISTORY ---\n${recentHistory}`;
+            if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY ---\n${documentMemory.substring(0, 40000)}`;
+            
+            let payloadImg = img;
+            if (!img && bookRecognitionImageBase64) { payloadImg = bookRecognitionImageBase64; sysPrompt += `\nCRITICAL: Extract the text/questions strictly from the provided image.`; }
+
+            const payload = payloadImg ? { imageBase64: payloadImg, userPrompt: text || "Please solve the questions visible.", systemPrompt: sysPrompt } : { userPrompt: text || "Please provide the chapter exercises.", systemPrompt: sysPrompt };
+            
+            try {
+                currentAbortController = new AbortController();
+                const endpoint = payloadImg ? "/api/gemini-vision" : "/api/gemini-text";
+                const r = await fetch(endpoint, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload), signal: currentAbortController.signal });
+                const data = await r.json();
+                if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
+
+                document.getElementById(loadingId).remove();
+                await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
+
+            } catch(err) {
+                let errorMsg = err.message;
+                if(err.name === 'AbortError') errorMsg = "⚠️ Generation stopped by user.";
+                document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
+                saveHistorySafe(); resetSendButton();
+            }
+        }
+
+        async function addAiMessage(text, typewrite = false) {
+            const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
+            const bubble = document.createElement("div"); bubble.className = "bubble";
+            msgDiv.appendChild(bubble); document.getElementById('chatHistory').appendChild(msgDiv);
+
+            let formattedText = text.replace(/\*\*(.*?)\*\"/g, '<b>$1</b>');
+            let btnHtml = `<button class="listen-btn" onclick="playAudio(this)" data-target="tts_${Date.now()}">🔊 Listen</button>`;
+
+            if(typewrite) {
+                let currentHTML = ""; let i = 0;
+                bubble.innerHTML = `<div id="tts_${Date.now()}" style="margin-bottom:10px;"></div>`;
+                let txtBox = bubble.firstChild;
+                
+                return new Promise((resolve) => {
+                    currentTypewriterInterval = setInterval(() => {
+                        if(i >= formattedText.length) {
+                            clearInterval(currentTypewriterInterval);
+                            bubble.insertAdjacentHTML('beforeend', btnHtml + msgMenuHTML);
+                            if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
+                            
+                            // Live Cloud Execution Hooks
+                            saveHistorySafe();
+                            triggerCloudSyncEngine();
+                            resetSendButton(); 
+                            resolve();
+                        } else {
+                            let char = formattedText[i];
+                            if(char === '<') { let end = formattedText.indexOf('>', i); if(end !== -1) { currentHTML += formattedText.substring(i, end + 1); i = end + 1; } }
+                            else { currentHTML += (char === '\n') ? '<br>' : char; i++; }
+                            txtBox.innerHTML = currentHTML;
+                            
+                            if((currentHTML.endsWith('$$') || currentHTML.endsWith('\\)')) && window.MathJax) {
+                                MathJax.typesetClear([txtBox]); MathJax.typesetPromise([txtBox]).catch(()=>{});
+                            }
+                        }
+                    }, 8);
+                });
+            } else {
+                let id = `tts_${Date.now()}`;
+                bubble.innerHTML = `<div id="${id}" style="margin-bottom:10px;">${formattedText.replace(/\n/g, '<br>')}</div>${btnHtml}${msgMenuHTML}`;
+                if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
+                
+                saveHistorySafe();
+                triggerCloudSyncEngine();
+                resetSendButton();
+            }
+        }
+
+        function triggerCloudSyncEngine() {
+            const fullHTMLPayload = document.getElementById('chatHistory').innerHTML;
+            
+            fetch('/api/pti-save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pti: currentPti || currentSessionId,
+                    title: document.getElementById('sessionTitleDisplay').innerText,
+                    interactions: [{ 
+                        question: "Book Session Update", 
+                        answer: fullHTMLPayload,
+                        metaSettings: selectedData // Store metadata configuration map so phone can auto-load configurations
+                    }]
+                })
+            })
+            .then(res => res.json())
+            .then(serverResult => {
+                if (serverResult.success && !currentPti) {
+                    currentPti = serverResult.pti;
+                    currentSessionId = currentPti;
+                    
+                    const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
+                    window.history.replaceState({ path: newUrl }, '', newUrl);
+                }
+            })
+            .catch(err => console.error("Cloud Sync Failed:", err));
+        }
 </script>
 </body>
 </html>
