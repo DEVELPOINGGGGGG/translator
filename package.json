@@ -5,7 +5,9 @@
   "description": "AI Pro Suite dashboard with Gemini, Groq, and YouTube integrations.",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js"
+    "check": "node --check server.js",
+    "build": "npm install",
+    "postinstall": "npx playwright install chromium"
   },
   "dependencies": {
     "@google/generative-ai": "^0.11.4",
