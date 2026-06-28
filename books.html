@@ -123,7 +123,7 @@
         .remove-img-btn { position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:22px; height:22px; font-size:10px; cursor:pointer; }
 
         @keyframes floatUp { 0% { opacity:0; transform:translateY(20px); } 100% { opacity:1; transform:translateY(0); } }
-        @keyframes popInCard { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes popInCard { 0% { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes popUp { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
@@ -378,7 +378,7 @@
     <div class="modal-box" style="text-align: center; max-width: 350px;">
         <h3 style="color: var(--primary); margin-bottom: 15px; font-size: 20px; font-weight: bold;">System Notice</h3>
         <p id="alertMessage" style="font-size: 15px; color: var(--text-main); margin-bottom: 25px;"></p>
-        <button class="btn btn-primary" style="width: 100%; padding: 12px; border-radius: 12px; font-size: 16px;" onclick="closeCustomAlert()">Done</button>
+        <button class="btn btn-primary" style="width: 100%; padding: 12px; border-radius: 12px; font-size: 16px;" onclick="window.closeCustomAlert()">Done</button>
     </div>
 </div>
 
@@ -453,7 +453,6 @@
 </div>
 
 <script>
-    // GLOBAL STATE VARIABLES (MUST BE AT THE TOP)
     localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
     let appHistory = [];
     let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
@@ -474,7 +473,6 @@
     let voiceText = "";
     let localSessionHTMLSize = 0;
 
-    // GLOBALLY BOUND UTILITIES
     window.showCustomAlert = function(msg) {
         document.getElementById('alertMessage').innerText = msg;
         document.getElementById('customAlertModal').style.display = 'flex';
@@ -488,7 +486,6 @@
         document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
     }
 
-    // 🛑 AUTO RESTORE & SYNC LOOP INIT 🛑
     window.addEventListener('load', function() {
         if(currentPti) {
             setInterval(() => { silentCheckPtiUpdates(); }, 4000);
@@ -527,14 +524,12 @@
         startMarquee();
     });
 
-    // 🌐 LANGUAGE TOGGLE
     window.toggleAppLanguage = function() {
         closePlusMenu();
         isHindiUI = !isHindiUI;
         showToast(isHindiUI ? "🌐 Language set to Hindi" : "🌐 Language set to English");
     }
 
-    // 🛑 CLEAR CHAT ENGINE (FIXED) 🛑
     window.clearChat = function() {
         if(confirm("🗑️ Are you sure you want to completely clear this chapter's chat and memory?")) {
             document.getElementById('chatHistory').innerHTML = "";
@@ -544,7 +539,6 @@
             currentPti = null;
             localSessionHTMLSize = 0;
             
-            // Strip the PTI from URL without reloading
             const newUrl = `${window.location.origin}${window.location.pathname}`;
             window.history.replaceState({ path: newUrl }, '', newUrl);
             
@@ -555,12 +549,10 @@
             document.getElementById('shareBtn').style.display = 'none';
             
             showToast("🗑️ Memory Wiped Clean.");
-            nextStep(1); // Kick back to start
+            nextStep(1);
         }
     };
 
-    // 🛑 MARQUEE TITLE LOGIC 🛑
-    let marqueeInterval;
     function startMarquee() {
         const titleEl = document.getElementById('sessionTitleDisplay');
         const container = document.getElementById('titleContainer');
@@ -724,7 +716,6 @@
         }
     }
 
-    // 🚨 FIXED SUBJECT FETCH TO BE ULTRA STRICT 🚨
     async function triggerSubjectFetch() {
         let pub = document.getElementById('publisherSelect').value; let cls = document.getElementById('classSelect').value; let subSelect = document.getElementById('subjectSelect');
         if(!pub || !cls) return;
@@ -828,14 +819,6 @@
         window.validateSendButton(); 
     }
 
-    function openWebImport() { closePlusMenu(); document.getElementById('webImportModal').style.display = 'flex'; }
-    function saveWebUrls() {
-        let text = document.getElementById('webUrlInput').value.trim(); let urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-        if (urls.length > 10) { window.showCustomAlert("⚠️ Maximum 10 URLs allowed!"); urls = urls.slice(0, 10); }
-        if (urls.length > 0) { webUrls = urls; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`; }
-        document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = ''; window.validateSendButton();
-    }
-
     function handleFileSelect(event) {
         closePlusMenu(); const file = event.target.files[0]; if(!file) return;
         if (file.type.startsWith('image/')) {
@@ -870,12 +853,11 @@
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
-    // 🚨 100% RELIABLE WHATSAPP SENDER (NO BUTTONS THAT GET BLOCKED) 🚨
+    // 🚨 INCORPORATED CORE CRITICAL SEARCH RESTRUCTURING LOGIC BLOCK 🚨
     window.submitWhatsAppSelection = async function(event) {
         let number = document.getElementById('waNumberInput').value.trim();
         if (!number) return showToast("Please enter a mobile number.");
         
-        // Auto prepend country code 91 if the user just types their 10 digit number
         if (!number.startsWith("91") && !number.startsWith("+")) {
             number = "91" + number;
         }
@@ -890,47 +872,61 @@
             if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
         });
 
-        // Clean LaTeX Math
         const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
         const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
         fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\\times/g, '×').replace(/\\cdot/g, '·');
 
-        const activeTokenId = currentPti || currentSessionId;
-        const liveChatPtiUrl = `${window.location.origin}/books.html?restore=${activeTokenId}&pti=${activeTokenId}`;
-
-        // Inject the Live URL directly into the text (WhatsApp will auto-hyperlink it)
-        fullChatText += `\n🔗 *Live Conversation Link:*\n${liveChatPtiUrl}`;
-
         const btn = event.target; 
         const originalText = btn.innerHTML; 
-        btn.innerHTML = "⏳ Sending..."; 
+        btn.innerHTML = "⏳ Sharing Loop Engine Process..."; 
         btn.disabled = true;
-        
+
+        const fullHTMLPayload = document.getElementById('chatHistory').innerHTML;
+
         try {
-            // Using the ultra-reliable /api/secure-whatsapp route
-            const response = await fetch("/api/secure-whatsapp", {
+            // 🚨 TRIGGER PTI GENERATION BEFORE MESSAGE Dispatches (Search-Style Flow) 🚨
+            const saveResponse = await fetch('/api/pti-save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ number: number, message: fullChatText.trim() })
+                body: JSON.stringify({
+                    action: "save",
+                    pti: currentPti || currentSessionId,
+                    title: document.getElementById('sessionTitleDisplay').innerText,
+                    htmlPayload: fullHTMLPayload, 
+                    metaSettings: selectedData 
+                })
+            });
+            const saveResult = await saveResponse.json();
+            
+            if (saveResult.success) {
+                currentPti = saveResult.pti;
+                currentSessionId = currentPti;
+                const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
+                window.history.replaceState({ path: newUrl }, '', newUrl);
+            }
+
+            const activeTokenId = currentPti || currentSessionId;
+            const liveChatPtiUrl = `${window.location.origin}/books.html?restore=${activeTokenId}&pti=${activeTokenId}`;
+
+            // Pack the text notes and live conversation link together into handleDualShare
+            const response = await fetch("/api/send-dual-share", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    number: number, 
+                    notesMessage: fullChatText.trim(), 
+                    targetUrl: liveChatPtiUrl 
+                })
             });
 
-            if (response.status === 403) {
-                window.alert("❌ ERROR: This number is not in your authorized list on the server.");
-            } else if (response.ok) {
-                const data = await response.json();
-                
-                // Check if Green API actually assigned an ID to the message
-                if (data.idMessage) {
-                    showToast("✅ Notes sent successfully!");
-                    document.getElementById('whatsappModal').style.display = 'none';
-                    window.cancelShareMode();
-                } else {
-                    window.alert("❌ Green API Error: Is your sender phone disconnected from Wi-Fi?");
-                }
+            if (response.ok) {
+                showToast("✅ Notes and live link sent successfully!");
+                document.getElementById('whatsappModal').style.display = 'none';
+                window.cancelShareMode();
             } else {
-                window.alert("❌ Transmission sequence failed.");
+                window.alert("Transmission failed. Verify server environment parameters.");
             }
-        } catch (e) { window.alert("❌ Connection error while sending."); }
+        } catch (e) { window.alert("❌ Transmission loop failed."); }
         
         btn.innerHTML = originalText; btn.disabled = false;
     }
@@ -1038,7 +1034,7 @@
     };
 
     // =========================================================================
-    // 🚨 🧠 INJECTED PTI SYNC LOGIC (CROSS DEVICE BULLETPROOF ENGINE) 🧠 🚨
+    // 🧠 PTI SYNC ENGINE CODES
     // ==========================================================================
     async function fetchAndInjectPtiSession(ptiString) {
         try {
@@ -1075,7 +1071,6 @@
             const freshSession = await response.json();
             if (freshSession.error) return;
             
-            // If the incoming text updates are longer, update the view instantly
             if (freshSession.htmlPayload && freshSession.htmlPayload.length > localSessionHTMLSize) {
                 localSessionHTMLSize = freshSession.htmlPayload.length;
                 document.getElementById('chatHistory').innerHTML = freshSession.htmlPayload;
@@ -1090,22 +1085,21 @@
     function triggerCloudSyncEngine() {
         const fullHTMLPayload = document.getElementById('chatHistory').innerHTML;
         
-        // Always save to the generic localStorage array as fallback
         let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
         let curIdx = savedSessions.findIndex(s => s.id == currentSessionId || s.id === currentPti);
         let sessionObj = { id: currentPti || currentSessionId, title: document.getElementById('sessionTitleDisplay').innerText, html: fullHTMLPayload, data: selectedData };
         if(curIdx !== -1) savedSessions[curIdx] = sessionObj; else savedSessions.unshift(sessionObj);
         localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedSessions));
 
-        // Sync to Server
         fetch('/api/pti-save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                action: "save",
                 pti: currentPti || currentSessionId,
                 title: document.getElementById('sessionTitleDisplay').innerText,
-                htmlPayload: fullHTMLPayload, // Using a dedicated htmlPayload field to match books structure
-                metaSettings: selectedData // Store metadata configuration map so phone can auto-load configurations
+                htmlPayload: fullHTMLPayload, 
+                metaSettings: selectedData 
             })
         })
         .then(res => res.json())
@@ -1121,9 +1115,6 @@
         .catch(err => console.error("Cloud Sync Failed:", err));
     }
 
-    // ==========================================
-    // 🧠 AI CONVERSATION TRIGGER (THE MAIN LOOP)
-    // ==========================================
     async function startConversation(forceNew = false, forceClear = false) {
         let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
         let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
