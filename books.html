@@ -39,6 +39,7 @@
         .topbar { position: fixed; top: 0; left: 0; width: 100%; z-index: 500; transition: transform 0.4s ease; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
         .topbar.hidden { transform: translateY(-100%); }
         
+        /* 🚨 RESTORED MARQUEE TITLE 🚨 */
         .appTitle-container { flex: 1; overflow-x: auto; white-space: nowrap; margin: 0 15px; position: relative; border-radius: 8px; cursor: pointer; touch-action: pan-x; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .appTitle-container::-webkit-scrollbar { display: none; }
         .appTitle { font-size: 18px; font-weight: bold; color: var(--text-main); display: inline-block; padding: 5px; white-space: nowrap; }
@@ -68,6 +69,8 @@
 
         .floating-lang-btn { position: absolute; top: 15px; right: 15px; font-size: 26px; background: transparent; border: none; cursor: pointer; transition: 0.3s; z-index: 100; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
         .floating-lang-btn:hover { transform: scale(1.15) rotate(15deg); }
+        
+        /* 🚨 RESTORED SETTINGS 'X' BUTTON 🚨 */
         #closeSettingsWizardBtn { display: none; position: absolute; top: 15px; left: 15px; background: var(--input-bg); border: 1px solid var(--border-light); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         #closeSettingsWizardBtn:hover { background: #ef4444; color: white; border-color: #ef4444; }
 
@@ -105,10 +108,11 @@
         textarea { flex: 1; background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 15px; resize: none; padding: 10px 0; outline: none; min-height: 24px; max-height: 120px; }
         .icon-btn { background: transparent; border: none; color: var(--primary); font-size: 22px; cursor: pointer; padding: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
         
-        .send-btn { background: linear-gradient(135deg, #cbd5e1, #94a3b8); color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; flex-shrink: 0; pointer-events: none; transition: 0.3s; }
-        .send-btn.active-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); box-shadow: 0 4px 10px var(--primary-glow); pointer-events: auto; }
+        /* 🚨 RESTORED BLANK MESSAGE GRAY BUTTON LOGIC 🚨 */
+        .send-btn { background: var(--border-light); color: var(--text-muted); border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: 5px; flex-shrink: 0; pointer-events: none; transition: 0.3s; opacity: 0.5; }
+        .send-btn.active-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 4px 10px var(--primary-glow); pointer-events: auto; opacity: 1; }
         .send-btn.active-btn:hover { transform: scale(1.1); }
-        .send-btn.stop-btn { background: #ef4444 !important; pointer-events: auto; animation: pulse 1s infinite alternate; }
+        .send-btn.stop-btn { background: #ef4444 !important; pointer-events: auto; animation: pulse 1s infinite alternate; opacity: 1; color: white;}
 
         .glass-panel { background: var(--bg-surface); backdrop-filter: blur(15px); border: 1px solid var(--border-light); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         #plusMenu { display: none; position: absolute; bottom: 75px; left: 15px; border-radius: 15px; flex-direction: column; z-index: 200; width: 220px; animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -123,7 +127,7 @@
         .remove-img-btn { position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:22px; height:22px; font-size:10px; cursor:pointer; }
 
         @keyframes floatUp { 0% { opacity:0; transform:translateY(20px); } 100% { opacity:1; transform:translateY(0); } }
-        @keyframes popInCard { 0% { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes popInCard { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes popUp { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
         @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
@@ -165,11 +169,14 @@
         
         #bookPreviewModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999999 !important; flex-direction: column; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
 
+        /* 🚨 RESTORED SVGS 🚨 */
         .math-svg-wrap { background: #ffffff !important; border-radius: 12px; padding: 15px; margin: 15px 0; text-align: center; overflow-x: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid var(--primary); }
         .math-svg-wrap svg { max-width: 100%; height: auto; border-radius: 8px; }
 
+        /* 🚨 RESTORED MARKDOWN BOLD FIXES 🚨 */
         .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 0; color: var(--text-main); font-weight: 800; }
         .markdown-body p { margin-bottom: 10px; }
+        .markdown-body strong { font-weight: 800; color: var(--text-main); }
         mjx-container[jax="CHTML"][display="true"] { margin: 1em 0 !important; overflow-x: auto; overflow-y: hidden; }
         mjx-container[jax="CHTML"][display="false"] { white-space: nowrap !important; display: inline-block !important; }
     </style>
@@ -182,20 +189,20 @@
     <div style="display:flex; align-items:center; flex: 1; overflow: hidden;">
         <div class="menuBtn" onclick="toggleSidebar()" style="font-size:24px; cursor:pointer; margin-right: 15px; color:var(--text-main);">☰</div>
         <div class="appTitle-container" id="titleContainer">
-            <div class="appTitle" id="sessionTitleDisplay" onclick="renameSession()">📚 Book Deep Study</div>
+            <div class="appTitle" id="sessionTitleDisplay" onclick="window.renameSession()">📚 Book Deep Study</div>
         </div>
     </div>
     <div style="display:flex; gap:8px;">
         <button class="btn btn-primary" id="shareBtn" style="padding: 6px 12px; display: none; font-size: 13px; background: #25D366; border: none;" onclick="window.toggleShareMode()">📤 Share</button>
         <button class="btn btn-secondary" id="clearBtn" style="padding: 6px 12px; display: none; font-size: 13px;" onclick="window.clearChat()">🗑️ Clear</button>
-        <button class="btn btn-primary" id="settingsBtn" style="padding: 6px 12px; display: none; font-size: 13px;" onclick="openSettings()">⚙️</button>
+        <button class="btn btn-primary" id="settingsBtn" style="padding: 6px 12px; display: none; font-size: 13px;" onclick="window.openSettings()">⚙️</button>
     </div>
 </div>
 
 <div id="topAudioPlayer">
     <span style="font-weight:bold; font-size:13px; color:var(--text-main);">🔊 AI Voice</span>
-    <button class="audio-btn" id="audioToggleBtn" onclick="toggleAudio()">⏸</button>
-    <button class="audio-btn" style="background:#ef4444;" onclick="stopAudio()">⏹</button>
+    <button class="audio-btn" id="audioToggleBtn" onclick="window.toggleAudio()">⏸</button>
+    <button class="audio-btn" style="background:#ef4444;" onclick="window.stopAudio()">⏹</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -221,7 +228,7 @@
 </div>
 
 <div id="wizardPage">
-    <button id="closeSettingsWizardBtn" onclick="closeSettingsWizard()">✖</button>
+    <button id="closeSettingsWizardBtn" onclick="window.closeSettingsWizard()">✖</button>
     <button class="floating-lang-btn" onclick="window.toggleAppLanguage()" title="Toggle Language">🌐</button>
     
     <div class="wizard-container" id="wizardContainer">
@@ -229,7 +236,7 @@
         <div class="step-card active" id="step-1">
             <h2>Step 1: Board / Publisher</h2>
             <label>Select Publisher:</label>
-            <select id="publisherSelect" class="standard" onchange="triggerSubjectFetch()">
+            <select id="publisherSelect" class="standard" onchange="window.triggerSubjectFetch()">
                 <option value="" selected disabled>-- Select Publisher --</option>
                 <option value="NCERT">NCERT</option>
                 <option value="SCERT">SCERT</option>
@@ -250,14 +257,14 @@
                 <option value="Other">Other (Custom)</option>
             </select>
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="nextStep(2)">Next ➔</button>
+                <button class="btn btn-primary" onclick="window.nextStep(2)">Next ➔</button>
             </div>
         </div>
 
         <div class="step-card" id="step-2">
             <h2>Step 2: Class</h2>
             <label>Select Class:</label>
-            <select id="classSelect" class="standard" onchange="triggerSubjectFetch()">
+            <select id="classSelect" class="standard" onchange="window.triggerSubjectFetch()">
                 <option value="" selected disabled>-- Select Class --</option>
                 <option value="Class 1">Class 1</option>
                 <option value="Class 2">Class 2</option>
@@ -273,25 +280,25 @@
                 <option value="Class 12">Class 12</option>
             </select>
             <div class="btn-row">
-                <button class="btn btn-secondary" onclick="nextStep(1)">⬅ Back</button>
-                <button class="btn btn-primary" onclick="nextStep(3)">Next ➔</button>
+                <button class="btn btn-secondary" onclick="window.nextStep(1)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="window.nextStep(3)">Next ➔</button>
             </div>
         </div>
 
         <div class="step-card" id="step-3">
             <h2>Step 3: Subject</h2>
             <label id="subjectFetchStatus">Select Subject (AI Fetched):</label>
-            <select id="subjectSelect" class="standard" onchange="handleSubjectChange()">
+            <select id="subjectSelect" class="standard" onchange="window.handleSubjectChange()">
                 <option value="" selected disabled>-- Select Publisher & Class First --</option>
             </select>
             
             <div id="customSubjectContainer" style="display:none; margin-top: 10px;">
-                <input type="text" id="customSubjectInput" class="standard" placeholder="Type custom subject here (e.g. Computer)..." oninput="triggerChapterFetch()">
+                <input type="text" id="customSubjectInput" class="standard" placeholder="Type custom subject here (e.g. Computer)..." oninput="window.triggerChapterFetch()">
             </div>
 
             <div class="btn-row">
-                <button class="btn btn-secondary" onclick="nextStep(2)">⬅ Back</button>
-                <button class="btn btn-primary" onclick="nextStep(4)">Next ➔</button>
+                <button class="btn btn-secondary" onclick="window.nextStep(2)">⬅ Back</button>
+                <button class="btn btn-primary" onclick="window.nextStep(4)">Next ➔</button>
             </div>
         </div>
 
@@ -305,13 +312,13 @@
             <label style="margin-top:10px;">Or Type Chapter Manually:</label>
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
                 <input type="text" id="manualChapter" class="standard" placeholder="e.g. Motion / गति" style="margin-bottom: 0;">
-                <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px;" onclick="openVoiceLang()">🎤</button>
-                <button class="icon-btn" style="background:#10b981; color:white; border-radius:12px; width:50px; height:50px;" onclick="openBookRecognitionCamera()" title="Take photo of book page">📷</button>
+                <button id="manualChapterMicBtn" class="icon-btn" style="background:var(--primary); color:white; border-radius:12px; width:50px; height:50px;" onclick="window.openVoiceLang()">🎤</button>
+                <button class="icon-btn" style="background:#10b981; color:white; border-radius:12px; width:50px; height:50px;" onclick="window.openBookRecognitionCamera()" title="Take photo of book page">📷</button>
             </div>
             
             <div class="btn-row">
-                <button class="btn btn-secondary" onclick="nextStep(3)">⬅ Back</button>
-                <button class="btn btn-primary" id="initBtnStep4" onclick="nextStep(5)">Next ➔</button>
+                <button class="btn btn-secondary" onclick="window.nextStep(3)">⬅ Back</button>
+                <button class="btn btn-primary" id="initBtnStep4" onclick="window.nextStep(5)">Next ➔</button>
             </div>
         </div>
 
@@ -327,9 +334,9 @@
 
             <div id="selectionSummary" style="text-align:left; background: var(--input-bg); border: 1px solid var(--border-light); padding:15px; border-radius:12px; margin-bottom:20px; font-weight:600; line-height:2;"></div>
             
-            <button id="initFinalBtn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="startConversation(false)">Initialize AI Tutor 🚀</button>
+            <button id="initFinalBtn" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #047857); padding: 18px; font-size: 18px;" onclick="window.startConversation(false)">Initialize AI Tutor 🚀</button>
             <div class="btn-row">
-                <button class="btn btn-secondary" onclick="nextStep(4)">⬅ Edit Details</button>
+                <button class="btn btn-secondary" onclick="window.nextStep(4)">⬅ Edit Details</button>
             </div>
         </div>
     </div>
@@ -339,6 +346,7 @@
     <div class="chat-scroll-area" id="chatHistory"></div>
 
     <div id="shareActionArea" class="bottom-action-container" style="display:none; border-top: 2px solid #25D366;">
+        <!-- 🚨 FIXED SHARE TEXT VISIBILITY 🚨 -->
         <div style="color:var(--text-main); text-align:center; font-weight:bold; font-size:14px; margin-bottom: 10px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:10px;">
             <button class="btn btn-secondary" style="flex:1; padding: 12px;" onclick="window.cancelShareMode()">Cancel</button>
@@ -348,28 +356,28 @@
     </div>
 
     <div class="bottom-action-container" id="mainInputArea">
-        <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Document Attached</span> <button class="chip-close" onclick="clearAttachment()">✕</button></div>
-        <input type="file" id="imageInput" accept="image/*,.pdf" style="display:none;" onchange="handleFileSelect(event)">
+        <div id="attachmentChip" class="status-chip">📎 <span id="attachName" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Document Attached</span> <button class="chip-close" onclick="window.clearAttachment()">✕</button></div>
+        <input type="file" id="imageInput" accept="image/*,.pdf" style="display:none;" onchange="window.handleFileSelect(event)">
         
         <div id="imagePreviewContainer">
             <img id="imgChip" class="img-chip">
-            <button class="remove-img-btn" onclick="removeImage()">✖</button>
+            <button class="remove-img-btn" onclick="window.removeImage()">✖</button>
         </div>
 
         <div id="plusMenu" class="glass-panel">
-            <button class="menu-item" onclick="openCameraChat()">📷 Open Camera</button>
+            <button class="menu-item" onclick="window.openCameraChat()">📷 Open Camera</button>
             <button class="menu-item" onclick="document.getElementById('imageInput').click()">📎 Upload PDF/Image</button>
-            <button class="menu-item" onclick="openWebImport()">🌐 Import from Web</button>
+            <button class="menu-item" onclick="window.openWebImport()">🌐 Import from Web</button>
             <button class="menu-item" onclick="window.toggleAppLanguage()">🌐 Toggle AI Language (Hindi/Eng)</button>
             <button class="menu-item" onclick="window.printFullChat()">🖨️ Print Chat</button> 
         </div>
         
         <div class="chat-input-wrapper">
-            <button id="plusBtn" class="icon-btn" onclick="togglePlusMenu(event)">➕</button>
-            <button id="micBtn" class="icon-btn" onclick="openVoiceLang()" style="transition: 0.3s;">🎤</button>
+            <button id="plusBtn" class="icon-btn" onclick="window.togglePlusMenu(event)">➕</button>
+            <button id="micBtn" class="icon-btn" onclick="window.openVoiceLang()" style="transition: 0.3s;">🎤</button>
             
-            <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="handleEnter(event)" oninput="resizeInputBox()"></textarea>
-            <button id="sendBtn" class="icon-btn send-btn" onclick="sendMessage()">➤</button>
+            <textarea id="chatInput" placeholder="Ask your question here..." rows="1" onkeypress="window.handleEnter(event)" oninput="window.resizeInputBox()"></textarea>
+            <button id="sendBtn" class="icon-btn send-btn" onclick="window.sendMessage()">➤</button>
         </div>
     </div>
 </div>
@@ -387,6 +395,7 @@
         <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
         <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the mobile number to send notes.</p>
         
+        <!-- 🚨 FIXED SINGLE NUMBER INPUT 🚨 -->
         <input type="number" id="waNumberInput" placeholder="9876543210" class="standard" style="width: 100%; padding: 15px; font-weight: bold; font-size: 18px; margin-bottom: 25px; text-align: center; box-sizing: border-box;">
 
         <div style="display: flex; gap: 10px;">
@@ -401,7 +410,7 @@
         <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🌐 Import from Web</h3>
         <textarea id="webUrlInput" class="standard" rows="5" placeholder="https://example.com/chapter.pdf"></textarea>
         <div style="display: flex; gap: 10px;">
-            <button class="btn btn-primary" style="flex: 1; padding: 12px; background: #10b981;" onclick="saveWebUrls()">💾 Save</button>
+            <button class="btn btn-primary" style="flex: 1; padding: 12px; background: #10b981;" onclick="window.saveWebUrls()">💾 Save</button>
             <button class="btn" style="flex: 1; padding: 12px; background: #ef4444; color:white;" onclick="document.getElementById('webImportModal').style.display='none'">✖ Cancel</button>
         </div>
     </div>
@@ -411,8 +420,8 @@
     <div class="modal-box" style="text-align: center;">
         <h3 style="color: var(--primary); margin-bottom: 10px; font-size: 22px; font-weight: 900;">🎤 Speak to Type</h3>
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn btn-primary" style="padding: 15px; border-radius: 12px; font-size: 15px;" onclick="selectVoiceLang('hi-IN')">🇮🇳 Speak in Hindi</button>
-            <button class="btn btn-primary" style="padding: 15px; background: #10b981; border-radius: 12px; font-size: 15px;" onclick="selectVoiceLang('en-US')">🇺🇸 Speak in English</button>
+            <button class="btn btn-primary" style="padding: 15px; border-radius: 12px; font-size: 15px;" onclick="window.selectVoiceLang('hi-IN')">🇮🇳 Speak in Hindi</button>
+            <button class="btn btn-primary" style="padding: 15px; background: #10b981; border-radius: 12px; font-size: 15px;" onclick="window.selectVoiceLang('en-US')">🇺🇸 Speak in English</button>
             <button class="btn" style="padding: 12px; background: transparent; color: #ef4444; border: 2px solid #ef4444; border-radius: 12px;" onclick="document.getElementById('voiceLangModal').style.display='none'">Cancel</button>
         </div>
     </div>
@@ -424,9 +433,9 @@
         <textarea id="voiceDictateText" class="standard" rows="5" placeholder="Your speech will appear here..." style="margin:0;"></textarea>
         <button id="holdToSpeakBtn" class="btn btn-primary" style="padding:20px; font-size:18px; border-radius:15px; user-select:none; -webkit-user-select:none;">👆 Hold to Speak</button>
         <div style="display:flex; gap:10px;">
-            <button class="btn btn-primary" style="flex:1; background:#10b981;" onclick="commitVoice()">✅ Done</button>
-            <button class="btn btn-secondary" style="flex:1;" onclick="clearVoice()">🗑️ Clear</button>
-            <button class="btn" style="flex:1; background:#ef4444; color:white;" onclick="closeVoiceDictate()">✖ Close</button>
+            <button class="btn btn-primary" style="flex:1; background:#10b981;" onclick="window.commitVoice()">✅ Done</button>
+            <button class="btn btn-secondary" style="flex:1;" onclick="window.clearVoice()">🗑️ Clear</button>
+            <button class="btn" style="flex:1; background:#ef4444; color:white;" onclick="window.closeVoiceDictate()">✖ Close</button>
         </div>
     </div>
 </div>
@@ -435,24 +444,26 @@
     <h3 style="color:white; margin-bottom:15px; font-size:20px; font-weight:bold;">📸 Review Chapter Photo</h3>
     <img id="bookPreviewImg" style="max-width:100%; max-height:60vh; border-radius:12px; border:3px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
     <div style="display:flex; gap:15px; margin-top:25px; width: 100%; max-width: 400px;">
-        <button class="btn" style="flex:1; background: rgba(255,255,255,0.2); color:white; border-radius:12px; padding:15px;" onclick="retakeBookPhoto()">🔄 Retake</button>
-        <button class="btn btn-primary" style="flex:1.5; font-size: 16px; border-radius:12px; padding:15px;" onclick="submitBookPhoto()">✅ Auto-Start Chat</button>
+        <button class="btn" style="flex:1; background: rgba(255,255,255,0.2); color:white; border-radius:12px; padding:15px;" onclick="window.retakeBookPhoto()">🔄 Retake</button>
+        <button class="btn btn-primary" style="flex:1.5; font-size: 16px; border-radius:12px; padding:15px;" onclick="window.submitBookPhoto()">✅ Auto-Start Chat</button>
     </div>
-    <button style="margin-top:25px; background:transparent; border:none; color:#ef4444; font-weight:bold; font-size:16px; cursor:pointer;" onclick="closeBookPreview()">✖ Cancel</button>
+    <button style="margin-top:25px; background:transparent; border:none; color:#ef4444; font-weight:bold; font-size:16px; cursor:pointer;" onclick="window.closeBookPreview()">✖ Cancel</button>
 </div>
 
 <div id="cameraModal">
     <video id="cameraVideo" autoplay playsinline></video>
-    <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="closeCamera()">✕</button>
+    <button style="position:absolute; top:25px; right:25px; background:#ef4444; color:white; border:none; width:45px; height:45px; border-radius:50%; font-size:20px; cursor:pointer; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.5);" onclick="window.closeCamera()">✕</button>
     <div class="camera-controls-container">
-        <button id="flashBtn" onclick="toggleFlash()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px); box-shadow:0 4px 10px rgba(0,0,0,0.5);">🔦</button>
-        <div onclick="takePhoto()" style="width:75px; height:75px; background:white; border:5px solid #cbd5e1; border-radius:50%; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.5); transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'"></div>
-        <button onclick="switchCamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px); box-shadow:0 4px 10px rgba(0,0,0,0.5);">🔄</button>
+        <button id="flashBtn" onclick="window.toggleFlash()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px); box-shadow:0 4px 10px rgba(0,0,0,0.5);">🔦</button>
+        <div onclick="window.takePhoto()" style="width:75px; height:75px; background:white; border:5px solid #cbd5e1; border-radius:50%; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.5); transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'"></div>
+        <button onclick="window.switchCamera()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:50px; height:50px; border-radius:50%; font-size:20px; cursor:pointer; backdrop-filter: blur(5px); box-shadow:0 4px 10px rgba(0,0,0,0.5);">🔄</button>
     </div>
     <canvas id="captureCanvas" style="display:none;"></canvas>
 </div>
 
+<!-- 🚨 100% GLOBALLY BOUND SCRIPT BLOCK 🚨 -->
 <script>
+    // GLOBAL STATE VARIABLES (MUST BE AT THE TOP)
     localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
     let appHistory = [];
     let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
@@ -473,6 +484,7 @@
     let voiceText = "";
     let localSessionHTMLSize = 0;
 
+    // GLOBALLY BOUND UTILITIES
     window.showCustomAlert = function(msg) {
         document.getElementById('alertMessage').innerText = msg;
         document.getElementById('customAlertModal').style.display = 'flex';
@@ -486,50 +498,56 @@
         document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
     }
 
-    window.addEventListener('load', function() {
-        if(currentPti) {
-            setInterval(() => { silentCheckPtiUpdates(); }, 4000);
-        }
-
-        let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
-        let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
-        
-        if(urlRestoreId) {
-            let session = savedSessions.find(s => s.id == urlRestoreId);
-            if(session) {
-                selectedData = session.data; currentSessionId = session.id;
-                document.getElementById('sessionTitleDisplay').innerText = session.title || "📚 Book Deep Study";
-                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-                document.getElementById('shareBtn').style.display = 'block'; 
-                document.getElementById('chatHistory').innerHTML = session.html;
-                localSessionHTMLSize = session.html.length;
-                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
-            }
+    // 🛑 AUTO RESTORE & SYNC LOOP INIT 🛑
+    window.addEventListener('load', async function() {
+        let ptiParam = new URLSearchParams(window.location.search).get('pti');
+        if (ptiParam) {
+            currentPti = ptiParam;
+            await window.fetchAndInjectPtiSession(currentPti);
+            setInterval(() => { window.silentCheckPtiUpdates(); }, 4000);
         } else {
-            let activeSession = localStorage.getItem('bookChatHistory_VUltimateAI');
-            let activeSettings = localStorage.getItem('bookSettings_VUltimateAI');
-            if(activeSession && activeSettings) {
-                selectedData = JSON.parse(activeSettings);
-                document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
-                document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
-                document.getElementById('shareBtn').style.display = 'block'; 
-                document.getElementById('chatHistory').innerHTML = activeSession;
-                localSessionHTMLSize = activeSession.length;
-                setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
+            let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
+            let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
+            
+            if(urlRestoreId) {
+                let session = savedSessions.find(s => s.id == urlRestoreId);
+                if(session) {
+                    selectedData = session.data; currentSessionId = session.id;
+                    document.getElementById('sessionTitleDisplay').innerText = session.title || "📚 Book Deep Study";
+                    document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+                    document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+                    document.getElementById('shareBtn').style.display = 'block'; 
+                    document.getElementById('chatHistory').innerHTML = session.html;
+                    localSessionHTMLSize = session.html.length;
+                    setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
+                }
+            } else {
+                let activeSession = localStorage.getItem('bookChatHistory_VUltimateAI');
+                let activeSettings = localStorage.getItem('bookSettings_VUltimateAI');
+                if(activeSession && activeSettings) {
+                    selectedData = JSON.parse(activeSettings);
+                    document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
+                    document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex';
+                    document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
+                    document.getElementById('shareBtn').style.display = 'block'; 
+                    document.getElementById('chatHistory').innerHTML = activeSession;
+                    localSessionHTMLSize = activeSession.length;
+                    setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
+                }
             }
         }
         window.validateSendButton(); 
-        startMarquee();
+        window.startMarquee();
     });
 
+    // 🌐 LANGUAGE TOGGLE
     window.toggleAppLanguage = function() {
-        closePlusMenu();
+        window.closePlusMenu();
         isHindiUI = !isHindiUI;
         showToast(isHindiUI ? "🌐 Language set to Hindi" : "🌐 Language set to English");
     }
 
+    // 🛑 CLEAR CHAT ENGINE (FIXED) 🛑
     window.clearChat = function() {
         if(confirm("🗑️ Are you sure you want to completely clear this chapter's chat and memory?")) {
             document.getElementById('chatHistory').innerHTML = "";
@@ -539,6 +557,7 @@
             currentPti = null;
             localSessionHTMLSize = 0;
             
+            // Strip the PTI from URL without reloading
             const newUrl = `${window.location.origin}${window.location.pathname}`;
             window.history.replaceState({ path: newUrl }, '', newUrl);
             
@@ -549,11 +568,13 @@
             document.getElementById('shareBtn').style.display = 'none';
             
             showToast("🗑️ Memory Wiped Clean.");
-            nextStep(1);
+            window.nextStep(1); // Kick back to start
         }
     };
 
-    function startMarquee() {
+    // 🛑 MARQUEE TITLE LOGIC 🛑
+    let marqueeInterval;
+    window.startMarquee = function() {
         const titleEl = document.getElementById('sessionTitleDisplay');
         const container = document.getElementById('titleContainer');
         clearInterval(marqueeInterval);
@@ -563,15 +584,15 @@
                 container.scrollLeft += 1;
                 if(container.scrollLeft >= (titleEl.scrollWidth - container.clientWidth)) {
                     clearInterval(marqueeInterval);
-                    setTimeout(() => { container.scrollLeft = 0; startMarquee(); }, 2000);
+                    setTimeout(() => { container.scrollLeft = 0; window.startMarquee(); }, 2000);
                 }
             }, 30);
         }
     }
     document.getElementById('titleContainer').addEventListener('touchstart', () => clearInterval(marqueeInterval));
-    document.getElementById('titleContainer').addEventListener('touchend', () => setTimeout(startMarquee, 3000));
+    document.getElementById('titleContainer').addEventListener('touchend', () => setTimeout(window.startMarquee, 3000));
 
-    function saveHistorySafe() { 
+    window.saveHistorySafe = function() { 
         localforage.setItem('aiHistory', appHistory).catch(e => console.log("Vault error")); 
         const histHTML = document.getElementById('chatHistory').innerHTML;
         localStorage.setItem('bookChatHistory_VUltimateAI', histHTML);
@@ -581,37 +602,37 @@
     window.runPreset = function(cmd) { 
         document.getElementById('chatInput').value = cmd; 
         window.resizeInputBox();
-        sendMessage(); 
+        window.sendMessage(); 
     }
 
     window.copyUserText = function(btn) { navigator.clipboard.writeText(decodeURIComponent(btn.getAttribute('data-text'))); showToast("✅ Copied your message!"); }
     function toggleSidebar() { const s = document.getElementById("sidebar"), o = document.getElementById("overlay"); const a = !s.classList.contains("active"); s.classList.toggle("active", a); o.classList.toggle("active", a); }
     window.toggleMsgMenu = function(btn, e) { e.stopPropagation(); let dropdown = btn.nextElementSibling; let isVis = dropdown.style.display === 'block'; document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none'); dropdown.style.display = isVis ? 'none' : 'block'; }
-    window.deleteMsg = function(btn, e) { e.stopPropagation(); let msg = btn.closest('.msg'); if(msg) { msg.remove(); saveHistorySafe(); triggerCloudSyncEngine(); showToast("Message deleted."); } document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none'); }
+    window.deleteMsg = function(btn, e) { e.stopPropagation(); let msg = btn.closest('.msg'); if(msg) { msg.remove(); window.saveHistorySafe(); window.triggerCloudSyncEngine(); showToast("Message deleted."); } document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none'); }
     window.copyMsg = function(btn, e) { e.stopPropagation(); let bubble = btn.closest('.bubble'); let text = bubble.innerText.replace('⋮','').replace('📋','').replace('🗑️ Delete','').replace('🔊 Listen','').trim(); navigator.clipboard.writeText(text); let orig = btn.innerHTML; btn.innerHTML = '✅'; setTimeout(() => { btn.innerHTML = orig; }, 1500); }
 
     const msgMenuHTML = `<div class="msg-menu-wrap"><button class="msg-action-btn" onclick="window.copyMsg(this, event)" title="Copy">📋</button><button class="msg-action-btn" onclick="window.toggleMsgMenu(this, event)">⋮</button><div class="msg-dropdown"><button onclick="window.deleteMsg(this, event)">🗑️ Delete</button></div></div>`;
 
     window.addEventListener('click', function(e) { 
-        if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) closePlusMenu(); 
+        if (!document.getElementById('plusMenu').contains(e.target) && !e.target.closest('#plusBtn')) window.closePlusMenu(); 
         if (!e.target.closest('.msg-menu-wrap')) document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
         if (document.getElementById("overlay").contains(e.target)) toggleSidebar();
     });
 
-    function renameSession() {
+    window.renameSession = function() {
         let newTitle = prompt("Enter new session name:", document.getElementById('sessionTitleDisplay').innerText);
         if(newTitle && newTitle.trim()) {
             document.getElementById('sessionTitleDisplay').innerText = newTitle.trim();
-            triggerCloudSyncEngine();
-            startMarquee();
+            window.triggerCloudSyncEngine();
+            window.startMarquee();
         }
     }
 
-    function nextStep(step) {
+    window.nextStep = function(step) {
         cameraTarget = 'chat'; 
-        if(step === 2 && !document.getElementById('publisherSelect').value) return showCustomAlert("Please Select Publisher!");
-        if(step === 3 && !document.getElementById('classSelect').value) return showCustomAlert("Please Select Class!");
-        if(step === 4 && !document.getElementById('subjectSelect').value) return showCustomAlert("Please Select Subject!");
+        if(step === 2 && !document.getElementById('publisherSelect').value) return window.showCustomAlert("Please Select Publisher!");
+        if(step === 3 && !document.getElementById('classSelect').value) return window.showCustomAlert("Please Select Class!");
+        if(step === 4 && !document.getElementById('subjectSelect').value) return window.showCustomAlert("Please Select Subject!");
         
         document.querySelectorAll('.step-card').forEach(el => el.classList.remove('active'));
         document.getElementById(`step-${step}`).classList.add('active');
@@ -626,7 +647,7 @@
             if(sub === 'Other') sub = document.getElementById('customSubjectInput').value || "Custom Subject";
             
             let finalChap = chapMan ? chapMan : chapList;
-            if(!finalChap) { nextStep(4); return showCustomAlert("Please select or type a chapter!"); }
+            if(!finalChap) { window.nextStep(4); return window.showCustomAlert("Please select or type a chapter!"); }
 
             selectedData = { publisher: pub, subject: sub, class: cls, chapter: finalChap };
             
@@ -637,17 +658,17 @@
             if (bookRecognitionImageBase64) {
                 let coverDiv = document.getElementById('dynamicBookCover');
                 coverDiv.innerHTML = `<img src="${bookRecognitionImageBase64}" style="width:140px; height:190px; object-fit:cover; border-radius:8px; border:2px solid var(--primary); box-shadow:0 10px 20px rgba(0,0,0,0.5); margin:0 auto 20px auto; display:block;">`;
-            } else { fetchRealBookCover(pub, sub, cls); }
+            } else { window.fetchRealBookCover(pub, sub, cls); }
 
             document.getElementById('selectionSummary').innerHTML = `<span style="color:var(--primary)">Publisher:</span> ${pub}<br><span style="color:var(--secondary)">Class:</span> ${cls}<br><span style="color:var(--accent)">Subject:</span> ${sub}<br><span style="color:#10b981">Chapter:</span> ${finalChap}`;
         }
     }
 
-    function openCameraChat() { cameraTarget = 'chat'; openCamera(); }
-    function openBookRecognitionCamera() { cameraTarget = 'bookRecognition'; openCamera(); }
+    window.openCameraChat = function() { cameraTarget = 'chat'; window.openCamera(); }
+    window.openBookRecognitionCamera = function() { cameraTarget = 'bookRecognition'; window.openCamera(); }
 
-    async function openCamera() { 
-        closePlusMenu(); const mod = document.getElementById('cameraModal'); mod.style.display = 'flex'; 
+    window.openCamera = async function() { 
+        window.closePlusMenu(); const mod = document.getElementById('cameraModal'); mod.style.display = 'flex'; 
         try { 
             if(camStream) camStream.getTracks().forEach(t => t.stop()); 
             camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: {ideal: 1920}, height: {ideal: 1080} } }); 
@@ -659,33 +680,33 @@
                     document.getElementById('flashBtn').innerText = "💡"; 
                 } else { isFlash = false; document.getElementById('flashBtn').innerText = "🔦"; }
             }, 500); 
-        } catch(e) { showCustomAlert("Camera Error: Please grant camera permissions."); mod.style.display = 'none'; } 
+        } catch(e) { window.showCustomAlert("Camera Error: Please grant camera permissions."); mod.style.display = 'none'; } 
     }
     
-    function closeCamera() { document.getElementById('cameraModal').style.display = 'none'; if(camStream) { const track = camStream.getVideoTracks()[0]; try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){} camStream.getTracks().forEach(t => t.stop()); } isFlash = false; }
-    async function switchCamera() { camFacing = camFacing === "environment" ? "user" : "environment"; await openCamera(); }
-    async function toggleFlash() { if(!camStream) return; const track = camStream.getVideoTracks()[0]; try { if(track && track.getCapabilities && track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } else { showToast("Flash not supported."); } } catch(err) {} }
+    window.closeCamera = function() { document.getElementById('cameraModal').style.display = 'none'; if(camStream) { const track = camStream.getVideoTracks()[0]; try { if (track && track.getCapabilities && track.getCapabilities().torch) track.applyConstraints({ advanced: [{ torch: false }] }); } catch(err){} camStream.getTracks().forEach(t => t.stop()); } isFlash = false; }
+    window.switchCamera = async function() { camFacing = camFacing === "environment" ? "user" : "environment"; await window.openCamera(); }
+    window.toggleFlash = async function() { if(!camStream) return; const track = camStream.getVideoTracks()[0]; try { if(track && track.getCapabilities && track.getCapabilities().torch) { isFlash = !isFlash; await track.applyConstraints({ advanced: [{ torch: isFlash }] }); document.getElementById('flashBtn').innerText = isFlash ? "💡" : "🔦"; } else { showToast("Flash not supported."); } } catch(err) {} }
     
-    function takePhoto() { 
+    window.takePhoto = function() { 
         const v = document.getElementById("cameraVideo"), c = document.getElementById("captureCanvas"); 
         c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); 
         
         if (cameraTarget === 'chat') {
             currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
             document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64;
-            closeCamera(); window.validateSendButton();
+            window.closeCamera(); window.validateSendButton();
         } else if (cameraTarget === 'bookRecognition') {
             bookRecognitionImageBase64 = c.toDataURL("image/jpeg", 0.7);
             document.getElementById('bookPreviewImg').src = bookRecognitionImageBase64;
             document.getElementById('bookPreviewModal').style.display = 'flex';
-            closeCamera();
+            window.closeCamera();
         }
     }
 
-    function retakeBookPhoto() { document.getElementById('bookPreviewModal').style.display = 'none'; openBookRecognitionCamera(); }
-    function closeBookPreview() { document.getElementById('bookPreviewModal').style.display = 'none'; bookRecognitionImageBase64 = null; }
+    window.retakeBookPhoto = function() { document.getElementById('bookPreviewModal').style.display = 'none'; window.openBookRecognitionCamera(); }
+    window.closeBookPreview = function() { document.getElementById('bookPreviewModal').style.display = 'none'; bookRecognitionImageBase64 = null; }
 
-    async function submitBookPhoto() {
+    window.submitBookPhoto = async function() {
         document.getElementById('bookPreviewModal').style.display = 'none';
         document.getElementById('loadingPage').style.display = 'flex';
         document.getElementById('wizardPage').style.display = 'none';
@@ -708,15 +729,16 @@
             selectedData.class = document.getElementById('classSelect').value || "Unknown Class";
 
             bar.style.width = '100%';
-            setTimeout(() => { startConversation(false); }, 300);
+            setTimeout(() => { window.startConversation(false); }, 300);
         } catch(e) {
-            showCustomAlert("Failed to analyze image. Please type details manually.");
+            window.showCustomAlert("Failed to analyze image. Please type details manually.");
             document.getElementById('loadingPage').style.display = 'none';
             document.getElementById('wizardPage').style.display = 'block';
         }
     }
 
-    async function triggerSubjectFetch() {
+    // 🚨 FIXED SUBJECT FETCH TO BE ULTRA STRICT 🚨
+    window.triggerSubjectFetch = async function() {
         let pub = document.getElementById('publisherSelect').value; let cls = document.getElementById('classSelect').value; let subSelect = document.getElementById('subjectSelect');
         if(!pub || !cls) return;
 
@@ -741,14 +763,14 @@
         }
     }
 
-    function handleSubjectChange() {
+    window.handleSubjectChange = function() {
         let sub = document.getElementById('subjectSelect').value;
         if(sub === 'Other') { document.getElementById('customSubjectContainer').style.display = 'block'; } 
         else { document.getElementById('customSubjectContainer').style.display = 'none'; }
-        triggerChapterFetch();
+        window.triggerChapterFetch();
     }
 
-    async function triggerChapterFetch() {
+    window.triggerChapterFetch = async function() {
         let pub = document.getElementById('publisherSelect').value; let sub = document.getElementById('subjectSelect').value; let cls = document.getElementById('classSelect').value; let chapSelect = document.getElementById('chapterSelect'); let statusLabel = document.getElementById('chapterFetchStatus');
         if(sub === 'Other') sub = document.getElementById('customSubjectInput').value;
 
@@ -778,7 +800,7 @@
         } catch(e) { statusLabel.innerText = "Select Chapter (Fetch Failed):"; chapSelect.innerHTML = '<option value="" selected disabled>-- ❌ Fetch Failed. Please type manually below --</option>'; }
     }
 
-    async function fetchChapterContext() {
+    window.fetchChapterContext = async function() {
         try {
             const sysPrompt = `Search the internet for textbook solutions for: Publisher: ${selectedData.publisher}, Class: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: ${selectedData.chapter}. Extract end-of-chapter questions and answers. Just store them internally. Do not output markdown.`;
             const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: `Find textbook exercises for ${selectedData.publisher} Class ${selectedData.class} ${selectedData.subject} ${selectedData.chapter}` }) });
@@ -786,7 +808,7 @@
         } catch(e) {}
     }
 
-    async function fetchRealBookCover(pub, sub, cls) {
+    window.fetchRealBookCover = async function(pub, sub, cls) {
         if (bookRecognitionImageBase64) return;
         let coverDiv = document.getElementById('dynamicBookCover'); let statusSub = document.getElementById('coverSub');
         try {
@@ -800,15 +822,20 @@
         } catch(e) { statusSub.innerText = sub; }
     }
 
+    // 🚨 RESTORED BLANK MESSAGE BLOCKER 🚨
     window.validateSendButton = function() {
         const inp = document.getElementById('chatInput');
         const btn = document.getElementById('sendBtn');
         const text = inp.value.trim();
         const hasAttachment = currentImageBase64 || documentMemory || webUrls.length > 0;
         
-        if (text.length > 2000) { btn.classList.remove('active-btn'); } 
-        else if (text.length === 0 && !hasAttachment) { btn.classList.remove('active-btn'); } 
-        else { btn.classList.add('active-btn'); }
+        if (text.length > 2000) { 
+            btn.classList.remove('active-btn'); 
+        } else if (text.length === 0 && !hasAttachment) { 
+            btn.classList.remove('active-btn'); 
+        } else { 
+            btn.classList.add('active-btn'); 
+        }
     }
 
     let previousInputHeight = "40px";
@@ -819,20 +846,28 @@
         window.validateSendButton(); 
     }
 
-    function handleFileSelect(event) {
-        closePlusMenu(); const file = event.target.files[0]; if(!file) return;
+    window.openWebImport = function() { window.closePlusMenu(); document.getElementById('webImportModal').style.display = 'flex'; }
+    window.saveWebUrls = function() {
+        let text = document.getElementById('webUrlInput').value.trim(); let urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+        if (urls.length > 10) { window.showCustomAlert("⚠️ Maximum 10 URLs allowed!"); urls = urls.slice(0, 10); }
+        if (urls.length > 0) { webUrls = urls; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`; }
+        document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = ''; window.validateSendButton();
+    }
+
+    window.handleFileSelect = function(event) {
+        window.closePlusMenu(); const file = event.target.files[0]; if(!file) return;
         if (file.type.startsWith('image/')) {
             const reader = new FileReader(); reader.onload = function(e) { currentImageBase64 = e.target.result; document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64; window.validateSendButton(); }; reader.readAsDataURL(file);
         } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
             const reader = new FileReader(); document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = "⏳ Reading PDF...";
             reader.onload = async function() {
-                try { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(item=>item.str).join(' '); } documentMemory = text; document.getElementById("attachName").innerText = `📄 ${file.name}`; window.validateSendButton(); } catch(err) { window.showCustomAlert("❌ Failed to read PDF."); clearAttachment(); }
+                try { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(item=>item.str).join(' '); } documentMemory = text; document.getElementById("attachName").innerText = `📄 ${file.name}`; window.validateSendButton(); } catch(err) { window.showCustomAlert("❌ Failed to read PDF."); window.clearAttachment(); }
             }; reader.readAsArrayBuffer(file);
         } else { window.showCustomAlert("Only Images and PDFs are supported right now."); } event.target.value = ''; 
     }
     
-    function removeImage() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; window.validateSendButton(); }
-    function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; window.validateSendButton(); }
+    window.removeImage = function() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; window.validateSendButton(); }
+    window.clearAttachment = function() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; window.validateSendButton(); }
 
     let isShareMode = false;
     window.toggleShareMode = function() {
@@ -853,7 +888,6 @@
         document.getElementById('whatsappModal').style.display = 'flex';
     }
 
-    // 🚨 INCORPORATED CORE CRITICAL SEARCH RESTRUCTURING LOGIC BLOCK 🚨
     window.submitWhatsAppSelection = async function(event) {
         let number = document.getElementById('waNumberInput').value.trim();
         if (!number) return showToast("Please enter a mobile number.");
@@ -884,7 +918,6 @@
         const fullHTMLPayload = document.getElementById('chatHistory').innerHTML;
 
         try {
-            // 🚨 TRIGGER PTI GENERATION BEFORE MESSAGE Dispatches (Search-Style Flow) 🚨
             const saveResponse = await fetch('/api/pti-save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -908,7 +941,6 @@
             const activeTokenId = currentPti || currentSessionId;
             const liveChatPtiUrl = `${window.location.origin}/books.html?restore=${activeTokenId}&pti=${activeTokenId}`;
 
-            // Pack the text notes and live conversation link together into handleDualShare
             const response = await fetch("/api/send-dual-share", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -932,7 +964,7 @@
     }
 
     window.printFullChat = function() {
-        closePlusMenu(); let content = document.getElementById('chatHistory').innerHTML; if(!content.trim()) return window.showCustomAlert("Chat is empty!");
+        window.closePlusMenu(); let content = document.getElementById('chatHistory').innerHTML; if(!content.trim()) return window.showCustomAlert("Chat is empty!");
         let win = window.open('', '', 'width=800,height=600');
         win.document.write(`<html><head><title>Print Chat</title><style>body{font-family:sans-serif; color:#333; line-height:1.6; padding:20px;} .msg-menu-wrap, .user-copy-btn, .typing-indicator{display:none;} .bubble{background:#f3f4f6; padding:15px; border-radius:10px; margin-bottom:10px;} img{max-width:100%; border-radius:8px;} h2{color:#3b82f6; text-align:center;} hr{margin-bottom:20px; border:none; border-bottom:2px solid #3b82f6;}</style></head><body><h2>📚 Book Deep Study: ${document.getElementById('sessionTitleDisplay').innerText}</h2><hr>${content}</body></html>`);
         win.document.close(); win.focus(); setTimeout(() => { win.print(); win.close(); }, 500);
@@ -951,21 +983,31 @@
         win.document.close(); win.focus(); setTimeout(() => { win.print(); window.cancelShareMode(); }, 500);
     }
 
-    function togglePlusMenu(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
-    function closePlusMenu() { document.getElementById("plusMenu").style.display = "none"; }
+    window.togglePlusMenu = function(e) { e.stopPropagation(); const m = document.getElementById("plusMenu"); m.style.display = m.style.display === "flex" ? "none" : "flex"; }
+    window.closePlusMenu = function() { document.getElementById("plusMenu").style.display = "none"; }
 
-    function openSettings() {
-        document.getElementById('chatPage').style.display = 'none'; document.getElementById('wizardPage').style.display = 'block';
-        if (document.getElementById('chatHistory').innerHTML.trim() !== "") document.getElementById('closeSettingsWizardBtn').style.display = 'block';
-        else document.getElementById('closeSettingsWizardBtn').style.display = 'none';
-        nextStep(1); 
+    // 🚨 RESTORED SETTINGS 'X' BUTTON LOGIC 🚨
+    window.openSettings = function() {
+        document.getElementById('chatPage').style.display = 'none'; 
+        document.getElementById('wizardPage').style.display = 'block';
+        
+        let chatContent = document.getElementById('chatHistory').innerHTML.trim();
+        if (chatContent !== "") {
+            document.getElementById('closeSettingsWizardBtn').style.display = 'block';
+        } else {
+            document.getElementById('closeSettingsWizardBtn').style.display = 'none';
+        }
+        window.nextStep(1); 
     }
-    function closeSettingsWizard() { document.getElementById('wizardPage').style.display = 'none'; document.getElementById('chatPage').style.display = 'flex'; }
+    window.closeSettingsWizard = function() { 
+        document.getElementById('wizardPage').style.display = 'none'; 
+        document.getElementById('chatPage').style.display = 'flex'; 
+    }
 
-    function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (document.getElementById('sendBtn').classList.contains('active-btn')) sendMessage(); } }
+    window.handleEnter = function(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (document.getElementById('sendBtn').classList.contains('active-btn')) window.sendMessage(); } }
 
-    function openVoiceLang() { closePlusMenu(); document.getElementById('voiceLangModal').style.display='flex'; }
-    function selectVoiceLang(lang) {
+    window.openVoiceLang = function() { window.closePlusMenu(); document.getElementById('voiceLangModal').style.display='flex'; }
+    window.selectVoiceLang = function(lang) {
         document.getElementById('voiceLangModal').style.display='none';
         document.getElementById('voiceDictateModal').style.display='flex';
         document.getElementById('voiceDictateText').value = ""; voiceText = "";
@@ -989,38 +1031,38 @@
     }
     
     const holdBtn = document.getElementById('holdToSpeakBtn');
-    function startDictation(e) { e.preventDefault(); if(voiceRec) { voiceRec.start(); holdBtn.innerHTML = "🎙️ Listening..."; holdBtn.style.background = "#ef4444"; } }
-    function stopDictation(e) { e.preventDefault(); if(voiceRec) { voiceRec.stop(); holdBtn.innerHTML = "👆 Hold to Speak"; holdBtn.style.background = "var(--primary)"; } }
+    window.startDictation = function(e) { e.preventDefault(); if(voiceRec) { voiceRec.start(); holdBtn.innerHTML = "🎙️ Listening..."; holdBtn.style.background = "#ef4444"; } }
+    window.stopDictation = function(e) { e.preventDefault(); if(voiceRec) { voiceRec.stop(); holdBtn.innerHTML = "👆 Hold to Speak"; holdBtn.style.background = "var(--primary)"; } }
     
-    holdBtn.addEventListener('mousedown', startDictation); holdBtn.addEventListener('touchstart', startDictation, {passive:false});
-    holdBtn.addEventListener('mouseup', stopDictation); holdBtn.addEventListener('touchend', stopDictation); holdBtn.addEventListener('mouseleave', stopDictation);
+    holdBtn.addEventListener('mousedown', window.startDictation); holdBtn.addEventListener('touchstart', window.startDictation, {passive:false});
+    holdBtn.addEventListener('mouseup', window.stopDictation); holdBtn.addEventListener('touchend', window.stopDictation); holdBtn.addEventListener('mouseleave', window.stopDictation);
 
-    function commitVoice() { 
+    window.commitVoice = function() { 
         document.getElementById('chatInput').value += (document.getElementById('chatInput').value ? " " : "") + document.getElementById('voiceDictateText').value; 
         document.getElementById('voiceDictateModal').style.display='none'; window.resizeInputBox(); if(voiceRec) voiceRec.stop(); 
     }
-    function clearVoice() { voiceText = ""; document.getElementById('voiceDictateText').value = ""; }
-    function closeVoiceDictate() { document.getElementById('voiceDictateModal').style.display='none'; if(voiceRec) voiceRec.stop(); }
+    window.clearVoice = function() { voiceText = ""; document.getElementById('voiceDictateText').value = ""; }
+    window.closeVoiceDictate = function() { document.getElementById('voiceDictateModal').style.display='none'; if(voiceRec) voiceRec.stop(); }
 
-    function cancelAiRequest() {
+    window.cancelAiRequest = function() {
         if(currentAbortController) currentAbortController.abort();
         if(currentTypewriterInterval) clearInterval(currentTypewriterInterval);
-        resetSendButton();
+        window.resetSendButton();
     }
 
-    function resetSendButton() {
+    window.resetSendButton = function() {
         const btn = document.getElementById('sendBtn');
         btn.classList.remove('stop-btn'); btn.classList.add('send-btn');
-        btn.innerHTML = '➤'; btn.onclick = sendMessage;
+        btn.innerHTML = '➤'; btn.onclick = window.sendMessage;
         window.validateSendButton();
     }
 
-    function toggleAudio() {
+    window.toggleAudio = function() {
         const btn = document.getElementById("audioToggleBtn");
         if (window.speechSynthesis.paused) { window.speechSynthesis.resume(); btn.innerText = "⏸"; } 
         else { window.speechSynthesis.pause(); btn.innerText = "▶"; }
     }
-    function stopAudio() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
+    window.stopAudio = function() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
     window.playAudio = function(btn) { 
         let targetId = btn.getAttribute('data-target');
         let text = document.getElementById(targetId).innerText; 
@@ -1036,7 +1078,7 @@
     // =========================================================================
     // 🧠 PTI SYNC ENGINE CODES
     // ==========================================================================
-    async function fetchAndInjectPtiSession(ptiString) {
+    window.fetchAndInjectPtiSession = async function(ptiString) {
         try {
             const response = await fetch(`/api/pti-get?pti=${ptiString}`);
             if (!response.ok) throw new Error("Not Found");
@@ -1047,6 +1089,8 @@
             selectedData = sessionRecord.metaSettings || {};
             
             document.getElementById('sessionTitleDisplay').innerText = sessionRecord.title || "📚 Book Deep Study";
+            
+            // 🚨 FIXED: BYPASS WIZARD ENTIRELY ON MOBILE LINK LOAD 🚨
             document.getElementById('wizardPage').style.display = 'none'; 
             document.getElementById('chatPage').style.display = 'flex';
             document.getElementById('settingsBtn').style.display = 'block'; 
@@ -1056,14 +1100,14 @@
             document.getElementById('chatHistory').innerHTML = sessionRecord.htmlPayload || "";
             localSessionHTMLSize = (sessionRecord.htmlPayload || "").length;
             setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
-            startMarquee();
+            window.startMarquee();
         } catch (e) {
             showToast("❌ Unable to locate active PTI profile.");
             console.error("Fetch Error:", e);
         }
     }
 
-    async function silentCheckPtiUpdates() {
+    window.silentCheckPtiUpdates = async function() {
         if (!currentPti || document.getElementById('sendBtn').classList.contains('stop-btn')) return;
         try {
             const response = await fetch(`/api/pti-get?pti=${currentPti}`);
@@ -1082,7 +1126,7 @@
         } catch(e) {}
     }
 
-    function triggerCloudSyncEngine() {
+    window.triggerCloudSyncEngine = function() {
         const fullHTMLPayload = document.getElementById('chatHistory').innerHTML;
         
         let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
@@ -1115,7 +1159,8 @@
         .catch(err => console.error("Cloud Sync Failed:", err));
     }
 
-    async function startConversation(forceNew = false, forceClear = false) {
+    // 🚨 RESTORED INITIAL MESSAGES AND DIVIDERS 🚨
+    window.startConversation = async function(forceNew = false, forceClear = false) {
         let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
         let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
         let isNewChapter = false;
@@ -1138,7 +1183,7 @@
         bar.style.width = '30%'; desc.innerText = "Connecting to AI Core...";
         await new Promise(r => setTimeout(r, 400));
         bar.style.width = '60%'; desc.innerText = "Analyzing Chapter Context...";
-        await fetchChapterContext();
+        await window.fetchChapterContext();
         bar.style.width = '90%'; desc.innerText = "Setting up Tutor Interface...";
         await new Promise(r => setTimeout(r, 400));
         bar.style.width = '100%';
@@ -1151,7 +1196,7 @@
             document.getElementById('shareBtn').style.display = 'block'; 
             
             document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
-            startMarquee();
+            window.startMarquee();
             localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
 
             if(document.getElementById('chatHistory').innerHTML.trim() === "" || isNewChapter) {
@@ -1171,12 +1216,12 @@
                         <button class="preset-btn" onclick="window.runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
                     </div>`;
                 
-                await addAiMessage(initialMessageHTML, false);
+                await window.addAiMessage(initialMessageHTML, false);
             }
         }, 300);
     }
 
-    async function sendMessage() {
+    window.sendMessage = async function() {
         const inputEl = document.getElementById('chatInput');
         const text = inputEl.value.trim();
         const img = currentImageBase64;
@@ -1184,7 +1229,7 @@
 
         if(!btn.classList.contains('active-btn')) return;
 
-        btn.classList.remove('active-btn', 'send-btn'); btn.classList.add('stop-btn'); btn.innerHTML = '⏹'; btn.onclick = cancelAiRequest;
+        btn.classList.remove('active-btn', 'send-btn'); btn.classList.add('stop-btn'); btn.innerHTML = '⏹'; btn.onclick = window.cancelAiRequest;
 
         const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
         let imgHtml = img ? `<img src="${img}" style="max-width:100%; border-radius:10px; margin-bottom:10px;"><br>` : "";
@@ -1193,7 +1238,7 @@
         
         const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
 
-        inputEl.value = ""; window.resizeInputBox(); removeImage(); 
+        inputEl.value = ""; window.resizeInputBox(); window.removeImage(); 
 
         const loadingId = "load_" + Date.now();
         const loadDiv = document.createElement("div"); loadDiv.className = "msg ai"; loadDiv.id = loadingId;
@@ -1213,15 +1258,25 @@
         let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI (Devanagari script)';
         let isMathSub = ['Mathematics', 'Physics', 'Chemistry', 'Science'].includes(selectedData.subject);
         
-        let sysPrompt = `You are a premium AI expert educational tutor. Answer entirely in ${targetLang}. Context: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}. Use **bolding**. NO HASHTAGS (#). NO RAW UNITS like \\text{m/s}^2.`;
+        // 🚨 STRICT NO HASHTAG AND BOLD QUESTION RULES APPLIED 🚨
+        let sysPrompt = `You are a premium AI expert educational tutor. Answer entirely in ${targetLang}. Context: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}".
+        STRICT RULES:
+        1. NO HASHTAGS (#) allowed anywhere. Use ** for bolding.
+        2. ALWAYS rewrite the user's core question at the very beginning of your answer in BOLD.
+        3. NO RAW UNITS like \\text{m/s}^2. Use standard text.`;
 
+        // 🚨 RESTORED SVGS AND MATH FRACTIONS 🚨
         if (isMathSub) {
             sysPrompt += `\n\n🚨 MATH TEMPLATE: For calculation questions, follow exactly:
 **1. [Step 1 Heading]**
 [Step 1 explanation in full words]
-$$[Equation]$$
+$$[Equation without using \\frac]$$
 **✅ Final Answer**
 [Final sentence in ${targetLang}]`;
+
+            sysPrompt += `\n\n🎨 VISUAL RULE: IF the question relates to Geometry, Physics concepts, Chemistry structures, or visual Math, YOU MUST generate a highly detailed, colorful <svg> diagram wrapped exactly in <div class="math-svg-wrap"><svg>...</svg></div>.`;
+        } else { 
+            sysPrompt += `\n\nIF SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`; 
         }
 
         if(recentHistory) sysPrompt += `\n\n--- CHAT HISTORY ---\n${recentHistory}`;
@@ -1240,22 +1295,26 @@ $$[Equation]$$
             if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
 
             document.getElementById(loadingId).remove();
-            await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
+            await window.addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
 
         } catch(err) {
             let errorMsg = err.message;
             if(err.name === 'AbortError') errorMsg = "⚠️ Generation stopped by user.";
             document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
-            saveHistorySafe(); resetSendButton();
+            window.saveHistorySafe(); window.resetSendButton();
         }
     }
 
-    async function addAiMessage(text, typewrite = false) {
+    // 🚨 FIXED MARKDOWN PARSER (NO REGEX CORRUPTION) 🚨
+    window.addAiMessage = async function(text, typewrite = false) {
         const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
         const bubble = document.createElement("div"); bubble.className = "bubble";
         msgDiv.appendChild(bubble); document.getElementById('chatHistory').appendChild(msgDiv);
 
-        let formattedText = text.replace(/\*\*(.*?)\*\"/g, '<b>$1</b>');
+        // Remove LaTeX fractions before markdown parse
+        let cleanText = text.replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\\times/g, '×');
+        let formattedHTML = marked.parse(cleanText); 
+
         let btnHtml = `<br><button class="listen-btn" onclick="window.playAudio(this)" data-target="tts_${Date.now()}">🔊 Listen</button>`;
 
         if(typewrite) {
@@ -1265,16 +1324,25 @@ $$[Equation]$$
             
             return new Promise((resolve) => {
                 currentTypewriterInterval = setInterval(() => {
-                    if(i >= formattedText.length) {
+                    if(i >= formattedHTML.length) {
                         clearInterval(currentTypewriterInterval);
                         bubble.insertAdjacentHTML('beforeend', btnHtml + msgMenuHTML);
                         if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
                         
-                        saveHistorySafe(); triggerCloudSyncEngine(); resetSendButton(); resolve();
+                        window.saveHistorySafe(); window.triggerCloudSyncEngine(); window.resetSendButton(); resolve();
                     } else {
-                        let char = formattedText[i];
-                        if(char === '<') { let end = formattedText.indexOf('>', i); if(end !== -1) { currentHTML += formattedText.substring(i, end + 1); i = end + 1; } }
-                        else { currentHTML += (char === '\n') ? '<br>' : char; i++; }
+                        let char = formattedHTML[i];
+                        if(char === '<') { 
+                            let end = formattedHTML.indexOf('>', i); 
+                            if(end !== -1) { 
+                                currentHTML += formattedHTML.substring(i, end + 1); 
+                                i = end + 1; 
+                                txtBox.innerHTML = currentHTML;
+                                return; // Skip over HTML tags instantly
+                            } 
+                        }
+                        
+                        currentHTML += char; i++;
                         txtBox.innerHTML = currentHTML;
                         
                         if((currentHTML.endsWith('$$') || currentHTML.endsWith('\\)')) && window.MathJax) {
@@ -1285,10 +1353,10 @@ $$[Equation]$$
             });
         } else {
             let id = `tts_${Date.now()}`;
-            bubble.innerHTML = `<div id="${id}" style="margin-bottom:10px;">${formattedText.replace(/\n/g, '<br>')}</div>${btnHtml}${msgMenuHTML}`;
+            bubble.innerHTML = `<div id="${id}" style="margin-bottom:10px;">${formattedHTML}</div>${btnHtml}${msgMenuHTML}`;
             if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
             
-            saveHistorySafe(); triggerCloudSyncEngine(); resetSendButton();
+            window.saveHistorySafe(); window.triggerCloudSyncEngine(); window.resetSendButton();
         }
     }
 </script>
