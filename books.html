@@ -187,7 +187,7 @@
     </div>
     <div style="display:flex; gap:8px;">
         <button class="btn btn-primary" id="shareBtn" style="padding: 6px 12px; display: none; font-size: 13px; background: #25D366; border: none;" onclick="window.toggleShareMode()">📤 Share</button>
-        <button class="btn btn-secondary" id="clearBtn" style="padding: 6px 12px; display: none; font-size: 13px;" onclick="clearChat()">🗑️ Clear</button>
+        <button class="btn btn-secondary" id="clearBtn" style="padding: 6px 12px; display: none; font-size: 13px;" onclick="window.clearChat()">🗑️ Clear</button>
         <button class="btn btn-primary" id="settingsBtn" style="padding: 6px 12px; display: none; font-size: 13px;" onclick="openSettings()">⚙️</button>
     </div>
 </div>
@@ -339,7 +339,7 @@
     <div class="chat-scroll-area" id="chatHistory"></div>
 
     <div id="shareActionArea" class="bottom-action-container" style="display:none; border-top: 2px solid #25D366;">
-        <div style="color:white; text-align:center; font-weight:bold; font-size:14px; margin-bottom: 10px;">👆 Tap messages above to select them</div>
+        <div style="color:var(--text-main); text-align:center; font-weight:bold; font-size:14px; margin-bottom: 10px;">👆 Tap messages above to select them</div>
         <div style="display:flex; gap:10px;">
             <button class="btn btn-secondary" style="flex:1; padding: 12px;" onclick="window.cancelShareMode()">Cancel</button>
             <button class="btn btn-primary" style="flex:1; background:#3b82f6; border:none; padding: 12px;" onclick="window.downloadSelectedAsPDF()">📄 Save PDF</button>
@@ -385,19 +385,9 @@
 <div id="whatsappModal" class="modal-overlay">
     <div class="modal-box" style="text-align:center; border:2px solid #25D366; max-width: 450px;">
         <h3 style="color: #25D366; margin-bottom: 15px; font-size: 22px; font-weight: 900;">💬 Share Selected Notes</h3>
-        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the authorized mobile number to send notes.</p>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Enter the mobile number to send notes.</p>
         
-        <div style="display: flex; gap: 10px; margin-bottom: 25px;">
-            <select id="waCountryCode" class="standard" style="width: 35%; padding: 15px 5px; text-align: center; margin: 0; font-weight: bold; font-size: 16px;">
-                <option value="+91" selected>+91</option>
-                <option value="+1">+1</option>
-                <option value="+44">+44</option>
-                <option value="+61">+61</option>
-                <option value="+81">+81</option>
-                <option value="+971">+971</option>
-            </select>
-            <input type="number" id="waNumberInput" placeholder="9876543210" class="standard" style="width: 65%; padding: 15px; font-weight: bold; font-size: 18px; margin: 0; text-align: left;">
-        </div>
+        <input type="number" id="waNumberInput" placeholder="9876543210" class="standard" style="width: 100%; padding: 15px; font-weight: bold; font-size: 18px; margin-bottom: 25px; text-align: center; box-sizing: border-box;">
 
         <div style="display: flex; gap: 10px;">
             <button id="waSendBtn" class="btn" style="flex: 1; padding: 12px; border-radius: 12px; background: #10b981; color: white;" onclick="window.submitWhatsAppSelection(event)">🚀 Send</button>
@@ -463,12 +453,33 @@
 </div>
 
 <script>
-    // GLOBALLY BOUND FUNCTIONS FOR INFALLIBLE UI TRIGGERS
+    // GLOBAL STATE VARIABLES (MUST BE AT THE TOP)
+    localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
+    let appHistory = [];
+    let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
+    let currentPti = new URLSearchParams(window.location.search).get('pti') || null;
+    let currentAbortController = null;
+    let currentTypewriterInterval = null;
+    let isHindiUI = true;
+    let selectedData = {}; 
+    let currentImageBase64 = null; 
+    let documentMemory = ""; 
+    let webUrls = []; 
+    let cameraTarget = 'chat'; 
+    let bookRecognitionImageBase64 = null; 
+    let camStream = null; 
+    let camFacing = "environment"; 
+    let isFlash = false;
+    let voiceRec = null; 
+    let voiceText = "";
+    let localSessionHTMLSize = 0;
+
+    // GLOBALLY BOUND UTILITIES
     window.showCustomAlert = function(msg) {
         document.getElementById('alertMessage').innerText = msg;
         document.getElementById('customAlertModal').style.display = 'flex';
     };
-    function closeCustomAlert() { document.getElementById('customAlertModal').style.display = 'none'; }
+    window.closeCustomAlert = function() { document.getElementById('customAlertModal').style.display = 'none'; };
     window.alert = function(msg) { window.showCustomAlert(msg); }; 
 
     function showToast(msg) {
@@ -477,15 +488,12 @@
         document.body.appendChild(t); setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
     }
 
-    localforage.config({ name: 'AI_Pro_Suite', storeName: 'massive_chat_history' });
-    let appHistory = [];
-    let currentSessionId = Number(new URLSearchParams(window.location.search).get('restore')) || Date.now();
-    let currentAbortController = null;
-    let currentTypewriterInterval = null;
-    let isHindiUI = true;
-
-    // 🛑 AUTO RESTORE LOGIC 🛑
+    // 🛑 AUTO RESTORE & SYNC LOOP INIT 🛑
     window.addEventListener('load', function() {
+        if(currentPti) {
+            setInterval(() => { silentCheckPtiUpdates(); }, 4000);
+        }
+
         let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
         let urlRestoreId = new URLSearchParams(window.location.search).get('restore');
         
@@ -498,6 +506,7 @@
                 document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
                 document.getElementById('shareBtn').style.display = 'block'; 
                 document.getElementById('chatHistory').innerHTML = session.html;
+                localSessionHTMLSize = session.html.length;
                 setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
             }
         } else {
@@ -510,10 +519,11 @@
                 document.getElementById('settingsBtn').style.display = 'block'; document.getElementById('clearBtn').style.display = 'block'; 
                 document.getElementById('shareBtn').style.display = 'block'; 
                 document.getElementById('chatHistory').innerHTML = activeSession;
+                localSessionHTMLSize = activeSession.length;
                 setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
             }
         }
-        validateSendButton(); 
+        window.validateSendButton(); 
         startMarquee();
     });
 
@@ -523,6 +533,31 @@
         isHindiUI = !isHindiUI;
         showToast(isHindiUI ? "🌐 Language set to Hindi" : "🌐 Language set to English");
     }
+
+    // 🛑 CLEAR CHAT ENGINE (FIXED) 🛑
+    window.clearChat = function() {
+        if(confirm("🗑️ Are you sure you want to completely clear this chapter's chat and memory?")) {
+            document.getElementById('chatHistory').innerHTML = "";
+            localStorage.removeItem('bookChatHistory_VUltimateAI');
+            appHistory = [];
+            currentSessionId = Date.now();
+            currentPti = null;
+            localSessionHTMLSize = 0;
+            
+            // Strip the PTI from URL without reloading
+            const newUrl = `${window.location.origin}${window.location.pathname}`;
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+            
+            document.getElementById('chatPage').style.display = 'none';
+            document.getElementById('wizardPage').style.display = 'block';
+            document.getElementById('settingsBtn').style.display = 'none'; 
+            document.getElementById('clearBtn').style.display = 'none'; 
+            document.getElementById('shareBtn').style.display = 'none';
+            
+            showToast("🗑️ Memory Wiped Clean.");
+            nextStep(1); // Kick back to start
+        }
+    };
 
     // 🛑 MARQUEE TITLE LOGIC 🛑
     let marqueeInterval;
@@ -548,18 +583,19 @@
         localforage.setItem('aiHistory', appHistory).catch(e => console.log("Vault error")); 
         const histHTML = document.getElementById('chatHistory').innerHTML;
         localStorage.setItem('bookChatHistory_VUltimateAI', histHTML);
+        localSessionHTMLSize = histHTML.length;
     }
 
     window.runPreset = function(cmd) { 
         document.getElementById('chatInput').value = cmd; 
-        resizeInputBox();
+        window.resizeInputBox();
         sendMessage(); 
     }
 
     window.copyUserText = function(btn) { navigator.clipboard.writeText(decodeURIComponent(btn.getAttribute('data-text'))); showToast("✅ Copied your message!"); }
     function toggleSidebar() { const s = document.getElementById("sidebar"), o = document.getElementById("overlay"); const a = !s.classList.contains("active"); s.classList.toggle("active", a); o.classList.toggle("active", a); }
     window.toggleMsgMenu = function(btn, e) { e.stopPropagation(); let dropdown = btn.nextElementSibling; let isVis = dropdown.style.display === 'block'; document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none'); dropdown.style.display = isVis ? 'none' : 'block'; }
-    window.deleteMsg = function(btn, e) { e.stopPropagation(); let msg = btn.closest('.msg'); if(msg) { msg.remove(); saveHistorySafe(); showToast("Message deleted."); } document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none'); }
+    window.deleteMsg = function(btn, e) { e.stopPropagation(); let msg = btn.closest('.msg'); if(msg) { msg.remove(); saveHistorySafe(); triggerCloudSyncEngine(); showToast("Message deleted."); } document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none'); }
     window.copyMsg = function(btn, e) { e.stopPropagation(); let bubble = btn.closest('.bubble'); let text = bubble.innerText.replace('⋮','').replace('📋','').replace('🗑️ Delete','').replace('🔊 Listen','').trim(); navigator.clipboard.writeText(text); let orig = btn.innerHTML; btn.innerHTML = '✅'; setTimeout(() => { btn.innerHTML = orig; }, 1500); }
 
     const msgMenuHTML = `<div class="msg-menu-wrap"><button class="msg-action-btn" onclick="window.copyMsg(this, event)" title="Copy">📋</button><button class="msg-action-btn" onclick="window.toggleMsgMenu(this, event)">⋮</button><div class="msg-dropdown"><button onclick="window.deleteMsg(this, event)">🗑️ Delete</button></div></div>`;
@@ -574,17 +610,11 @@
         let newTitle = prompt("Enter new session name:", document.getElementById('sessionTitleDisplay').innerText);
         if(newTitle && newTitle.trim()) {
             document.getElementById('sessionTitleDisplay').innerText = newTitle.trim();
+            triggerCloudSyncEngine();
             startMarquee();
         }
     }
 
-    let selectedData = {}; let currentImageBase64 = null; let documentMemory = ""; let webUrls = []; 
-
-    // ==========================================
-    // 📷 CAMERA ENGINE
-    // ==========================================
-    let cameraTarget = 'chat'; let bookRecognitionImageBase64 = null; let camStream = null; let camFacing = "environment"; let isFlash = false;
-    
     function nextStep(step) {
         cameraTarget = 'chat'; 
         if(step === 2 && !document.getElementById('publisherSelect').value) return showCustomAlert("Please Select Publisher!");
@@ -651,7 +681,7 @@
         if (cameraTarget === 'chat') {
             currentImageBase64 = c.toDataURL("image/jpeg", 0.7); 
             document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64;
-            closeCamera(); validateSendButton();
+            closeCamera(); window.validateSendButton();
         } else if (cameraTarget === 'bookRecognition') {
             bookRecognitionImageBase64 = c.toDataURL("image/jpeg", 0.7);
             document.getElementById('bookPreviewImg').src = bookRecognitionImageBase64;
@@ -694,14 +724,21 @@
         }
     }
 
+    // 🚨 FIXED SUBJECT FETCH TO BE ULTRA STRICT 🚨
     async function triggerSubjectFetch() {
         let pub = document.getElementById('publisherSelect').value; let cls = document.getElementById('classSelect').value; let subSelect = document.getElementById('subjectSelect');
         if(!pub || !cls) return;
 
         subSelect.innerHTML = '<option value="" selected disabled>-- 🤖 Fetching Subjects... --</option>';
         try {
-            const sysPrompt = `Return a raw JSON array of strings containing the subjects taught in Class ${cls} for the publisher/board ${pub}. Example: ["Mathematics", "Science", "English Grammar"]. If unknown, return standard subjects.`;
-            const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: `Fetch subjects for ${cls} ${pub}` }) });
+            const sysPrompt = `You are a syllabus mapping expert. The user wants the EXACT subjects published for Class ${cls} by the publisher/board "${pub}". 
+            CRITICAL RULES:
+            1. ONLY return subjects that are ACTUALLY PUBLISHED by "${pub}" for Class ${cls}.
+            2. If "${pub}" is a specialized publisher (e.g. R.D. Sharma only does Mathematics), you MUST ONLY RETURN ["Mathematics"].
+            3. DO NOT hallucinate generic subjects if the publisher does not print them.
+            4. Return a raw JSON array of strings ONLY. Example: ["Mathematics", "Science"].`;
+            
+            const r = await fetch("/api/gemini-text", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ systemPrompt: sysPrompt, userPrompt: `Fetch real subjects for ${cls} ${pub}` }) });
             const data = await r.json(); let cleanJson = data.text.replace(/```json/gi, '').replace(/```/g, '').trim(); let fetchedSubjects = JSON.parse(cleanJson);
             
             if(!Array.isArray(fetchedSubjects) || fetchedSubjects.length === 0) throw new Error("Fallback");
@@ -788,31 +825,31 @@
         const inp = document.getElementById('chatInput');
         if (inp.value.trim() === "") { inp.style.height = '40px'; previousInputHeight = '40px'; }
         else { inp.style.height = '40px'; inp.style.height = Math.max(40, Math.min(inp.scrollHeight, 120)) + 'px'; previousInputHeight = inp.style.height; }
-        validateSendButton(); 
+        window.validateSendButton(); 
     }
 
     function openWebImport() { closePlusMenu(); document.getElementById('webImportModal').style.display = 'flex'; }
     function saveWebUrls() {
         let text = document.getElementById('webUrlInput').value.trim(); let urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-        if (urls.length > 10) { showCustomAlert("⚠️ Maximum 10 URLs allowed!"); urls = urls.slice(0, 10); }
+        if (urls.length > 10) { window.showCustomAlert("⚠️ Maximum 10 URLs allowed!"); urls = urls.slice(0, 10); }
         if (urls.length > 0) { webUrls = urls; document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = `${urls.length} Web URLs Attached`; }
-        document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = ''; validateSendButton();
+        document.getElementById('webImportModal').style.display = 'none'; document.getElementById('webUrlInput').value = ''; window.validateSendButton();
     }
 
     function handleFileSelect(event) {
         closePlusMenu(); const file = event.target.files[0]; if(!file) return;
         if (file.type.startsWith('image/')) {
-            const reader = new FileReader(); reader.onload = function(e) { currentImageBase64 = e.target.result; document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64; validateSendButton(); }; reader.readAsDataURL(file);
+            const reader = new FileReader(); reader.onload = function(e) { currentImageBase64 = e.target.result; document.getElementById('imagePreviewContainer').style.display = 'block'; document.getElementById('imgChip').src = currentImageBase64; window.validateSendButton(); }; reader.readAsDataURL(file);
         } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
             const reader = new FileReader(); document.getElementById("attachmentChip").style.display = "flex"; document.getElementById("attachName").innerText = "⏳ Reading PDF...";
             reader.onload = async function() {
-                try { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(item=>item.str).join(' '); } documentMemory = text; document.getElementById("attachName").innerText = `📄 ${file.name}`; validateSendButton(); } catch(err) { showCustomAlert("❌ Failed to read PDF."); clearAttachment(); }
+                try { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let text = ""; for(let i=1; i<=pdf.numPages; i++){ const p = await pdf.getPage(i); const c = await p.getTextContent(); text += c.items.map(item=>item.str).join(' '); } documentMemory = text; document.getElementById("attachName").innerText = `📄 ${file.name}`; window.validateSendButton(); } catch(err) { window.showCustomAlert("❌ Failed to read PDF."); clearAttachment(); }
             }; reader.readAsArrayBuffer(file);
-        } else { showCustomAlert("Only Images and PDFs are supported right now."); } event.target.value = ''; 
+        } else { window.showCustomAlert("Only Images and PDFs are supported right now."); } event.target.value = ''; 
     }
     
-    function removeImage() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; validateSendButton(); }
-    function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; validateSendButton(); }
+    function removeImage() { currentImageBase64 = null; document.getElementById('imagePreviewContainer').style.display = 'none'; window.validateSendButton(); }
+    function clearAttachment() { documentMemory = ""; webUrls = []; document.getElementById("attachmentChip").style.display = "none"; window.validateSendButton(); }
 
     let isShareMode = false;
     window.toggleShareMode = function() {
@@ -831,6 +868,55 @@
     window.proceedToShare = function() {
         if(document.querySelectorAll('.bubble.selected-for-share').length === 0) return window.showCustomAlert("Please tap at least one message to share!");
         document.getElementById('whatsappModal').style.display = 'flex';
+    }
+
+    // 🚨 FIXED WHATSAPP ENGINE (AUTO 91 + GLOBALLY BOUND) 🚨
+    window.submitWhatsAppSelection = async function(event) {
+        let number = document.getElementById('waNumberInput').value.trim();
+        if (!number) return showToast("Please enter a mobile number.");
+        
+        // Auto prepend country code 91 if the user just types their 10 digit number
+        if (!number.startsWith("91") && !number.startsWith("+")) {
+            number = "91" + number;
+        }
+
+        let fullChatText = "🔎 *DEEP STUDY - Selected Notes* 🔎\n\n";
+        document.querySelectorAll('.bubble.selected-for-share').forEach(node => {
+            let clone = node.cloneNode(true);
+            clone.querySelectorAll('.msg-menu-wrap, button, .listen-btn, .user-copy-btn').forEach(el => el.remove());
+            let htmlStr = clone.innerHTML.replace(/<br\s*[\/]?>/gi, '\n').replace(/<\/div>/gi, '\n').replace(/<\/p>/gi, '\n\n');
+            clone.innerHTML = htmlStr;
+            let msgText = (clone.textContent || clone.innerText || "").replace(/\n\s*\n/g, '\n\n').trim();
+            if (msgText.length > 0) fullChatText += `${msgText}\n\n------------------------\n\n`;
+        });
+
+        // Clean LaTeX
+        const superscripts = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','a':'ᵃ','b':'ᵇ','c':'ᶜ','n':'ⁿ','x':'ˣ','y':'ʸ'};
+        const toSuper = (str) => str.split('').map(c => superscripts[c] || c).join('');
+        fullChatText = fullChatText.replace(/\$\$/g, '').replace(/\$/g, '').replace(/\\\(/g, '').replace(/\\\)/g, '').replace(/\\frac{([^}]+)}{([^}]+)}/g, '$1/$2').replace(/\\times/g, '×').replace(/\\cdot/g, '·');
+
+        const activeTokenId = currentPti || currentSessionId;
+        const liveChatPtiUrl = `${window.location.origin}/books.html?restore=${activeTokenId}&pti=${activeTokenId}`;
+
+        const btn = event.target; const originalText = btn.innerHTML; btn.innerHTML = "⏳ Sending..."; btn.disabled = true;
+        
+        try {
+            const response = await fetch("/api/send-dual-share", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number: number, notesMessage: fullChatText.trim(), targetUrl: liveChatPtiUrl })
+            });
+
+            if (response.ok) {
+                showToast("✅ Both messages dispatched successfully!");
+                document.getElementById('whatsappModal').style.display = 'none';
+                window.cancelShareMode();
+            } else {
+                window.alert("❌ Transmission sequence failed.");
+            }
+        } catch (e) { window.alert("❌ Connection error while sending."); }
+        
+        btn.innerHTML = originalText; btn.disabled = false;
     }
 
     window.printFullChat = function() {
@@ -866,7 +952,6 @@
 
     function handleEnter(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (document.getElementById('sendBtn').classList.contains('active-btn')) sendMessage(); } }
 
-    let voiceRec = null; let voiceText = "";
     function openVoiceLang() { closePlusMenu(); document.getElementById('voiceLangModal').style.display='flex'; }
     function selectVoiceLang(lang) {
         document.getElementById('voiceLangModal').style.display='none';
@@ -895,12 +980,12 @@
     function startDictation(e) { e.preventDefault(); if(voiceRec) { voiceRec.start(); holdBtn.innerHTML = "🎙️ Listening..."; holdBtn.style.background = "#ef4444"; } }
     function stopDictation(e) { e.preventDefault(); if(voiceRec) { voiceRec.stop(); holdBtn.innerHTML = "👆 Hold to Speak"; holdBtn.style.background = "var(--primary)"; } }
     
-    holdBtn.addEventListener('mousedown', startDictation); holdBtn.addEventListener('touchstart', startDictation);
+    holdBtn.addEventListener('mousedown', startDictation); holdBtn.addEventListener('touchstart', startDictation, {passive:false});
     holdBtn.addEventListener('mouseup', stopDictation); holdBtn.addEventListener('touchend', stopDictation); holdBtn.addEventListener('mouseleave', stopDictation);
 
     function commitVoice() { 
         document.getElementById('chatInput').value += (document.getElementById('chatInput').value ? " " : "") + document.getElementById('voiceDictateText').value; 
-        document.getElementById('voiceDictateModal').style.display='none'; resizeInputBox(); if(voiceRec) voiceRec.stop(); 
+        document.getElementById('voiceDictateModal').style.display='none'; window.resizeInputBox(); if(voiceRec) voiceRec.stop(); 
     }
     function clearVoice() { voiceText = ""; document.getElementById('voiceDictateText').value = ""; }
     function closeVoiceDictate() { document.getElementById('voiceDictateModal').style.display='none'; if(voiceRec) voiceRec.stop(); }
@@ -915,7 +1000,7 @@
         const btn = document.getElementById('sendBtn');
         btn.classList.remove('stop-btn'); btn.classList.add('send-btn');
         btn.innerHTML = '➤'; btn.onclick = sendMessage;
-        validateSendButton();
+        window.validateSendButton();
     }
 
     function toggleAudio() {
@@ -924,6 +1009,17 @@
         else { window.speechSynthesis.pause(); btn.innerText = "▶"; }
     }
     function stopAudio() { window.speechSynthesis.cancel(); document.getElementById("topAudioPlayer").style.display = "none"; }
+    window.playAudio = function(btn) { 
+        let targetId = btn.getAttribute('data-target');
+        let text = document.getElementById(targetId).innerText; 
+        window.speechSynthesis.cancel(); 
+        const u = new SpeechSynthesisUtterance(text); 
+        u.lang = isHindiUI ? 'hi-IN' : 'en-US'; 
+        u.onstart = () => { document.getElementById("topAudioPlayer").style.display = "flex"; document.getElementById("audioToggleBtn").innerText = "⏸"; }; 
+        u.onend = () => { document.getElementById("topAudioPlayer").style.display = "none"; }; 
+        window.activeUtterance = u; 
+        window.speechSynthesis.speak(window.activeUtterance); 
+    };
 
     // =========================================================================
     // 🚨 🧠 INJECTED PTI SYNC LOGIC (CROSS DEVICE BULLETPROOF ENGINE) 🧠 🚨
@@ -946,6 +1042,7 @@
             document.getElementById('shareBtn').style.display = 'block';
             
             document.getElementById('chatHistory').innerHTML = sessionRecord.htmlPayload || "";
+            localSessionHTMLSize = (sessionRecord.htmlPayload || "").length;
             setTimeout(() => { const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'instant'}); }, 100);
             startMarquee();
         } catch (e) {
@@ -962,34 +1059,37 @@
             const freshSession = await response.json();
             if (freshSession.error) return;
             
-            let localContainer = document.getElementById('chatHistory');
             // If the incoming text updates are longer, update the view instantly
-            if (freshSession.html && freshSession.html.length > localSessionHTMLSize) {
-                localSessionHTMLSize = freshSession.html.length;
-                document.getElementById('chatHistory').innerHTML = freshSession.html;
+            if (freshSession.htmlPayload && freshSession.htmlPayload.length > localSessionHTMLSize) {
+                localSessionHTMLSize = freshSession.htmlPayload.length;
+                document.getElementById('chatHistory').innerHTML = freshSession.htmlPayload;
                 currentSessionId = freshSession.id;
-                localStorage.setItem('bookChatHistory_VUltimateAI', freshSession.html);
+                localStorage.setItem('bookChatHistory_VUltimateAI', freshSession.htmlPayload);
                 const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
                 showToast("📲 Live session update applied!");
             }
         } catch(e) {}
     }
 
-    function cloudSaveSyncEngine(htmlDataToCloud) {
+    function triggerCloudSyncEngine() {
+        const fullHTMLPayload = document.getElementById('chatHistory').innerHTML;
+        
+        // Always save to the generic localStorage array as fallback
         let savedSessions = JSON.parse(localStorage.getItem('bookSessionsArray_VUltimateAI')) || [];
         let curIdx = savedSessions.findIndex(s => s.id == currentSessionId || s.id === currentPti);
-        
-        let sessionObj = { id: currentPti || currentSessionId, title: document.getElementById('sessionTitleDisplay').innerText, html: htmlDataContainer, data: selectedData };
-        if(curIdx !== -1) savedSessions[curIdx] = sessionObj; else savedSessions.unshift(winSessionObj);
+        let sessionObj = { id: currentPti || currentSessionId, title: document.getElementById('sessionTitleDisplay').innerText, html: fullHTMLPayload, data: selectedData };
+        if(curIdx !== -1) savedSessions[curIdx] = sessionObj; else savedSessions.unshift(sessionObj);
         localStorage.setItem('bookSessionsArray_VUltimateAI', JSON.stringify(savedSessions));
 
+        // Sync to Server
         fetch('/api/pti-save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 pti: currentPti || currentSessionId,
                 title: document.getElementById('sessionTitleDisplay').innerText,
-                interactions: [{ question: "Book Deep Study Update", answer: htmlData }] // Standard payload wrapper compatible with database router mapping
+                htmlPayload: fullHTMLPayload, // Using a dedicated htmlPayload field to match books structure
+                metaSettings: selectedData // Store metadata configuration map so phone can auto-load configurations
             })
         })
         .then(res => res.json())
@@ -1005,226 +1105,185 @@
         .catch(err => console.error("Cloud Sync Failed:", err));
     }
 
-    // Initialize logic checking url targets upon component registration
-    let initialUrlCheck = new URLSearchParams(window.location.search).get('pti');
-    if(initialMessageHTML = null, initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "", initialMessageHTML = "🤖 Dual engine connected", currentPti) {
-            setInterval(() => { silentCheckPtiUpdates(); }, 4000);
+    // ==========================================
+    // 🧠 AI CONVERSATION TRIGGER (THE MAIN LOOP)
+    // ==========================================
+    async function startConversation(forceNew = false, forceClear = false) {
+        let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
+        let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
+        let isNewChapter = false;
+
+        if (oldSettingsStr && oldHistory) {
+            let oldSettings = JSON.parse(oldSettingsStr);
+            if (oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) isNewChapter = true;
         }
 
-        async function startConversation(forceNew = false, forceClear = false) {
-            let oldSettingsStr = localStorage.getItem('bookSettings_VUltimateAI');
-            let oldHistory = localStorage.getItem('bookChatHistory_VUltimateAI');
-            let isNewChapter = false;
+        if (forceClear) {
+            document.getElementById('chatHistory').innerHTML = ""; localStorage.removeItem('bookChatHistory_VUltimateAI'); currentSessionId = Date.now();
+        } else if (isNewChapter) {
+            document.getElementById('chatHistory').insertAdjacentHTML('beforeend', `<div class="chapter-divider">--- Started New Session: ${selectedData.chapter} ---</div>`);
+        }
 
-            if (oldSettingsStr && oldHistory) {
-                let oldSettings = JSON.parse(oldSettingsStr);
-                if (oldSettings.chapter !== selectedData.chapter || oldSettings.subject !== selectedData.subject) isNewChapter = true;
-            }
-
-            if (forceClear) {
-                document.getElementById('chatHistory').innerHTML = ""; localStorage.removeItem('bookChatHistory_VUltimateAI'); currentSessionId = Date.now();
-            } else if (isNewChapter) {
-                document.getElementById('chatHistory').insertAdjacentHTML('beforeend', `<div class="chapter-divider">--- Started New Session: ${selectedData.chapter} ---</div>`);
-            }
-
-            document.getElementById('wizardPage').style.display = 'none'; 
-            document.getElementById('loadingPage').style.display = 'flex';
+        document.getElementById('wizardPage').style.display = 'none'; 
+        document.getElementById('loadingPage').style.display = 'flex';
+        
+        let bar = document.getElementById('loadingBar'); let desc = document.getElementById('loadingDesc');
+        bar.style.width = '30%'; desc.innerText = "Connecting to AI Core...";
+        await new Promise(r => setTimeout(r, 400));
+        bar.style.width = '60%'; desc.innerText = "Analyzing Chapter Context...";
+        await fetchChapterContext();
+        bar.style.width = '90%'; desc.innerText = "Setting up Tutor Interface...";
+        await new Promise(r => setTimeout(r, 400));
+        bar.style.width = '100%';
+        
+        setTimeout(async () => {
+            document.getElementById('loadingPage').style.display = 'none'; 
+            document.getElementById('chatPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'block'; 
+            document.getElementById('clearBtn').style.display = 'block'; 
+            document.getElementById('shareBtn').style.display = 'block'; 
             
-            let bar = document.getElementById('loadingBar'); let desc = document.getElementById('loadingDesc');
-            bar.style.width = '30%'; desc.innerText = "Connecting to AI Core...";
-            await new Promise(r => setTimeout(r, 400));
-            bar.style.width = '60%'; desc.innerText = "Analyzing Chapter Context...";
-            await fetchChapterContext();
-            bar.style.width = '90%'; desc.innerText = "Setting up Tutor Interface...";
-            await new Promise(r => setTimeout(r, 400));
-            bar.style.width = '100%';
-            
-            setTimeout(async () => {
-                document.getElementById('loadingPage').style.display = 'none'; 
-                document.getElementById('chatPage').style.display = 'flex';
-                document.getElementById('settingsBtn').style.display = 'block'; 
-                document.getElementById('clearBtn').style.display = 'block'; 
-                document.getElementById('shareBtn').style.display = 'block'; 
+            document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
+            startMarquee();
+            localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
+
+            if(document.getElementById('chatHistory').innerHTML.trim() === "" || isNewChapter) {
+                let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
+                let initialMessageHTML = (isEnglishSub || !isHindiUI) ? 
+                    `Hello! I am your AI Tutor. <br><br>We are ready to discuss Chapter **"${selectedData.chapter}"** of **${selectedData.subject}** (${selectedData.class}). <br><br>**I will respond in English by default.**<br>*Note: If you ask to solve a specific exercise, I will check the real textbook data first!*<br><br>
+                    <div class="preset-chips" style="margin-top: 15px;">
+                        <button class="preset-btn" onclick="window.runPreset('Generate detailed study notes for this chapter.')">📝 Generate Notes</button>
+                        <button class="preset-btn" onclick="window.runPreset('Create 10 important MCQs from this chapter with answers.')">✅ Objectives</button>
+                        <button class="preset-btn" onclick="window.runPreset('Analyze this chapter in simple terms.')">📊 Analyze Chapter</button>
+                    </div>`
+                    : 
+                    `नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।**<br><br>
+                    <div class="preset-chips" style="margin-top: 15px;">
+                        <button class="preset-btn" onclick="window.runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स</button>
+                        <button class="preset-btn" onclick="window.runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न</button>
+                        <button class="preset-btn" onclick="window.runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
+                    </div>`;
                 
-                document.getElementById('sessionTitleDisplay').innerText = `${selectedData.subject} - ${selectedData.chapter}`;
-                startMarquee();
-                localStorage.setItem('bookSettings_VUltimateAI', JSON.stringify(selectedData));
+                await addAiMessage(initialMessageHTML, false);
+            }
+        }, 300);
+    }
 
-                if(document.getElementById('chatHistory').innerHTML.trim() === "" || isNewChapter) {
-                    let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-                    let initialMessageHTML = (isEnglishSub || !isHindiUI) ? 
-                        `Hello! I am your AI Tutor. <br><br>We are ready to discuss Chapter **"${selectedData.chapter}"** of **${selectedData.subject}** (${selectedData.class}). <br><br>**I will respond in English by default.**<br>*Note: If you ask to solve a specific exercise, I will check the real textbook data first!*<br><br>
-                        <div class="preset-chips" style="margin-top: 15px;">
-                            <button class="preset-btn" onclick="window.runPreset('Generate detailed study notes for this chapter.')">📝 Generate Notes</button>
-                            <button class="preset-btn" onclick="window.runPreset('Create 10 important MCQs from this chapter with answers.')">✅ Objectives</button>
-                            <button class="preset-btn" onclick="window.runPreset('Analyze this chapter in simple terms.')">📊 Analyze Chapter</button>
-                        </div>`
-                        : 
-                        `नमस्ते! मैं आपका एआई शिक्षक हूँ। <br><br>हम **${selectedData.class}** के **${selectedData.subject}** विषय के अध्याय **"${selectedData.chapter}"** पर चर्चा करने के लिए तैयार हैं। <br><br>**मैं आपके सभी सवालों के जवाब डिफ़ॉल्ट रूप से हिंदी में दूँगा।**<br><br>
-                        <div class="preset-chips" style="margin-top: 15px;">
-                            <button class="preset-btn" onclick="window.runPreset('इस अध्याय के लिए विस्तृत और आसान नोट्स बनाएं।')">📝 जनरेट नोट्स</button>
-                            <button class="preset-btn" onclick="window.runPreset('इस अध्याय से 10 महत्वपूर्ण बहुविकल्पीय प्रश्न (MCQ) बनाएं और उत्तर भी दें।')">✅ ऑब्जेक्टिव प्रश्न</button>
-                            <button class="preset-btn" onclick="window.runPreset('इस अध्याय का विस्तार से और आसान भाषा में विश्लेषण करें।')">📊 अध्याय का विश्लेषण</button>
-                        </div>`;
-                    
-                    await addAiMessage(initialMessageHTML, false);
-                }
-            }, 300);
+    async function sendMessage() {
+        const inputEl = document.getElementById('chatInput');
+        const text = inputEl.value.trim();
+        const img = currentImageBase64;
+        const btn = document.getElementById('sendBtn');
+
+        if(!btn.classList.contains('active-btn')) return;
+
+        btn.classList.remove('active-btn', 'send-btn'); btn.classList.add('stop-btn'); btn.innerHTML = '⏹'; btn.onclick = cancelAiRequest;
+
+        const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
+        let imgHtml = img ? `<img src="${img}" style="max-width:100%; border-radius:10px; margin-bottom:10px;"><br>` : "";
+        msgDiv.innerHTML = `<div class="bubble"><button onclick="window.copyUserText(this)" data-text="${encodeURIComponent(text)}" class="user-copy-btn">📋</button>${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}${msgMenuHTML}</div>`;
+        document.getElementById('chatHistory').appendChild(msgDiv);
+        
+        const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
+
+        inputEl.value = ""; window.resizeInputBox(); removeImage(); 
+
+        const loadingId = "load_" + Date.now();
+        const loadDiv = document.createElement("div"); loadDiv.className = "msg ai"; loadDiv.id = loadingId;
+        loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+        document.getElementById('chatHistory').appendChild(loadDiv);
+        c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); 
+
+        let recentHistory = ""; let chatNodes = document.querySelectorAll('#chatHistory .msg'); let startIdx = Math.max(0, chatNodes.length - 8); 
+        for(let i = startIdx; i < chatNodes.length; i++) {
+            let m = chatNodes[i]; if(m.id === loadingId) continue;
+            let role = m.classList.contains('user') ? "User" : "AI";
+            let clone = m.cloneNode(true); let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
+            let msgText = clone.innerText.trim().replace(/\s+/g, ' '); if(msgText) recentHistory += `${role}: ${msgText}\n`;
         }
 
-        async function sendMessage() {
-            const inputEl = document.getElementById('chatInput');
-            const text = inputEl.value.trim();
-            const img = currentImageBase64;
-            const btn = document.getElementById('sendBtn');
+        let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
+        let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI (Devanagari script)';
+        let isMathSub = ['Mathematics', 'Physics', 'Chemistry', 'Science'].includes(selectedData.subject);
+        
+        let sysPrompt = `You are a premium AI expert educational tutor. Answer entirely in ${targetLang}. Context: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}. Use **bolding**. NO HASHTAGS (#). NO RAW UNITS like \\text{m/s}^2.`;
 
-            if(!btn.classList.contains('active-btn')) return;
-
-            btn.classList.remove('active-btn', 'send-btn'); btn.classList.add('stop-btn'); btn.innerHTML = '⏹'; btn.onclick = cancelAiRequest;
-
-            const msgDiv = document.createElement("div"); msgDiv.className = "msg user";
-            let imgHtml = img ? `<img src="${img}"><br>` : "";
-            msgDiv.innerHTML = `<div class="bubble"><button onclick="copyUserText(this)" data-text="${encodeURIComponent(text)}" class="user-copy-btn">📋</button>${imgHtml}${text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}${msgMenuHTML}</div>`;
-            document.getElementById('chatHistory').appendChild(msgDiv);
-            
-            const c = document.getElementById('chatHistory'); c.scrollTo({top: c.scrollHeight, behavior: 'smooth'});
-
-            inputEl.value = ""; resizeInputBox(); removeImage(); 
-
-            const loadingId = "load_" + Date.now();
-            const loadDiv = document.createElement("div"); loadDiv.className = "msg ai"; loadDiv.id = loadingId;
-            loadDiv.innerHTML = `<div class="bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
-            document.getElementById('chatHistory').appendChild(loadDiv);
-            c.scrollTo({top: c.scrollHeight, behavior: 'smooth'}); 
-
-            let recentHistory = ""; let chatNodes = document.querySelectorAll('#chatHistory .msg'); let startIdx = Math.max(0, chatNodes.length - 8); 
-            for(let i = startIdx; i < chatNodes.length; i++) {
-                let m = chatNodes[i]; if(m.id === loadingId) continue;
-                let role = m.classList.contains('user') ? "User" : "AI";
-                let clone = m.cloneNode(true); let menuWrap = clone.querySelector('.msg-menu-wrap'); if(menuWrap) menuWrap.remove();
-                let msgText = clone.innerText.trim().replace(/\s+/g, ' '); if(msgText) recentHistory += `${role}: ${msgText}\n`;
-            }
-
-            let isEnglishSub = ['English', 'English Grammar', 'Computer Science', 'Information Technology'].includes(selectedData.subject);
-            let targetLang = (isEnglishSub || !isHindiUI) ? 'ENGLISH' : 'HINDI (Devanagari script)';
-            let isMathSub = ['Mathematics', 'Physics', 'Chemistry', 'Science'].includes(selectedData.subject);
-            
-            let sysPrompt = `You are a premium AI expert educational tutor. Answer entirely in ${targetLang}. Context: ${selectedData.class}, Subject: ${selectedData.subject}, Chapter: "${selectedData.chapter}". Publisher: ${selectedData.publisher}. Use **bolding**. NO HASHTAGS (#). NO RAW UNITS like \\text{m/s}^2.`;
-
-            if (isMathSub) {
-                sysPrompt += `\n\n🚨 MATH TEMPLATE: For calculation questions, follow exactly:
+        if (isMathSub) {
+            sysPrompt += `\n\n🚨 MATH TEMPLATE: For calculation questions, follow exactly:
 **1. [Step 1 Heading]**
 [Step 1 explanation in full words]
 $$[Equation]$$
 **✅ Final Answer**
 [Final sentence in ${targetLang}]`;
-                sysPrompt += `\n\n🎨 VISUAL RULE: IF the question relates to Geometry, Physics concepts, Chemistry structures, or visual Math, YOU MUST generate a highly detailed, colorful <svg> diagram wrapped exactly in <div class="math-svg-wrap"><svg>...</svg></div>.`;
-            } else { 
-                sysPrompt += `\n\nIF SUBJECT IS NOT MATH OR SCIENCE, DO NOT INVENT MATH FORMULAS.`; 
-            }
-
-            if(recentHistory) sysPrompt += `\n\n--- CHAT HISTORY ---\n${recentHistory}`;
-            if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY ---\n${documentMemory.substring(0, 40000)}`;
-            
-            let payloadImg = img;
-            if (!img && bookRecognitionImageBase64) { payloadImg = bookRecognitionImageBase64; sysPrompt += `\nCRITICAL: Extract the text/questions strictly from the provided image.`; }
-
-            const payload = payloadImg ? { imageBase64: payloadImg, userPrompt: text || "Please solve the questions visible.", systemPrompt: sysPrompt } : { userPrompt: text || "Please provide the chapter exercises.", systemPrompt: sysPrompt };
-            
-            try {
-                currentAbortController = new AbortController();
-                const endpoint = payloadImg ? "/api/gemini-vision" : "/api/gemini-text";
-                const r = await fetch(endpoint, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload), signal: currentAbortController.signal });
-                const data = await r.json();
-                if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
-
-                document.getElementById(loadingId).remove();
-                await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
-
-            } catch(err) {
-                let errorMsg = err.message;
-                if(err.name === 'AbortError') errorMsg = "⚠️ Generation stopped by user.";
-                document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
-                saveHistorySafe(); resetSendButton();
-            }
         }
 
-        async function addAiMessage(text, typewrite = false) {
-            const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
-            const bubble = document.createElement("div"); bubble.className = "bubble";
-            msgDiv.appendChild(bubble); document.getElementById('chatHistory').appendChild(msgDiv);
+        if(recentHistory) sysPrompt += `\n\n--- CHAT HISTORY ---\n${recentHistory}`;
+        if (documentMemory) sysPrompt += `\n\n--- INBUILT CHAPTER MEMORY ---\n${documentMemory.substring(0, 40000)}`;
+        
+        let payloadImg = img;
+        if (!img && bookRecognitionImageBase64) { payloadImg = bookRecognitionImageBase64; sysPrompt += `\nCRITICAL: Extract the text/questions strictly from the provided image.`; }
 
-            let formattedText = text.replace(/\*\*(.*?)\*\"/g, '<b>$1</b>');
-            let btnHtml = `<button class="listen-btn" onclick="playAudio(this)" data-target="tts_${Date.now()}">🔊 Listen</button>`;
+        const payload = payloadImg ? { imageBase64: payloadImg, userPrompt: text || "Please solve the questions visible.", systemPrompt: sysPrompt } : { userPrompt: text || "Please provide the chapter exercises.", systemPrompt: sysPrompt };
+        
+        try {
+            currentAbortController = new AbortController();
+            const endpoint = payloadImg ? "/api/gemini-vision" : "/api/gemini-text";
+            const r = await fetch(endpoint, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload), signal: currentAbortController.signal });
+            const data = await r.json();
+            if(!r.ok) throw new Error(data.error || "Server Connection Failed.");
 
-            if(typewrite) {
-                let currentHTML = ""; let i = 0;
-                bubble.innerHTML = `<div id="tts_${Date.now()}" style="margin-bottom:10px;"></div>`;
-                let txtBox = bubble.firstChild;
-                
-                return new Promise((resolve) => {
-                    currentTypewriterInterval = setInterval(() => {
-                        if(i >= formattedText.length) {
-                            clearInterval(currentTypewriterInterval);
-                            bubble.insertAdjacentHTML('beforeend', btnHtml + msgMenuHTML);
-                            if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
-                            
-                            // Live Cloud Execution Hooks
-                            saveHistorySafe();
-                            triggerCloudSyncEngine();
-                            resetSendButton(); 
-                            resolve();
-                        } else {
-                            let char = formattedText[i];
-                            if(char === '<') { let end = formattedText.indexOf('>', i); if(end !== -1) { currentHTML += formattedText.substring(i, end + 1); i = end + 1; } }
-                            else { currentHTML += (char === '\n') ? '<br>' : char; i++; }
-                            txtBox.innerHTML = currentHTML;
-                            
-                            if((currentHTML.endsWith('$$') || currentHTML.endsWith('\\)')) && window.MathJax) {
-                                MathJax.typesetClear([txtBox]); MathJax.typesetPromise([txtBox]).catch(()=>{});
-                            }
+            document.getElementById(loadingId).remove();
+            await addAiMessage(data.text || data.choices?.[0]?.message?.content, true);
+
+        } catch(err) {
+            let errorMsg = err.message;
+            if(err.name === 'AbortError') errorMsg = "⚠️ Generation stopped by user.";
+            document.getElementById(loadingId).querySelector('.bubble').innerHTML = `❌ <b style='color:#ef4444;'>Error:</b> ${errorMsg} ${msgMenuHTML}`;
+            saveHistorySafe(); resetSendButton();
+        }
+    }
+
+    async function addAiMessage(text, typewrite = false) {
+        const msgDiv = document.createElement("div"); msgDiv.className = "msg ai";
+        const bubble = document.createElement("div"); bubble.className = "bubble";
+        msgDiv.appendChild(bubble); document.getElementById('chatHistory').appendChild(msgDiv);
+
+        let formattedText = text.replace(/\*\*(.*?)\*\"/g, '<b>$1</b>');
+        let btnHtml = `<br><button class="listen-btn" onclick="window.playAudio(this)" data-target="tts_${Date.now()}">🔊 Listen</button>`;
+
+        if(typewrite) {
+            let currentHTML = ""; let i = 0;
+            bubble.innerHTML = `<div id="tts_${Date.now()}" style="margin-bottom:10px;"></div>`;
+            let txtBox = bubble.firstChild;
+            
+            return new Promise((resolve) => {
+                currentTypewriterInterval = setInterval(() => {
+                    if(i >= formattedText.length) {
+                        clearInterval(currentTypewriterInterval);
+                        bubble.insertAdjacentHTML('beforeend', btnHtml + msgMenuHTML);
+                        if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
+                        
+                        saveHistorySafe(); triggerCloudSyncEngine(); resetSendButton(); resolve();
+                    } else {
+                        let char = formattedText[i];
+                        if(char === '<') { let end = formattedText.indexOf('>', i); if(end !== -1) { currentHTML += formattedText.substring(i, end + 1); i = end + 1; } }
+                        else { currentHTML += (char === '\n') ? '<br>' : char; i++; }
+                        txtBox.innerHTML = currentHTML;
+                        
+                        if((currentHTML.endsWith('$$') || currentHTML.endsWith('\\)')) && window.MathJax) {
+                            MathJax.typesetClear([txtBox]); MathJax.typesetPromise([txtBox]).catch(()=>{});
                         }
-                    }, 8);
-                });
-            } else {
-                let id = `tts_${Date.now()}`;
-                bubble.innerHTML = `<div id="${id}" style="margin-bottom:10px;">${formattedText.replace(/\n/g, '<br>')}</div>${btnHtml}${msgMenuHTML}`;
-                if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
-                
-                saveHistorySafe();
-                triggerCloudSyncEngine();
-                resetSendButton();
-            }
-        }
-
-        function triggerCloudSyncEngine() {
-            const fullHTMLPayload = document.getElementById('chatHistory').innerHTML;
+                    }
+                }, 8);
+            });
+        } else {
+            let id = `tts_${Date.now()}`;
+            bubble.innerHTML = `<div id="${id}" style="margin-bottom:10px;">${formattedText.replace(/\n/g, '<br>')}</div>${btnHtml}${msgMenuHTML}`;
+            if(window.MathJax) { MathJax.typesetClear([bubble]); MathJax.typesetPromise([bubble]); }
             
-            fetch('/api/pti-save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    pti: currentPti || currentSessionId,
-                    title: document.getElementById('sessionTitleDisplay').innerText,
-                    interactions: [{ 
-                        question: "Book Session Update", 
-                        answer: fullHTMLPayload,
-                        metaSettings: selectedData // Store metadata configuration map so phone can auto-load configurations
-                    }]
-                })
-            })
-            .then(res => res.json())
-            .then(serverResult => {
-                if (serverResult.success && !currentPti) {
-                    currentPti = serverResult.pti;
-                    currentSessionId = currentPti;
-                    
-                    const newUrl = `${window.location.origin}${window.location.pathname}?pti=${currentPti}`;
-                    window.history.replaceState({ path: newUrl }, '', newUrl);
-                }
-            })
-            .catch(err => console.error("Cloud Sync Failed:", err));
+            saveHistorySafe(); triggerCloudSyncEngine(); resetSendButton();
         }
+    }
 </script>
 </body>
 </html>
