@@ -5,8 +5,8 @@ const crypto = require("crypto");
 const ytSearch = require('yt-search');
 const Tesseract = require('tesseract.js'); 
 const axios = require('axios');
-const { chromium } = require("playwright"); // Playwright Chromium Core
-const { createClient } = require("@supabase/supabase-js"); // Supabase client initialization
+const { chromium } = require("playwright"); 
+const { createClient } = require("@supabase/supabase-js"); 
 
 const dns = require('dns');
 dns.setDefaultResultOrder('ipv4first'); 
@@ -20,25 +20,20 @@ const SUPABASE_URL = "https://cnexypomeopydsvhmpzv.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuZXh5cG9tZW9weWRzdmhtcHp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MDgzMTQsImV4cCI6MjA5ODE4NDMxNH0.WwxIuUMFR6PQTkNhjN8TYtFFz5nR-AmSebzkB-Rf2G0";
 const BUCKET_NAME = "whatsapp-session";
 const SESSION_DIR = path.join(__dirname, "user_data");
-global.WebSocket = require('ws');
 
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Helper to reconstruct browser login profile folders instantly on Render containers
 async function downloadSessionFromCloud() {
     console.log("☁️ Downloading WhatsApp tokens from Supabase Storage...");
     try {
         const leveldbDir = path.join(SESSION_DIR, "Default", "Local Storage", "leveldb");
         const defaultDir = path.join(SESSION_DIR, "Default");
-        
         fs.mkdirSync(leveldbDir, { recursive: true });
 
-        // 1. Download rolling log file payload
         const { data: logData, error: logErr } = await supabaseClient.storage.from(BUCKET_NAME).download("000004.log");
         if (logErr) throw logErr;
         fs.writeFileSync(path.join(leveldbDir, "000004.log"), Buffer.from(await logData.arrayBuffer()));
 
-        // 2. Download raw rolling state Cookies database file
         const { data: cookieData, error: cookieErr } = await supabaseClient.storage.from(BUCKET_NAME).download("Cookies");
         if (cookieErr) throw cookieErr;
         fs.writeFileSync(path.join(defaultDir, "Cookies"), Buffer.from(await cookieData.arrayBuffer()));
@@ -53,7 +48,6 @@ async function downloadSessionFromCloud() {
 // ==========================================================================
 
 const GOOGLE_DATABASE_URL = "https://script.google.com/macros/s/AKfycbwuSwz8wvT24TUYq_eWy9Ak4Lj7CfWUXGiTsaFT9oGrBAvdN93X4sV6eJlMgRJbNbKjnA/exec";
-
 const MASTER_RULES = `\n\nSTRICT OUTPUT RULES:
 1. NO FOREIGN GARBAGE: Never output Chinese, Japanese, Korean, or random unreadable symbols. If the image or text has illegible noise, completely ignore it.
 2. BRAND NAMES IN ENGLISH and HINDI: When replying in Hindi, you MUST keep all company names, brand names, app names, and complex technical terms in pure English script (e.g., write "Crompton Greaves" not "क्रॉम्पटन" or "कrompton"). Translate them into Hindi and English both. Keep sentences natural but preserve both hindi and english nouns(eg. if you write windmill then you will write पवन चक्की(wind mill)).`;
@@ -125,7 +119,7 @@ async function tryProviders(providers, requestFn, override = null) {
 }
 
 // ==========================================
-// SMART SEARCH ROUTERS
+// SMART AI ROUTERS
 // ==========================================
 async function handleSmartSearch(req, res) {
     try {
@@ -245,7 +239,7 @@ async function handleGeminiVision(req, res) {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${p.modelId}:generateContent?key=${p.key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 const data = await response.json(); 
                 return data.candidates[0].content.parts[0].text;
-           } else if (p.type === 'cloudflare', accountId) {
+           } else if (p.type === 'cloudflare') {
                 const imageBuffer = Buffer.from(rawBase64, 'base64');
                 const imageArray = Array.from(imageBuffer);
                 const cloudflarePrompt = "agree Do your best to read and solve it. " + userText + MASTER_RULES;
@@ -317,8 +311,34 @@ async function handleCloudflareImage(req, res) {
 }
 
 // =========================================================================
-// 🛡️ NATIVE PLAYWRIGHT CHROMIUM CONTROLLER (REPLACES BROKEN GREEN API) 🛡️
+// 🛡️ DUAL-LAYERED WHATSAPP CONTROLLER (PLAYWRIGHT -> GREEN API FALLBACK) 🛡️
 // =========================================================================
+async function sendViaGreenAPIFallback(number, message) {
+    // Dynamic import from process.env based on Render config
+    const idInstance = process.env.ID_INSTANCE || process.env.GREEN_API_ID || "";
+    const apiToken = process.env.API_TOKEN || process.env.GREEN_API_TOKEN || "";
+
+    if (!idInstance || !apiToken) {
+        throw new Error("Green API credentials missing in environment variables.");
+    }
+
+    const url = `https://api.green-api.com/waInstance${idInstance}/sendMessage/${apiToken}`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chatId: `${number}@c.us`,
+            message: message
+        })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(`Green API Rejected: ${JSON.stringify(data)}`);
+    }
+    return data;
+}
+
 async function handleSecureWhatsapp(req, res) {
     let browserContext;
     try {
@@ -330,58 +350,109 @@ async function handleSecureWhatsapp(req, res) {
             return sendJson(res, 400, { error: "Missing required payload parameters" });
         }
 
-        // Auto-prepend 91 if it's a standard 10-digit mobile layout number
         if (number.length === 10 && /^\d+$/.test(number)) {
             number = "91" + number;
         }
 
-        // Sync fresh credential context tokens down to the local file layout
-        await downloadSessionFromCloud();
+        let primarySuccess = false;
+        let primaryErrorLog = "";
 
-        console.log(`🌐 Deploying secure browser channel for recipient: ${number}`);
-        browserContext = await chromium.launchPersistentContext(SESSION_DIR, {
-            headless: true, // Required for invisible background operation on Render
-            args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
-        });
+        // =====================================================
+        // LAYER 1: PRIMARY PLAYWRIGHT BROWSER AUTOMATION
+        // =====================================================
+        try {
+            await downloadSessionFromCloud();
+            console.log(`🌐 [LAYER 1] Deploying primary browser channel for: ${number}`);
+            
+            browserContext = await chromium.launchPersistentContext(SESSION_DIR, {
+                headless: true,
+                args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
+            });
 
-        const page = await browserContext.newPage();
-        const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURIComponent(message)}`;
-        await page.goto(url);
+            const page = await browserContext.newPage();
+            const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURIComponent(message)}`;
+            await page.goto(url);
 
-        console.log("⏳ Syncing browser page state...");
-        await page.waitForTimeout(8000); // Buffer connection block hold
+            console.log("⏳ [LAYER 1] Waiting for WhatsApp Web interface to sync (Giving it 20s)...");
+            await page.waitForTimeout(20000); 
 
-        const selectors = [
-            'span[data-testid="send"]',
-            'button[data-testid="compose-btn-send"]',
-            'span[data-icon="send"]'
-        ];
-
-        let sent = false;
-        for (const selector of selectors) {
             try {
-                if (await page.$(selector)) {
-                    await page.click(selector);
-                    sent = true;
-                    console.log("✅ Selector Hit! Message dispatched over layout.");
-                    break;
-                }
-            } catch (e) {}
+                const chatBoxSelector = 'div[contenteditable="true"][data-tab="10"]';
+                await page.waitForSelector(chatBoxSelector, { timeout: 5000 });
+                await page.focus(chatBoxSelector);
+                await page.click(chatBoxSelector);
+            } catch (e) {
+                console.log("⚠️ [LAYER 1] Direct focus missed. Falling back to global layout...");
+            }
+
+            const selectors = [
+                'span[data-testid="send"]',
+                'button[data-testid="compose-btn-send"]',
+                'span[data-icon="send"]'
+            ];
+
+            let sent = false;
+            for (const selector of selectors) {
+                try {
+                    if (await page.$(selector)) {
+                        await page.click(selector);
+                        sent = true;
+                        console.log("✅ [LAYER 1] Selector Hit! Message dispatched via Send Button.");
+                        break;
+                    }
+                } catch (e) {}
+            }
+
+            if (!sent) {
+                console.log("⌨️ [LAYER 1] Forcing physical keyboard Enter execution...");
+                await page.keyboard.press("Enter");
+            }
+
+            await page.waitForTimeout(6000); // Hold channel open for network transit
+            primarySuccess = true;
+            
+        } catch (playwrightError) {
+            primaryErrorLog = playwrightError.message;
+            console.error(`❌ [LAYER 1] Playwright Automation Failed: ${primaryErrorLog}`);
+        } finally {
+            if (browserContext) await browserContext.close();
         }
 
-        if (!sent) {
-            console.log("⌨️ Selector missed. Forcing physical keyboard Enter execution.");
-            await page.keyboard.press("Enter");
+        // Return immediately if Primary was successful
+        if (primarySuccess) {
+            return sendJson(res, 200, { success: true, method: "Playwright", message: "Dispatched over custom cloud automation engine" });
         }
 
-        await page.waitForTimeout(4000); // Hold channel open briefly for transmission dispatch
-        return sendJson(res, 200, { success: true, message: "Dispatched over custom cloud automation engine" });
+
+        // =====================================================
+        // LAYER 2: GREEN API FALLBACK (Only runs if Layer 1 fails)
+        // =====================================================
+        console.log(`⚠️ [LAYER 2] Triggering Green API Fallback for ${number}...`);
+        
+        try {
+            const greenResult = await sendViaGreenAPIFallback(number, message);
+            console.log(`✅ [LAYER 2] Fallback Successful! Message sent via Green API.`);
+            
+            return sendJson(res, 200, { 
+                success: true, 
+                method: "GreenAPI", 
+                message: "Dispatched via Green API Fallback", 
+                details: greenResult 
+            });
+            
+        } catch (greenError) {
+            console.error(`❌ [LAYER 2] Green API Fallback also Failed: ${greenError.message}`);
+            
+            // Both layers failed, report full diagnostic payload to client
+            return sendJson(res, 502, { 
+                error: "Both primary and fallback messaging pipelines failed.",
+                primaryError: primaryErrorLog,
+                fallbackError: greenError.message
+            });
+        }
 
     } catch (e) {
-        console.error("❌ Cloud Automation Failure:", e.message);
         return sendJson(res, 502, { error: e.message });
-    } finally {
-        if (browserContext) await browserContext.close();
     }
 }
 
@@ -421,23 +492,24 @@ async function handleDualShare(req, res) {
         const messageContent = body.notesMessage || body.message || "Deep Study Notes Dispatch";
         const customUrlLink = `🔗 *Live Conversation Synchronization Link:*\n${body.targetUrl}`;
 
-        console.log(`[Dual Sync] Redirecting payloads straight into the unified cloud browser pipeline...`);
+        console.log(`[Dual Sync] Processing sequence of 2 messages for recipient: ${number}`);
         
-        // Pass packet 1 recursively into our custom controller pipeline
+        // Pass packet 1 into our dual-layered security pipeline
         await new Promise((resolve) => {
             const mockRes = { writeHead: () => {}, end: () => resolve() };
             const fakeReq = { on: (ev, cb) => { if(ev === 'data') cb(JSON.stringify({ number, message: messageContent })); if(ev === 'end') cb(); } };
             handleSecureWhatsapp(fakeReq, mockRes);
         });
 
-        // Pass packet 2 recursively into our custom controller pipeline
+        // Pass packet 2 into our dual-layered security pipeline
+        // (This will also properly route through Playwright, and hit Send/Enter for the 2nd message, or fallback to GreenAPI)
         await new Promise((resolve) => {
             const mockRes = { writeHead: () => {}, end: () => resolve() };
             const fakeReq = { on: (ev, cb) => { if(ev === 'data') cb(JSON.stringify({ number, message: customUrlLink })); if(ev === 'end') cb(); } };
             handleSecureWhatsapp(fakeReq, mockRes);
         });
 
-        return sendJson(res, 200, { success: true, detail: "Dual share mapped to browser session flow successfully" });
+        return sendJson(res, 200, { success: true, detail: "Dual share sequence completed via routing pipeline." });
     } catch (e) { return sendJson(res, 502, { error: e.message }); }
 }
 
